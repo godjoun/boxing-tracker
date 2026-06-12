@@ -1,66 +1,168 @@
+import { useState } from "react";
 import { useTraining } from "../store/TrainingContext.jsx";
 
-function FeedPage() {
-  const { feed, deleteFeed } = useTraining();
+function getToday() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function LogPage() {
+  const { logs, feed, addLog, shareToFeed, unshareFromFeed } = useTraining();
+
+  const [form, setForm] = useState({
+    date: getToday(),
+    type: "스파링",
+    duration: "",
+    memo: "",
+  });
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+
+    setForm({
+      ...form,
+      [name]: value,
+    });
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!form.duration) {
+      alert("훈련 시간을 입력해줘!");
+      return;
+    }
+
+    addLog({
+      date: form.date,
+      type: form.type,
+      duration: Number(form.duration),
+      memo: form.memo,
+    });
+
+    setForm({
+      date: getToday(),
+      type: "스파링",
+      duration: "",
+      memo: "",
+    });
+  }
 
   return (
     <div>
       <section>
-        <p style={sectionLabel}>PUBLIC FEED</p>
-        <h2 style={titleStyle}>🌍 공개 피드</h2>
+        <p style={sectionLabel}>PRIVATE TRAINING LOG</p>
+        <h2 style={titleStyle}>🥊 오늘의 훈련 기록</h2>
         <p style={descStyle}>
-          내가 직접 공개한 훈련 기록만 표시되는 공간이야.
+          이 기록은 기본적으로 나만 보는 개인 기록이야. 원할 때만 공개 피드에 공유할 수 있어.
         </p>
+
+        <form onSubmit={handleSubmit} style={formStyle}>
+          <label style={labelStyle}>
+            날짜
+            <input
+              style={inputStyle}
+              type="date"
+              name="date"
+              value={form.date}
+              onChange={handleChange}
+            />
+          </label>
+
+          <label style={labelStyle}>
+            훈련 종류
+            <select
+              style={inputStyle}
+              name="type"
+              value={form.type}
+              onChange={handleChange}
+            >
+              <option value="스파링">스파링</option>
+              <option value="샌드백">샌드백</option>
+              <option value="줄넘기">줄넘기</option>
+              <option value="미트">미트</option>
+              <option value="러닝">러닝</option>
+            </select>
+          </label>
+
+          <label style={labelStyle}>
+            훈련 시간(분)
+            <input
+              style={inputStyle}
+              type="number"
+              name="duration"
+              value={form.duration}
+              onChange={handleChange}
+              placeholder="예: 45"
+            />
+          </label>
+
+          <label style={labelStyle}>
+            메모
+            <textarea
+              style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
+              name="memo"
+              value={form.memo}
+              onChange={handleChange}
+              placeholder="오늘 훈련 느낌을 적어줘"
+            />
+          </label>
+
+          <button type="submit" style={saveButtonStyle}>
+            개인 기록 저장하기
+          </button>
+        </form>
       </section>
 
-      <section style={{ marginTop: "24px" }}>
-        {feed.length === 0 ? (
+      <section style={{ marginTop: "34px" }}>
+        <div style={listHeaderStyle}>
+          <div>
+            <p style={sectionLabel}>MY RECORDS</p>
+            <h2 style={titleStyle}>내 개인 훈련 기록</h2>
+          </div>
+          <span style={countBadgeStyle}>{logs.length}개</span>
+        </div>
+
+        {logs.length === 0 ? (
           <div style={emptyStyle}>
-            아직 공개한 기록이 없어. 개인 기록에서 원하는 기록만 공개해보자.
+            아직 개인 훈련 기록이 없어. 첫 훈련을 기록해보자.
           </div>
         ) : (
-          feed.map((item) => (
-            <div key={item.feedId} style={feedCardStyle}>
-              <div style={feedTopStyle}>
-                <div>
-                  <strong style={{ fontSize: "17px" }}>🥊 익명의 복서</strong>
-                  <p style={{ color: "#888", margin: "6px 0 0" }}>
-                    {item.date}
-                  </p>
+          logs.map((log) => {
+            const isShared = feed.some((item) => item.id === log.id);
+
+            return (
+              <div key={log.id} style={logCardStyle}>
+                <div style={cardTopStyle}>
+                  <div>
+                    <strong style={{ fontSize: "18px" }}>{log.type}</strong>
+                    <p style={{ color: "#888", margin: "6px 0 0" }}>
+                      {log.date}
+                    </p>
+                  </div>
+
+                  <div style={timeBadgeStyle}>{log.duration}분</div>
                 </div>
 
-                <span style={typeBadgeStyle}>{item.type}</span>
+                {log.memo && <p style={memoStyle}>{log.memo}</p>}
+
+                {isShared ? (
+                  <button
+                    onClick={() => unshareFromFeed(log.id)}
+                    style={cancelButtonStyle}
+                  >
+                    공개 취소
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => shareToFeed(log)}
+                    style={shareButtonStyle}
+                  >
+                    공개 피드에 공유
+                  </button>
+                )}
               </div>
-
-              <div style={trainingBoxStyle}>
-                <p style={{ margin: 0, color: "#aaa", fontSize: "14px" }}>
-                  훈련 시간
-                </p>
-                <h3 style={{ margin: "6px 0 0", fontSize: "24px" }}>
-                  {item.duration}분
-                </h3>
-              </div>
-
-              {item.memo && <p style={memoStyle}>{item.memo}</p>}
-
-              <div style={feedBottomStyle}>
-                <span style={{ color: "#777", fontSize: "13px" }}>
-                  공개됨
-                </span>
-
-                <button
-                  onClick={() => {
-                    if (confirm("이 공개 기록을 피드에서 삭제할까요?")) {
-                      deleteFeed(item.feedId);
-                    }
-                  }}
-                  style={deleteButtonStyle}
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </section>
     </div>
@@ -86,6 +188,64 @@ const descStyle = {
   marginTop: "10px",
 };
 
+const formStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "14px",
+  marginTop: "22px",
+};
+
+const labelStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+  color: "#ddd",
+  fontWeight: "700",
+  fontSize: "14px",
+};
+
+const inputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  backgroundColor: "#0f0f0f",
+  color: "white",
+  border: "1px solid #333",
+  borderRadius: "14px",
+  padding: "13px 14px",
+  fontSize: "15px",
+  outline: "none",
+};
+
+const saveButtonStyle = {
+  marginTop: "8px",
+  width: "100%",
+  backgroundColor: "#ff3b3b",
+  color: "white",
+  border: "none",
+  borderRadius: "16px",
+  padding: "15px",
+  fontSize: "16px",
+  fontWeight: "800",
+  cursor: "pointer",
+};
+
+const listHeaderStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "14px",
+};
+
+const countBadgeStyle = {
+  backgroundColor: "#222",
+  border: "1px solid #333",
+  color: "#aaa",
+  borderRadius: "999px",
+  padding: "7px 12px",
+  fontSize: "13px",
+  fontWeight: "700",
+};
+
 const emptyStyle = {
   backgroundColor: "#111",
   border: "1px dashed #333",
@@ -95,22 +255,22 @@ const emptyStyle = {
   textAlign: "center",
 };
 
-const feedCardStyle = {
+const logCardStyle = {
   backgroundColor: "#111",
   border: "1px solid #2b2b2b",
   borderRadius: "18px",
   padding: "16px",
-  marginBottom: "14px",
+  marginBottom: "12px",
 };
 
-const feedTopStyle = {
+const cardTopStyle = {
   display: "flex",
   justifyContent: "space-between",
   gap: "12px",
   alignItems: "flex-start",
 };
 
-const typeBadgeStyle = {
+const timeBadgeStyle = {
   backgroundColor: "#251111",
   border: "1px solid #ff3b3b",
   color: "#ff6b6b",
@@ -121,37 +281,37 @@ const typeBadgeStyle = {
   whiteSpace: "nowrap",
 };
 
-const trainingBoxStyle = {
-  marginTop: "16px",
-  backgroundColor: "#1b1b1b",
-  borderRadius: "14px",
-  padding: "14px",
-};
-
 const memoStyle = {
   backgroundColor: "#1b1b1b",
   borderRadius: "12px",
   padding: "12px",
   color: "#ddd",
   lineHeight: "1.5",
-  marginTop: "12px",
-};
-
-const feedBottomStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
   marginTop: "14px",
 };
 
-const deleteButtonStyle = {
-  backgroundColor: "transparent",
-  color: "#ff6b6b",
-  border: "1px solid #ff6b6b",
-  borderRadius: "999px",
-  padding: "7px 12px",
+const shareButtonStyle = {
+  marginTop: "12px",
+  width: "100%",
+  backgroundColor: "#222",
+  color: "white",
+  border: "1px solid #444",
+  borderRadius: "12px",
+  padding: "11px",
   fontWeight: "700",
   cursor: "pointer",
 };
 
-export default FeedPage;
+const cancelButtonStyle = {
+  marginTop: "12px",
+  width: "100%",
+  backgroundColor: "transparent",
+  color: "#ff6b6b",
+  border: "1px solid #ff6b6b",
+  borderRadius: "12px",
+  padding: "11px",
+  fontWeight: "700",
+  cursor: "pointer",
+};
+
+export default LogPage;

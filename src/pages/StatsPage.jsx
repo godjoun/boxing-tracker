@@ -33,15 +33,15 @@ function StatsPage() {
         <p style={sectionLabel}>GROWTH</p>
         <h2 style={titleStyle}>📊 나의 성장 통계</h2>
         <p style={descStyle}>
-          지금까지 쌓인 훈련 기록을 숫자로 확인해보자.
+          지금까지 쌓인 운동 기록을 숫자로 확인해보자.
         </p>
 
         <div style={statsGridStyle}>
-          <StatCard label="총 훈련 횟수" value={`${totalCount}회`} />
-          <StatCard label="총 훈련 시간" value={`${totalMinutes}분`} />
-          <StatCard label="가장 많이 한 훈련" value={mostTraining} />
+          <StatCard label="총 운동 횟수" value={`${totalCount}회`} />
+          <StatCard label="총 운동 시간" value={`${totalMinutes}분`} />
+          <StatCard label="가장 많이 한 운동" value={mostTraining} />
           <StatCard
-            label="최근 훈련"
+            label="최근 운동"
             value={latestLog ? latestLog.type : "없음"}
           />
         </div>
@@ -49,11 +49,11 @@ function StatsPage() {
 
       <section style={{ marginTop: "34px" }}>
         <p style={sectionLabel}>HISTORY</p>
-        <h2 style={titleStyle}>최근 훈련 기록</h2>
+        <h2 style={titleStyle}>최근 운동 기록</h2>
 
         {logs.length === 0 ? (
           <div style={emptyStyle}>
-            아직 통계를 낼 기록이 없어. 먼저 훈련을 기록해보자.
+            아직 통계를 낼 기록이 없어. 먼저 운동을 기록해보자.
           </div>
         ) : (
           <div style={{ marginTop: "16px" }}>

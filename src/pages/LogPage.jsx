@@ -10,7 +10,7 @@ function LogPage() {
 
   const [form, setForm] = useState({
     date: getToday(),
-    type: "스파링",
+    type: "복싱",
     duration: "",
     memo: "",
   });
@@ -28,7 +28,7 @@ function LogPage() {
     e.preventDefault();
 
     if (!form.duration) {
-      alert("훈련 시간을 입력해줘!");
+      alert("운동 시간을 입력해줘!");
       return;
     }
 
@@ -41,7 +41,7 @@ function LogPage() {
 
     setForm({
       date: getToday(),
-      type: "스파링",
+      type: "복싱",
       duration: "",
       memo: "",
     });
@@ -51,7 +51,7 @@ function LogPage() {
     <div>
       <section>
         <p style={sectionLabel}>PRIVATE TRAINING LOG</p>
-        <h2 style={titleStyle}>🥊 오늘의 훈련 기록</h2>
+        <h2 style={titleStyle}>🏋️ 오늘의 운동 기록</h2>
         <p style={descStyle}>
           이 기록은 기본적으로 나만 보는 개인 기록이야. 원할 때만 공개 피드에 공유할 수 있어.
         </p>
@@ -69,23 +69,25 @@ function LogPage() {
           </label>
 
           <label style={labelStyle}>
-            훈련 종류
+            운동 종류
             <select
               style={inputStyle}
               name="type"
               value={form.type}
               onChange={handleChange}
             >
+              <option value="복싱">복싱</option>
               <option value="스파링">스파링</option>
               <option value="샌드백">샌드백</option>
               <option value="줄넘기">줄넘기</option>
-              <option value="미트">미트</option>
               <option value="러닝">러닝</option>
+              <option value="헬스">헬스</option>
+              <option value="기타 운동">기타 운동</option>
             </select>
           </label>
 
           <label style={labelStyle}>
-            훈련 시간(분)
+            운동 시간(분)
             <input
               style={inputStyle}
               type="number"
@@ -103,7 +105,7 @@ function LogPage() {
               name="memo"
               value={form.memo}
               onChange={handleChange}
-              placeholder="오늘 훈련 느낌을 적어줘"
+              placeholder="오늘 운동 느낌을 적어줘"
             />
           </label>
 
@@ -117,14 +119,14 @@ function LogPage() {
         <div style={listHeaderStyle}>
           <div>
             <p style={sectionLabel}>MY RECORDS</p>
-            <h2 style={titleStyle}>내 개인 훈련 기록</h2>
+            <h2 style={titleStyle}>내 개인 운동 기록</h2>
           </div>
           <span style={countBadgeStyle}>{logs.length}개</span>
         </div>
 
         {logs.length === 0 ? (
           <div style={emptyStyle}>
-            아직 개인 훈련 기록이 없어. 첫 훈련을 기록해보자.
+            아직 개인 운동 기록이 없어. 첫 운동을 기록해보자.
           </div>
         ) : (
           logs.map((log) => {

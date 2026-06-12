@@ -9,14 +9,14 @@ function FeedPage() {
         <p style={sectionLabel}>COMMUNITY</p>
         <h2 style={titleStyle}>🌍 공유 피드</h2>
         <p style={descStyle}>
-          내가 공유한 훈련 기록을 피드 형태로 확인하는 공간이야.
+          내가 공유한 운동 기록을 피드 형태로 확인하는 공간이야.
         </p>
       </section>
 
       <section style={{ marginTop: "24px" }}>
         {feed.length === 0 ? (
           <div style={emptyStyle}>
-            아직 공유된 기록이 없어. 훈련 기록에서 피드에 공유해보자.
+            아직 공유된 기록이 없어. 운동 기록에서 피드에 공유해보자.
           </div>
         ) : (
           feed.map((item) => (
@@ -34,7 +34,7 @@ function FeedPage() {
 
               <div style={trainingBoxStyle}>
                 <p style={{ margin: 0, color: "#aaa", fontSize: "14px" }}>
-                  훈련 시간
+                  운동 시간
                 </p>
                 <h3 style={{ margin: "6px 0 0", fontSize: "24px" }}>
                   {item.duration}분

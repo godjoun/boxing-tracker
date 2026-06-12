@@ -56,7 +56,7 @@ function App() {
               letterSpacing: "-1px",
             }}
           >
-            🥊 Boxing Tracker
+            🏋️ Training Tracker
           </h1>
 
           <p
@@ -66,7 +66,7 @@ function App() {
               lineHeight: "1.5",
             }}
           >
-            오늘의 복싱 훈련을 기록하고, 성장 과정을 확인해보자.
+            오늘의 운동을 기록하고, 성장 과정을 확인해보자.
           </p>
         </header>
 
@@ -123,7 +123,7 @@ function App() {
             padding: "24px 0",
           }}
         >
-          Boxing Tracker MVP · 첫 번째 버전
+          Training Tracker MVP · 피드백 반영 버전
         </footer>
       </div>
     </div>

@@ -22,12 +22,12 @@ export function TrainingProvider({ children }) {
   }, [feed]);
 
   function addLog(newLog) {
-    setLogs([
+    setLogs((prevLogs) => [
       {
         id: Date.now(),
         ...newLog,
       },
-      ...logs,
+      ...prevLogs,
     ]);
   }
 
@@ -38,22 +38,22 @@ export function TrainingProvider({ children }) {
       return;
     }
 
-    setFeed([
+    setFeed((prevFeed) => [
       {
         ...log,
         feedId: Date.now(),
         sharedAt: new Date().toISOString(),
       },
-      ...feed,
+      ...prevFeed,
     ]);
-  }
-
-  function deleteFeed(feedId) {
-    setFeed((prevFeed) => prevFeed.filter((item) => item.feedId !== feedId));
   }
 
   function unshareFromFeed(logId) {
     setFeed((prevFeed) => prevFeed.filter((item) => item.id !== logId));
+  }
+
+  function deleteFeed(feedId) {
+    setFeed((prevFeed) => prevFeed.filter((item) => item.feedId !== feedId));
   }
 
   return (
@@ -63,8 +63,8 @@ export function TrainingProvider({ children }) {
         feed,
         addLog,
         shareToFeed,
-        deleteFeed,
         unshareFromFeed,
+        deleteFeed,
       }}
     >
       {children}

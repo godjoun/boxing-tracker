@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 const TrainingContext = createContext(null);
 
 const STORAGE_KEY = "fitness-league-logs";
+const FEED_STORAGE_KEY = "fitness-league-feed";
 const TIER_STORAGE_KEY = "fitness-league-tier";
 const MODE_STORAGE_KEY = "fitness-league-mode";
 
@@ -54,29 +55,7 @@ const TIERS = [
     promoteScore: 600,
   },
 ];
-
-const SAMPLE_PLAYERS = [
-  {
-    id: "rival-1",
-    name: "민수",
-    score: 420,
-  },
-  {
-    id: "rival-2",
-    name: "지훈",
-    score: 310,
-  },
-  {
-    id: "rival-3",
-    name: "현우",
-    score: 240,
-  },
-  {
-    id: "rival-4",
-    name: "태준",
-    score: 160,
-  },
-];
+const SAMPLE_PLAYERS = [];
 
 function getTodayString() {
   const today = new Date();
@@ -96,43 +75,6 @@ function getWeekStart(date = new Date()) {
   target.setHours(0, 0, 0, 0);
 
   return target;
-}
-
-function getWeekEnd(date = new Date()) {
-  const weekStart = getWeekStart(date);
-  const weekEnd = new Date(weekStart);
-
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
-
-  return weekEnd;
-}
-
-function getDaysLeftInWeek() {
-  const now = new Date();
-  const weekEnd = getWeekEnd();
-  const diff = weekEnd.getTime() - now.getTime();
-  const daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-  return Math.max(daysLeft, 0);
-}
-
-function formatDateKorean(date) {
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-
-  return `${month}월 ${day}일`;
-}
-
-function getSeasonInfo() {
-  const weekStart = getWeekStart();
-  const weekEnd = getWeekEnd();
-
-  return {
-    startText: formatDateKorean(weekStart),
-    endText: formatDateKorean(weekEnd),
-    daysLeft: getDaysLeftInWeek(),
-  };
 }
 
 function isThisWeek(dateString) {
@@ -211,17 +153,16 @@ function getTierStatus(currentTier, weeklyScore) {
 
 function loadStorage(key, defaultValue) {
   const saved = localStorage.getItem(key);
-
-  try {
-    return saved ? JSON.parse(saved) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
+  return saved ? JSON.parse(saved) : defaultValue;
 }
 
 export function TrainingProvider({ children }) {
   const [logs, setLogs] = useState(() => {
     return loadStorage(STORAGE_KEY, []);
+  });
+
+  const [feed, setFeed] = useState(() => {
+    return loadStorage(FEED_STORAGE_KEY, []);
   });
 
   const [tierId, setTierId] = useState(() => {
@@ -235,6 +176,10 @@ export function TrainingProvider({ children }) {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
   }, [logs]);
+
+  useEffect(() => {
+    localStorage.setItem(FEED_STORAGE_KEY, JSON.stringify(feed));
+  }, [feed]);
 
   useEffect(() => {
     localStorage.setItem(TIER_STORAGE_KEY, tierId);
@@ -256,7 +201,6 @@ export function TrainingProvider({ children }) {
   const nextTier = getNextTier(tierId);
   const tierStatus = getTierStatus(currentTier, weeklyScore);
   const isLeagueMode = mode === "league";
-  const seasonInfo = getSeasonInfo();
 
   const rankings = useMemo(() => {
     const me = {
@@ -289,19 +233,29 @@ export function TrainingProvider({ children }) {
     setLogs((prevLogs) => [newLog, ...prevLogs]);
   }
 
-  function deleteLog(logId) {
-    setLogs((prevLogs) => prevLogs.filter((log) => log.id !== logId));
-  }
+  function shareToFeed(logId) {
+    const targetLog = logs.find((log) => log.id === logId);
 
-  function resetAllLogs() {
-    setLogs([]);
+    if (!targetLog) return;
+
+    const alreadyShared = feed.some((item) => item.id === logId);
+
+    if (alreadyShared) return;
+
+    const newFeedItem = {
+      ...targetLog,
+      feedId: crypto.randomUUID(),
+      sharedAt: new Date().toISOString(),
+    };
+
+    setFeed((prevFeed) => [newFeedItem, ...prevFeed]);
   }
 
   const value = {
     logs,
+    feed,
     addLog,
-    deleteLog,
-    resetAllLogs,
+    shareToFeed,
 
     weeklyLogs,
     weeklyScore,
@@ -317,7 +271,6 @@ export function TrainingProvider({ children }) {
     setMode,
     isLeagueMode,
 
-    seasonInfo,
     dailyScoreLimit: DAILY_SCORE_LIMIT,
     difficultyLabel: DIFFICULTY_LABEL,
   };

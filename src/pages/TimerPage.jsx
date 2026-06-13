@@ -44,6 +44,7 @@ const ROUTINES = [
     ],
   },
 ];
+const PREP_SECONDS = 10;
 
 const formatTime = (seconds) => {
   const min = Math.floor(seconds / 60);
@@ -70,6 +71,7 @@ function TimerPage({ onGoLog }) {
   const [isRunning, setIsRunning] = useState(false);
   const [hasSavedLog, setHasSavedLog] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [hasStartedSession, setHasStartedSession] = useState(false);
 
   const savedLogRef = useRef(false);
   const audioContextRef = useRef(null);
@@ -140,8 +142,13 @@ function TimerPage({ onGoLog }) {
           return prev - 1;
         }
 
-        if (phase === "work") {
-          if (currentRound === totalRounds) {
+        if (phase === "prep") {
+            setPhase("work");
+            return workSeconds;
+          }
+          if (phase === "work") {
+        
+            if (currentRound === totalRounds) {
             setPhase("done");
             setIsRunning(false);
             return 0;
@@ -221,6 +228,7 @@ function TimerPage({ onGoLog }) {
     previousPhaseRef.current = "work";
     setRemainingTime(nextWorkMinutes * 60);
     setHasSavedLog(false);
+    setHasStartedSession(false);
     savedLogRef.current = false;
   };
 
@@ -233,14 +241,31 @@ function TimerPage({ onGoLog }) {
   };
 
   const handleStart = () => {
-    playBeep("work");
-
     if (phase === "done") {
       resetTimerState();
-      setTimeout(() => setIsRunning(true), 0);
+  
+      setTimeout(() => {
+        setHasStartedSession(true);
+        setCurrentRound(1);
+        setPhase("prep");
+        setRemainingTime(PREP_SECONDS);
+        setIsRunning(true);
+        playBeep("work");
+      }, 0);
+  
       return;
     }
-
+  
+    if (!hasStartedSession) {
+      setHasStartedSession(true);
+      setCurrentRound(1);
+      setPhase("prep");
+      setRemainingTime(PREP_SECONDS);
+      setIsRunning(true);
+      playBeep("work");
+      return;
+    }
+  
     setIsRunning(true);
   };
 
@@ -275,17 +300,20 @@ function TimerPage({ onGoLog }) {
   };
 
   const getPhaseText = () => {
+    if (phase === "prep") return "준비 시간";
     if (phase === "work") return "훈련 시간";
     if (phase === "rest") return "휴식 시간";
     return "운동 완료";
   };
 
   const getCurrentRoundName = () => {
+    if (phase === "prep") return "10초 후 1라운드 자동 시작";
     if (!selectedRoutine) return "직접 설정한 운동";
     return selectedRoutine.rounds[currentRound - 1] || "마무리 운동";
   };
 
   const getPhaseBadgeStyle = () => {
+    if (phase === "prep") return styles.prepBadge;
     if (phase === "work") return styles.workBadge;
     if (phase === "rest") return styles.restBadge;
     return styles.doneBadge;
@@ -372,7 +400,7 @@ function TimerPage({ onGoLog }) {
         <div style={styles.buttonRow}>
           {!isRunning ? (
             <button style={styles.startButton} onClick={handleStart}>
-              {phase === "done" ? "다시 시작" : "시작"}
+             {phase === "done" ? "다시 시작" : hasStartedSession ? "계속" : "시작"}
             </button>
           ) : (
             <button style={styles.pauseButton} onClick={handlePause}>
@@ -568,6 +596,10 @@ const styles = {
     padding: "7px 10px",
     fontSize: "12px",
     fontWeight: "900",
+  },
+  prepBadge: {
+    backgroundColor: "#ffffff",
+    color: "#111111",
   },
   workBadge: {
     backgroundColor: "#ff3333",

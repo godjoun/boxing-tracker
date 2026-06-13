@@ -69,11 +69,64 @@ function TimerPage({ onGoLog }) {
   const [remainingTime, setRemainingTime] = useState(180);
   const [isRunning, setIsRunning] = useState(false);
   const [hasSavedLog, setHasSavedLog] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const savedLogRef = useRef(false);
+  const audioContextRef = useRef(null);
+  const previousPhaseRef = useRef("work");
 
   const workSeconds = workMinutes * 60;
   const restSeconds = restMinutes * 60;
+
+  const playBeep = async (type = "work") => {
+    if (!soundEnabled) return;
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContext) return;
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+
+    const audioContext = audioContextRef.current;
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    const frequencyMap = {
+      work: 880,
+      rest: 520,
+      done: 1040,
+    };
+
+    const durationMap = {
+      work: 0.18,
+      rest: 0.25,
+      done: 0.35,
+    };
+
+    const now = audioContext.currentTime;
+    const frequency = frequencyMap[type] || 880;
+    const duration = durationMap[type] || 0.2;
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+
+    oscillator.start(now);
+    oscillator.stop(now + duration);
+  };
 
   useEffect(() => {
     if (!isRunning) return;
@@ -109,6 +162,28 @@ function TimerPage({ onGoLog }) {
   }, [isRunning, phase, currentRound, totalRounds, workSeconds, restSeconds]);
 
   useEffect(() => {
+    if (previousPhaseRef.current === phase) return;
+
+    if (phase === "work") {
+      playBeep("work");
+    }
+
+    if (phase === "rest") {
+      playBeep("rest");
+    }
+
+    if (phase === "done") {
+      playBeep("done");
+
+      setTimeout(() => {
+        playBeep("done");
+      }, 180);
+    }
+
+    previousPhaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
     if (phase !== "done") return;
     if (savedLogRef.current) return;
     if (hasSavedLog) return;
@@ -140,6 +215,7 @@ function TimerPage({ onGoLog }) {
     setIsRunning(false);
     setCurrentRound(1);
     setPhase("work");
+    previousPhaseRef.current = "work";
     setRemainingTime(nextWorkMinutes * 60);
     setHasSavedLog(false);
     savedLogRef.current = false;
@@ -154,6 +230,8 @@ function TimerPage({ onGoLog }) {
   };
 
   const handleStart = () => {
+    playBeep("work");
+
     if (phase === "done") {
       resetTimerState();
       setTimeout(() => setIsRunning(true), 0);
@@ -210,6 +288,19 @@ function TimerPage({ onGoLog }) {
       <p style={styles.subtitle}>
         루틴을 고르면 타이머가 자동으로 설정됩니다.
       </p>
+
+      <div style={styles.soundBox}>
+        <span style={styles.soundText}>
+          소리 알림: {soundEnabled ? "켜짐" : "꺼짐"}
+        </span>
+
+        <button
+          style={styles.soundButton}
+          onClick={() => setSoundEnabled((prev) => !prev)}
+        >
+          {soundEnabled ? "소리 끄기" : "소리 켜기"}
+        </button>
+      </div>
 
       <div style={styles.routineCard}>
         <h2 style={styles.settingTitle}>오늘의 복싱 루틴</h2>
@@ -354,7 +445,32 @@ const styles = {
   },
   subtitle: {
     color: "#aaaaaa",
-    marginBottom: "24px",
+    marginBottom: "16px",
+  },
+  soundBox: {
+    backgroundColor: "#1c1c1c",
+    border: "1px solid #333333",
+    borderRadius: "16px",
+    padding: "14px",
+    marginBottom: "20px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+  },
+  soundText: {
+    color: "#dddddd",
+    fontWeight: "bold",
+  },
+  soundButton: {
+    backgroundColor: "#ffffff",
+    color: "#111111",
+    border: "none",
+    borderRadius: "10px",
+    padding: "10px 14px",
+    fontSize: "14px",
+    fontWeight: "bold",
+    cursor: "pointer",
   },
   routineCard: {
     backgroundColor: "#1c1c1c",

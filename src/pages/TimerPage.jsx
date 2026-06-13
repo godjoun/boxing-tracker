@@ -16,7 +16,7 @@ const ROUTINES = [
     description: "복싱 기본기를 천천히 쌓는 기본 루틴",
     workMinutes: 3,
     restMinutes: 1,
-    rounds: ["줄넘기", "잽 연습", "잽-스트레이트", "쉐도우복싱", "복근"],
+    rounds: ["줄넘기", "잽 연습", "잽-스트레이트", "쉐도우복싱", "복근 운동"],
   },
   {
     id: "bag",
@@ -39,7 +39,7 @@ const ROUTINES = [
       "원투",
       "훅 콤비네이션",
       "샌드백",
-      "복근",
+      "복근 운동",
       "전신 마무리",
     ],
   },
@@ -77,6 +77,9 @@ function TimerPage({ onGoLog }) {
 
   const workSeconds = workMinutes * 60;
   const restSeconds = restMinutes * 60;
+
+  const totalWorkMinutes = totalRounds * workMinutes;
+  const totalSessionMinutes = totalRounds * workMinutes + Math.max(totalRounds - 1, 0) * restMinutes;
 
   const playBeep = async (type = "work") => {
     if (!soundEnabled) return;
@@ -190,12 +193,11 @@ function TimerPage({ onGoLog }) {
 
     savedLogRef.current = true;
 
-    const totalWorkoutMinutes = totalRounds * workMinutes;
     const routineTitle = selectedRoutine ? selectedRoutine.title : "직접 설정 루틴";
 
     addLog({
       type: routineTitle,
-      minutes: totalWorkoutMinutes,
+      minutes: totalWorkMinutes,
       difficulty: "normal",
       memo: `${totalRounds}라운드 완료 / 운동 ${workMinutes}분 / 휴식 ${restMinutes}분`,
     });
@@ -209,6 +211,7 @@ function TimerPage({ onGoLog }) {
     workMinutes,
     restMinutes,
     selectedRoutine,
+    totalWorkMinutes,
   ]);
 
   const resetTimerState = (nextWorkMinutes = workMinutes) => {
@@ -282,28 +285,112 @@ function TimerPage({ onGoLog }) {
     return selectedRoutine.rounds[currentRound - 1] || "마무리 운동";
   };
 
+  const getPhaseBadgeStyle = () => {
+    if (phase === "work") return styles.workBadge;
+    if (phase === "rest") return styles.restBadge;
+    return styles.doneBadge;
+  };
+
   return (
     <div style={styles.page}>
-      <h1 style={styles.title}>복싱 라운드 타이머</h1>
-      <p style={styles.subtitle}>
-        루틴을 고르면 타이머가 자동으로 설정됩니다.
-      </p>
+      <section style={styles.heroCard}>
+        <div style={styles.kicker}>BOXING ROUND TIMER</div>
 
-      <div style={styles.soundBox}>
-        <span style={styles.soundText}>
-          소리 알림: {soundEnabled ? "켜짐" : "꺼짐"}
-        </span>
+        <h1 style={styles.title}>오늘 몇 라운드 버텼나?</h1>
 
-        <button
-          style={styles.soundButton}
-          onClick={() => setSoundEnabled((prev) => !prev)}
-        >
-          {soundEnabled ? "소리 끄기" : "소리 켜기"}
-        </button>
-      </div>
+        <p style={styles.subtitle}>
+          3분 라운드와 1분 휴식으로 훈련하고, 완료 기록으로 증명하세요.
+        </p>
 
-      <div style={styles.routineCard}>
-        <h2 style={styles.settingTitle}>오늘의 복싱 루틴</h2>
+        <div style={styles.soundBox}>
+          <span style={styles.soundText}>
+            소리 알림 {soundEnabled ? "켜짐" : "꺼짐"}
+          </span>
+
+          <button
+            style={styles.soundButton}
+            onClick={() => setSoundEnabled((prev) => !prev)}
+          >
+            {soundEnabled ? "끄기" : "켜기"}
+          </button>
+        </div>
+      </section>
+
+      <section style={styles.timerCard}>
+        <div style={styles.timerTopRow}>
+          <span style={{ ...styles.phaseBadge, ...getPhaseBadgeStyle() }}>
+            {getPhaseText()}
+          </span>
+
+          <span style={styles.roundText}>
+            {phase === "done" ? "완료" : `${currentRound} / ${totalRounds} R`}
+          </span>
+        </div>
+
+        {phase !== "done" && (
+          <div style={styles.currentRoundName}>{getCurrentRoundName()}</div>
+        )}
+
+        <div style={styles.timeText}>{formatTime(remainingTime)}</div>
+
+        <div style={styles.sessionInfoGrid}>
+          <div style={styles.sessionInfoBox}>
+            <span style={styles.sessionInfoLabel}>라운드</span>
+            <strong style={styles.sessionInfoValue}>{totalRounds}R</strong>
+          </div>
+
+          <div style={styles.sessionInfoBox}>
+            <span style={styles.sessionInfoLabel}>운동</span>
+            <strong style={styles.sessionInfoValue}>{totalWorkMinutes}분</strong>
+          </div>
+
+          <div style={styles.sessionInfoBox}>
+            <span style={styles.sessionInfoLabel}>전체</span>
+            <strong style={styles.sessionInfoValue}>{totalSessionMinutes}분</strong>
+          </div>
+        </div>
+
+        {phase === "done" && (
+          <div style={styles.doneBox}>
+            <div style={styles.completeTitle}>SESSION COMPLETE</div>
+
+            <p style={styles.savedText}>
+              운동 기록에 자동 저장됐습니다.
+            </p>
+
+            <button
+              style={styles.goLogButton}
+              onClick={() => {
+                if (onGoLog) onGoLog();
+              }}
+            >
+              기록 보러가기
+            </button>
+          </div>
+        )}
+
+        <div style={styles.buttonRow}>
+          {!isRunning ? (
+            <button style={styles.startButton} onClick={handleStart}>
+              {phase === "done" ? "다시 시작" : "시작"}
+            </button>
+          ) : (
+            <button style={styles.pauseButton} onClick={handlePause}>
+              일시정지
+            </button>
+          )}
+
+          <button style={styles.resetButton} onClick={handleReset}>
+            초기화
+          </button>
+        </div>
+      </section>
+
+      <section style={styles.routineCard}>
+        <div style={styles.cardHeaderRow}>
+          <h2 style={styles.cardTitle}>오늘의 복싱 루틴</h2>
+          <span style={styles.cardHint}>선택</span>
+        </div>
 
         <div style={styles.routineButtonGrid}>
           {ROUTINES.map((routine) => (
@@ -311,7 +398,9 @@ function TimerPage({ onGoLog }) {
               key={routine.id}
               style={{
                 ...styles.routineButton,
-                ...(selectedRoutineId === routine.id ? styles.activeRoutineButton : {}),
+                ...(selectedRoutineId === routine.id
+                  ? styles.activeRoutineButton
+                  : {}),
               }}
               onClick={() => applyRoutine(routine)}
               disabled={isRunning}
@@ -335,7 +424,7 @@ function TimerPage({ onGoLog }) {
           {selectedRoutine && (
             <div style={styles.roundList}>
               {selectedRoutine.rounds.map((round, index) => (
-                <div key={round} style={styles.roundItem}>
+                <div key={`${round}-${index}`} style={styles.roundItem}>
                   <span style={styles.roundNumber}>{index + 1}R</span>
                   <span>{round}</span>
                 </div>
@@ -343,50 +432,13 @@ function TimerPage({ onGoLog }) {
             </div>
           )}
         </div>
-      </div>
+      </section>
 
-      <div style={styles.timerCard}>
-        <div style={styles.roundText}>
-          {phase === "done" ? "완료" : `${currentRound} / ${totalRounds} 라운드`}
+      <section style={styles.settingCard}>
+        <div style={styles.cardHeaderRow}>
+          <h2 style={styles.cardTitle}>타이머 설정</h2>
+          <span style={styles.cardHint}>직접 조절</span>
         </div>
-
-        {phase !== "done" && (
-          <div style={styles.currentRoundName}>{getCurrentRoundName()}</div>
-        )}
-
-        <div style={styles.phaseText}>{getPhaseText()}</div>
-
-        <div style={styles.timeText}>{formatTime(remainingTime)}</div>
-
-        {phase === "done" && (
-          <div style={styles.doneBox}>
-            <p style={styles.savedText}>운동 기록에 자동 저장됐습니다.</p>
-
-            <button style={styles.goLogButton} onClick={onGoLog}>
-              기록 보러가기
-            </button>
-          </div>
-        )}
-
-        <div style={styles.buttonRow}>
-          {!isRunning ? (
-            <button style={styles.startButton} onClick={handleStart}>
-              {phase === "done" ? "다시 시작" : "시작"}
-            </button>
-          ) : (
-            <button style={styles.pauseButton} onClick={handlePause}>
-              일시정지
-            </button>
-          )}
-
-          <button style={styles.resetButton} onClick={handleReset}>
-            초기화
-          </button>
-        </div>
-      </div>
-
-      <div style={styles.settingCard}>
-        <h2 style={styles.settingTitle}>타이머 설정</h2>
 
         <label style={styles.label}>
           총 라운드
@@ -426,74 +478,260 @@ function TimerPage({ onGoLog }) {
             disabled={isRunning}
           />
         </label>
-      </div>
+      </section>
     </div>
   );
 }
 
 const styles = {
   page: {
-    minHeight: "100vh",
-    backgroundColor: "#111111",
-    color: "white",
-    padding: "24px",
+    width: "100%",
+    maxWidth: "390px",
+    margin: "0 auto",
+    padding: "18px 14px 92px",
     boxSizing: "border-box",
+    color: "#ffffff",
   },
-  title: {
-    fontSize: "28px",
+
+  heroCard: {
+    background: "linear-gradient(180deg, #1d1d1f 0%, #121212 100%)",
+    border: "1px solid #2f2f33",
+    borderRadius: "22px",
+    padding: "18px",
+    marginBottom: "14px",
+    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.32)",
+  },
+  kicker: {
+    color: "#ff4444",
+    fontSize: "11px",
+    fontWeight: "900",
+    letterSpacing: "1px",
     marginBottom: "8px",
   },
-  subtitle: {
-    color: "#aaaaaa",
-    marginBottom: "16px",
+  title: {
+    fontSize: "24px",
+    lineHeight: "1.2",
+    margin: "0 0 8px",
+    fontWeight: "900",
   },
+  subtitle: {
+    color: "#b8b8b8",
+    fontSize: "13px",
+    lineHeight: "1.55",
+    margin: "0 0 14px",
+  },
+
   soundBox: {
-    backgroundColor: "#1c1c1c",
-    border: "1px solid #333333",
-    borderRadius: "16px",
-    padding: "14px",
-    marginBottom: "20px",
+    backgroundColor: "#0d0d0f",
+    border: "1px solid #2f2f33",
+    borderRadius: "14px",
+    padding: "10px 12px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
   },
   soundText: {
-    color: "#dddddd",
-    fontWeight: "bold",
+    color: "#eeeeee",
+    fontSize: "13px",
+    fontWeight: "800",
   },
   soundButton: {
     backgroundColor: "#ffffff",
     color: "#111111",
     border: "none",
-    borderRadius: "10px",
-    padding: "10px 14px",
-    fontSize: "14px",
-    fontWeight: "bold",
+    borderRadius: "999px",
+    padding: "7px 12px",
+    fontSize: "12px",
+    fontWeight: "900",
     cursor: "pointer",
   },
+
+  timerCard: {
+    backgroundColor: "#1b1b1d",
+    border: "1px solid #343438",
+    borderRadius: "24px",
+    padding: "18px",
+    textAlign: "center",
+    marginBottom: "14px",
+    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.28)",
+  },
+  timerTopRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "14px",
+  },
+  phaseBadge: {
+    borderRadius: "999px",
+    padding: "7px 10px",
+    fontSize: "12px",
+    fontWeight: "900",
+  },
+  workBadge: {
+    backgroundColor: "#ff3333",
+    color: "#ffffff",
+  },
+  restBadge: {
+    backgroundColor: "#2b65ff",
+    color: "#ffffff",
+  },
+  doneBadge: {
+    backgroundColor: "#25d366",
+    color: "#06150b",
+  },
+  roundText: {
+    color: "#ff4d4d",
+    fontSize: "14px",
+    fontWeight: "900",
+  },
+  currentRoundName: {
+    minHeight: "22px",
+    fontSize: "17px",
+    fontWeight: "900",
+    marginBottom: "8px",
+  },
+  timeText: {
+    fontSize: "58px",
+    lineHeight: "1",
+    fontWeight: "950",
+    letterSpacing: "1px",
+    margin: "14px 0 18px",
+  },
+
+  sessionInfoGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: "8px",
+    marginBottom: "16px",
+  },
+  sessionInfoBox: {
+    backgroundColor: "#0e0e10",
+    border: "1px solid #2f2f33",
+    borderRadius: "14px",
+    padding: "10px 6px",
+  },
+  sessionInfoLabel: {
+    display: "block",
+    color: "#888888",
+    fontSize: "11px",
+    fontWeight: "800",
+    marginBottom: "4px",
+  },
+  sessionInfoValue: {
+    color: "#ffffff",
+    fontSize: "15px",
+  },
+
+  doneBox: {
+    backgroundColor: "#0f1912",
+    border: "1px solid #244f30",
+    borderRadius: "16px",
+    padding: "14px",
+    marginBottom: "14px",
+  },
+  completeTitle: {
+    color: "#7CFF7C",
+    fontSize: "12px",
+    fontWeight: "950",
+    letterSpacing: "1px",
+    marginBottom: "6px",
+  },
+  savedText: {
+    color: "#d9ffd9",
+    fontSize: "13px",
+    fontWeight: "800",
+    margin: "0 0 12px",
+  },
+  goLogButton: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    color: "#111111",
+    border: "none",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    fontSize: "14px",
+    fontWeight: "900",
+    cursor: "pointer",
+  },
+
+  buttonRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+  startButton: {
+    backgroundColor: "#ff3333",
+    color: "white",
+    border: "none",
+    borderRadius: "14px",
+    padding: "14px",
+    fontSize: "15px",
+    fontWeight: "950",
+    cursor: "pointer",
+  },
+  pauseButton: {
+    backgroundColor: "#3a3a3f",
+    color: "white",
+    border: "none",
+    borderRadius: "14px",
+    padding: "14px",
+    fontSize: "15px",
+    fontWeight: "950",
+    cursor: "pointer",
+  },
+  resetButton: {
+    backgroundColor: "#0f0f11",
+    color: "white",
+    border: "1px solid #44444a",
+    borderRadius: "14px",
+    padding: "14px",
+    fontSize: "15px",
+    fontWeight: "800",
+    cursor: "pointer",
+  },
+
   routineCard: {
-    backgroundColor: "#1c1c1c",
-    border: "1px solid #333333",
-    borderRadius: "20px",
-    padding: "20px",
-    marginBottom: "20px",
+    backgroundColor: "#1b1b1d",
+    border: "1px solid #343438",
+    borderRadius: "22px",
+    padding: "16px",
+    marginBottom: "14px",
+  },
+  cardHeaderRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "12px",
+  },
+  cardTitle: {
+    fontSize: "17px",
+    margin: 0,
+    fontWeight: "950",
+  },
+  cardHint: {
+    color: "#9b9b9b",
+    fontSize: "12px",
+    fontWeight: "800",
   },
   routineButtonGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "10px",
-    marginBottom: "16px",
+    gap: "8px",
+    marginBottom: "12px",
   },
   routineButton: {
-    backgroundColor: "#111111",
+    backgroundColor: "#0f0f11",
     color: "#dddddd",
-    border: "1px solid #444444",
-    borderRadius: "12px",
-    padding: "12px",
-    fontSize: "14px",
-    fontWeight: "bold",
+    border: "1px solid #39393f",
+    borderRadius: "14px",
+    padding: "11px 8px",
+    fontSize: "12px",
+    fontWeight: "900",
     cursor: "pointer",
+    minHeight: "44px",
   },
   activeRoutineButton: {
     backgroundColor: "#ff3333",
@@ -501,143 +739,67 @@ const styles = {
     border: "1px solid #ff3333",
   },
   selectedRoutineBox: {
-    backgroundColor: "#111111",
-    border: "1px solid #333333",
+    backgroundColor: "#0f0f11",
+    border: "1px solid #303036",
     borderRadius: "16px",
-    padding: "16px",
+    padding: "14px",
   },
   selectedRoutineTitle: {
-    fontSize: "18px",
-    fontWeight: "bold",
+    fontSize: "16px",
+    fontWeight: "950",
     marginBottom: "6px",
   },
   selectedRoutineDescription: {
-    color: "#aaaaaa",
+    color: "#a9a9a9",
+    fontSize: "12px",
     marginTop: 0,
-    marginBottom: "14px",
+    marginBottom: "12px",
     lineHeight: "1.5",
   },
   roundList: {
     display: "flex",
     flexDirection: "column",
-    gap: "8px",
+    gap: "7px",
   },
   roundItem: {
     display: "flex",
-    gap: "10px",
+    gap: "9px",
     alignItems: "center",
     color: "#eeeeee",
+    fontSize: "13px",
   },
   roundNumber: {
     color: "#ff4d4d",
-    fontWeight: "bold",
+    fontWeight: "950",
     minWidth: "30px",
   },
-  timerCard: {
-    backgroundColor: "#1c1c1c",
-    border: "1px solid #333333",
-    borderRadius: "20px",
-    padding: "28px",
-    textAlign: "center",
-    marginBottom: "20px",
-  },
-  roundText: {
-    fontSize: "18px",
-    color: "#ff4d4d",
-    fontWeight: "bold",
-    marginBottom: "8px",
-  },
-  currentRoundName: {
-    fontSize: "18px",
-    fontWeight: "bold",
-    marginBottom: "12px",
-  },
-  phaseText: {
-    fontSize: "20px",
-    marginBottom: "16px",
-  },
-  timeText: {
-    fontSize: "64px",
-    fontWeight: "bold",
-    letterSpacing: "2px",
-    marginBottom: "16px",
-  },
-  doneBox: {
-    marginBottom: "20px",
-  },
-  savedText: {
-    color: "#7CFF7C",
-    fontWeight: "bold",
-    marginBottom: "12px",
-  },
-  goLogButton: {
-    backgroundColor: "#ffffff",
-    color: "#111111",
-    border: "none",
-    borderRadius: "12px",
-    padding: "12px 20px",
-    fontSize: "15px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-  buttonRow: {
-    display: "flex",
-    gap: "12px",
-    justifyContent: "center",
-  },
-  startButton: {
-    backgroundColor: "#ff3333",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    padding: "14px 24px",
-    fontSize: "16px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-  pauseButton: {
-    backgroundColor: "#444444",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    padding: "14px 24px",
-    fontSize: "16px",
-    fontWeight: "bold",
-    cursor: "pointer",
-  },
-  resetButton: {
-    backgroundColor: "transparent",
-    color: "white",
-    border: "1px solid #555555",
-    borderRadius: "12px",
-    padding: "14px 24px",
-    fontSize: "16px",
-    cursor: "pointer",
-  },
+
   settingCard: {
-    backgroundColor: "#1c1c1c",
-    border: "1px solid #333333",
-    borderRadius: "20px",
-    padding: "20px",
-  },
-  settingTitle: {
-    fontSize: "20px",
-    marginBottom: "16px",
+    backgroundColor: "#1b1b1d",
+    border: "1px solid #343438",
+    borderRadius: "22px",
+    padding: "16px",
   },
   label: {
     display: "flex",
     flexDirection: "column",
-    gap: "8px",
-    marginBottom: "14px",
+    gap: "7px",
+    marginBottom: "12px",
     color: "#dddddd",
+    fontSize: "13px",
+    fontWeight: "850",
   },
   input: {
-    backgroundColor: "#000000",
-    color: "white",
-    border: "1px solid #555555",
-    borderRadius: "10px",
+    width: "100%",
+    boxSizing: "border-box",
+    backgroundColor: "#050505",
+    color: "#ffffff",
+    border: "1px solid #44444a",
+    borderRadius: "12px",
     padding: "12px",
-    fontSize: "16px",
+    fontSize: "15px",
+    fontWeight: "800",
+    outline: "none",
   },
 };
 

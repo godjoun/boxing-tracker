@@ -1,22 +1,58 @@
 import { useState } from "react";
 import { TrainingProvider } from "./store/TrainingContext";
+import HomePage from "./pages/HomePage";
 import LogPage from "./pages/LogPage";
 import TimerPage from "./pages/TimerPage";
+import StatsPage from "./pages/StatsPage";
+import ProfilePage from "./pages/ProfilePage";
+import "./App.css";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState("log");
+  const [currentPage, setCurrentPage] = useState("home");
 
   return (
     <TrainingProvider>
       <div style={styles.app}>
         <main style={styles.main}>
-          {currentPage === "log" && <LogPage />}
-          {currentPage === "timer" && (
-            <TimerPage onGoLog={() => setCurrentPage("log")} />
+          {currentPage === "home" && (
+            <HomePage onStartTraining={() => setCurrentPage("timer")} />
           )}
+
+          {currentPage === "timer" && (
+            <TimerPage
+              onGoLog={() => setCurrentPage("log")}
+              onGoHome={() => setCurrentPage("home")}
+            />
+          )}
+
+          {currentPage === "log" && <LogPage />}
+
+          {currentPage === "stats" && <StatsPage />}
+
+          {currentPage === "profile" && <ProfilePage />}
         </main>
 
         <nav style={styles.nav}>
+          <button
+            style={{
+              ...styles.navButton,
+              ...(currentPage === "home" ? styles.activeButton : {}),
+            }}
+            onClick={() => setCurrentPage("home")}
+          >
+            홈
+          </button>
+
+          <button
+            style={{
+              ...styles.navButton,
+              ...(currentPage === "timer" ? styles.activeButton : {}),
+            }}
+            onClick={() => setCurrentPage("timer")}
+          >
+            타이머
+          </button>
+
           <button
             style={{
               ...styles.navButton,
@@ -30,11 +66,21 @@ export default function App() {
           <button
             style={{
               ...styles.navButton,
-              ...(currentPage === "timer" ? styles.activeButton : {}),
+              ...(currentPage === "stats" ? styles.activeButton : {}),
             }}
-            onClick={() => setCurrentPage("timer")}
+            onClick={() => setCurrentPage("stats")}
           >
-            타이머
+            성장
+          </button>
+
+          <button
+            style={{
+              ...styles.navButton,
+              ...(currentPage === "profile" ? styles.activeButton : {}),
+            }}
+            onClick={() => setCurrentPage("profile")}
+          >
+            프로필
           </button>
         </nav>
       </div>
@@ -45,41 +91,47 @@ export default function App() {
 const styles = {
   app: {
     minHeight: "100vh",
-    backgroundColor: "#111111",
-    color: "white",
-    paddingBottom: "72px",
+    background: "#050505",
+    color: "#ffffff",
+    paddingBottom: "86px",
   },
+
   main: {
+    width: "100%",
     minHeight: "100vh",
   },
+
   nav: {
     position: "fixed",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: "72px",
-    backgroundColor: "#000000",
-    borderTop: "1px solid #333333",
-    display: "flex",
-    justifyContent: "center",
-    gap: "12px",
-    padding: "12px",
-    boxSizing: "border-box",
+    left: "50%",
+    bottom: "16px",
+    transform: "translateX(-50%)",
+    width: "calc(100% - 28px)",
+    maxWidth: "720px",
+    display: "grid",
+    gridTemplateColumns: "repeat(5, 1fr)",
+    gap: "8px",
+    padding: "10px",
+    borderRadius: "24px",
+    background: "rgba(20, 20, 20, 0.92)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    backdropFilter: "blur(14px)",
+    zIndex: 100,
   },
+
   navButton: {
-    flex: 1,
-    maxWidth: "180px",
-    backgroundColor: "#1c1c1c",
-    color: "#aaaaaa",
-    border: "1px solid #333333",
-    borderRadius: "14px",
-    fontSize: "16px",
-    fontWeight: "bold",
+    border: "none",
+    borderRadius: "16px",
+    padding: "12px 8px",
+    background: "transparent",
+    color: "rgba(255, 255, 255, 0.55)",
+    fontSize: "13px",
+    fontWeight: 800,
     cursor: "pointer",
   },
+
   activeButton: {
-    backgroundColor: "#ff3333",
-    color: "white",
-    border: "1px solid #ff3333",
+    background: "#ff3b3b",
+    color: "#ffffff",
   },
 };

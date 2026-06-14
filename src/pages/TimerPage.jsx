@@ -52,7 +52,7 @@ const formatTime = (seconds) => {
   return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 };
 
-function TimerPage({ onGoLog }) {
+function TimerPage({ onGoLog, onGoHome }) {
   const { addLog } = useTraining();
 
   const [selectedRoutineId, setSelectedRoutineId] = useState("beginner");
@@ -203,11 +203,15 @@ function TimerPage({ onGoLog }) {
     const routineTitle = selectedRoutine ? selectedRoutine.title : "직접 설정 루틴";
 
     addLog({
-      type: routineTitle,
-      minutes: totalWorkMinutes,
-      difficulty: "normal",
-      memo: `${totalRounds}라운드 완료 / 운동 ${workMinutes}분 / 휴식 ${restMinutes}분`,
-    });
+        type: routineTitle,
+        minutes: totalWorkMinutes,
+        duration: totalWorkMinutes,
+        rounds: totalRounds,
+        totalRounds: totalRounds,
+        completedRounds: totalRounds,
+        difficulty: "normal",
+        memo: `${totalRounds}라운드 완료 / 운동 ${workMinutes}분 / 휴식 ${restMinutes}분`,
+      });
 
     setHasSavedLog(true);
   }, [
@@ -387,13 +391,28 @@ function TimerPage({ onGoLog }) {
             </p>
 
             <button
-              style={styles.goLogButton}
-              onClick={() => {
-                if (onGoLog) onGoLog();
-              }}
-            >
-              기록 보러가기
-            </button>
+  style={styles.goLogButton}
+  onClick={() => {
+    if (onGoHome) onGoHome();
+  }}
+>
+  내 프로필 확인하기
+</button>
+
+<button
+  style={{
+    ...styles.goLogButton,
+    marginTop: "8px",
+    backgroundColor: "#1c1c1c",
+    color: "#ffffff",
+    border: "1px solid #333333",
+  }}
+  onClick={() => {
+    if (onGoLog) onGoLog();
+  }}
+>
+  기록 보러가기
+</button>
           </div>
         )}
 

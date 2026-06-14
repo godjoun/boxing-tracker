@@ -20,9 +20,10 @@ export default function App() {
 
           {currentPage === "timer" && (
             <TimerPage
-              onGoLog={() => setCurrentPage("log")}
-              onGoHome={() => setCurrentPage("home")}
-            />
+            onGoLog={() => setCurrentPage("log")}
+            onGoHome={() => setCurrentPage("home")}
+            onGoProfile={() => setCurrentPage("profile")}
+          />
           )}
 
           {currentPage === "log" && <LogPage />}

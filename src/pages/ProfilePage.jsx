@@ -197,8 +197,9 @@ export default function ProfilePage() {
   } = useTraining();
 
   const fileInputRef = useRef(null);
-  const cardFileInputRef = useRef(null);
+  const cardMediaInputRef = useRef(null);
   const trainingCardRef = useRef(null);
+  const videoObjectUrlRef = useRef(null);
 
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
@@ -207,7 +208,8 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [selectedLogIds, setSelectedLogIds] = useState([]);
-  const [cardPhoto, setCardPhoto] = useState("");
+  const [cardMedia, setCardMedia] = useState("");
+  const [cardMediaType, setCardMediaType] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("red");
   const [filterIntensity, setFilterIntensity] = useState(75);
   const [photoScale, setPhotoScale] = useState(100);
@@ -280,24 +282,31 @@ export default function ProfilePage() {
   }, [logs]);
 
   useEffect(() => {
-    if (logs.length === 0) {
-      setSelectedLogIds([]);
-      return;
-    }
+    setSelectedLogIds((prev) => {
+      if (logs.length === 0) return [];
 
-    if (selectedLogIds.length === 0) {
-      setSelectedLogIds([logs[0].id]);
-      return;
-    }
+      if (prev.length === 0) {
+        return [logs[0].id];
+      }
 
-    const validIds = selectedLogIds.filter((id) =>
-      logs.some((log) => log.id === id)
-    );
+      const logIds = new Set(logs.map((log) => log.id));
+      const validIds = prev.filter((id) => logIds.has(id));
 
-    if (validIds.length !== selectedLogIds.length) {
-      setSelectedLogIds(validIds);
-    }
-  }, [logs, selectedLogIds]);
+      if (validIds.length === 0) {
+        return [logs[0].id];
+      }
+
+      return validIds;
+    });
+  }, [logs]);
+
+  useEffect(() => {
+    return () => {
+      if (videoObjectUrlRef.current) {
+        URL.revokeObjectURL(videoObjectUrlRef.current);
+      }
+    };
+  }, []);
 
   const selectedLogs = useMemo(() => {
     return logs.filter((log) => selectedLogIds.includes(log.id));
@@ -315,6 +324,13 @@ export default function ProfilePage() {
       ? getDisplayComment(firstLogWithComment)
       : "오늘의 훈련을 끝까지 버텼다.";
   }, [selectedLogs]);
+
+  function clearVideoObjectUrl() {
+    if (videoObjectUrlRef.current) {
+      URL.revokeObjectURL(videoObjectUrlRef.current);
+      videoObjectUrlRef.current = null;
+    }
+  }
 
   function handleSaveProfile() {
     updateNickname(nickname.trim() || "나");
@@ -344,22 +360,37 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleCardPhotoChange(event) {
+  async function handleCardMediaChange(event) {
     const file = event.target.files?.[0];
 
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("이미지 파일만 업로드할 수 있어.");
+    if (file.type.startsWith("image/")) {
+      try {
+        clearVideoObjectUrl();
+
+        const resizedImage = await resizeImage(file);
+        setCardMedia(resizedImage);
+        setCardMediaType("image");
+      } catch {
+        alert("카드 사진 업로드에 실패했어. 다른 사진으로 다시 시도해줘.");
+      }
+
       return;
     }
 
-    try {
-      const resizedImage = await resizeImage(file);
-      setCardPhoto(resizedImage);
-    } catch {
-      alert("카드 사진 업로드에 실패했어. 다른 사진으로 다시 시도해줘.");
+    if (file.type.startsWith("video/")) {
+      clearVideoObjectUrl();
+
+      const videoUrl = URL.createObjectURL(file);
+      videoObjectUrlRef.current = videoUrl;
+
+      setCardMedia(videoUrl);
+      setCardMediaType("video");
+      return;
     }
+
+    alert("이미지 또는 동영상 파일만 업로드할 수 있어.");
   }
 
   function handleRemovePhoto() {
@@ -373,11 +404,13 @@ export default function ProfilePage() {
     }
   }
 
-  function handleRemoveCardPhoto() {
-    setCardPhoto("");
+  function handleRemoveCardMedia() {
+    clearVideoObjectUrl();
+    setCardMedia("");
+    setCardMediaType("");
 
-    if (cardFileInputRef.current) {
-      cardFileInputRef.current.value = "";
+    if (cardMediaInputRef.current) {
+      cardMediaInputRef.current.value = "";
     }
   }
 
@@ -393,6 +426,13 @@ export default function ProfilePage() {
   }
 
   async function handleSaveCardImage() {
+    if (cardMediaType === "video") {
+      alert(
+        "영상 카드는 다음 단계에서 저장 기능을 붙일게. 지금은 사진 카드만 이미지 저장이 가능해."
+      );
+      return;
+    }
+
     if (!trainingCardRef.current) {
       alert("저장할 카드가 아직 준비되지 않았어.");
       return;
@@ -443,10 +483,13 @@ COMMENT
 ${mainComment}`
       : "";
 
+    const mediaText =
+      cardMediaType === "video" ? "\n\nMEDIA\nVideo training card preview" : "";
+
     const text = `[TRAINING CARD]
 ${profile.nickname || "나"} · ${profileStats.tierName}
 
-${logLines}${commentText}`;
+${logLines}${commentText}${mediaText}`;
 
     try {
       await navigator.clipboard.writeText(text);
@@ -635,18 +678,18 @@ ${logLines}${commentText}`;
 
             <div style={styles.cardPhotoBox}>
               <div>
-                <p style={styles.cardMakerLabel}>2. 카드 사진 선택</p>
+                <p style={styles.cardMakerLabel}>2. 카드 사진/영상 선택</p>
                 <p style={styles.cardMakerHelp}>
-                  카드의 큰 영역에 들어갈 사진이야. 글러브, 체육관, 샌드백,
-                  운동 후 사진 같은 게 잘 어울려.
+                  사진을 선택하면 이미지 저장이 가능해. 영상을 선택하면 카드
+                  안에서 자동 재생 미리보기까지만 가능해.
                 </p>
               </div>
 
               <input
-                ref={cardFileInputRef}
+                ref={cardMediaInputRef}
                 type="file"
-                accept="image/*"
-                onChange={handleCardPhotoChange}
+                accept="image/*,video/*"
+                onChange={handleCardMediaChange}
                 style={{ display: "none" }}
               />
 
@@ -654,21 +697,28 @@ ${logLines}${commentText}`;
                 <button
                   type="button"
                   style={styles.photoButton}
-                  onClick={() => cardFileInputRef.current?.click()}
+                  onClick={() => cardMediaInputRef.current?.click()}
                 >
-                  카드 사진 업로드
+                  사진/영상 업로드
                 </button>
 
-                {cardPhoto && (
+                {cardMedia && (
                   <button
                     type="button"
                     style={styles.darkButton}
-                    onClick={handleRemoveCardPhoto}
+                    onClick={handleRemoveCardMedia}
                   >
-                    카드 사진 삭제
+                    카드 미디어 삭제
                   </button>
                 )}
               </div>
+
+              {cardMediaType === "video" && (
+                <p style={styles.videoNotice}>
+                  영상은 현재 미리보기만 가능해. 영상 저장은 다음 단계에서
+                  붙일게.
+                </p>
+              )}
             </div>
 
             <div style={styles.filterSection}>
@@ -695,7 +745,7 @@ ${logLines}${commentText}`;
             </div>
 
             <div style={styles.adjustSection}>
-              <p style={styles.cardMakerLabel}>4. 사진 조절</p>
+              <p style={styles.cardMakerLabel}>4. 사진/영상 조절</p>
 
               <label style={styles.rangeLabel}>
                 <span>필터 강도</span>
@@ -713,7 +763,7 @@ ${logLines}${commentText}`;
               />
 
               <label style={styles.rangeLabel}>
-                <span>사진 확대</span>
+                <span>확대</span>
                 <strong>{photoScale}%</strong>
               </label>
               <input
@@ -749,9 +799,9 @@ ${logLines}${commentText}`;
               }}
             >
               <div style={styles.trainingCardPhotoArea}>
-                {cardPhoto ? (
+                {cardMediaType === "image" && cardMedia && (
                   <img
-                    src={cardPhoto}
+                    src={cardMedia}
                     alt="훈련 카드"
                     style={{
                       ...styles.trainingCardImage,
@@ -759,9 +809,26 @@ ${logLines}${commentText}`;
                       transform: `scale(${photoScale / 100})`,
                     }}
                   />
-                ) : (
+                )}
+
+                {cardMediaType === "video" && cardMedia && (
+                  <video
+                    src={cardMedia}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    style={{
+                      ...styles.trainingCardImage,
+                      filter: getImageFilter(selectedFilter, filterIntensity),
+                      transform: `scale(${photoScale / 100})`,
+                    }}
+                  />
+                )}
+
+                {!cardMedia && (
                   <div style={styles.trainingCardDefaultBg}>
-                    <span>NO PHOTO</span>
+                    <span>NO MEDIA</span>
                     <strong>BOXING TRAINING</strong>
                   </div>
                 )}
@@ -823,10 +890,17 @@ ${logLines}${commentText}`;
 
             <button
               type="button"
-              style={styles.saveImageButton}
+              style={{
+                ...styles.saveImageButton,
+                ...(cardMediaType === "video" ? styles.disabledSaveButton : {}),
+              }}
               onClick={handleSaveCardImage}
             >
-              {isSavingImage ? "이미지 저장 중..." : "카드 이미지 저장하기"}
+              {cardMediaType === "video"
+                ? "영상 저장은 다음 단계"
+                : isSavingImage
+                ? "이미지 저장 중..."
+                : "카드 이미지 저장하기"}
             </button>
 
             <button
@@ -838,7 +912,8 @@ ${logLines}${commentText}`;
             </button>
 
             <p style={styles.shareHint}>
-              지금은 카드 화면을 캡처해서 공유하는 방식이야.
+              사진 카드는 이미지로 저장할 수 있어. 영상 카드는 지금은 미리보기만
+              가능해.
             </p>
           </>
         )}
@@ -1281,6 +1356,13 @@ const styles = {
     gap: "8px",
   },
 
+  videoNotice: {
+    margin: "12px 0 0",
+    color: "rgba(255, 255, 255, 0.55)",
+    fontSize: "12px",
+    lineHeight: 1.5,
+  },
+
   filterSection: {
     marginBottom: "16px",
   },
@@ -1498,6 +1580,11 @@ const styles = {
     fontSize: "15px",
     fontWeight: 900,
     cursor: "pointer",
+  },
+
+  disabledSaveButton: {
+    background: "rgba(255, 255, 255, 0.14)",
+    color: "rgba(255, 255, 255, 0.62)",
   },
 
   copyButton: {

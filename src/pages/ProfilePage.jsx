@@ -849,7 +849,7 @@ ${logLines}${commentText}${mediaText}`;
                   <div style={styles.trainingCardBottomContent}>
                     <div style={styles.trainingExerciseBox}>
                       <div style={styles.trainingExerciseHeader}>
-                        <span>오늘의 훈련</span>
+                        <span> training </span>
                         <strong>{selectedLogs.length}개</strong>
                       </div>
 

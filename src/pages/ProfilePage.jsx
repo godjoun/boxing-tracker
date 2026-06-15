@@ -217,6 +217,7 @@ export default function ProfilePage({ scrollTarget }) {
   const [copied, setCopied] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showComment, setShowComment] = useState(true);
+  const [customTrainingTitle, setCustomTrainingTitle] = useState("");
 
   const profileStats = useMemo(() => {
     const totalLogs = logs.length;
@@ -343,6 +344,20 @@ export default function ProfilePage({ scrollTarget }) {
       ? getDisplayComment(firstLogWithComment)
       : "오늘의 훈련을 끝까지 버텼다.";
   }, [selectedLogs]);
+
+  function getCardLogTitle(log, index) {
+    const customTitle = customTrainingTitle.trim();
+
+    if (selectedLogs.length === 1 && index === 0 && customTitle) {
+      return customTitle;
+    }
+
+    if (log.type === "직접 설정 루틴") {
+      return "";
+    }
+
+    return log.type;
+  }
 
   function clearVideoObjectUrl() {
     if (videoObjectUrlRef.current) {
@@ -487,12 +502,14 @@ export default function ProfilePage({ scrollTarget }) {
     }
 
     const logLines = selectedLogs
-      .map(
-        (log) =>
-          `${log.type}\n${getRounds(log)}R · ${
-            log.minutes || log.duration
-          }min`
-      )
+      .map((log, index) => {
+        const title = getCardLogTitle(log, index);
+        const trainingInfo = `${getRounds(log)}R · ${
+          log.minutes || log.duration
+        }min`;
+
+        return title ? `${title}\n${trainingInfo}` : trainingInfo;
+      })
       .join("\n\n");
 
     const commentText = showComment
@@ -827,6 +844,23 @@ ${logLines}${commentText}${mediaText}`;
               <p style={styles.commentToggleHelp}>
                 끄면 카드 이미지와 공유 문구에서 코멘트가 빠져.
               </p>
+
+              <label style={{ ...styles.label, marginTop: "16px" }}>
+                카드에 보여줄 이름
+                <input
+                  value={customTrainingTitle}
+                  onChange={(event) =>
+                    setCustomTrainingTitle(event.target.value)
+                  }
+                  placeholder="예: 아침 샌드백"
+                  style={styles.input}
+                />
+              </label>
+
+              <p style={styles.commentToggleHelp}>
+                비워두면 “직접 설정 루틴”은 카드에 표시되지 않아. 이름을 쓰면
+                카드와 공유 문구에 그 이름이 표시돼.
+              </p>
             </div>
 
             <div
@@ -887,20 +921,35 @@ ${logLines}${commentText}${mediaText}`;
                   <div style={styles.trainingCardBottomContent}>
                     <div style={styles.trainingExerciseBox}>
                       <div style={styles.trainingExerciseHeader}>
-                        <span>training</span>
+                        <span>TRAINING</span>
                         <strong>{selectedLogs.length}개</strong>
                       </div>
 
                       <div style={styles.trainingExerciseList}>
-                        {visibleCardLogs.map((log) => (
-                          <div key={log.id} style={styles.trainingExerciseRow}>
-                            <strong>{log.type}</strong>
-                            <span>
-                              {getRounds(log)}R · {log.minutes || log.duration}
-                              min
-                            </span>
-                          </div>
-                        ))}
+                        {visibleCardLogs.map((log, index) => {
+                          const cardTitle = getCardLogTitle(log, index);
+                          const trainingInfo = `${getRounds(log)}R · ${
+                            log.minutes || log.duration
+                          }min`;
+
+                          return (
+                            <div
+                              key={log.id}
+                              style={styles.trainingExerciseRow}
+                            >
+                              {cardTitle ? (
+                                <>
+                                  <strong>{cardTitle}</strong>
+                                  <span>{trainingInfo}</span>
+                                </>
+                              ) : (
+                                <span style={styles.trainingExerciseMetaOnly}>
+                                  {trainingInfo}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
 
                         {hiddenCardLogCount > 0 && (
                           <div style={styles.moreTrainingRow}>
@@ -1626,6 +1675,15 @@ const styles = {
     justifyContent: "space-between",
     gap: "14px",
     alignItems: "flex-end",
+    color: "#ffffff",
+    fontSize: "14px",
+    fontWeight: 950,
+    lineHeight: 1.2,
+    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
+  },
+
+  trainingExerciseMetaOnly: {
+    display: "block",
     color: "#ffffff",
     fontSize: "14px",
     fontWeight: 950,

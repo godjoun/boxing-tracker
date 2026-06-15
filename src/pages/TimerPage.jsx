@@ -1,47 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 
-const PREP_SECONDS = 10;
-
-const MATCH_PRESETS = [
-  {
-    id: "match-3",
-    label: "3R",
-    title: "경기식 3R",
-    description: "가볍게 경기처럼 몸을 올리는 짧은 라운드",
-    totalRounds: 3,
-    workMinutes: 3,
-    restMinutes: 1,
-  },
-  {
-    id: "match-6",
-    label: "6R",
-    title: "경기식 6R",
-    description: "중간 강도로 제대로 땀 나는 기본 경기식 훈련",
-    totalRounds: 6,
-    workMinutes: 3,
-    restMinutes: 1,
-  },
-  {
-    id: "match-9",
-    label: "9R",
-    title: "경기식 9R",
-    description: "체력과 집중력을 길게 가져가는 고강도 훈련",
-    totalRounds: 9,
-    workMinutes: 3,
-    restMinutes: 1,
-  },
-  {
-    id: "match-12",
-    label: "12R",
-    title: "경기식 12R",
-    description: "챔피언십 느낌으로 끝까지 버티는 긴 훈련",
-    totalRounds: 12,
-    workMinutes: 3,
-    restMinutes: 1,
-  },
-];
-
 const ROUTINES = [
   {
     id: "quick",
@@ -65,13 +24,7 @@ const ROUTINES = [
     description: "샌드백 칠 때 바로 따라 하기 좋은 루틴",
     workMinutes: 3,
     restMinutes: 1,
-    rounds: [
-      "가볍게 잽",
-      "원투 콤비네이션",
-      "훅 연습",
-      "강도 높은 샌드백",
-      "마무리 쉐도우",
-    ],
+    rounds: ["가볍게 잽", "원투 콤비네이션", "훅 연습", "강도 높은 샌드백", "마무리 쉐도우"],
   },
   {
     id: "hard",
@@ -91,6 +44,7 @@ const ROUTINES = [
     ],
   },
 ];
+const PREP_SECONDS = 10;
 
 const formatTime = (seconds) => {
   const min = Math.floor(seconds / 60);
@@ -98,17 +52,7 @@ const formatTime = (seconds) => {
   return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 };
 
-const clampTimerValue = (value, min, max) => {
-  const number = Number(value);
-
-  if (Number.isNaN(number)) return min;
-  if (number < min) return min;
-  if (number > max) return max;
-
-  return number;
-};
-
-function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
+function TimerPage({ onGoLog, onGoHome }) {
   const { addLog } = useTraining();
 
   const [selectedRoutineId, setSelectedRoutineId] = useState("beginner");
@@ -117,28 +61,12 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     return routine.id === selectedRoutineId;
   });
 
-  const selectedMatchPreset = MATCH_PRESETS.find((preset) => {
-    return preset.id === selectedRoutineId;
-  });
-
-  const selectedPlanTitle = selectedRoutine
-    ? selectedRoutine.title
-    : selectedMatchPreset
-    ? selectedMatchPreset.title
-    : "직접 설정 루틴";
-
-  const selectedPlanDescription = selectedRoutine
-    ? selectedRoutine.description
-    : selectedMatchPreset
-    ? selectedMatchPreset.description
-    : "아래 설정값으로 직접 타이머를 진행합니다.";
-
   const [totalRounds, setTotalRounds] = useState(5);
   const [workMinutes, setWorkMinutes] = useState(3);
   const [restMinutes, setRestMinutes] = useState(1);
 
   const [currentRound, setCurrentRound] = useState(1);
-  const [phase, setPhase] = useState("work"); // prep, work, rest, done
+  const [phase, setPhase] = useState("work"); // work, rest, done
   const [remainingTime, setRemainingTime] = useState(180);
   const [isRunning, setIsRunning] = useState(false);
   const [hasSavedLog, setHasSavedLog] = useState(false);
@@ -153,8 +81,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   const restSeconds = restMinutes * 60;
 
   const totalWorkMinutes = totalRounds * workMinutes;
-  const totalSessionMinutes =
-    totalRounds * workMinutes + Math.max(totalRounds - 1, 0) * restMinutes;
+  const totalSessionMinutes = totalRounds * workMinutes + Math.max(totalRounds - 1, 0) * restMinutes;
 
   const playBeep = async (type = "work") => {
     if (!soundEnabled) return;
@@ -216,12 +143,12 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
         }
 
         if (phase === "prep") {
-          setPhase("work");
-          return workSeconds;
-        }
-
-        if (phase === "work") {
-          if (currentRound === totalRounds) {
+            setPhase("work");
+            return workSeconds;
+          }
+          if (phase === "work") {
+        
+            if (currentRound === totalRounds) {
             setPhase("done");
             setIsRunning(false);
             return 0;
@@ -273,16 +200,18 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
     savedLogRef.current = true;
 
+    const routineTitle = selectedRoutine ? selectedRoutine.title : "직접 설정 루틴";
+
     addLog({
-      type: selectedPlanTitle,
-      minutes: totalWorkMinutes,
-      duration: totalWorkMinutes,
-      rounds: totalRounds,
-      totalRounds: totalRounds,
-      completedRounds: totalRounds,
-      difficulty: "normal",
-      memo: `${totalRounds}라운드 완료 / 운동 ${workMinutes}분 / 휴식 ${restMinutes}분 / 준비 ${PREP_SECONDS}초`,
-    });
+        type: routineTitle,
+        minutes: totalWorkMinutes,
+        duration: totalWorkMinutes,
+        rounds: totalRounds,
+        totalRounds: totalRounds,
+        completedRounds: totalRounds,
+        difficulty: "normal",
+        memo: `${totalRounds}라운드 완료 / 운동 ${workMinutes}분 / 휴식 ${restMinutes}분`,
+      });
 
     setHasSavedLog(true);
   }, [
@@ -292,7 +221,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     totalRounds,
     workMinutes,
     restMinutes,
-    selectedPlanTitle,
+    selectedRoutine,
     totalWorkMinutes,
   ]);
 
@@ -315,18 +244,10 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     resetTimerState(routine.workMinutes);
   };
 
-  const applyMatchPreset = (preset) => {
-    setSelectedRoutineId(preset.id);
-    setTotalRounds(preset.totalRounds);
-    setWorkMinutes(preset.workMinutes);
-    setRestMinutes(preset.restMinutes);
-    resetTimerState(preset.workMinutes);
-  };
-
   const handleStart = () => {
     if (phase === "done") {
       resetTimerState();
-
+  
       setTimeout(() => {
         setHasStartedSession(true);
         setCurrentRound(1);
@@ -335,10 +256,10 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
         setIsRunning(true);
         playBeep("work");
       }, 0);
-
+  
       return;
     }
-
+  
     if (!hasStartedSession) {
       setHasStartedSession(true);
       setCurrentRound(1);
@@ -348,7 +269,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       playBeep("work");
       return;
     }
-
+  
     setIsRunning(true);
   };
 
@@ -361,7 +282,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   };
 
   const handleWorkMinutesChange = (value) => {
-    const number = clampTimerValue(value, 1, 10);
+    const number = Number(value);
     setSelectedRoutineId("custom");
     setWorkMinutes(number);
 
@@ -371,13 +292,13 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   };
 
   const handleTotalRoundsChange = (value) => {
-    const number = clampTimerValue(value, 1, 20);
+    const number = Number(value);
     setSelectedRoutineId("custom");
     setTotalRounds(number);
   };
 
   const handleRestMinutesChange = (value) => {
-    const number = clampTimerValue(value, 1, 5);
+    const number = Number(value);
     setSelectedRoutineId("custom");
     setRestMinutes(number);
   };
@@ -391,16 +312,8 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
   const getCurrentRoundName = () => {
     if (phase === "prep") return "10초 후 1라운드 자동 시작";
-
-    if (selectedRoutine) {
-      return selectedRoutine.rounds[currentRound - 1] || "마무리 운동";
-    }
-
-    if (selectedMatchPreset) {
-      return `${selectedMatchPreset.label} 경기식 라운드`;
-    }
-
-    return "직접 설정한 운동";
+    if (!selectedRoutine) return "직접 설정한 운동";
+    return selectedRoutine.rounds[currentRound - 1] || "마무리 운동";
   };
 
   const getPhaseBadgeStyle = () => {
@@ -418,8 +331,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
         <h1 style={styles.title}>오늘 몇 라운드 버텼나?</h1>
 
         <p style={styles.subtitle}>
-          시작하면 10초 준비 시간이 주어지고, 그 후 라운드가 자동으로
-          시작됩니다.
+          3분 라운드와 1분 휴식으로 훈련하고, 완료 기록으로 증명하세요.
         </p>
 
         <div style={styles.soundBox}>
@@ -466,9 +378,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
           <div style={styles.sessionInfoBox}>
             <span style={styles.sessionInfoLabel}>전체</span>
-            <strong style={styles.sessionInfoValue}>
-              {totalSessionMinutes}분
-            </strong>
+            <strong style={styles.sessionInfoValue}>{totalSessionMinutes}분</strong>
           </div>
         </div>
 
@@ -476,43 +386,18 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
           <div style={styles.doneBox}>
             <div style={styles.completeTitle}>SESSION COMPLETE</div>
 
-            <p style={styles.savedText}>운동 기록에 자동 저장됐습니다.</p>
+            <p style={styles.savedText}>
+              운동 기록에 자동 저장됐습니다.
+            </p>
 
-            <button
-  style={styles.goLogButton}
-  onClick={() => {
-    if (onGoProfile) {
-      onGoProfile();
-      return;
-    }
-
-    if (onGoHome) onGoHome();
-  }}
->
-  내 프로필 확인하기
-</button>
-
-            <button
-              style={{
-                ...styles.goLogButton,
-                marginTop: "8px",
-                backgroundColor: "#1c1c1c",
-                color: "#ffffff",
-                border: "1px solid #333333",
-              }}
-              onClick={() => {
-                if (onGoLog) onGoLog();
-              }}
-            >
-              기록 보러가기
-            </button>
+            
           </div>
         )}
 
         <div style={styles.buttonRow}>
           {!isRunning ? (
             <button style={styles.startButton} onClick={handleStart}>
-              {phase === "done" ? "다시 시작" : hasStartedSession ? "계속" : "시작"}
+             {phase === "done" ? "다시 시작" : hasStartedSession ? "계속" : "시작"}
             </button>
           ) : (
             <button style={styles.pauseButton} onClick={handlePause}>
@@ -524,39 +409,6 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
             초기화
           </button>
         </div>
-      </section>
-
-      <section style={styles.matchPresetCard}>
-        <div style={styles.cardHeaderRow}>
-          <h2 style={styles.cardTitle}>경기식 빠른 선택</h2>
-          <span style={styles.cardHint}>3분 / 1분</span>
-        </div>
-
-        <div style={styles.matchPresetGrid}>
-          {MATCH_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              style={{
-                ...styles.matchPresetButton,
-                ...(selectedRoutineId === preset.id
-                  ? styles.activeMatchPresetButton
-                  : {}),
-              }}
-              onClick={() => applyMatchPreset(preset)}
-              disabled={isRunning}
-            >
-              <strong style={styles.matchPresetLabel}>{preset.label}</strong>
-              <span style={styles.matchPresetDescription}>
-                {preset.totalRounds}라운드
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <p style={styles.matchPresetHint}>
-          경기식 선택은 모두 10초 준비 후, 3분 운동과 1분 휴식으로 진행됩니다.
-        </p>
       </section>
 
       <section style={styles.routineCard}>
@@ -584,30 +436,15 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
         </div>
 
         <div style={styles.selectedRoutineBox}>
-          <div style={styles.selectedRoutineTitle}>{selectedPlanTitle}</div>
+          <div style={styles.selectedRoutineTitle}>
+            {selectedRoutine ? selectedRoutine.title : "직접 설정 루틴"}
+          </div>
 
           <p style={styles.selectedRoutineDescription}>
-            {selectedPlanDescription}
+            {selectedRoutine
+              ? selectedRoutine.description
+              : "아래 설정값으로 직접 타이머를 진행합니다."}
           </p>
-
-          {selectedMatchPreset && (
-            <div style={styles.matchSummary}>
-              <div style={styles.matchSummaryItem}>
-                <span>라운드</span>
-                <strong>{totalRounds}R</strong>
-              </div>
-
-              <div style={styles.matchSummaryItem}>
-                <span>운동</span>
-                <strong>{workMinutes}분</strong>
-              </div>
-
-              <div style={styles.matchSummaryItem}>
-                <span>휴식</span>
-                <strong>{restMinutes}분</strong>
-              </div>
-            </div>
-          )}
 
           {selectedRoutine && (
             <div style={styles.roundList}>
@@ -636,7 +473,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
             min="1"
             max="20"
             value={totalRounds}
-            onChange={(event) => handleTotalRoundsChange(event.target.value)}
+            onChange={(e) => handleTotalRoundsChange(e.target.value)}
             disabled={isRunning}
           />
         </label>
@@ -649,7 +486,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
             min="1"
             max="10"
             value={workMinutes}
-            onChange={(event) => handleWorkMinutesChange(event.target.value)}
+            onChange={(e) => handleWorkMinutesChange(e.target.value)}
             disabled={isRunning}
           />
         </label>
@@ -662,7 +499,7 @@ function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
             min="1"
             max="5"
             value={restMinutes}
-            onChange={(event) => handleRestMinutesChange(event.target.value)}
+            onChange={(e) => handleRestMinutesChange(e.target.value)}
             disabled={isRunning}
           />
         </label>
@@ -689,7 +526,6 @@ const styles = {
     marginBottom: "14px",
     boxShadow: "0 18px 45px rgba(0, 0, 0, 0.32)",
   },
-
   kicker: {
     color: "#ff4444",
     fontSize: "11px",
@@ -697,14 +533,12 @@ const styles = {
     letterSpacing: "1px",
     marginBottom: "8px",
   },
-
   title: {
     fontSize: "24px",
     lineHeight: "1.2",
     margin: "0 0 8px",
     fontWeight: "900",
   },
-
   subtitle: {
     color: "#b8b8b8",
     fontSize: "13px",
@@ -722,13 +556,11 @@ const styles = {
     alignItems: "center",
     gap: "10px",
   },
-
   soundText: {
     color: "#eeeeee",
     fontSize: "13px",
     fontWeight: "800",
   },
-
   soundButton: {
     backgroundColor: "#ffffff",
     color: "#111111",
@@ -749,7 +581,6 @@ const styles = {
     marginBottom: "14px",
     boxShadow: "0 18px 45px rgba(0, 0, 0, 0.28)",
   },
-
   timerTopRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -757,47 +588,39 @@ const styles = {
     gap: "10px",
     marginBottom: "14px",
   },
-
   phaseBadge: {
     borderRadius: "999px",
     padding: "7px 10px",
     fontSize: "12px",
     fontWeight: "900",
   },
-
   prepBadge: {
     backgroundColor: "#ffffff",
     color: "#111111",
   },
-
   workBadge: {
     backgroundColor: "#ff3333",
     color: "#ffffff",
   },
-
   restBadge: {
     backgroundColor: "#2b65ff",
     color: "#ffffff",
   },
-
   doneBadge: {
     backgroundColor: "#25d366",
     color: "#06150b",
   },
-
   roundText: {
     color: "#ff4d4d",
     fontSize: "14px",
     fontWeight: "900",
   },
-
   currentRoundName: {
     minHeight: "22px",
     fontSize: "17px",
     fontWeight: "900",
     marginBottom: "8px",
   },
-
   timeText: {
     fontSize: "58px",
     lineHeight: "1",
@@ -812,14 +635,12 @@ const styles = {
     gap: "8px",
     marginBottom: "16px",
   },
-
   sessionInfoBox: {
     backgroundColor: "#0e0e10",
     border: "1px solid #2f2f33",
     borderRadius: "14px",
     padding: "10px 6px",
   },
-
   sessionInfoLabel: {
     display: "block",
     color: "#888888",
@@ -827,7 +648,6 @@ const styles = {
     fontWeight: "800",
     marginBottom: "4px",
   },
-
   sessionInfoValue: {
     color: "#ffffff",
     fontSize: "15px",
@@ -840,7 +660,6 @@ const styles = {
     padding: "14px",
     marginBottom: "14px",
   },
-
   completeTitle: {
     color: "#7CFF7C",
     fontSize: "12px",
@@ -848,14 +667,12 @@ const styles = {
     letterSpacing: "1px",
     marginBottom: "6px",
   },
-
   savedText: {
     color: "#d9ffd9",
     fontSize: "13px",
     fontWeight: "800",
     margin: "0 0 12px",
   },
-
   goLogButton: {
     width: "100%",
     backgroundColor: "#ffffff",
@@ -873,7 +690,6 @@ const styles = {
     gridTemplateColumns: "1fr 1fr",
     gap: "10px",
   },
-
   startButton: {
     backgroundColor: "#ff3333",
     color: "white",
@@ -884,7 +700,6 @@ const styles = {
     fontWeight: "950",
     cursor: "pointer",
   },
-
   pauseButton: {
     backgroundColor: "#3a3a3f",
     color: "white",
@@ -895,7 +710,6 @@ const styles = {
     fontWeight: "950",
     cursor: "pointer",
   },
-
   resetButton: {
     backgroundColor: "#0f0f11",
     color: "white",
@@ -907,57 +721,6 @@ const styles = {
     cursor: "pointer",
   },
 
-  matchPresetCard: {
-    backgroundColor: "#1b1b1d",
-    border: "1px solid #343438",
-    borderRadius: "22px",
-    padding: "16px",
-    marginBottom: "14px",
-  },
-
-  matchPresetGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: "8px",
-  },
-
-  matchPresetButton: {
-    backgroundColor: "#0f0f11",
-    color: "#dddddd",
-    border: "1px solid #39393f",
-    borderRadius: "16px",
-    padding: "12px 6px",
-    cursor: "pointer",
-    minHeight: "66px",
-  },
-
-  activeMatchPresetButton: {
-    backgroundColor: "#ff3333",
-    color: "#ffffff",
-    border: "1px solid #ff3333",
-  },
-
-  matchPresetLabel: {
-    display: "block",
-    fontSize: "18px",
-    fontWeight: "950",
-    marginBottom: "5px",
-  },
-
-  matchPresetDescription: {
-    display: "block",
-    fontSize: "11px",
-    fontWeight: "800",
-    color: "rgba(255, 255, 255, 0.72)",
-  },
-
-  matchPresetHint: {
-    margin: "12px 0 0",
-    color: "#a9a9a9",
-    fontSize: "12px",
-    lineHeight: "1.5",
-  },
-
   routineCard: {
     backgroundColor: "#1b1b1d",
     border: "1px solid #343438",
@@ -965,7 +728,6 @@ const styles = {
     padding: "16px",
     marginBottom: "14px",
   },
-
   cardHeaderRow: {
     display: "flex",
     justifyContent: "space-between",
@@ -973,26 +735,22 @@ const styles = {
     gap: "10px",
     marginBottom: "12px",
   },
-
   cardTitle: {
     fontSize: "17px",
     margin: 0,
     fontWeight: "950",
   },
-
   cardHint: {
     color: "#9b9b9b",
     fontSize: "12px",
     fontWeight: "800",
   },
-
   routineButtonGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
     gap: "8px",
     marginBottom: "12px",
   },
-
   routineButton: {
     backgroundColor: "#0f0f11",
     color: "#dddddd",
@@ -1004,26 +762,22 @@ const styles = {
     cursor: "pointer",
     minHeight: "44px",
   },
-
   activeRoutineButton: {
     backgroundColor: "#ff3333",
     color: "white",
     border: "1px solid #ff3333",
   },
-
   selectedRoutineBox: {
     backgroundColor: "#0f0f11",
     border: "1px solid #303036",
     borderRadius: "16px",
     padding: "14px",
   },
-
   selectedRoutineTitle: {
     fontSize: "16px",
     fontWeight: "950",
     marginBottom: "6px",
   },
-
   selectedRoutineDescription: {
     color: "#a9a9a9",
     fontSize: "12px",
@@ -1031,27 +785,11 @@ const styles = {
     marginBottom: "12px",
     lineHeight: "1.5",
   },
-
-  matchSummary: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "8px",
-  },
-
-  matchSummaryItem: {
-    backgroundColor: "#171719",
-    border: "1px solid #303036",
-    borderRadius: "12px",
-    padding: "10px 6px",
-    textAlign: "center",
-  },
-
   roundList: {
     display: "flex",
     flexDirection: "column",
     gap: "7px",
   },
-
   roundItem: {
     display: "flex",
     gap: "9px",
@@ -1059,7 +797,6 @@ const styles = {
     color: "#eeeeee",
     fontSize: "13px",
   },
-
   roundNumber: {
     color: "#ff4d4d",
     fontWeight: "950",
@@ -1072,7 +809,6 @@ const styles = {
     borderRadius: "22px",
     padding: "16px",
   },
-
   label: {
     display: "flex",
     flexDirection: "column",
@@ -1082,7 +818,6 @@ const styles = {
     fontSize: "13px",
     fontWeight: "850",
   },
-
   input: {
     width: "100%",
     boxSizing: "border-box",

@@ -568,6 +568,9 @@ ${logLines}${commentText}${mediaText}`;
     }
   }
 
+  const socialEmptyHeight =
+    cardStyle === "social" && !cardMedia ? "480px" : "650px";
+
   return (
     <main style={styles.page}>
       <section style={styles.profileCard}>
@@ -922,7 +925,12 @@ ${logLines}${commentText}${mediaText}`;
                 background: getCardBackground(selectedFilter),
               }}
             >
-              <div style={styles.trainingCardPhotoArea}>
+              <div
+                style={{
+                  ...styles.trainingCardPhotoArea,
+                  minHeight: socialEmptyHeight,
+                }}
+              >
                 {cardMediaType === "image" && cardMedia && (
                   <img
                     src={cardMedia}
@@ -1028,7 +1036,12 @@ ${logLines}${commentText}${mediaText}`;
                     </div>
                   </div>
                 ) : (
-                  <div style={styles.socialCardTextLayer}>
+                  <div
+                    style={{
+                      ...styles.socialCardTextLayer,
+                      minHeight: socialEmptyHeight,
+                    }}
+                  >
                     <div style={styles.socialCardTop}>
                       <span style={styles.socialCardKicker}>
                         BOXING TRAINING
@@ -1037,12 +1050,12 @@ ${logLines}${commentText}${mediaText}`;
                     </div>
 
                     {cardMedia && (
-                   <div style={styles.socialCardCenter}>
-                     <strong style={styles.socialRoundNumber}>
-                    {cardTotalRounds || 0}
-                   </strong>
-                     <span style={styles.socialRoundLabel}>ROUNDS</span>
-                   </div>
+                      <div style={styles.socialCardCenter}>
+                        <strong style={styles.socialRoundNumber}>
+                          {cardTotalRounds || 0}
+                        </strong>
+                        <span style={styles.socialRoundLabel}>ROUNDS</span>
+                      </div>
                     )}
 
                     <div style={styles.socialCardBottom}>
@@ -1055,26 +1068,26 @@ ${logLines}${commentText}${mediaText}`;
                       </div>
 
                       <div style={styles.socialMetricRow}>
-                          <div style={styles.socialMetricBox}>
-                        <span style={styles.socialMetricLabel}>TIME</span>
-                       <strong style={styles.socialMetricValue}>
-                          {cardTotalMinutes || 0}min
-                        </strong>
-                      </div>
+                        <div style={styles.socialMetricBox}>
+                          <span style={styles.socialMetricLabel}>TIME</span>
+                          <strong style={styles.socialMetricValue}>
+                            {cardTotalMinutes || 0}min
+                          </strong>
+                        </div>
 
-                      <div style={styles.socialMetricBox}>
-                        <span style={styles.socialMetricLabel}>LOGS</span>
-                        <strong style={styles.socialMetricValue}>
-                          {selectedLogs.length}
-                        </strong>
-                      </div>
+                        <div style={styles.socialMetricBox}>
+                          <span style={styles.socialMetricLabel}>LOGS</span>
+                          <strong style={styles.socialMetricValue}>
+                            {selectedLogs.length}
+                          </strong>
+                        </div>
 
-                      <div style={styles.socialMetricBox}>
-                        <span style={styles.socialMetricLabel}>FIGHTER</span>
-                        <strong style={styles.socialMetricValue}>
-                          {profile.nickname || "나"}
-                        </strong>
-                      </div>
+                        <div style={styles.socialMetricBox}>
+                          <span style={styles.socialMetricLabel}>FIGHTER</span>
+                          <strong style={styles.socialMetricValue}>
+                            {profile.nickname || "나"}
+                          </strong>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1962,7 +1975,7 @@ const styles = {
     letterSpacing: "0.12em",
     marginBottom: "5px",
   },
-  
+
   socialMetricValue: {
     display: "block",
     color: "#ffffff",

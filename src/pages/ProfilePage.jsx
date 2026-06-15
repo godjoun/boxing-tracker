@@ -197,10 +197,10 @@ export default function ProfilePage({ scrollTarget }) {
   } = useTraining();
 
   const fileInputRef = useRef(null);
-const cardMediaInputRef = useRef(null);
-const trainingCardRef = useRef(null);
-const cardMakerRef = useRef(null);
-const videoObjectUrlRef = useRef(null);
+  const cardMediaInputRef = useRef(null);
+  const trainingCardRef = useRef(null);
+  const cardMakerRef = useRef(null);
+  const videoObjectUrlRef = useRef(null);
 
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
@@ -308,30 +308,32 @@ const videoObjectUrlRef = useRef(null);
       }
     };
   }, []);
+
   useEffect(() => {
     if (scrollTarget !== "cardMaker") return;
-  
+
     const timer = setTimeout(() => {
       cardMakerRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
     }, 150);
-  
+
     return () => clearTimeout(timer);
   }, [scrollTarget]);
 
   const selectedLogs = useMemo(() => {
     return logs.filter((log) => selectedLogIds.includes(log.id));
   }, [logs, selectedLogIds]);
-  
+
   const latestLog = logs[0];
   const isLatestLogSelected = latestLog
     ? selectedLogIds.includes(latestLog.id)
     : false;
-  
+
   const visibleCardLogs = selectedLogs.slice(0, 4);
   const hiddenCardLogCount = Math.max(0, selectedLogs.length - 4);
+
   const mainComment = useMemo(() => {
     const firstLogWithComment = selectedLogs.find(
       (log) => log.publicComment || log.memo
@@ -587,39 +589,38 @@ ${logLines}${commentText}${mediaText}`;
             {profile.bio || "아직 초보지만 링에 계속 올라가는 중"}
           </p>
         </div>
-      </section>
 
-      <section style={styles.editCard}>
-        <p style={styles.kicker}>EDIT PROFILE</p>
-        <h2 style={styles.sectionTitle}>프로필 수정</h2>
+        <div style={styles.profileEditInsideBox}>
+          <p style={styles.kicker}>EDIT PROFILE</p>
 
-        <label style={styles.label}>
-          닉네임
-          <input
-            value={nickname}
-            onChange={(event) => setNickname(event.target.value)}
-            placeholder="예: 조운 파이터"
-            style={styles.input}
-          />
-        </label>
+          <label style={styles.label}>
+            닉네임
+            <input
+              value={nickname}
+              onChange={(event) => setNickname(event.target.value)}
+              placeholder="예: 조운 파이터"
+              style={styles.input}
+            />
+          </label>
 
-        <label style={styles.label}>
-          한 줄 소개
-          <textarea
-            value={bio}
-            onChange={(event) => setBio(event.target.value)}
-            placeholder="예: 아직 초보지만 매주 링에 올라가는 중"
-            style={styles.textarea}
-          />
-        </label>
+          <label style={styles.label}>
+            한 줄 소개
+            <textarea
+              value={bio}
+              onChange={(event) => setBio(event.target.value)}
+              placeholder="예: 아직 초보지만 매주 링에 올라가는 중"
+              style={styles.textarea}
+            />
+          </label>
 
-        <button
-          type="button"
-          style={styles.saveButton}
-          onClick={handleSaveProfile}
-        >
-          {isSaving ? "저장 완료!" : "프로필 저장하기"}
-        </button>
+          <button
+            type="button"
+            style={styles.saveButton}
+            onClick={handleSaveProfile}
+          >
+            {isSaving ? "저장 완료!" : "프로필 저장하기"}
+          </button>
+        </div>
       </section>
 
       <section style={styles.statGrid}>
@@ -649,20 +650,21 @@ ${logLines}${commentText}${mediaText}`;
         <h2 style={styles.sectionTitle}>훈련 인증 카드 만들기</h2>
 
         {latestLog && isLatestLogSelected && (
-  <div style={styles.recentTrainingNotice}>
-    <span style={styles.recentTrainingBadge}>최근 훈련 선택됨</span>
+          <div style={styles.recentTrainingNotice}>
+            <span style={styles.recentTrainingBadge}>최근 훈련 선택됨</span>
 
-    <div>
-      <strong style={styles.recentTrainingTitle}>{latestLog.type}</strong>
+            <div>
+              <strong style={styles.recentTrainingTitle}>{latestLog.type}</strong>
 
-      <p style={styles.recentTrainingText}>
-        {getRounds(latestLog)}R · {latestLog.minutes || latestLog.duration}min
-        훈련이 카드에 자동 선택됐어요. 이제 사진이나 영상을 넣고 인증 카드로
-        저장해보세요.
-      </p>
-    </div>
-  </div>
-)}
+              <p style={styles.recentTrainingText}>
+                {getRounds(latestLog)}R ·{" "}
+                {latestLog.minutes || latestLog.duration}min 훈련이 카드에
+                자동 선택됐어요. 이제 사진이나 영상을 넣고 인증 카드로
+                저장해보세요.
+              </p>
+            </div>
+          </div>
+        )}
 
         {logs.length === 0 ? (
           <div style={styles.emptyFeaturedLog}>
@@ -713,8 +715,8 @@ ${logLines}${commentText}${mediaText}`;
               <div>
                 <p style={styles.cardMakerLabel}>2. 카드 사진/영상 선택</p>
                 <p style={styles.cardMakerHelp}>
-                  사진을 선택하면 이미지 저장이 가능해. 영상을 선택하면 카드
-                  안에서 자동 재생 미리보기까지만 가능해.
+                  오늘 훈련한 사진이나 영상을 넣어줘. 사진 카드는 이미지로
+                  저장할 수 있고, 영상은 지금은 카드 안에서 미리보기만 가능해.
                 </p>
               </div>
 
@@ -748,8 +750,8 @@ ${logLines}${commentText}${mediaText}`;
 
               {cardMediaType === "video" && (
                 <p style={styles.videoNotice}>
-                  오늘 훈련한 사진이나 영상을 넣어줘. 사진 카드는 이미지로 저장할 수 있고,
-                  영상은 지금은 카드 안에서 미리보기만 가능해..
+                  영상 카드는 현재 미리보기만 가능해. 영상 저장 기능은 다음
+                  단계에서 붙일게.
                 </p>
               )}
             </div>
@@ -882,7 +884,7 @@ ${logLines}${commentText}${mediaText}`;
                   <div style={styles.trainingCardBottomContent}>
                     <div style={styles.trainingExerciseBox}>
                       <div style={styles.trainingExerciseHeader}>
-                        <span> training </span>
+                        <span>training</span>
                         <strong>{selectedLogs.length}개</strong>
                       </div>
 
@@ -906,33 +908,16 @@ ${logLines}${commentText}${mediaText}`;
                     </div>
 
                     {showComment && (
-  <div style={styles.trainingCardCommentBox}>
-    <span
-      style={{
-        display: "block",
-        marginBottom: "5px",
-        color: "rgba(255, 255, 255, 0.72)",
-        fontSize: "10px",
-        fontWeight: 900,
-        letterSpacing: "0.14em",
-      }}
-    >
-      COMMENT
-    </span>
+                      <div style={styles.trainingCardCommentBox}>
+                        <span style={styles.trainingCardCommentLabel}>
+                          COMMENT
+                        </span>
 
-    <p
-      style={{
-        margin: 0,
-        color: "#ffffff",
-        fontSize: "13px",
-        lineHeight: 1.45,
-        fontWeight: 850,
-      }}
-    >
-      {mainComment}
-    </p>
-  </div>
-)}
+                        <p style={styles.trainingCardCommentText}>
+                          {mainComment}
+                        </p>
+                      </div>
+                    )}
 
                     <div style={styles.trainingCardBottom}>
                       <span>{profile.nickname || "나"}</span>
@@ -967,8 +952,8 @@ ${logLines}${commentText}${mediaText}`;
             </button>
 
             <p style={styles.shareHint}>
-            사진 카드는 저장해서 인스타그램이나 카카오톡에 공유할 수 있어.
-            영상 카드는 지금은 미리보기만 가능해.
+              사진 카드는 저장해서 인스타그램이나 카카오톡에 공유할 수 있어.
+              영상 카드는 지금은 미리보기만 가능해.
             </p>
           </>
         )}
@@ -1232,12 +1217,10 @@ const styles = {
     lineHeight: 1.5,
   },
 
-  editCard: {
-    marginTop: "16px",
-    borderRadius: "26px",
-    padding: "21px",
-    background: "#121212",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
+  profileEditInsideBox: {
+    marginTop: "18px",
+    paddingTop: "18px",
+    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
   },
 
   label: {
@@ -1335,7 +1318,7 @@ const styles = {
     background: "rgba(255, 51, 51, 0.1)",
     border: "1px solid rgba(255, 85, 85, 0.28)",
   },
-  
+
   recentTrainingBadge: {
     display: "inline-block",
     marginBottom: "9px",
@@ -1346,7 +1329,7 @@ const styles = {
     fontSize: "11px",
     fontWeight: 900,
   },
-  
+
   recentTrainingTitle: {
     display: "block",
     color: "#ffffff",
@@ -1354,13 +1337,14 @@ const styles = {
     fontWeight: 900,
     marginBottom: "5px",
   },
-  
+
   recentTrainingText: {
     margin: 0,
     color: "rgba(255, 255, 255, 0.68)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
+
   selectorSection: {
     marginBottom: "16px",
   },
@@ -1663,6 +1647,23 @@ const styles = {
     backdropFilter: "none",
     color: "#ffffff",
     textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
+  },
+
+  trainingCardCommentLabel: {
+    display: "block",
+    marginBottom: "5px",
+    color: "rgba(255, 255, 255, 0.72)",
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: "0.14em",
+  },
+
+  trainingCardCommentText: {
+    margin: 0,
+    color: "#ffffff",
+    fontSize: "13px",
+    lineHeight: 1.45,
+    fontWeight: 800,
   },
 
   trainingCardBottom: {

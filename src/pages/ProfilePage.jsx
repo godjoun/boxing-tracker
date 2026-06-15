@@ -104,6 +104,19 @@ const CARD_FILTERS = [
   },
 ];
 
+const CARD_STYLES = [
+  {
+    id: "basic",
+    name: "BASIC",
+    description: "기존 복싱 카드",
+  },
+  {
+    id: "social",
+    name: "SOCIAL",
+    description: "사진 중심 공유 카드",
+  },
+];
+
 function getCardBackground(filterId) {
   if (filterId === "gold") {
     return "radial-gradient(circle at 80% 12%, rgba(255, 198, 41, 0.42), transparent 34%), linear-gradient(145deg, #241800, #050505)";
@@ -218,6 +231,7 @@ export default function ProfilePage({ scrollTarget }) {
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showComment, setShowComment] = useState(true);
   const [customTrainingTitle, setCustomTrainingTitle] = useState("");
+  const [cardStyle, setCardStyle] = useState("basic");
 
   const profileStats = useMemo(() => {
     const totalLogs = logs.length;
@@ -335,6 +349,14 @@ export default function ProfilePage({ scrollTarget }) {
   const visibleCardLogs = selectedLogs.slice(0, 4);
   const hiddenCardLogCount = Math.max(0, selectedLogs.length - 4);
 
+  const cardTotalRounds = selectedLogs.reduce((sum, log) => {
+    return sum + getRounds(log);
+  }, 0);
+
+  const cardTotalMinutes = selectedLogs.reduce((sum, log) => {
+    return sum + getTotalMinutes(log);
+  }, 0);
+
   const mainComment = useMemo(() => {
     const firstLogWithComment = selectedLogs.find(
       (log) => log.publicComment || log.memo
@@ -358,6 +380,13 @@ export default function ProfilePage({ scrollTarget }) {
 
     return log.type;
   }
+
+  const primaryCardTitle =
+    customTrainingTitle.trim() ||
+    selectedLogs
+      .map((log, index) => getCardLogTitle(log, index))
+      .find(Boolean) ||
+    "BOXING TRAINING";
 
   function clearVideoObjectUrl() {
     if (videoObjectUrlRef.current) {
@@ -777,7 +806,30 @@ ${logLines}${commentText}${mediaText}`;
             </div>
 
             <div style={styles.filterSection}>
-              <p style={styles.cardMakerLabel}>3. 복싱 필터 선택</p>
+              <p style={styles.cardMakerLabel}>3. 카드 스타일 선택</p>
+
+              <div style={styles.cardStyleGrid}>
+                {CARD_STYLES.map((style) => (
+                  <button
+                    key={style.id}
+                    type="button"
+                    style={{
+                      ...styles.cardStyleButton,
+                      ...(cardStyle === style.id
+                        ? styles.activeCardStyleButton
+                        : {}),
+                    }}
+                    onClick={() => setCardStyle(style.id)}
+                  >
+                    <strong>{style.name}</strong>
+                    <span>{style.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={styles.filterSection}>
+              <p style={styles.cardMakerLabel}>4. 복싱 필터 선택</p>
 
               <div style={styles.filterGrid}>
                 {CARD_FILTERS.map((filter) => (
@@ -800,7 +852,7 @@ ${logLines}${commentText}${mediaText}`;
             </div>
 
             <div style={styles.adjustSection}>
-              <p style={styles.cardMakerLabel}>4. 사진/영상 조절</p>
+              <p style={styles.cardMakerLabel}>5. 사진/영상 조절</p>
 
               <label style={styles.rangeLabel}>
                 <span>필터 강도</span>
@@ -912,71 +964,118 @@ ${logLines}${commentText}${mediaText}`;
                   }}
                 />
 
-                <div style={styles.trainingCardTextLayer}>
-                  <div style={styles.trainingCardTop}>
-                    <span style={styles.trainingCardKicker}>TRAINING CARD</span>
-                    <strong>{profileStats.tierName}</strong>
-                  </div>
+                {cardStyle === "basic" ? (
+                  <div style={styles.trainingCardTextLayer}>
+                    <div style={styles.trainingCardTop}>
+                      <span style={styles.trainingCardKicker}>
+                        TRAINING CARD
+                      </span>
+                      <strong>{profileStats.tierName}</strong>
+                    </div>
 
-                  <div style={styles.trainingCardBottomContent}>
-                    <div style={styles.trainingExerciseBox}>
-                      <div style={styles.trainingExerciseHeader}>
-                        <span>TRAINING</span>
-                        <strong>{selectedLogs.length}개</strong>
+                    <div style={styles.trainingCardBottomContent}>
+                      <div style={styles.trainingExerciseBox}>
+                        <div style={styles.trainingExerciseHeader}>
+                          <span>TRAINING</span>
+                          <strong>{selectedLogs.length}개</strong>
+                        </div>
+
+                        <div style={styles.trainingExerciseList}>
+                          {visibleCardLogs.map((log, index) => {
+                            const cardTitle = getCardLogTitle(log, index);
+                            const trainingInfo = `${getRounds(log)}R · ${
+                              log.minutes || log.duration
+                            }min`;
+
+                            return (
+                              <div
+                                key={log.id}
+                                style={styles.trainingExerciseRow}
+                              >
+                                {cardTitle ? (
+                                  <>
+                                    <strong>{cardTitle}</strong>
+                                    <span>{trainingInfo}</span>
+                                  </>
+                                ) : (
+                                  <span style={styles.trainingExerciseMetaOnly}>
+                                    {trainingInfo}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {hiddenCardLogCount > 0 && (
+                            <div style={styles.moreTrainingRow}>
+                              + {hiddenCardLogCount} more trainings
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      <div style={styles.trainingExerciseList}>
-                        {visibleCardLogs.map((log, index) => {
-                          const cardTitle = getCardLogTitle(log, index);
-                          const trainingInfo = `${getRounds(log)}R · ${
-                            log.minutes || log.duration
-                          }min`;
+                      {showComment && (
+                        <div style={styles.trainingCardCommentBox}>
+                          <span style={styles.trainingCardCommentLabel}>
+                            COMMENT
+                          </span>
 
-                          return (
-                            <div
-                              key={log.id}
-                              style={styles.trainingExerciseRow}
-                            >
-                              {cardTitle ? (
-                                <>
-                                  <strong>{cardTitle}</strong>
-                                  <span>{trainingInfo}</span>
-                                </>
-                              ) : (
-                                <span style={styles.trainingExerciseMetaOnly}>
-                                  {trainingInfo}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
+                          <p style={styles.trainingCardCommentText}>
+                            {mainComment}
+                          </p>
+                        </div>
+                      )}
 
-                        {hiddenCardLogCount > 0 && (
-                          <div style={styles.moreTrainingRow}>
-                            + {hiddenCardLogCount} more trainings
-                          </div>
+                      <div style={styles.trainingCardBottom}>
+                        <span>{profile.nickname || "나"}</span>
+                        <strong>{selectedLogs.length} TRAININGS</strong>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={styles.socialCardTextLayer}>
+                    <div style={styles.socialCardTop}>
+                      <span style={styles.socialCardKicker}>
+                        BOXING TRAINING
+                      </span>
+                      <strong>{profileStats.tierName}</strong>
+                    </div>
+
+                    <div style={styles.socialCardCenter}>
+                      <strong style={styles.socialRoundNumber}>
+                        {cardTotalRounds || 0}
+                      </strong>
+                      <span style={styles.socialRoundLabel}>ROUNDS</span>
+                    </div>
+
+                    <div style={styles.socialCardBottom}>
+                      <div>
+                        <p style={styles.socialTitle}>{primaryCardTitle}</p>
+
+                        {showComment && (
+                          <p style={styles.socialComment}>{mainComment}</p>
                         )}
                       </div>
-                    </div>
 
-                    {showComment && (
-                      <div style={styles.trainingCardCommentBox}>
-                        <span style={styles.trainingCardCommentLabel}>
-                          COMMENT
-                        </span>
+                      <div style={styles.socialMetricRow}>
+                        <div style={styles.socialMetricBox}>
+                          <span>TIME</span>
+                          <strong>{cardTotalMinutes || 0}min</strong>
+                        </div>
 
-                        <p style={styles.trainingCardCommentText}>
-                          {mainComment}
-                        </p>
+                        <div style={styles.socialMetricBox}>
+                          <span>LOGS</span>
+                          <strong>{selectedLogs.length}</strong>
+                        </div>
+
+                        <div style={styles.socialMetricBox}>
+                          <span>FIGHTER</span>
+                          <strong>{profile.nickname || "나"}</strong>
+                        </div>
                       </div>
-                    )}
-
-                    <div style={styles.trainingCardBottom}>
-                      <span>{profile.nickname || "나"}</span>
-                      <strong>{selectedLogs.length} TRAININGS</strong>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -1496,6 +1595,31 @@ const styles = {
     marginBottom: "16px",
   },
 
+  cardStyleGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+
+  cardStyleButton: {
+    border: "1px solid rgba(255, 255, 255, 0.12)",
+    borderRadius: "16px",
+    padding: "14px",
+    background: "#050505",
+    color: "#ffffff",
+    textAlign: "left",
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  },
+
+  activeCardStyleButton: {
+    background: "#ffffff",
+    color: "#050505",
+    border: "1px solid #ffffff",
+  },
+
   filterGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",
@@ -1741,6 +1865,103 @@ const styles = {
     fontSize: "12px",
     fontWeight: 900,
     textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
+  },
+
+  socialCardTextLayer: {
+    position: "relative",
+    zIndex: 1,
+    minHeight: "650px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    padding: "24px",
+    boxSizing: "border-box",
+    color: "#ffffff",
+    textShadow: "0 5px 18px rgba(0, 0, 0, 0.95)",
+  },
+
+  socialCardTop: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.14em",
+  },
+
+  socialCardKicker: {
+    color: "rgba(255, 255, 255, 0.86)",
+  },
+
+  socialCardCenter: {
+    marginTop: "auto",
+    marginBottom: "auto",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+  },
+
+  socialRoundNumber: {
+    fontSize: "112px",
+    lineHeight: 0.86,
+    fontWeight: 950,
+    letterSpacing: "-0.08em",
+  },
+
+  socialRoundLabel: {
+    marginTop: "8px",
+    paddingLeft: "4px",
+    color: "rgba(255, 255, 255, 0.82)",
+    fontSize: "18px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
+  },
+
+  socialCardBottom: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+
+  socialTitle: {
+    margin: 0,
+    color: "#ffffff",
+    fontSize: "28px",
+    fontWeight: 950,
+    lineHeight: 1.1,
+    letterSpacing: "-0.04em",
+  },
+
+  socialComment: {
+    margin: "10px 0 0",
+    width: "min(320px, 88%)",
+    color: "rgba(255, 255, 255, 0.86)",
+    fontSize: "14px",
+    lineHeight: 1.45,
+    fontWeight: 800,
+  },
+
+  socialMetricRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: "8px",
+  },
+
+  socialMetricBox: {
+    padding: "10px",
+    borderRadius: "16px",
+    background: "rgba(0, 0, 0, 0.34)",
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    backdropFilter: "blur(10px)",
+  },
+
+  socialMetricBox: {
+    padding: "10px",
+    borderRadius: "16px",
+    background: "rgba(0, 0, 0, 0.34)",
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    backdropFilter: "blur(10px)",
   },
 
   saveImageButton: {

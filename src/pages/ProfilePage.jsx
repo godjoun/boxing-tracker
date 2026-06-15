@@ -1055,20 +1055,26 @@ ${logLines}${commentText}${mediaText}`;
                       </div>
 
                       <div style={styles.socialMetricRow}>
-                        <div style={styles.socialMetricBox}>
-                          <span>TIME</span>
-                          <strong>{cardTotalMinutes || 0}min</strong>
-                        </div>
+                          <div style={styles.socialMetricBox}>
+                        <span style={styles.socialMetricLabel}>TIME</span>
+                       <strong style={styles.socialMetricValue}>
+                          {cardTotalMinutes || 0}min
+                        </strong>
+                      </div>
 
-                        <div style={styles.socialMetricBox}>
-                          <span>LOGS</span>
-                          <strong>{selectedLogs.length}</strong>
-                        </div>
+                      <div style={styles.socialMetricBox}>
+                        <span style={styles.socialMetricLabel}>LOGS</span>
+                        <strong style={styles.socialMetricValue}>
+                          {selectedLogs.length}
+                        </strong>
+                      </div>
 
-                        <div style={styles.socialMetricBox}>
-                          <span>FIGHTER</span>
-                          <strong>{profile.nickname || "나"}</strong>
-                        </div>
+                      <div style={styles.socialMetricBox}>
+                        <span style={styles.socialMetricLabel}>FIGHTER</span>
+                        <strong style={styles.socialMetricValue}>
+                          {profile.nickname || "나"}
+                        </strong>
+                      </div>
                       </div>
                     </div>
                   </div>
@@ -1894,19 +1900,19 @@ const styles = {
   },
 
   socialRoundNumber: {
-    fontSize: "112px",
-    lineHeight: 0.86,
+    fontSize: "92px",
+    lineHeight: 0.9,
     fontWeight: 950,
-    letterSpacing: "-0.08em",
+    letterSpacing: "-0.07em",
   },
 
   socialRoundLabel: {
-    marginTop: "8px",
+    marginTop: "6px",
     paddingLeft: "4px",
-    color: "rgba(255, 255, 255, 0.82)",
-    fontSize: "18px",
+    color: "rgba(255, 255, 255, 0.78)",
+    fontSize: "15px",
     fontWeight: 950,
-    letterSpacing: "0.16em",
+    letterSpacing: "0.18em",
   },
 
   socialCardBottom: {
@@ -1918,17 +1924,18 @@ const styles = {
   socialTitle: {
     margin: 0,
     color: "#ffffff",
-    fontSize: "28px",
+    fontSize: "24px",
     fontWeight: 950,
-    lineHeight: 1.1,
+    lineHeight: 1.12,
     letterSpacing: "-0.04em",
+    maxWidth: "320px",
   },
 
   socialComment: {
-    margin: "10px 0 0",
-    width: "min(320px, 88%)",
-    color: "rgba(255, 255, 255, 0.86)",
-    fontSize: "14px",
+    margin: "9px 0 0",
+    width: "min(310px, 88%)",
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: "13px",
     lineHeight: 1.45,
     fontWeight: 800,
   },
@@ -1936,23 +1943,32 @@ const styles = {
   socialMetricRow: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "8px",
+    gap: "7px",
   },
 
   socialMetricBox: {
-    padding: "10px",
-    borderRadius: "16px",
-    background: "rgba(0, 0, 0, 0.34)",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
-    backdropFilter: "blur(10px)",
+    padding: "9px 8px",
+    borderRadius: "14px",
+    background: "rgba(0, 0, 0, 0.26)",
+    border: "1px solid rgba(255, 255, 255, 0.12)",
+    backdropFilter: "blur(8px)",
   },
 
-  socialMetricBox: {
-    padding: "10px",
-    borderRadius: "16px",
-    background: "rgba(0, 0, 0, 0.34)",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
-    backdropFilter: "blur(10px)",
+  socialMetricLabel: {
+    display: "block",
+    color: "rgba(255, 255, 255, 0.52)",
+    fontSize: "9px",
+    fontWeight: 900,
+    letterSpacing: "0.12em",
+    marginBottom: "5px",
+  },
+  
+  socialMetricValue: {
+    display: "block",
+    color: "#ffffff",
+    fontSize: "13px",
+    fontWeight: 950,
+    lineHeight: 1.15,
   },
 
   saveImageButton: {

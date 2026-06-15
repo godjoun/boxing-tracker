@@ -44,28 +44,43 @@ function resizeImage(file) {
     const reader = new FileReader();
 
     reader.onload = () => {
+      const originalImageData = reader.result;
       const image = new Image();
 
       image.onload = () => {
-        const maxSize = 900;
-        const scale = Math.min(maxSize / image.width, maxSize / image.height, 1);
+        try {
+          const maxSize = 700;
+          const scale = Math.min(
+            maxSize / image.width,
+            maxSize / image.height,
+            1
+          );
 
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(image.width * scale);
-        canvas.height = Math.round(image.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(image.width * scale);
+          canvas.height = Math.round(image.height * scale);
 
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+          const ctx = canvas.getContext("2d");
 
-        const compressedImage = canvas.toDataURL("image/jpeg", 0.78);
-        resolve(compressedImage);
+          if (!ctx) {
+            resolve(originalImageData);
+            return;
+          }
+
+          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+          const compressedImage = canvas.toDataURL("image/jpeg", 0.72);
+          resolve(compressedImage);
+        } catch {
+          resolve(originalImageData);
+        }
       };
 
       image.onerror = () => {
-        reject(new Error("이미지를 불러오지 못했어요."));
+        resolve(originalImageData);
       };
 
-      image.src = reader.result;
+      image.src = originalImageData;
     };
 
     reader.onerror = () => {
@@ -878,7 +893,7 @@ ${logLines}${commentText}${mediaText}`;
               </label>
               <input
                 type="range"
-                min="90"
+                min="70"
                 max="120"
                 value={photoScale}
                 onChange={(event) => setPhotoScale(Number(event.target.value))}
@@ -937,6 +952,7 @@ ${logLines}${commentText}${mediaText}`;
                     alt="훈련 카드"
                     style={{
                       ...styles.trainingCardImage,
+                      objectFit: cardStyle === "social" ? "contain" : "cover",
                       filter: getImageFilter(selectedFilter, filterIntensity),
                       transform: `scale(${photoScale / 100})`,
                     }}
@@ -952,6 +968,7 @@ ${logLines}${commentText}${mediaText}`;
                     playsInline
                     style={{
                       ...styles.trainingCardImage,
+                      objectFit: cardStyle === "social" ? "contain" : "cover",
                       filter: getImageFilter(selectedFilter, filterIntensity),
                       transform: `scale(${photoScale / 100})`,
                     }}

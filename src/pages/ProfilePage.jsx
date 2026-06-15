@@ -186,7 +186,7 @@ function getOverlayStyle(filterId, intensity) {
   }), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
 }
 
-export default function ProfilePage() {
+export default function ProfilePage({ scrollTarget }) {
   const {
     logs,
     profile,
@@ -197,9 +197,10 @@ export default function ProfilePage() {
   } = useTraining();
 
   const fileInputRef = useRef(null);
-  const cardMediaInputRef = useRef(null);
-  const trainingCardRef = useRef(null);
-  const videoObjectUrlRef = useRef(null);
+const cardMediaInputRef = useRef(null);
+const trainingCardRef = useRef(null);
+const cardMakerRef = useRef(null);
+const videoObjectUrlRef = useRef(null);
 
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
@@ -307,6 +308,18 @@ export default function ProfilePage() {
       }
     };
   }, []);
+  useEffect(() => {
+    if (scrollTarget !== "cardMaker") return;
+  
+    const timer = setTimeout(() => {
+      cardMakerRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 150);
+  
+    return () => clearTimeout(timer);
+  }, [scrollTarget]);
 
   const selectedLogs = useMemo(() => {
     return logs.filter((log) => selectedLogIds.includes(log.id));
@@ -627,7 +640,7 @@ ${logLines}${commentText}${mediaText}`;
         </div>
       </section>
 
-      <section style={styles.cardMakerSection}>
+      <section ref={cardMakerRef} style={styles.cardMakerSection}>
         <p style={styles.kicker}>TRAINING CARD MAKER</p>
         <h2 style={styles.sectionTitle}>훈련 인증 카드 만들기</h2>
 
@@ -1266,6 +1279,7 @@ const styles = {
 
   cardMakerSection: {
     marginTop: "16px",
+    scrollMarginTop: "18px",
     borderRadius: "26px",
     padding: "21px",
     background: "#121212",

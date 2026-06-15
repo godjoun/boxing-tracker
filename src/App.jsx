@@ -9,28 +9,49 @@ import "./App.css";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
+  const [profileScrollTarget, setProfileScrollTarget] = useState(null);
+
+  const goPage = (page) => {
+    if (page !== "profile") {
+      setProfileScrollTarget(null);
+    }
+
+    setCurrentPage(page);
+  };
+
+  const goProfile = () => {
+    setProfileScrollTarget(null);
+    setCurrentPage("profile");
+  };
+
+  const goProfileCardMaker = () => {
+    setProfileScrollTarget("cardMaker");
+    setCurrentPage("profile");
+  };
 
   return (
     <TrainingProvider>
       <div style={styles.app}>
         <main style={styles.main}>
           {currentPage === "home" && (
-            <HomePage onStartTraining={() => setCurrentPage("timer")} />
+            <HomePage onStartTraining={() => goPage("timer")} />
           )}
 
           {currentPage === "timer" && (
             <TimerPage
-            onGoLog={() => setCurrentPage("log")}
-            onGoHome={() => setCurrentPage("home")}
-            onGoProfile={() => setCurrentPage("profile")}
-          />
+              onGoLog={() => goPage("log")}
+              onGoHome={() => goPage("home")}
+              onGoProfile={goProfileCardMaker}
+            />
           )}
 
           {currentPage === "log" && <LogPage />}
 
           {currentPage === "stats" && <StatsPage />}
 
-          {currentPage === "profile" && <ProfilePage />}
+          {currentPage === "profile" && (
+            <ProfilePage scrollTarget={profileScrollTarget} />
+          )}
         </main>
 
         <nav style={styles.nav}>
@@ -39,7 +60,7 @@ export default function App() {
               ...styles.navButton,
               ...(currentPage === "home" ? styles.activeButton : {}),
             }}
-            onClick={() => setCurrentPage("home")}
+            onClick={() => goPage("home")}
           >
             홈
           </button>
@@ -49,7 +70,7 @@ export default function App() {
               ...styles.navButton,
               ...(currentPage === "timer" ? styles.activeButton : {}),
             }}
-            onClick={() => setCurrentPage("timer")}
+            onClick={() => goPage("timer")}
           >
             타이머
           </button>
@@ -59,7 +80,7 @@ export default function App() {
               ...styles.navButton,
               ...(currentPage === "log" ? styles.activeButton : {}),
             }}
-            onClick={() => setCurrentPage("log")}
+            onClick={() => goPage("log")}
           >
             기록
           </button>
@@ -69,7 +90,7 @@ export default function App() {
               ...styles.navButton,
               ...(currentPage === "stats" ? styles.activeButton : {}),
             }}
-            onClick={() => setCurrentPage("stats")}
+            onClick={() => goPage("stats")}
           >
             성장
           </button>
@@ -79,7 +100,7 @@ export default function App() {
               ...styles.navButton,
               ...(currentPage === "profile" ? styles.activeButton : {}),
             }}
-            onClick={() => setCurrentPage("profile")}
+            onClick={goProfile}
           >
             프로필
           </button>

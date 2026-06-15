@@ -324,10 +324,14 @@ const videoObjectUrlRef = useRef(null);
   const selectedLogs = useMemo(() => {
     return logs.filter((log) => selectedLogIds.includes(log.id));
   }, [logs, selectedLogIds]);
-
+  
+  const latestLog = logs[0];
+  const isLatestLogSelected = latestLog
+    ? selectedLogIds.includes(latestLog.id)
+    : false;
+  
   const visibleCardLogs = selectedLogs.slice(0, 4);
   const hiddenCardLogCount = Math.max(0, selectedLogs.length - 4);
-
   const mainComment = useMemo(() => {
     const firstLogWithComment = selectedLogs.find(
       (log) => log.publicComment || log.memo
@@ -644,6 +648,22 @@ ${logLines}${commentText}${mediaText}`;
         <p style={styles.kicker}>TRAINING CARD MAKER</p>
         <h2 style={styles.sectionTitle}>훈련 인증 카드 만들기</h2>
 
+        {latestLog && isLatestLogSelected && (
+  <div style={styles.recentTrainingNotice}>
+    <span style={styles.recentTrainingBadge}>최근 훈련 선택됨</span>
+
+    <div>
+      <strong style={styles.recentTrainingTitle}>{latestLog.type}</strong>
+
+      <p style={styles.recentTrainingText}>
+        {getRounds(latestLog)}R · {latestLog.minutes || latestLog.duration}min
+        훈련이 카드에 자동 선택됐어요. 이제 사진이나 영상을 넣고 인증 카드로
+        저장해보세요.
+      </p>
+    </div>
+  </div>
+)}
+
         {logs.length === 0 ? (
           <div style={styles.emptyFeaturedLog}>
             아직 선택할 운동 기록이 없어. 타이머를 완료하거나 기록 화면에서
@@ -712,7 +732,7 @@ ${logLines}${commentText}${mediaText}`;
                   style={styles.photoButton}
                   onClick={() => cardMediaInputRef.current?.click()}
                 >
-                  사진/영상 업로드
+                  훈련 사진/영상 넣기
                 </button>
 
                 {cardMedia && (
@@ -721,15 +741,15 @@ ${logLines}${commentText}${mediaText}`;
                     style={styles.darkButton}
                     onClick={handleRemoveCardMedia}
                   >
-                    카드 미디어 삭제
+                    선택한 사진/영상 지우기
                   </button>
                 )}
               </div>
 
               {cardMediaType === "video" && (
                 <p style={styles.videoNotice}>
-                  영상은 현재 미리보기만 가능해. 영상 저장은 다음 단계에서
-                  붙일게.
+                  오늘 훈련한 사진이나 영상을 넣어줘. 사진 카드는 이미지로 저장할 수 있고,
+                  영상은 지금은 카드 안에서 미리보기만 가능해..
                 </p>
               )}
             </div>
@@ -925,8 +945,8 @@ ${logLines}${commentText}${mediaText}`;
             </button>
 
             <p style={styles.shareHint}>
-              사진 카드는 이미지로 저장할 수 있어. 영상 카드는 지금은 미리보기만
-              가능해.
+            사진 카드는 저장해서 인스타그램이나 카카오톡에 공유할 수 있어.
+            영상 카드는 지금은 미리보기만 가능해.
             </p>
           </>
         )}
@@ -1286,6 +1306,39 @@ const styles = {
     border: "1px solid rgba(255, 255, 255, 0.09)",
   },
 
+  recentTrainingNotice: {
+    marginBottom: "16px",
+    padding: "15px",
+    borderRadius: "18px",
+    background: "rgba(255, 51, 51, 0.1)",
+    border: "1px solid rgba(255, 85, 85, 0.28)",
+  },
+  
+  recentTrainingBadge: {
+    display: "inline-block",
+    marginBottom: "9px",
+    padding: "6px 9px",
+    borderRadius: "999px",
+    background: "#ff3333",
+    color: "#ffffff",
+    fontSize: "11px",
+    fontWeight: 900,
+  },
+  
+  recentTrainingTitle: {
+    display: "block",
+    color: "#ffffff",
+    fontSize: "15px",
+    fontWeight: 900,
+    marginBottom: "5px",
+  },
+  
+  recentTrainingText: {
+    margin: 0,
+    color: "rgba(255, 255, 255, 0.68)",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
   selectorSection: {
     marginBottom: "16px",
   },

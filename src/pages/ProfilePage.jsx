@@ -906,11 +906,33 @@ ${logLines}${commentText}${mediaText}`;
                     </div>
 
                     {showComment && (
-                      <div style={styles.trainingCardCommentBox}>
-                        <span>COMMENT</span>
-                        <p>{mainComment}</p>
-                      </div>
-                    )}
+  <div style={styles.trainingCardCommentBox}>
+    <span
+      style={{
+        display: "block",
+        marginBottom: "5px",
+        color: "rgba(255, 255, 255, 0.72)",
+        fontSize: "10px",
+        fontWeight: 900,
+        letterSpacing: "0.14em",
+      }}
+    >
+      COMMENT
+    </span>
+
+    <p
+      style={{
+        margin: 0,
+        color: "#ffffff",
+        fontSize: "13px",
+        lineHeight: 1.45,
+        fontWeight: 850,
+      }}
+    >
+      {mainComment}
+    </p>
+  </div>
+)}
 
                     <div style={styles.trainingCardBottom}>
                       <span>{profile.nickname || "나"}</span>
@@ -1573,24 +1595,33 @@ const styles = {
 
   trainingCardBottomContent: {
     marginTop: "auto",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    width: "100%",
   },
 
   trainingExerciseBox: {
-    padding: "14px",
-    borderRadius: "18px",
-    background: "rgba(0, 0, 0, 0.42)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    backdropFilter: "blur(2px)",
+    width: "min(300px, 82%)",
+    padding: 0,
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
+    boxShadow: "none",
+    backdropFilter: "none",
+    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
   },
 
   trainingExerciseHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "10px",
-    color: "rgba(255, 255, 255, 0.68)",
-    fontSize: "12px",
+    marginBottom: "8px",
+    color: "rgba(255, 255, 255, 0.78)",
+    fontSize: "10px",
     fontWeight: 900,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
   },
 
   trainingExerciseList: {
@@ -1602,38 +1633,48 @@ const styles = {
   trainingExerciseRow: {
     display: "flex",
     justifyContent: "space-between",
-    gap: "12px",
-    alignItems: "center",
+    gap: "14px",
+    alignItems: "flex-end",
     color: "#ffffff",
     fontSize: "14px",
-    fontWeight: 900,
+    fontWeight: 950,
+    lineHeight: 1.2,
+    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
   },
 
   moreTrainingRow: {
-    marginTop: "4px",
-    paddingTop: "8px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.12)",
-    color: "rgba(255, 255, 255, 0.62)",
+    marginTop: "6px",
+    paddingTop: 0,
+    borderTop: "none",
+    color: "rgba(255, 255, 255, 0.72)",
     fontSize: "12px",
     fontWeight: 900,
+    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
   },
 
   trainingCardCommentBox: {
+    width: "min(300px, 82%)",
     marginTop: "12px",
-    padding: "14px",
-    borderRadius: "18px",
-    background: "rgba(0, 0, 0, 0.42)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    padding: 0,
+    borderRadius: 0,
+    background: "transparent",
+    border: "none",
+    boxShadow: "none",
+    backdropFilter: "none",
+    color: "#ffffff",
+    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
   },
 
   trainingCardBottom: {
-    marginTop: "14px",
+    width: "min(300px, 82%)",
+    marginTop: "12px",
     display: "flex",
     justifyContent: "space-between",
     gap: "10px",
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "13px",
+    color: "rgba(255, 255, 255, 0.86)",
+    fontSize: "12px",
     fontWeight: 900,
+    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
   },
 
   saveImageButton: {

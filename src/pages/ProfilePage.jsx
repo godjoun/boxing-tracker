@@ -891,7 +891,7 @@ ${logLines}${commentText}${mediaText}`;
                 <span>확대</span>
                 <strong>{photoScale}%</strong>
               </label>
-              <input
+               <input
                 type="range"
                 min="70"
                 max="120"
@@ -1066,14 +1066,7 @@ ${logLines}${commentText}${mediaText}`;
                       <strong>{profileStats.tierName}</strong>
                     </div>
 
-                    {cardMedia && (
-                      <div style={styles.socialCardCenter}>
-                        <strong style={styles.socialRoundNumber}>
-                          {cardTotalRounds || 0}
-                        </strong>
-                        <span style={styles.socialRoundLabel}>ROUNDS</span>
-                      </div>
-                    )}
+
 
                     <div style={styles.socialCardBottom}>
                       <div>

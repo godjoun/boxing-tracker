@@ -2,15 +2,17 @@ import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 
 const EXERCISE_OPTIONS = [
-  "복싱",
+
   "쉐도우복싱",
   "샌드백",
   "미트 훈련",
   "줄넘기",
   "풋워크",
   "복근 운동",
+  "스파링",
   "러닝",
   "기타",
+
 ];
 
 const DIFFICULTY_OPTIONS = [

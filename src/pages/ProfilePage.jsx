@@ -564,7 +564,7 @@ ${logLines}${commentText}${mediaText}`;
 
             <button
               type="button"
-              style={styles.photoButton}
+              style={{ ...styles.photoButton, ...styles.profileActionButton }}
               onClick={() => fileInputRef.current?.click()}
             >
               사진 업로드
@@ -573,12 +573,23 @@ ${logLines}${commentText}${mediaText}`;
             {profile.photo && (
               <button
                 type="button"
-                style={styles.darkButton}
+                style={{ ...styles.darkButton, ...styles.profileActionButton }}
                 onClick={handleRemovePhoto}
               >
                 사진 삭제
               </button>
             )}
+
+            <button
+              type="button"
+              style={{
+                ...styles.profileSaveInlineButton,
+                ...styles.profileActionButton,
+              }}
+              onClick={handleSaveProfile}
+            >
+              {isSaving ? "저장 완료!" : "프로필 저장"}
+            </button>
           </div>
         </div>
 
@@ -612,14 +623,6 @@ ${logLines}${commentText}${mediaText}`;
               style={styles.textarea}
             />
           </label>
-
-          <button
-            type="button"
-            style={styles.saveButton}
-            onClick={handleSaveProfile}
-          >
-            {isSaving ? "저장 완료!" : "프로필 저장하기"}
-          </button>
         </div>
       </section>
 
@@ -1162,9 +1165,14 @@ const styles = {
 
   photoButtons: {
     display: "flex",
-    flexDirection: "column",
+    flexWrap: "wrap",
     gap: "8px",
     flex: 1,
+  },
+
+  profileActionButton: {
+    flex: "1 1 120px",
+    minWidth: "120px",
   },
 
   photoButton: {
@@ -1184,6 +1192,17 @@ const styles = {
     padding: "13px 14px",
     background: "rgba(255, 255, 255, 0.06)",
     color: "#ffffff",
+    fontSize: "14px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  profileSaveInlineButton: {
+    border: "none",
+    borderRadius: "16px",
+    padding: "13px 14px",
+    background: "#ffffff",
+    color: "#050505",
     fontSize: "14px",
     fontWeight: 900,
     cursor: "pointer",
@@ -1260,18 +1279,6 @@ const styles = {
     outline: "none",
     resize: "vertical",
     lineHeight: 1.5,
-  },
-
-  saveButton: {
-    width: "100%",
-    border: "none",
-    borderRadius: "16px",
-    padding: "15px",
-    background: "#ff3333",
-    color: "#ffffff",
-    fontSize: "15px",
-    fontWeight: 900,
-    cursor: "pointer",
   },
 
   statGrid: {

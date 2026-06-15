@@ -950,12 +950,7 @@ ${logLines}${commentText}${mediaText}`;
                   />
                 )}
 
-                {!cardMedia && (
-                  <div style={styles.trainingCardDefaultBg}>
-                    <span>NO MEDIA</span>
-                    <strong>BOXING TRAINING</strong>
-                  </div>
-                )}
+                {!cardMedia && <div style={styles.trainingCardDefaultBg} />}
 
                 <div
                   style={{
@@ -1041,12 +1036,14 @@ ${logLines}${commentText}${mediaText}`;
                       <strong>{profileStats.tierName}</strong>
                     </div>
 
-                    <div style={styles.socialCardCenter}>
-                      <strong style={styles.socialRoundNumber}>
-                        {cardTotalRounds || 0}
-                      </strong>
-                      <span style={styles.socialRoundLabel}>ROUNDS</span>
-                    </div>
+                    {cardMedia && (
+                   <div style={styles.socialCardCenter}>
+                     <strong style={styles.socialRoundNumber}>
+                    {cardTotalRounds || 0}
+                   </strong>
+                     <span style={styles.socialRoundLabel}>ROUNDS</span>
+                   </div>
+                    )}
 
                     <div style={styles.socialCardBottom}>
                       <div>
@@ -1717,14 +1714,8 @@ const styles = {
   trainingCardDefaultBg: {
     position: "absolute",
     inset: 0,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "8px",
     background:
-      "radial-gradient(circle at center, rgba(255, 255, 255, 0.08), transparent 34%)",
-    color: "rgba(255, 255, 255, 0.48)",
+      "radial-gradient(circle at center, rgba(255, 255, 255, 0.04), transparent 34%)",
   },
 
   trainingCardOverlay: {

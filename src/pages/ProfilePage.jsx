@@ -1071,57 +1071,32 @@ ${logLines}${commentText}${mediaText}`;
                     </div>
 
                     <div style={styles.trainingCardBottomContent}>
-                      <div style={styles.trainingExerciseBox}>
-                        <div style={styles.trainingExerciseHeader}>
-                          <span>TRAINING</span>
-                          <strong>{selectedLogs.length}개</strong>
-                        </div>
+                    <div style={styles.basicCardInfo}>
+                      <div style={styles.basicTrainingLineList}>
+                        {visibleCardLogs.map((log, index) => {
+                          const cardTitle = getCardLogTitle(log, index);
+                          const trainingInfo = `${getRounds(log)}R · ${
+                            log.minutes || log.duration
+                          }m`;
 
-                        <div style={styles.trainingExerciseList}>
-                          {visibleCardLogs.map((log, index) => {
-                            const cardTitle = getCardLogTitle(log, index);
-                            const trainingInfo = `${getRounds(log)}R · ${
-                              log.minutes || log.duration
-                            }min`;
-
-                            return (
-                              <div
-                                key={log.id}
-                                style={styles.trainingExerciseRow}
-                              >
-                                {cardTitle ? (
-                                  <>
-                                    <strong>{cardTitle}</strong>
-                                    <span>{trainingInfo}</span>
-                                  </>
-                                ) : (
-                                  <span style={styles.trainingExerciseMetaOnly}>
-                                    {trainingInfo}
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-
-                          {hiddenCardLogCount > 0 && (
-                            <div style={styles.moreTrainingRow}>
-                              + {hiddenCardLogCount} more trainings
+                          return (
+                            <div key={log.id} style={styles.basicTrainingLine}>
+                              {cardTitle ? `${cardTitle} · ${trainingInfo}` : trainingInfo}
                             </div>
-                          )}
-                        </div>
+                          );
+                        })}
+
+                        {hiddenCardLogCount > 0 && (
+                          <div style={styles.basicTrainingMore}>
+                            + {hiddenCardLogCount} more trainings
+                          </div>
+                        )}
                       </div>
 
                       {showComment && (
-                        <div style={styles.trainingCardCommentBox}>
-                          <span style={styles.trainingCardCommentLabel}>
-                            COMMENT
-                          </span>
-
-                          <p style={styles.trainingCardCommentText}>
-                            {mainComment}
-                          </p>
-                        </div>
+                        <p style={styles.basicCardComment}>{mainComment}</p>
                       )}
+                    </div>
 
                       <div style={styles.trainingCardBottom}>
                         <span>{profile.nickname || "나"}</span>
@@ -1863,24 +1838,61 @@ const styles = {
   },
 
   trainingExerciseBox: {
-    width: "min(300px, 82%)",
-    padding: 0,
-    borderRadius: 0,
-    background: "transparent",
-    border: "none",
-    boxShadow: "none",
-    backdropFilter: "none",
+    width: "min(245px, 72%)",
+    padding: "10px 11px",
+    borderRadius: "16px",
+    background: "rgba(0, 0, 0, 0.22)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    boxShadow: "0 10px 24px rgba(0, 0, 0, 0.24)",
+    backdropFilter: "blur(7px)",
+    textShadow: "0 3px 12px rgba(0, 0, 0, 0.95)",
+  },
+
+  basicCardInfo: {
+    width: "min(310px, 84%)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "7px",
     textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
+  },
+  
+  basicTrainingLineList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  
+  basicTrainingLine: {
+    color: "#ffffff",
+    fontSize: "14px",
+    fontWeight: 950,
+    lineHeight: 1.25,
+    letterSpacing: "-0.02em",
+  },
+  
+  basicTrainingMore: {
+    color: "rgba(255, 255, 255, 0.62)",
+    fontSize: "11px",
+    fontWeight: 900,
+  },
+  
+  basicCardComment: {
+    margin: 0,
+    width: "min(280px, 92%)",
+    color: "rgba(255, 255, 255, 0.78)",
+    fontSize: "12px",
+    lineHeight: 1.45,
+    fontWeight: 800,
   },
 
   trainingExerciseHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "8px",
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "10px",
-    fontWeight: 900,
+    marginBottom: "6px",
+    color: "rgba(255, 255, 255, 0.58)",
+    fontSize: "9px",
+    fontWeight: 950,
     letterSpacing: "0.14em",
     textTransform: "uppercase",
   },
@@ -1894,13 +1906,13 @@ const styles = {
   trainingExerciseRow: {
     display: "flex",
     justifyContent: "space-between",
-    gap: "14px",
-    alignItems: "flex-end",
+    gap: "10px",
+    alignItems: "center",
     color: "#ffffff",
-    fontSize: "14px",
+    fontSize: "12px",
     fontWeight: 950,
     lineHeight: 1.2,
-    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
+    textShadow: "0 3px 12px rgba(0, 0, 0, 0.95)",
   },
 
   trainingExerciseMetaOnly: {
@@ -1923,16 +1935,16 @@ const styles = {
   },
 
   trainingCardCommentBox: {
-    width: "min(300px, 82%)",
-    marginTop: "12px",
-    padding: 0,
-    borderRadius: 0,
-    background: "transparent",
-    border: "none",
-    boxShadow: "none",
-    backdropFilter: "none",
+    width: "min(245px, 72%)",
+    marginTop: "8px",
+    padding: "9px 11px",
+    borderRadius: "16px",
+    background: "rgba(0, 0, 0, 0.18)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    boxShadow: "0 10px 24px rgba(0, 0, 0, 0.2)",
+    backdropFilter: "blur(7px)",
     color: "#ffffff",
-    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
+    textShadow: "0 3px 12px rgba(0, 0, 0, 0.95)",
   },
 
   trainingCardCommentLabel: {
@@ -1946,9 +1958,9 @@ const styles = {
 
   trainingCardCommentText: {
     margin: 0,
-    color: "#ffffff",
-    fontSize: "13px",
-    lineHeight: 1.45,
+    color: "rgba(255, 255, 255, 0.86)",
+    fontSize: "12px",
+    lineHeight: 1.4,
     fontWeight: 800,
   },
 

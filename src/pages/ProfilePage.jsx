@@ -239,6 +239,7 @@ export default function ProfilePage({ scrollTarget }) {
   const [selectedLogIds, setSelectedLogIds] = useState([]);
   const [cardMedia, setCardMedia] = useState("");
   const [cardMediaType, setCardMediaType] = useState("");
+  const [cardMediaReady, setCardMediaReady] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState("red");
   const [filterIntensity, setFilterIntensity] = useState(75);
   const [photoScale, setPhotoScale] = useState(100);
@@ -361,8 +362,8 @@ export default function ProfilePage({ scrollTarget }) {
     ? selectedLogIds.includes(latestLog.id)
     : false;
 
-  const visibleCardLogs = selectedLogs.slice(0, 4);
-  const hiddenCardLogCount = Math.max(0, selectedLogs.length - 4);
+  const visibleCardLogs = selectedLogs.slice(0, 3);
+  const hiddenCardLogCount = Math.max(0, selectedLogs.length - 3);
 
   const cardTotalRounds = selectedLogs.reduce((sum, log) => {
     return sum + getRounds(log);
@@ -447,10 +448,16 @@ export default function ProfilePage({ scrollTarget }) {
       try {
         clearVideoObjectUrl();
 
+        setCardMediaReady(false);
+        setCardMedia("");
+        setCardMediaType("");
+
         const resizedImage = await resizeImage(file);
+
         setCardMedia(resizedImage);
         setCardMediaType("image");
       } catch {
+        setCardMediaReady(true);
         alert("카드 사진 업로드에 실패했어. 다른 사진으로 다시 시도해줘.");
       }
 
@@ -463,6 +470,7 @@ export default function ProfilePage({ scrollTarget }) {
       const videoUrl = URL.createObjectURL(file);
       videoObjectUrlRef.current = videoUrl;
 
+      setCardMediaReady(true);
       setCardMedia(videoUrl);
       setCardMediaType("video");
       return;
@@ -486,6 +494,7 @@ export default function ProfilePage({ scrollTarget }) {
     clearVideoObjectUrl();
     setCardMedia("");
     setCardMediaType("");
+    setCardMediaReady(true);
 
     if (cardMediaInputRef.current) {
       cardMediaInputRef.current.value = "";
@@ -511,37 +520,49 @@ export default function ProfilePage({ scrollTarget }) {
   
   async function waitForCardReady() {
     const card = trainingCardRef.current;
-  
+
     if (!card) return;
-  
-    await sleep(100);
-  
-    let images = Array.from(card.querySelectorAll("img"));
-  
-    if (cardMediaType === "image" && cardMedia) {
-      let waitCount = 0;
-  
-      while (images.length === 0 && waitCount < 20) {
-        await sleep(100);
-        images = Array.from(card.querySelectorAll("img"));
-        waitCount += 1;
+
+    await sleep(120);
+
+    if (document.fonts?.ready) {
+      try {
+        await document.fonts.ready;
+      } catch {
+        // 폰트 준비 실패는 저장을 막지 않음
       }
     }
-  
+
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      });
+    });
+
+    const images = Array.from(card.querySelectorAll("img"));
+
     await Promise.all(
-      images.map((image) => {
+      images.map(async (image) => {
         if (image.complete && image.naturalWidth > 0) {
-          return Promise.resolve();
+          if (image.decode) {
+            try {
+              await image.decode();
+            } catch {
+              // decode 실패해도 화면에 보이면 저장 시도
+            }
+          }
+
+          return;
         }
-  
-        return new Promise((resolve) => {
-          const timer = setTimeout(resolve, 2500);
-  
+
+        await new Promise((resolve) => {
+          const timer = setTimeout(resolve, 3000);
+
           image.onload = () => {
             clearTimeout(timer);
             resolve();
           };
-  
+
           image.onerror = () => {
             clearTimeout(timer);
             resolve();
@@ -549,10 +570,12 @@ export default function ProfilePage({ scrollTarget }) {
         });
       })
     );
-  
-    await sleep(700);
+
+    await new Promise((resolve) => {
+      requestAnimationFrame(resolve);
+    });
   }
-  
+
   async function handleSaveCardImage() {
     if (cardMediaType === "video") {
       alert(
@@ -563,6 +586,11 @@ export default function ProfilePage({ scrollTarget }) {
   
     if (!trainingCardRef.current) {
       alert("저장할 카드가 아직 준비되지 않았어.");
+      return;
+    }
+
+    if (cardMediaType === "image" && cardMedia && !cardMediaReady) {
+      alert("사진이 아직 준비 중이야. 잠깐만 기다렸다가 다시 저장해줘.");
       return;
     }
   
@@ -662,6 +690,12 @@ ${logLines}${commentText}${mediaText}`;
 
   const socialEmptyHeight =
     cardStyle === "social" && !cardMedia ? "480px" : "650px";
+
+  const isCardImagePreparing =
+    cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
+
+  const isSaveCardDisabled =
+    cardMediaType === "video" || isSavingImage || isCardImagePreparing;
 
   return (
     <main style={styles.page}>
@@ -1027,6 +1061,20 @@ ${logLines}${commentText}${mediaText}`;
                   <img
                     src={cardMedia}
                     alt="훈련 카드"
+                    onLoad={async (event) => {
+                      const image = event.currentTarget;
+
+                      if (image.decode) {
+                        try {
+                          await image.decode();
+                        } catch {
+                          // decode 실패해도 렌더링은 완료된 것으로 처리
+                        }
+                      }
+
+                      setCardMediaReady(true);
+                    }}
+                    onError={() => setCardMediaReady(true)}
                     style={{
                       ...styles.trainingCardImage,
                       objectFit: cardStyle === "social" ? "contain" : "cover",
@@ -1078,7 +1126,7 @@ ${logLines}${commentText}${mediaText}`;
                       <span style={styles.basicPosterLabel}>TRAINING</span>
 
                       <div style={styles.basicTrainingLineList}>
-                        {visibleCardLogs.slice(0, 3).map((log, index) => {
+                        {visibleCardLogs.map((log, index) => {
                           const cardTitle = getCardLogTitle(log, index);
                           const trainingInfo = `${getRounds(log)}R · ${
                             log.minutes || log.duration
@@ -1092,9 +1140,9 @@ ${logLines}${commentText}${mediaText}`;
                           );
                         })}
 
-                        {selectedLogs.length > 3 && (
+                        {hiddenCardLogCount > 0 && (
                           <div style={styles.basicTrainingMore}>
-                            + {selectedLogs.length - 3} more
+                            + {hiddenCardLogCount} more
                           </div>
                         )}
                       </div>
@@ -1168,14 +1216,17 @@ ${logLines}${commentText}${mediaText}`;
               type="button"
               style={{
                 ...styles.saveImageButton,
-                ...(cardMediaType === "video" ? styles.disabledSaveButton : {}),
+                ...(isSaveCardDisabled ? styles.disabledSaveButton : {}),
               }}
-              onClick={handleSaveCardImage}
+              onClick={isSaveCardDisabled ? undefined : handleSaveCardImage}
+              disabled={isSaveCardDisabled}
             >
               {cardMediaType === "video"
                 ? "영상 저장은 다음 단계"
                 : isSavingImage
                 ? "이미지 저장 중..."
+                : isCardImagePreparing
+                ? "사진 준비 중..."
                 : "카드 이미지 저장하기"}
             </button>
 
@@ -1844,16 +1895,6 @@ const styles = {
     width: "100%",
   },
 
-  trainingExerciseBox: {
-    width: "min(245px, 72%)",
-    padding: "10px 11px",
-    borderRadius: "16px",
-    background: "rgba(0, 0, 0, 0.22)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    boxShadow: "0 10px 24px rgba(0, 0, 0, 0.24)",
-    backdropFilter: "blur(7px)",
-    textShadow: "0 3px 12px rgba(0, 0, 0, 0.95)",
-  },
 
   basicPosterInfo: {
     width: "min(320px, 86%)",
@@ -1926,96 +1967,14 @@ const styles = {
     letterSpacing: "0.04em",
   },
 
-  trainingExerciseHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "6px",
-    color: "rgba(255, 255, 255, 0.58)",
-    fontSize: "9px",
-    fontWeight: 950,
-    letterSpacing: "0.14em",
-    textTransform: "uppercase",
-  },
 
-  trainingExerciseList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "7px",
-  },
 
-  trainingExerciseRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "10px",
-    alignItems: "center",
-    color: "#ffffff",
-    fontSize: "12px",
-    fontWeight: 950,
-    lineHeight: 1.2,
-    textShadow: "0 3px 12px rgba(0, 0, 0, 0.95)",
-  },
 
-  trainingExerciseMetaOnly: {
-    display: "block",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 950,
-    lineHeight: 1.2,
-    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
-  },
 
-  moreTrainingRow: {
-    marginTop: "6px",
-    paddingTop: 0,
-    borderTop: "none",
-    color: "rgba(255, 255, 255, 0.72)",
-    fontSize: "12px",
-    fontWeight: 900,
-    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
-  },
 
-  trainingCardCommentBox: {
-    width: "min(245px, 72%)",
-    marginTop: "8px",
-    padding: "9px 11px",
-    borderRadius: "16px",
-    background: "rgba(0, 0, 0, 0.18)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-    boxShadow: "0 10px 24px rgba(0, 0, 0, 0.2)",
-    backdropFilter: "blur(7px)",
-    color: "#ffffff",
-    textShadow: "0 3px 12px rgba(0, 0, 0, 0.95)",
-  },
 
-  trainingCardCommentLabel: {
-    display: "block",
-    marginBottom: "5px",
-    color: "rgba(255, 255, 255, 0.72)",
-    fontSize: "10px",
-    fontWeight: 900,
-    letterSpacing: "0.14em",
-  },
 
-  trainingCardCommentText: {
-    margin: 0,
-    color: "rgba(255, 255, 255, 0.86)",
-    fontSize: "12px",
-    lineHeight: 1.4,
-    fontWeight: 800,
-  },
 
-  trainingCardBottom: {
-    width: "min(300px, 82%)",
-    marginTop: "12px",
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "10px",
-    color: "rgba(255, 255, 255, 0.86)",
-    fontSize: "12px",
-    fontWeight: 900,
-    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
-  },
 
   socialCardTextLayer: {
     position: "relative",
@@ -2116,6 +2075,8 @@ const styles = {
   disabledSaveButton: {
     background: "rgba(255, 255, 255, 0.14)",
     color: "rgba(255, 255, 255, 0.62)",
+    cursor: "not-allowed",
+    opacity: 0.82,
   },
 
   copyButton: {

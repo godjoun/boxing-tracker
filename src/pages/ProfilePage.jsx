@@ -503,43 +503,56 @@ export default function ProfilePage({ scrollTarget }) {
     });
   }
 
-  function waitForCardReady() {
+  function sleep(ms) {
     return new Promise((resolve) => {
-      const card = trainingCardRef.current;
-  
-      if (!card) {
-        resolve();
-        return;
-      }
-  
-      const images = Array.from(card.querySelectorAll("img"));
-  
-      if (images.length === 0) {
-        setTimeout(resolve, 300);
-        return;
-      }
-  
-      let loadedCount = 0;
-  
-      const finish = () => {
-        loadedCount += 1;
-  
-        if (loadedCount >= images.length) {
-          setTimeout(resolve, 300);
-        }
-      };
-  
-      images.forEach((image) => {
-        if (image.complete && image.naturalWidth > 0) {
-          finish();
-        } else {
-          image.onload = finish;
-          image.onerror = finish;
-        }
-      });
+      setTimeout(resolve, ms);
     });
   }
-
+  
+  async function waitForCardReady() {
+    const card = trainingCardRef.current;
+  
+    if (!card) return;
+  
+    await sleep(100);
+  
+    let images = Array.from(card.querySelectorAll("img"));
+  
+    if (cardMediaType === "image" && cardMedia) {
+      let waitCount = 0;
+  
+      while (images.length === 0 && waitCount < 20) {
+        await sleep(100);
+        images = Array.from(card.querySelectorAll("img"));
+        waitCount += 1;
+      }
+    }
+  
+    await Promise.all(
+      images.map((image) => {
+        if (image.complete && image.naturalWidth > 0) {
+          return Promise.resolve();
+        }
+  
+        return new Promise((resolve) => {
+          const timer = setTimeout(resolve, 2500);
+  
+          image.onload = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+  
+          image.onerror = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+        });
+      })
+    );
+  
+    await sleep(700);
+  }
+  
   async function handleSaveCardImage() {
     if (cardMediaType === "video") {
       alert(
@@ -555,9 +568,9 @@ export default function ProfilePage({ scrollTarget }) {
   
     try {
       setIsSavingImage(true);
-    
+  
       await waitForCardReady();
-    
+  
       const dataUrl = await toPng(trainingCardRef.current, {
         cacheBust: true,
         pixelRatio: 2,

@@ -502,10 +502,41 @@ export default function ProfilePage({ scrollTarget }) {
       return [...prev, logId];
     });
   }
-  
+
   function waitForCardReady() {
     return new Promise((resolve) => {
-      setTimeout(resolve, 350);
+      const card = trainingCardRef.current;
+  
+      if (!card) {
+        resolve();
+        return;
+      }
+  
+      const images = Array.from(card.querySelectorAll("img"));
+  
+      if (images.length === 0) {
+        setTimeout(resolve, 300);
+        return;
+      }
+  
+      let loadedCount = 0;
+  
+      const finish = () => {
+        loadedCount += 1;
+  
+        if (loadedCount >= images.length) {
+          setTimeout(resolve, 300);
+        }
+      };
+  
+      images.forEach((image) => {
+        if (image.complete && image.naturalWidth > 0) {
+          finish();
+        } else {
+          image.onload = finish;
+          image.onerror = finish;
+        }
+      });
     });
   }
 

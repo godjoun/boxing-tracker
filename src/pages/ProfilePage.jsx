@@ -588,18 +588,41 @@ export default function ProfilePage({ scrollTarget }) {
       alert("저장할 카드가 아직 준비되지 않았어.");
       return;
     }
-
-    if (cardMediaType === "image" && cardMedia && !cardMediaReady) {
-      alert("사진이 아직 준비 중이야. 잠깐만 기다렸다가 다시 저장해줘.");
-      return;
-    }
   
     try {
       setIsSavingImage(true);
   
+      const card = trainingCardRef.current;
+  
+      // 1차 대기: 이미지/폰트/화면 렌더링 준비
       await waitForCardReady();
   
-      const dataUrl = await toPng(trainingCardRef.current, {
+      // 브라우저가 화면을 한 번 더 그릴 시간을 줌
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+  
+      // 핵심 수정:
+      // 사진이 있는 경우, 첫 번째 캡처는 저장하지 않고 예비 캡처로만 사용
+      if (cardMediaType === "image" && cardMedia) {
+        try {
+          await toPng(card, {
+            cacheBust: true,
+            pixelRatio: 1,
+            backgroundColor: "#050505",
+          });
+        } catch (warmupError) {
+          console.warn("예비 캡처 실패:", warmupError);
+        }
+  
+        await sleep(500);
+        await waitForCardReady();
+      }
+  
+      // 진짜 저장용 캡처
+      const dataUrl = await toPng(card, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#050505",

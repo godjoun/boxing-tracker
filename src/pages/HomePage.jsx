@@ -164,8 +164,8 @@ export default function HomePage({ onStartTraining }) {
       <section className="fighter-card">
         <div className="fighter-card-top">
           <div>
-            <p className="home-kicker">FIGHTER CARD</p>
-            <h1>내 복싱 프로필을 키우는 중</h1>
+            <p className="home-kicker">FIGHTER PROFILE</p>
+            <h1>Every round writes your story.</h1>
           </div>
 
           <div className="fighter-tier-badge">
@@ -175,8 +175,7 @@ export default function HomePage({ onStartTraining }) {
         </div>
 
         <p className="fighter-card-text">
-          오늘 버틴 라운드, 오늘 남긴 기록, 이번 주 쌓은 훈련이 전부
-          네 복싱 캐릭터의 성장 기록이 된다.
+          기록하고, 훈련하고, 증명하세요.
         </p>
 
         <button className="home-main-button" onClick={onStartTraining}>
@@ -188,46 +187,46 @@ export default function HomePage({ onStartTraining }) {
         <div className="home-stat-card">
           <span>누적 라운드</span>
           <strong>{stats.totalRounds}</strong>
-          <p>지금까지 버틴 라운드</p>
+          <p>버틴 라운드</p>
         </div>
 
         <div className="home-stat-card">
-          <span>총 훈련 기록</span>
+          <span>훈련 기록</span>
           <strong>{stats.totalLogs}</strong>
-          <p>완료한 훈련 로그</p>
+          <p>쌓인 로그</p>
         </div>
 
         <div className="home-stat-card">
-          <span>이번 주 훈련</span>
+          <span>이번 주</span>
           <strong>{stats.weeklyCount}</strong>
-          <p>이번 주 쌓은 기록</p>
+          <p>주간 훈련</p>
         </div>
 
         <div className="home-stat-card">
-          <span>오늘 완료</span>
+          <span>오늘</span>
           <strong>{stats.todayCount}</strong>
-          <p>오늘 남긴 성장 로그</p>
+          <p>완료 기록</p>
         </div>
       </section>
 
       <section className="home-mission-card">
-        <p className="home-section-label">TODAY MISSION</p>
-        <h2>오늘의 목표</h2>
+        <p className="home-section-label">TODAY ROUTINE</p>
+        <h2>오늘의 루틴</h2>
 
         <div className="mission-list">
           <div className="mission-item">
             <span>01</span>
-            <p>타이머를 켜고 최소 1라운드 버티기</p>
+            <p>라운드 선택</p>
           </div>
 
           <div className="mission-item">
             <span>02</span>
-            <p>훈련이 끝나면 기록 남기기</p>
+            <p>타이머 훈련</p>
           </div>
 
           <div className="mission-item">
             <span>03</span>
-            <p>내 프로필에 오늘의 성장 추가하기</p>
+            <p>프로필 기록</p>
           </div>
         </div>
       </section>
@@ -250,11 +249,11 @@ export default function HomePage({ onStartTraining }) {
 
       <section className="home-log-card">
         <p className="home-section-label">RECENT LOG</p>
-        <h2>최근 성장 로그</h2>
+        <h2>최근 기록</h2>
 
         {stats.recentLogs.length === 0 ? (
           <div className="home-empty-log">
-            아직 기록이 없어. 첫 훈련을 완료하면 여기에 네 성장 로그가 쌓인다.
+            아직 기록이 없어. 첫 라운드를 시작해보세요.
           </div>
         ) : (
           <div className="home-log-list">

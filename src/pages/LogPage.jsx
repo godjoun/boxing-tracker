@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 
-const EXERCISE_OPTIONS = [
+const CUSTOM_EXERCISE_VALUE = "직접 입력";
 
+const EXERCISE_OPTIONS = [
+  "복싱",
   "쉐도우복싱",
   "샌드백",
   "미트 훈련",
@@ -12,7 +14,7 @@ const EXERCISE_OPTIONS = [
   "스파링",
   "러닝",
   "기타",
-
+  CUSTOM_EXERCISE_VALUE,
 ];
 
 const DIFFICULTY_OPTIONS = [
@@ -84,6 +86,7 @@ function getProgressText({ weeklyScore, currentTier, nextTier }) {
 function createEmptyForm() {
   return {
     type: "복싱",
+    customType: "",
     minutes: "",
     rounds: "",
     date: getTodayString(),
@@ -91,6 +94,28 @@ function createEmptyForm() {
     memo: "",
     publicComment: "",
   };
+}
+
+function getExerciseFormState(exerciseName) {
+  if (EXERCISE_OPTIONS.includes(exerciseName)) {
+    return {
+      type: exerciseName,
+      customType: "",
+    };
+  }
+
+  return {
+    type: CUSTOM_EXERCISE_VALUE,
+    customType: exerciseName || "",
+  };
+}
+
+function getFinalExerciseName(formData) {
+  if (formData.type === CUSTOM_EXERCISE_VALUE) {
+    return formData.customType.trim();
+  }
+
+  return formData.type;
 }
 
 function OptionButton({ isActive, title, description, onClick }) {
@@ -195,8 +220,31 @@ export default function LogPage() {
     }));
   }
 
+  function handleTypeChange(value) {
+    setForm((prev) => ({
+      ...prev,
+      type: value,
+      customType: value === CUSTOM_EXERCISE_VALUE ? prev.customType : "",
+    }));
+  }
+
+  function handleEditTypeChange(value) {
+    setEditForm((prev) => ({
+      ...prev,
+      type: value,
+      customType: value === CUSTOM_EXERCISE_VALUE ? prev.customType : "",
+    }));
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
+
+    const finalExerciseName = getFinalExerciseName(form);
+
+    if (!finalExerciseName) {
+      alert("운동 종류를 입력해줘!");
+      return;
+    }
 
     if (!form.minutes || Number(form.minutes) <= 0) {
       alert("운동 시간을 입력해줘!");
@@ -206,7 +254,7 @@ export default function LogPage() {
     const addedScore = calculatePreviewScore(form.minutes, form.difficulty);
 
     addLog({
-      type: form.type,
+      type: finalExerciseName,
       minutes: Number(form.minutes),
       duration: Number(form.minutes),
       rounds: Number(form.rounds || 0),
@@ -232,8 +280,11 @@ export default function LogPage() {
   function handleStartEdit(log) {
     setEditingId(log.id);
 
+    const exerciseState = getExerciseFormState(log.type || "복싱");
+
     setEditForm({
-      type: log.type || "복싱",
+      type: exerciseState.type,
+      customType: exerciseState.customType,
       minutes: String(log.minutes || log.duration || ""),
       rounds: String(getRounds(log) || ""),
       date: log.date || getTodayString(),
@@ -249,13 +300,20 @@ export default function LogPage() {
   }
 
   function handleSaveEdit(logId) {
+    const finalExerciseName = getFinalExerciseName(editForm);
+
+    if (!finalExerciseName) {
+      alert("운동 종류를 입력해줘!");
+      return;
+    }
+
     if (!editForm.minutes || Number(editForm.minutes) <= 0) {
       alert("운동 시간을 입력해줘!");
       return;
     }
 
     updateLog(logId, {
-      type: editForm.type,
+      type: finalExerciseName,
       minutes: Number(editForm.minutes),
       duration: Number(editForm.minutes),
       rounds: Number(editForm.rounds || 0),
@@ -402,9 +460,7 @@ export default function LogPage() {
 
               <select
                 value={form.type}
-                onChange={(event) =>
-                  updateFormField("type", event.target.value)
-                }
+                onChange={(event) => handleTypeChange(event.target.value)}
                 style={styles.input}
               >
                 {EXERCISE_OPTIONS.map((exercise) => (
@@ -414,6 +470,25 @@ export default function LogPage() {
                 ))}
               </select>
             </div>
+
+            {form.type === CUSTOM_EXERCISE_VALUE && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>운동 이름 직접 작성</label>
+
+                <input
+                  value={form.customType}
+                  onChange={(event) =>
+                    updateFormField("customType", event.target.value)
+                  }
+                  placeholder="예: 샌드백 집중 훈련"
+                  style={styles.input}
+                />
+
+                <p style={styles.inputHint}>
+                  카드와 기록에 이 이름으로 표시돼.
+                </p>
+              </div>
+            )}
 
             <div style={styles.grid2}>
               <div style={styles.formGroup}>
@@ -622,7 +697,7 @@ export default function LogPage() {
                           <select
                             value={editForm.type}
                             onChange={(event) =>
-                              updateEditField("type", event.target.value)
+                              handleEditTypeChange(event.target.value)
                             }
                             style={styles.input}
                           >
@@ -633,6 +708,30 @@ export default function LogPage() {
                             ))}
                           </select>
                         </div>
+
+                        {editForm.type === CUSTOM_EXERCISE_VALUE && (
+                          <div style={styles.formGroup}>
+                            <label style={styles.label}>
+                              운동 이름 직접 작성
+                            </label>
+
+                            <input
+                              value={editForm.customType}
+                              onChange={(event) =>
+                                updateEditField(
+                                  "customType",
+                                  event.target.value
+                                )
+                              }
+                              placeholder="예: 샌드백 집중 훈련"
+                              style={styles.input}
+                            />
+
+                            <p style={styles.inputHint}>
+                              수정 저장하면 이 이름으로 기록돼.
+                            </p>
+                          </div>
+                        )}
 
                         <div style={styles.grid2}>
                           <div style={styles.formGroup}>
@@ -931,6 +1030,14 @@ const styles = {
     padding: "14px",
     fontSize: "15px",
     outline: "none",
+  },
+
+  inputHint: {
+    margin: "8px 0 0",
+    color: "#a1a1aa",
+    fontSize: "12px",
+    fontWeight: 700,
+    lineHeight: 1.5,
   },
 
   textarea: {

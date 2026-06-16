@@ -502,6 +502,12 @@ export default function ProfilePage({ scrollTarget }) {
       return [...prev, logId];
     });
   }
+  
+  function waitForCardReady() {
+    return new Promise((resolve) => {
+      setTimeout(resolve, 350);
+    });
+  }
 
   async function handleSaveCardImage() {
     if (cardMediaType === "video") {
@@ -518,7 +524,9 @@ export default function ProfilePage({ scrollTarget }) {
   
     try {
       setIsSavingImage(true);
-  
+    
+      await waitForCardReady();
+    
       const dataUrl = await toPng(trainingCardRef.current, {
         cacheBust: true,
         pixelRatio: 2,

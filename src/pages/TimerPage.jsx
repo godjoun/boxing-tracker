@@ -38,6 +38,24 @@ const MATCH_PRESETS = [
 
 const PREP_SECONDS = 10;
 
+const SOUND_OPTIONS = [
+  {
+    id: "basic",
+    label: "기본음",
+    description: "복싱 종 울림",
+  },
+  {
+    id: "strong",
+    label: "강한 알림음",
+    description: "운동 중 더 잘 들림",
+  },
+  {
+    id: "mute",
+    label: "무음",
+    description: "소리 없이 진행",
+  },
+];
+
 const formatTime = (seconds) => {
   const safeSeconds = Math.max(0, Number(seconds) || 0);
   const min = Math.floor(safeSeconds / 60);
@@ -65,7 +83,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   const [isRunning, setIsRunning] = useState(false);
   const [hasStartedSession, setHasStartedSession] = useState(false);
   const [hasSavedLog, setHasSavedLog] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundMode, setSoundMode] = useState("basic");
 
   const savedLogRef = useRef(false);
   const previousPhaseRef = useRef("work");
@@ -83,7 +101,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     : "직접 설정 루틴";
 
   const playBeep = async (type = "work") => {
-    if (!soundEnabled) return;
+    if (soundMode === "mute") return;
 
     const AudioContext = window.AudioContext || window.webkitAudioContext;
 
@@ -99,32 +117,70 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       await audioContext.resume();
     }
 
+    const now = audioContext.currentTime;
+
+    // 기본음: 띵~ 하는 복싱 종 울림 느낌
+    if (soundMode === "basic") {
+      const isRest = type === "rest";
+      const isDone = type === "done";
+
+      const baseFrequencies = isRest
+        ? [520, 1040, 1560]
+        : [740, 1480, 2220];
+
+      const duration = isDone ? 0.95 : 0.72;
+      const volume = isDone ? 0.34 : 0.28;
+
+      baseFrequencies.forEach((frequency, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(
+          volume / (index + 1),
+          now + 0.015
+        );
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+
+        oscillator.start(now);
+        oscillator.stop(now + duration);
+      });
+
+      return;
+    }
+
+    // 강한 알림음: 운동 중 잘 들리는 짧고 강한 소리
     const oscillator = audioContext.createOscillator();
     const gain = audioContext.createGain();
 
     const frequencyMap = {
-      prep: 760,
-      work: 880,
-      rest: 520,
-      done: 1040,
+      prep: 920,
+      work: 1120,
+      rest: 620,
+      done: 1280,
     };
 
     const durationMap = {
-      prep: 0.16,
-      work: 0.18,
-      rest: 0.24,
-      done: 0.34,
+      prep: 0.26,
+      work: 0.3,
+      rest: 0.34,
+      done: 0.46,
     };
 
-    const now = audioContext.currentTime;
-    const frequency = frequencyMap[type] || 880;
-    const duration = durationMap[type] || 0.2;
+    const frequency = frequencyMap[type] || 1120;
+    const duration = durationMap[type] || 0.3;
 
-    oscillator.type = "sine";
+    oscillator.type = "square";
     oscillator.frequency.setValueAtTime(frequency, now);
 
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.42, now + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
     oscillator.connect(gain);
@@ -366,17 +422,33 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
         </p>
 
         <div style={styles.soundBox}>
-          <span style={styles.soundText}>
-            소리 알림 {soundEnabled ? "켜짐" : "꺼짐"}
-          </span>
+          <div style={styles.soundHeaderRow}>
+            <span style={styles.soundText}>알림음 선택</span>
+            <strong style={styles.soundStatus}>
+              {SOUND_OPTIONS.find((option) => option.id === soundMode)?.label}
+            </strong>
+          </div>
 
-          <button
-            type="button"
-            style={styles.soundButton}
-            onClick={() => setSoundEnabled((prev) => !prev)}
-          >
-            {soundEnabled ? "끄기" : "켜기"}
-          </button>
+          <div style={styles.soundOptionGrid}>
+            {SOUND_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                style={{
+                  ...styles.soundOptionButton,
+                  ...(soundMode === option.id
+                    ? styles.activeSoundOptionButton
+                    : {}),
+                }}
+                onClick={() => setSoundMode(option.id)}
+              >
+                <strong style={styles.soundOptionLabel}>{option.label}</strong>
+                <span style={styles.soundOptionDescription}>
+                  {option.description}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -616,28 +688,65 @@ const styles = {
     backgroundColor: "#0d0d0f",
     border: "1px solid #2f2f33",
     borderRadius: "16px",
-    padding: "10px 12px",
+    padding: "12px",
+  },
+
+  soundHeaderRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
     gap: "10px",
+    marginBottom: "10px",
   },
 
   soundText: {
     color: "#eeeeee",
     fontSize: "13px",
-    fontWeight: 800,
+    fontWeight: 900,
   },
 
-  soundButton: {
-    backgroundColor: "#ffffff",
-    color: "#111111",
-    border: "none",
-    borderRadius: "999px",
-    padding: "7px 12px",
+  soundStatus: {
+    color: "#ff5555",
     fontSize: "12px",
-    fontWeight: 900,
+    fontWeight: 950,
+  },
+
+  soundOptionGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: "8px",
+  },
+
+  soundOptionButton: {
+    width: "100%",
+    border: "1px solid #2f2f33",
+    borderRadius: "14px",
+    padding: "11px 12px",
+    backgroundColor: "#151517",
+    color: "#ffffff",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "10px",
     cursor: "pointer",
+    textAlign: "left",
+  },
+
+  activeSoundOptionButton: {
+    backgroundColor: "#ff3333",
+    border: "1px solid #ff3333",
+  },
+
+  soundOptionLabel: {
+    fontSize: "13px",
+    fontWeight: 950,
+  },
+
+  soundOptionDescription: {
+    color: "rgba(255, 255, 255, 0.68)",
+    fontSize: "11px",
+    fontWeight: 800,
+    whiteSpace: "nowrap",
   },
 
   timerCard: {

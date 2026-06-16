@@ -510,21 +510,46 @@ export default function ProfilePage({ scrollTarget }) {
       );
       return;
     }
-
+  
     if (!trainingCardRef.current) {
       alert("저장할 카드가 아직 준비되지 않았어.");
       return;
     }
-
+  
     try {
       setIsSavingImage(true);
-
+  
       const dataUrl = await toPng(trainingCardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#050505",
       });
-
+  
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+  
+      const file = new File(
+        [blob],
+        `boxing-training-card-${Date.now()}.png`,
+        {
+          type: "image/png",
+        }
+      );
+  
+      if (
+        navigator.canShare &&
+        navigator.canShare({ files: [file] }) &&
+        navigator.share
+      ) {
+        await navigator.share({
+          title: "Boxing Training Card",
+          text: "오늘의 복싱 훈련 카드",
+          files: [file],
+        });
+  
+        return;
+      }
+  
       const link = document.createElement("a");
       link.download = `boxing-training-card-${Date.now()}.png`;
       link.href = dataUrl;
@@ -1912,30 +1937,6 @@ const styles = {
 
   socialCardKicker: {
     color: "rgba(255, 255, 255, 0.86)",
-  },
-
-  socialCardCenter: {
-    marginTop: "auto",
-    marginBottom: "auto",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-  },
-
-  socialRoundNumber: {
-    fontSize: "92px",
-    lineHeight: 0.9,
-    fontWeight: 950,
-    letterSpacing: "-0.07em",
-  },
-
-  socialRoundLabel: {
-    marginTop: "6px",
-    paddingLeft: "4px",
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "15px",
-    fontWeight: 950,
-    letterSpacing: "0.18em",
   },
 
   socialCardBottom: {

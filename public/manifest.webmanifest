@@ -1,0 +1,25 @@
+{
+    "name": "Fighter Profile",
+    "short_name": "Fighter",
+    "description": "복싱 훈련을 기록하고 나만의 파이터 프로필로 남기는 앱",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#050505",
+    "theme_color": "#050505",
+    "lang": "ko-KR",
+    "icons": [
+      {
+        "src": "/favicon.svg",
+        "sizes": "any",
+        "type": "image/svg+xml"
+      },
+      {
+        "src": "/icons.svg",
+        "sizes": "any",
+        "type": "image/svg+xml",
+        "purpose": "any maskable"
+      }
+    ]
+  }

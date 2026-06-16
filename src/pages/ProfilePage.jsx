@@ -1071,9 +1071,14 @@ ${logLines}${commentText}${mediaText}`;
                     </div>
 
                     <div style={styles.trainingCardBottomContent}>
-                    <div style={styles.basicCardInfo}>
+                  <div style={styles.basicPosterInfo}>
+                    <div style={styles.basicPosterLine} />
+
+                    <div style={styles.basicPosterContent}>
+                      <span style={styles.basicPosterLabel}>TRAINING</span>
+
                       <div style={styles.basicTrainingLineList}>
-                        {visibleCardLogs.map((log, index) => {
+                        {visibleCardLogs.slice(0, 3).map((log, index) => {
                           const cardTitle = getCardLogTitle(log, index);
                           const trainingInfo = `${getRounds(log)}R · ${
                             log.minutes || log.duration
@@ -1081,14 +1086,15 @@ ${logLines}${commentText}${mediaText}`;
 
                           return (
                             <div key={log.id} style={styles.basicTrainingLine}>
-                              {cardTitle ? `${cardTitle} · ${trainingInfo}` : trainingInfo}
+                              <strong>{cardTitle || "TRAINING"}</strong>
+                              <span>{trainingInfo}</span>
                             </div>
                           );
                         })}
 
-                        {hiddenCardLogCount > 0 && (
+                        {selectedLogs.length > 3 && (
                           <div style={styles.basicTrainingMore}>
-                            + {hiddenCardLogCount} more trainings
+                            + {selectedLogs.length - 3} more
                           </div>
                         )}
                       </div>
@@ -1096,13 +1102,14 @@ ${logLines}${commentText}${mediaText}`;
                       {showComment && (
                         <p style={styles.basicCardComment}>{mainComment}</p>
                       )}
-                    </div>
 
-                      <div style={styles.trainingCardBottom}>
+                      <div style={styles.basicFighterMeta}>
                         <span>{profile.nickname || "나"}</span>
-                        <strong>{selectedLogs.length} TRAININGS</strong>
+                        <strong>{profileStats.tierName}</strong>
                       </div>
                     </div>
+                  </div>
+                </div>
                   </div>
                 ) : (
                   <div
@@ -1848,26 +1855,49 @@ const styles = {
     textShadow: "0 3px 12px rgba(0, 0, 0, 0.95)",
   },
 
-  basicCardInfo: {
-    width: "min(310px, 84%)",
+  basicPosterInfo: {
+    width: "min(320px, 86%)",
+    display: "flex",
+    alignItems: "stretch",
+    gap: "12px",
+    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
+  },
+  
+  basicPosterLine: {
+    width: "3px",
+    borderRadius: "999px",
+    background:
+      "linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 51, 51, 0.85))",
+    boxShadow: "0 0 18px rgba(255, 51, 51, 0.38)",
+    flexShrink: 0,
+  },
+  
+  basicPosterContent: {
     display: "flex",
     flexDirection: "column",
-    gap: "7px",
-    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
+    gap: "8px",
+    minWidth: 0,
+  },
+  
+  basicPosterLabel: {
+    color: "rgba(255, 255, 255, 0.56)",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.16em",
   },
   
   basicTrainingLineList: {
     display: "flex",
     flexDirection: "column",
-    gap: "4px",
+    gap: "6px",
   },
   
   basicTrainingLine: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
     color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 950,
-    lineHeight: 1.25,
-    letterSpacing: "-0.02em",
+    lineHeight: 1.18,
   },
   
   basicTrainingMore: {
@@ -1877,12 +1907,23 @@ const styles = {
   },
   
   basicCardComment: {
-    margin: 0,
-    width: "min(280px, 92%)",
-    color: "rgba(255, 255, 255, 0.78)",
+    margin: "4px 0 0",
+    width: "min(270px, 94%)",
+    color: "rgba(255, 255, 255, 0.76)",
     fontSize: "12px",
     lineHeight: 1.45,
     fontWeight: 800,
+  },
+  
+  basicFighterMeta: {
+    marginTop: "4px",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    color: "rgba(255, 255, 255, 0.72)",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: "0.04em",
   },
 
   trainingExerciseHeader: {

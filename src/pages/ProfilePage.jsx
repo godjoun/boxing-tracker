@@ -145,6 +145,11 @@ const CARD_STYLES = [
     name: "SOCIAL",
     description: "사진 중심 공유 카드",
   },
+  {
+    id: "poster",
+    name: "POSTER",
+    description: "친구와 장난치기 좋은 경기 포스터",
+  },
 ];
 
 function getCardBackground(filterId) {
@@ -325,6 +330,10 @@ export default function ProfilePage({ scrollTarget }) {
   const [showComment, setShowComment] = useState(true);
   const [customTrainingTitle, setCustomTrainingTitle] = useState("");
   const [cardStyle, setCardStyle] = useState("basic");
+  const [posterMainName, setPosterMainName] = useState("");
+  const [posterOpponentName, setPosterOpponentName] = useState("MY LIMIT");
+  const [posterEventTitle, setPosterEventTitle] = useState("SPARRING DAY");
+  const [posterDateText, setPosterDateText] = useState("");
 
   const profileStats = useMemo(() => {
     const totalLogs = logs.length;
@@ -480,6 +489,12 @@ export default function ProfilePage({ scrollTarget }) {
       .map((log, index) => getCardLogTitle(log, index))
       .find(Boolean) ||
     "BOXING TRAINING";
+
+  const posterMainNameText =
+    posterMainName.trim() || profile.nickname || "나";
+  const posterOpponentNameText = posterOpponentName.trim() || "MY LIMIT";
+  const posterEventTitleText = posterEventTitle.trim() || "SPARRING DAY";
+  const posterDateTextValue = posterDateText.trim() || getTodayString();
 
   function clearVideoObjectUrl() {
     if (videoObjectUrlRef.current) {
@@ -771,7 +786,13 @@ ${mainComment}`
     const mediaText =
       cardMediaType === "video" ? "\n\nMEDIA\nVideo training card preview" : "";
 
-    const text = `[TRAINING CARD]
+    const text =
+      cardStyle === "poster"
+        ? `[POSTER CARD]
+${posterMainNameText} VS ${posterOpponentNameText}
+${posterEventTitleText}
+${posterDateTextValue}${commentText}${mediaText}`
+        : `[TRAINING CARD]
 ${profile.nickname || "나"} · ${profileStats.tierName}
 
 ${logLines}${commentText}${mediaText}`;
@@ -1142,6 +1163,63 @@ ${logLines}${commentText}${mediaText}`;
                 비워두면 “직접 설정 루틴”은 카드에 표시되지 않아. 이름을 쓰면
                 카드와 공유 문구에 그 이름이 표시돼.
               </p>
+
+              {cardStyle === "poster" && (
+                <div style={styles.posterInputBox}>
+                  <p style={styles.cardMakerLabel}>POSTER 입력</p>
+                  <p style={styles.cardMakerHelp}>
+                    친구와 장난으로 만들거나, 스파링 데이 포스터처럼 쓸 수 있어.
+                  </p>
+
+                  <div style={styles.posterInputGrid}>
+                    <label style={styles.posterInputLabel}>
+                      내 이름
+                      <input
+                        value={posterMainName}
+                        onChange={(event) =>
+                          setPosterMainName(event.target.value)
+                        }
+                        placeholder={profile.nickname || "JO WOON"}
+                        style={styles.posterInput}
+                      />
+                    </label>
+
+                    <label style={styles.posterInputLabel}>
+                      상대 이름
+                      <input
+                        value={posterOpponentName}
+                        onChange={(event) =>
+                          setPosterOpponentName(event.target.value)
+                        }
+                        placeholder="MY LIMIT"
+                        style={styles.posterInput}
+                      />
+                    </label>
+
+                    <label style={styles.posterInputLabel}>
+                      포스터 문구
+                      <input
+                        value={posterEventTitle}
+                        onChange={(event) =>
+                          setPosterEventTitle(event.target.value)
+                        }
+                        placeholder="SPARRING DAY"
+                        style={styles.posterInput}
+                      />
+                    </label>
+
+                    <label style={styles.posterInputLabel}>
+                      날짜 / D-DAY
+                      <input
+                        value={posterDateText}
+                        onChange={(event) => setPosterDateText(event.target.value)}
+                        placeholder="2 WEEKS TO GO"
+                        style={styles.posterInput}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div
@@ -1262,6 +1340,47 @@ ${logLines}${commentText}${mediaText}`;
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                ) : cardStyle === "poster" ? (
+                  <div
+                    style={{
+                      ...styles.posterCardTextLayer,
+                      minHeight: socialEmptyHeight,
+                    }}
+                  >
+                    <div style={styles.posterHeader}>
+                      <span>FIGHTER PROFILE</span>
+                      <strong>{posterEventTitleText}</strong>
+                    </div>
+
+                    <div style={styles.posterCenterBlock}>
+                      <span style={styles.posterSmallLabel}>
+                        TODAY'S MATCHUP
+                      </span>
+
+                      <h2 style={styles.posterMainName}>
+                        {posterMainNameText}
+                      </h2>
+
+                      <div style={styles.posterVs}>VS</div>
+
+                      <h2 style={styles.posterOpponentName}>
+                        {posterOpponentNameText}
+                      </h2>
+                    </div>
+
+                    <div style={styles.posterBottomBlock}>
+                      <div style={styles.posterDateLine}>
+                        <span>{posterDateTextValue}</span>
+                        <strong>
+                          {cardTotalRounds || 0}R · {cardTotalMinutes || 0}min
+                        </strong>
+                      </div>
+
+                      {showComment && (
+                        <p style={styles.posterComment}>{mainComment}</p>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -2152,6 +2271,148 @@ const styles = {
     fontSize: "13px",
     fontWeight: 950,
     lineHeight: 1.15,
+  },
+
+  posterInputBox: {
+    marginTop: "18px",
+    paddingTop: "16px",
+    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+  },
+
+  posterInputGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "10px",
+  },
+
+  posterInputLabel: {
+    display: "block",
+    color: "rgba(255, 255, 255, 0.82)",
+    fontSize: "12px",
+    fontWeight: 900,
+  },
+
+  posterInput: {
+    width: "100%",
+    boxSizing: "border-box",
+    marginTop: "7px",
+    backgroundColor: "#050505",
+    color: "#ffffff",
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    borderRadius: "13px",
+    padding: "11px",
+    fontSize: "13px",
+    fontWeight: 900,
+    outline: "none",
+  },
+
+  posterCardTextLayer: {
+    position: "relative",
+    zIndex: 1,
+    minHeight: "650px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    padding: "24px",
+    boxSizing: "border-box",
+    color: "#ffffff",
+    textShadow: "0 6px 20px rgba(0, 0, 0, 0.98)",
+  },
+
+  posterHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "12px",
+    color: "rgba(255, 255, 255, 0.86)",
+    fontSize: "11px",
+    fontWeight: 950,
+    letterSpacing: "0.14em",
+    textTransform: "uppercase",
+  },
+
+  posterCenterBlock: {
+    marginTop: "auto",
+    marginBottom: "auto",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    textAlign: "center",
+  },
+
+  posterSmallLabel: {
+    marginBottom: "14px",
+    color: "rgba(255, 255, 255, 0.68)",
+    fontSize: "11px",
+    fontWeight: 950,
+    letterSpacing: "0.18em",
+  },
+
+  posterMainName: {
+    margin: 0,
+    maxWidth: "100%",
+    color: "#ffffff",
+    fontSize: "clamp(42px, 14vw, 76px)",
+    lineHeight: 0.9,
+    fontWeight: 950,
+    letterSpacing: "-0.08em",
+    textTransform: "uppercase",
+  },
+
+  posterVs: {
+    margin: "12px 0",
+    width: "58px",
+    height: "58px",
+    borderRadius: "999px",
+    background: "rgba(255, 51, 51, 0.92)",
+    border: "1px solid rgba(255, 255, 255, 0.36)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#ffffff",
+    fontSize: "18px",
+    fontWeight: 950,
+    boxShadow: "0 14px 35px rgba(0, 0, 0, 0.4)",
+  },
+
+  posterOpponentName: {
+    margin: 0,
+    maxWidth: "100%",
+    color: "#ffffff",
+    fontSize: "clamp(34px, 11vw, 60px)",
+    lineHeight: 0.9,
+    fontWeight: 950,
+    letterSpacing: "-0.07em",
+    textTransform: "uppercase",
+  },
+
+  posterBottomBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "11px",
+  },
+
+  posterDateLine: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px",
+    paddingTop: "12px",
+    borderTop: "2px solid rgba(255, 255, 255, 0.76)",
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: "12px",
+    fontWeight: 950,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+  },
+
+  posterComment: {
+    margin: 0,
+    width: "min(360px, 100%)",
+    color: "rgba(255, 255, 255, 0.82)",
+    fontSize: "13px",
+    lineHeight: 1.45,
+    fontWeight: 850,
   },
 
   saveImageButton: {

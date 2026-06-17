@@ -345,8 +345,8 @@ export default function ProfilePage({ scrollTarget }) {
     subtitle: true,
     eventTitle: true,
     date: true,
-    meta: false,
-    footer: false,
+    meta: true,
+    footer: true,
   });
 
   const profileStats = useMemo(() => {
@@ -702,6 +702,346 @@ export default function ProfilePage({ scrollTarget }) {
     });
   }
 
+
+  function loadCanvasImage(src) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("이미지를 캔버스에 불러오지 못했어요."));
+      image.src = src;
+    });
+  }
+
+  function drawCoverImage(ctx, image, x, y, width, height, scalePercent = 100) {
+    const baseScale = Math.max(width / image.width, height / image.height);
+    const finalScale = baseScale * (scalePercent / 100);
+    const drawWidth = image.width * finalScale;
+    const drawHeight = image.height * finalScale;
+    const drawX = x + (width - drawWidth) / 2;
+    const drawY = y + (height - drawHeight) / 2;
+
+    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  }
+
+  function drawTextFit(ctx, text, x, y, maxWidth, options = {}) {
+    const {
+      size = 80,
+      minSize = 32,
+      weight = 900,
+      family = "Arial, sans-serif",
+      align = "center",
+      color = "#ffffff",
+      baseline = "alphabetic",
+      letterSpacing = 0,
+      shadow = true,
+    } = options;
+
+    if (!text) return size;
+
+    let fontSize = size;
+    ctx.textAlign = align;
+    ctx.textBaseline = baseline;
+    ctx.fillStyle = color;
+
+    while (fontSize > minSize) {
+      ctx.font = `${weight} ${fontSize}px ${family}`;
+      if (ctx.measureText(text).width <= maxWidth) break;
+      fontSize -= 2;
+    }
+
+    ctx.font = `${weight} ${fontSize}px ${family}`;
+
+    if (shadow) {
+      ctx.shadowColor = "rgba(0, 0, 0, 0.82)";
+      ctx.shadowBlur = 22;
+      ctx.shadowOffsetY = 8;
+    } else {
+      ctx.shadowColor = "transparent";
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+    }
+
+    if (!letterSpacing) {
+      ctx.fillText(text, x, y);
+    } else {
+      const chars = String(text).split("");
+      const totalWidth = chars.reduce((sum, char) => {
+        return sum + ctx.measureText(char).width + letterSpacing;
+      }, -letterSpacing);
+      let currentX = align === "center" ? x - totalWidth / 2 : x;
+
+      chars.forEach((char) => {
+        ctx.fillText(char, currentX, y);
+        currentX += ctx.measureText(char).width + letterSpacing;
+      });
+    }
+
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    return fontSize;
+  }
+
+  function drawWrappedText(ctx, text, x, y, maxWidth, options = {}) {
+    const {
+      size = 34,
+      weight = 800,
+      family = "Arial, sans-serif",
+      lineHeight = 46,
+      maxLines = 2,
+      color = "rgba(255, 255, 255, 0.86)",
+      align = "center",
+    } = options;
+
+    if (!text) return y;
+
+    ctx.font = `${weight} ${size}px ${family}`;
+    ctx.fillStyle = color;
+    ctx.textAlign = align;
+    ctx.textBaseline = "top";
+
+    const words = String(text).split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = "";
+
+    words.forEach((word) => {
+      const testLine = line ? `${line} ${word}` : word;
+      if (ctx.measureText(testLine).width <= maxWidth || !line) {
+        line = testLine;
+      } else {
+        lines.push(line);
+        line = word;
+      }
+    });
+
+    if (line) lines.push(line);
+
+    lines.slice(0, maxLines).forEach((lineText, index) => {
+      const finalText = index === maxLines - 1 && lines.length > maxLines
+        ? `${lineText}...`
+        : lineText;
+      ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 5;
+      ctx.fillText(finalText, x, y + index * lineHeight);
+    });
+
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    return y + Math.min(lines.length, maxLines) * lineHeight;
+  }
+
+  function drawPosterBackground(ctx, width, height) {
+    const base = ctx.createLinearGradient(0, 0, width, height);
+    base.addColorStop(0, "#240707");
+    base.addColorStop(0.42, "#050505");
+    base.addColorStop(1, "#160000");
+    ctx.fillStyle = base;
+    ctx.fillRect(0, 0, width, height);
+
+    const glow = ctx.createRadialGradient(width * 0.5, height * 0.18, 20, width * 0.5, height * 0.18, width * 0.72);
+    glow.addColorStop(0, "rgba(255, 255, 255, 0.24)");
+    glow.addColorStop(0.36, "rgba(255, 51, 51, 0.18)");
+    glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  async function createPosterCanvasDataUrl() {
+    const canvas = document.createElement("canvas");
+    const width = 1080;
+    const height = 1920;
+    const centerX = width / 2;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      throw new Error("캔버스를 만들지 못했어요.");
+    }
+
+    drawPosterBackground(ctx, width, height);
+
+    if (cardMediaType === "image" && cardMedia) {
+      const image = await loadCanvasImage(cardMedia);
+
+      ctx.save();
+      if ("filter" in ctx) {
+        ctx.filter = getImageFilter(selectedFilter, filterIntensity);
+      }
+      drawCoverImage(ctx, image, 0, 0, width, height, photoScale);
+      ctx.restore();
+    }
+
+    // 전체 어둡게 + 아래쪽 텍스트 가독성 확보
+    const overlay = ctx.createLinearGradient(0, 0, 0, height);
+    overlay.addColorStop(0, "rgba(0, 0, 0, 0.28)");
+    overlay.addColorStop(0.28, "rgba(0, 0, 0, 0.08)");
+    overlay.addColorStop(0.58, "rgba(0, 0, 0, 0.22)");
+    overlay.addColorStop(1, "rgba(0, 0, 0, 0.88)");
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+
+    const redGlow = ctx.createRadialGradient(centerX, height * 0.78, 10, centerX, height * 0.78, width * 0.72);
+    redGlow.addColorStop(0, "rgba(255, 44, 44, 0.32)");
+    redGlow.addColorStop(1, "rgba(255, 44, 44, 0)");
+    ctx.fillStyle = redGlow;
+    ctx.fillRect(0, 0, width, height);
+
+    // 상단 브랜드 라인
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fillRect(130, 120, 250, 3);
+    ctx.fillRect(width - 380, 120, 250, 3);
+    drawTextFit(ctx, "FIGHTER PROFILE", centerX, 133, 420, {
+      size: 30,
+      minSize: 22,
+      weight: 900,
+      family: "Arial, sans-serif",
+      color: "rgba(255, 255, 255, 0.92)",
+      letterSpacing: 2,
+      shadow: false,
+    });
+
+    // 하단 포스터 텍스트 블록: 고정 좌표 + 고정 px라 저장 시 겹침 방지
+    let cursorY = 1110;
+
+    if (posterVisible.mainName) {
+      const usedSize = drawTextFit(ctx, posterMainNameText.toUpperCase(), centerX, cursorY, 920, {
+        size: 138,
+        minSize: 58,
+        weight: 950,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        color: "#ffffff",
+        letterSpacing: 1,
+      });
+      cursorY += Math.max(usedSize * 0.82, 72);
+    }
+
+    if (posterVisible.subtitle) {
+      drawTextFit(ctx, posterSubtitleText.toUpperCase(), centerX, cursorY, 760, {
+        size: 42,
+        minSize: 24,
+        weight: 900,
+        family: "Arial, sans-serif",
+        color: "#ff3b3b",
+        letterSpacing: 4,
+      });
+      cursorY += 80;
+    }
+
+    if (posterVisible.eventTitle || posterVisible.date) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.76)";
+      ctx.fillRect(190, cursorY, 270, 3);
+      ctx.fillRect(width - 460, cursorY, 270, 3);
+      drawTextFit(ctx, "★", centerX, cursorY + 12, 80, {
+        size: 38,
+        minSize: 28,
+        weight: 900,
+        color: "#ffffff",
+        shadow: false,
+      });
+      cursorY += 78;
+    }
+
+    if (posterVisible.eventTitle) {
+      drawTextFit(ctx, posterEventTitleText.toUpperCase(), centerX, cursorY, 860, {
+        size: 62,
+        minSize: 32,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        color: "#ffffff",
+        letterSpacing: 1,
+      });
+      cursorY += 74;
+    }
+
+    if (posterVisible.date) {
+      drawTextFit(ctx, posterDateTextValue.toUpperCase(), centerX, cursorY, 780, {
+        size: 48,
+        minSize: 28,
+        weight: 900,
+        family: "Arial, sans-serif",
+        color: "#ff3b3b",
+        letterSpacing: 3,
+      });
+      cursorY += 92;
+    }
+
+    const bottomY = Math.max(cursorY, 1630);
+
+    if (posterVisible.meta) {
+      drawTextFit(ctx, posterMetaTextValue.toUpperCase(), centerX, bottomY, 900, {
+        size: 30,
+        minSize: 20,
+        weight: 900,
+        family: "Arial, sans-serif",
+        color: "rgba(255, 255, 255, 0.86)",
+        letterSpacing: 2,
+      });
+    }
+
+    if (showComment && mainComment) {
+      drawWrappedText(ctx, mainComment, centerX, bottomY + 58, 820, {
+        size: 32,
+        lineHeight: 42,
+        maxLines: 2,
+        weight: 800,
+        color: "rgba(255, 255, 255, 0.78)",
+      });
+    }
+
+    if (posterVisible.footer) {
+      drawTextFit(ctx, posterFooterTextValue.toUpperCase(), centerX, height - 92, 860, {
+        size: 28,
+        minSize: 18,
+        weight: 900,
+        family: "Arial, sans-serif",
+        color: "rgba(255, 255, 255, 0.82)",
+        letterSpacing: 2,
+      });
+    }
+
+    // 가장자리 어둡게
+    const vignette = ctx.createRadialGradient(centerX, height * 0.48, width * 0.25, centerX, height * 0.48, width * 0.86);
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.54)");
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+
+    return canvas.toDataURL("image/png", 1);
+  }
+
+  async function shareOrDownloadDataUrl(dataUrl, filename) {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const file = new File([blob], filename, { type: "image/png" });
+
+    if (
+      navigator.canShare &&
+      navigator.canShare({ files: [file] }) &&
+      navigator.share
+    ) {
+      await navigator.share({
+        title: "Boxing Training Card",
+        text: cardStyle === "poster" ? "오늘의 파이터 포스터" : "오늘의 복싱 훈련 카드",
+        files: [file],
+      });
+
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = dataUrl;
+    link.click();
+  }
+
   async function handleSaveCardImage() {
     if (cardMediaType === "video") {
       alert(
@@ -715,83 +1055,55 @@ export default function ProfilePage({ scrollTarget }) {
       return;
     }
 
-    if (cardMediaType === "image" && cardMedia && !cardMediaReady) {
-      alert("사진이 아직 준비 중이야. 잠깐만 기다렸다가 다시 저장해줘.");
-      return;
-    }
-
     try {
       setIsSavingImage(true);
 
-      const card = trainingCardRef.current;
-
-      // 1차 대기: 이미지/폰트/화면 렌더링 준비
-      await waitForCardReady();
-
-      // 모바일 Safari/Chrome은 업로드 직후 첫 캡처가 사진을 놓치는 경우가 있어
-      // 사진 카드에서는 충분히 기다리고 예비 캡처를 2회 진행한다.
-      if (cardMediaType === "image" && cardMedia) {
-        await sleep(900);
-        await waitForCardReady();
-
-        for (let index = 0; index < 2; index += 1) {
-          try {
-            await toPng(card, {
-              cacheBust: true,
-              pixelRatio: 1,
-              backgroundColor: "#050505",
-            });
-          } catch (warmupError) {
-            console.warn("예비 캡처 실패:", warmupError);
-          }
-
-          await sleep(350);
-          await waitForCardReady();
-        }
-      } else {
-        await new Promise((resolve) => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(resolve);
-          });
-        });
+      // POSTER는 html-to-image를 쓰지 않고 캔버스에 직접 그려서 저장한다.
+      // 모바일 Safari에서 미리보기와 저장 결과가 달라지는 문제를 피하기 위한 분리 처리.
+      if (cardStyle === "poster") {
+        const posterDataUrl = await createPosterCanvasDataUrl();
+        await shareOrDownloadDataUrl(
+          posterDataUrl,
+          `boxing-fighter-poster-${Date.now()}.png`
+        );
+        return;
       }
 
-      // 진짜 저장용 캡처
+      const card = trainingCardRef.current;
+
+      await waitForCardReady();
+
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      if (cardMediaType === "image" && cardMedia) {
+        try {
+          await toPng(card, {
+            cacheBust: true,
+            pixelRatio: 1,
+            backgroundColor: "#050505",
+          });
+        } catch (warmupError) {
+          console.warn("예비 캡처 실패:", warmupError);
+        }
+
+        await sleep(500);
+        await waitForCardReady();
+      }
+
       const dataUrl = await toPng(card, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#050505",
       });
 
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-
-      const file = new File(
-        [blob],
-        `boxing-training-card-${Date.now()}.png`,
-        {
-          type: "image/png",
-        }
+      await shareOrDownloadDataUrl(
+        dataUrl,
+        `boxing-training-card-${Date.now()}.png`
       );
-
-      if (
-        navigator.canShare &&
-        navigator.canShare({ files: [file] }) &&
-        navigator.share
-      ) {
-        await navigator.share({
-          title: "Boxing Training Card",
-          text: "오늘의 복싱 훈련 카드",
-          files: [file],
-        });
-
-        return;
-      }
-
-      const link = document.createElement("a");
-      link.download = `boxing-training-card-${Date.now()}.png`;
-      link.href = dataUrl;
-      link.click();
     } catch (error) {
       console.error(error);
       alert(
@@ -851,11 +1163,7 @@ ${logLines}${commentText}${mediaText}`;
   }
 
   const cardPreviewHeight =
-    cardStyle === "poster"
-      ? "820px"
-      : cardStyle === "social" && !cardMedia
-      ? "480px"
-      : "650px";
+    cardStyle === "poster" ? "700px" : cardStyle === "social" && !cardMedia ? "480px" : "650px";
 
   const isCardImagePreparing =
     cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
@@ -1414,15 +1722,6 @@ ${logLines}${commentText}${mediaText}`;
                           // decode 실패해도 렌더링은 완료된 것으로 처리
                         }
                       }
-
-                      // 모바일 브라우저는 이미지가 load 된 직후에도
-                      // html-to-image 캡처에는 한 박자 늦게 반영되는 경우가 있음.
-                      await sleep(450);
-                      await new Promise((resolve) => {
-                        requestAnimationFrame(() => {
-                          requestAnimationFrame(resolve);
-                        });
-                      });
 
                       setCardMediaReady(true);
                     }}
@@ -2545,11 +2844,11 @@ const styles = {
   posterCardTextLayer: {
     position: "relative",
     zIndex: 2,
-    minHeight: "820px",
+    minHeight: "700px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: "20px 16px 26px",
+    padding: "18px 16px 20px",
     boxSizing: "border-box",
     color: "#ffffff",
     textAlign: "center",
@@ -2588,22 +2887,21 @@ const styles = {
   posterCenterBlock: {
     marginTop: "auto",
     marginBottom: "10px",
-    paddingTop: "0",
+    paddingTop: "220px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     textAlign: "center",
-    flexShrink: 0,
   },
 
   posterMainName: {
     margin: 0,
-    maxWidth: "96%",
+    maxWidth: "100%",
     color: "#f4f1ea",
-    fontSize: "clamp(38px, 10.5vw, 72px)",
-    lineHeight: 0.92,
+    fontSize: "clamp(46px, 14vw, 92px)",
+    lineHeight: 0.86,
     fontWeight: 950,
-    letterSpacing: "-0.065em",
+    letterSpacing: "-0.08em",
     textTransform: "uppercase",
     overflowWrap: "break-word",
     textShadow:
@@ -2611,27 +2909,26 @@ const styles = {
   },
 
   posterSubtitle: {
-    margin: "4px 0 0",
+    margin: "2px 0 0",
     color: "#ff3333",
-    fontSize: "clamp(18px, 5.1vw, 30px)",
-    lineHeight: 1.05,
+    fontSize: "clamp(20px, 6.2vw, 38px)",
+    lineHeight: 1,
     fontWeight: 950,
     fontStyle: "italic",
-    letterSpacing: "-0.045em",
+    letterSpacing: "-0.06em",
     textTransform: "uppercase",
     transform: "rotate(-3deg)",
   },
 
   posterStarLine: {
-    margin: "10px 0 6px",
+    margin: "14px 0 8px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "8px",
+    gap: "10px",
     width: "100%",
     color: "#ff3333",
-    fontSize: "13px",
-    flexShrink: 0,
+    fontSize: "15px",
   },
 
   posterStarRule: {
@@ -2643,68 +2940,61 @@ const styles = {
 
   posterEventTitle: {
     margin: "0",
-    maxWidth: "96%",
     color: "#e72a22",
-    fontSize: "clamp(24px, 6.8vw, 42px)",
-    lineHeight: 1.02,
+    fontSize: "clamp(28px, 8.3vw, 50px)",
+    lineHeight: 0.95,
     fontWeight: 950,
-    letterSpacing: "-0.025em",
+    letterSpacing: "-0.035em",
     textTransform: "uppercase",
     overflowWrap: "break-word",
   },
 
   posterDateText: {
-    margin: "7px 0 0",
+    margin: "8px 0 0",
     color: "#ffffff",
-    fontSize: "clamp(17px, 4.8vw, 28px)",
-    lineHeight: 1.1,
+    fontSize: "clamp(22px, 6.4vw, 38px)",
+    lineHeight: 1,
     fontWeight: 950,
-    letterSpacing: "0.035em",
+    letterSpacing: "0.04em",
     textTransform: "uppercase",
-    whiteSpace: "normal",
   },
 
   posterBottomBlock: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "5px",
-    flexShrink: 0,
+    gap: "6px",
   },
 
   posterMetaText: {
     margin: 0,
-    maxWidth: "92%",
+    maxWidth: "94%",
     color: "#ff3333",
-    fontSize: "8px",
-    lineHeight: 1.55,
+    fontSize: "9px",
+    lineHeight: 1.45,
     fontWeight: 950,
-    letterSpacing: "0.13em",
+    letterSpacing: "0.18em",
     textTransform: "uppercase",
     overflowWrap: "break-word",
   },
 
   posterComment: {
     margin: 0,
-    width: "min(330px, 90%)",
+    width: "min(360px, 92%)",
     color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "10px",
+    fontSize: "12px",
     lineHeight: 1.45,
     fontWeight: 850,
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical",
-    overflow: "hidden",
   },
 
   posterFooterText: {
-    margin: "1px 0 0",
-    maxWidth: "92%",
+    margin: "2px 0 0",
+    maxWidth: "94%",
     color: "rgba(255, 255, 255, 0.88)",
-    fontSize: "8px",
-    lineHeight: 1.65,
+    fontSize: "9px",
+    lineHeight: 1.55,
     fontWeight: 950,
-    letterSpacing: "0.13em",
+    letterSpacing: "0.18em",
     textTransform: "uppercase",
     overflowWrap: "break-word",
   },

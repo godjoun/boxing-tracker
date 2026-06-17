@@ -117,6 +117,21 @@ const CARD_FILTERS = [
     name: "CLASSIC MONO",
     description: "흑백 복싱 다큐 느낌",
   },
+  {
+    id: "chrome",
+    name: "CHROME CARD",
+    description: "반짝이는 트레이딩 카드 느낌",
+  },
+  {
+    id: "future",
+    name: "FUTURE STAR",
+    description: "신예 파이터 카드 느낌",
+  },
+  {
+    id: "vintage",
+    name: "VINTAGE RINGSIDE",
+    description: "올드 복싱 포스터 느낌",
+  },
 ];
 
 const CARD_STYLES = [
@@ -133,6 +148,18 @@ const CARD_STYLES = [
 ];
 
 function getCardBackground(filterId) {
+  if (filterId === "chrome") {
+    return "radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.58), transparent 18%), radial-gradient(circle at 82% 12%, rgba(255, 51, 51, 0.45), transparent 30%), linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 28%, rgba(255, 255, 255, 0.08) 42%, transparent 58%, rgba(255, 255, 255, 0.16) 76%), linear-gradient(145deg, #262626, #050505)";
+  }
+
+  if (filterId === "future") {
+    return "radial-gradient(circle at 80% 12%, rgba(139, 92, 246, 0.48), transparent 34%), radial-gradient(circle at 15% 82%, rgba(14, 165, 233, 0.36), transparent 32%), linear-gradient(145deg, #120a2f, #050505)";
+  }
+
+  if (filterId === "vintage") {
+    return "radial-gradient(circle at 20% 18%, rgba(255, 220, 140, 0.22), transparent 28%), linear-gradient(145deg, #2a1b10, #070504)";
+  }
+
   if (filterId === "gold") {
     return "radial-gradient(circle at 80% 12%, rgba(255, 198, 41, 0.42), transparent 34%), linear-gradient(145deg, #241800, #050505)";
   }
@@ -154,6 +181,24 @@ function getCardBackground(filterId) {
 
 function getImageFilter(filterId, intensity) {
   const strength = intensity / 100;
+
+  if (filterId === "chrome") {
+    return `contrast(${1 + 0.22 * strength}) saturate(${
+      1 - 0.18 * strength
+    }) brightness(${1 + 0.04 * strength})`;
+  }
+
+  if (filterId === "future") {
+    return `contrast(${1 + 0.16 * strength}) saturate(${
+      1 + 0.18 * strength
+    }) hue-rotate(${18 * strength}deg) brightness(${1 - 0.02 * strength})`;
+  }
+
+  if (filterId === "vintage") {
+    return `contrast(${1 + 0.12 * strength}) saturate(${
+      1 - 0.34 * strength
+    }) sepia(${0.42 * strength}) brightness(${1 - 0.05 * strength})`;
+  }
 
   if (filterId === "gold") {
     return `contrast(${1 + 0.16 * strength}) saturate(${
@@ -184,6 +229,38 @@ function getImageFilter(filterId, intensity) {
 
 function getOverlayStyle(filterId, intensity) {
   const strength = intensity / 100;
+
+  if (filterId === "chrome") {
+    return `linear-gradient(135deg, rgba(255, 255, 255, ${
+      0.05 + 0.16 * strength
+    }), transparent 22%, rgba(255, 51, 51, ${
+      0.04 + 0.12 * strength
+    }) 48%, transparent 68%, rgba(255, 255, 255, ${
+      0.06 + 0.14 * strength
+    })), linear-gradient(180deg, rgba(0, 0, 0, ${
+      0.18 + 0.12 * strength
+    }), rgba(0, 0, 0, ${0.46 + 0.18 * strength}))`;
+  }
+
+  if (filterId === "future") {
+    return `linear-gradient(180deg, rgba(88, 28, 135, ${
+      0.06 + 0.16 * strength
+    }), rgba(0, 0, 0, ${
+      0.42 + 0.22 * strength
+    })), linear-gradient(135deg, rgba(14, 165, 233, ${
+      0.04 + 0.12 * strength
+    }), transparent 42%, rgba(255, 51, 51, ${0.04 + 0.08 * strength}))`;
+  }
+
+  if (filterId === "vintage") {
+    return `linear-gradient(180deg, rgba(255, 214, 150, ${
+      0.04 + 0.1 * strength
+    }), rgba(0, 0, 0, ${
+      0.5 + 0.2 * strength
+    })), radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, ${
+      0.18 + 0.18 * strength
+    }))`;
+  }
 
   if (filterId === "gold") {
     return `linear-gradient(180deg, rgba(255, 180, 35, ${
@@ -981,7 +1058,7 @@ ${logLines}${commentText}${mediaText}`;
             </div>
 
             <div style={styles.filterSection}>
-              <p style={styles.cardMakerLabel}>4. 복싱 필터 선택</p>
+              <p style={styles.cardMakerLabel}>4. 카드 테마 선택</p>
 
               <div style={styles.filterGrid}>
                 {CARD_FILTERS.map((filter) => (
@@ -1007,7 +1084,7 @@ ${logLines}${commentText}${mediaText}`;
               <p style={styles.cardMakerLabel}>5. 사진/영상 조절</p>
 
               <label style={styles.rangeLabel}>
-                <span>필터 강도</span>
+                <span>테마 강도</span>
                 <strong>{filterIntensity}%</strong>
               </label>
               <input
@@ -1142,45 +1219,50 @@ ${logLines}${commentText}${mediaText}`;
                     </div>
 
                     <div style={styles.trainingCardBottomContent}>
-                  <div style={styles.basicPosterInfo}>
-                    <div style={styles.basicPosterLine} />
+                      <div style={styles.basicPosterInfo}>
+                        <div style={styles.basicPosterLine} />
 
-                    <div style={styles.basicPosterContent}>
-                      <span style={styles.basicPosterLabel}>TRAINING</span>
+                        <div style={styles.basicPosterContent}>
+                          <span style={styles.basicPosterLabel}>TRAINING</span>
 
-                      <div style={styles.basicTrainingLineList}>
-                        {visibleCardLogs.map((log, index) => {
-                          const cardTitle = getCardLogTitle(log, index);
-                          const trainingInfo = `${getRounds(log)}R · ${
-                            log.minutes || log.duration
-                          }m`;
+                          <div style={styles.basicTrainingLineList}>
+                            {visibleCardLogs.map((log, index) => {
+                              const cardTitle = getCardLogTitle(log, index);
+                              const trainingInfo = `${getRounds(log)}R · ${
+                                log.minutes || log.duration
+                              }m`;
 
-                          return (
-                            <div key={log.id} style={styles.basicTrainingLine}>
-                              <strong>{cardTitle || "TRAINING"}</strong>
-                              <span>{trainingInfo}</span>
-                            </div>
-                          );
-                        })}
+                              return (
+                                <div
+                                  key={log.id}
+                                  style={styles.basicTrainingLine}
+                                >
+                                  <strong>{cardTitle || "TRAINING"}</strong>
+                                  <span>{trainingInfo}</span>
+                                </div>
+                              );
+                            })}
 
-                        {hiddenCardLogCount > 0 && (
-                          <div style={styles.basicTrainingMore}>
-                            + {hiddenCardLogCount} more
+                            {hiddenCardLogCount > 0 && (
+                              <div style={styles.basicTrainingMore}>
+                                + {hiddenCardLogCount} more
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {showComment && (
-                        <p style={styles.basicCardComment}>{mainComment}</p>
-                      )}
+                          {showComment && (
+                            <p style={styles.basicCardComment}>
+                              {mainComment}
+                            </p>
+                          )}
 
-                      <div style={styles.basicFighterMeta}>
-                        <span>{profile.nickname || "나"}</span>
-                        <strong>{profileStats.tierName}</strong>
+                          <div style={styles.basicFighterMeta}>
+                            <span>{profile.nickname || "나"}</span>
+                            <strong>{profileStats.tierName}</strong>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
                   </div>
                 ) : (
                   <div
@@ -1195,8 +1277,6 @@ ${logLines}${commentText}${mediaText}`;
                       </span>
                       <strong>{profileStats.tierName}</strong>
                     </div>
-
-
 
                     <div style={styles.socialCardBottom}>
                       <div>
@@ -1989,14 +2069,6 @@ const styles = {
     fontWeight: 900,
     letterSpacing: "0.04em",
   },
-
-
-
-
-
-
-
-
 
 
   socialCardTextLayer: {

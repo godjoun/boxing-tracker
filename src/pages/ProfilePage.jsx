@@ -345,8 +345,8 @@ export default function ProfilePage({ scrollTarget }) {
     subtitle: true,
     eventTitle: true,
     date: true,
-    meta: true,
-    footer: true,
+    meta: false,
+    footer: false,
   });
 
   const profileStats = useMemo(() => {
@@ -709,54 +709,63 @@ export default function ProfilePage({ scrollTarget }) {
       );
       return;
     }
-  
+
     if (!trainingCardRef.current) {
       alert("저장할 카드가 아직 준비되지 않았어.");
       return;
     }
-  
+
+    if (cardMediaType === "image" && cardMedia && !cardMediaReady) {
+      alert("사진이 아직 준비 중이야. 잠깐만 기다렸다가 다시 저장해줘.");
+      return;
+    }
+
     try {
       setIsSavingImage(true);
-  
+
       const card = trainingCardRef.current;
-  
+
       // 1차 대기: 이미지/폰트/화면 렌더링 준비
       await waitForCardReady();
-  
-      // 브라우저가 화면을 한 번 더 그릴 시간을 줌
-      await new Promise((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(resolve);
-        });
-      });
-  
-      // 핵심 수정:
-      // 사진이 있는 경우, 첫 번째 캡처는 저장하지 않고 예비 캡처로만 사용
+
+      // 모바일 Safari/Chrome은 업로드 직후 첫 캡처가 사진을 놓치는 경우가 있어
+      // 사진 카드에서는 충분히 기다리고 예비 캡처를 2회 진행한다.
       if (cardMediaType === "image" && cardMedia) {
-        try {
-          await toPng(card, {
-            cacheBust: true,
-            pixelRatio: 1,
-            backgroundColor: "#050505",
-          });
-        } catch (warmupError) {
-          console.warn("예비 캡처 실패:", warmupError);
-        }
-  
-        await sleep(500);
+        await sleep(900);
         await waitForCardReady();
+
+        for (let index = 0; index < 2; index += 1) {
+          try {
+            await toPng(card, {
+              cacheBust: true,
+              pixelRatio: 1,
+              backgroundColor: "#050505",
+            });
+          } catch (warmupError) {
+            console.warn("예비 캡처 실패:", warmupError);
+          }
+
+          await sleep(350);
+          await waitForCardReady();
+        }
+      } else {
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(resolve);
+          });
+        });
       }
-  
+
       // 진짜 저장용 캡처
       const dataUrl = await toPng(card, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: "#050505",
       });
-  
+
       const response = await fetch(dataUrl);
       const blob = await response.blob();
-  
+
       const file = new File(
         [blob],
         `boxing-training-card-${Date.now()}.png`,
@@ -764,7 +773,7 @@ export default function ProfilePage({ scrollTarget }) {
           type: "image/png",
         }
       );
-  
+
       if (
         navigator.canShare &&
         navigator.canShare({ files: [file] }) &&
@@ -775,10 +784,10 @@ export default function ProfilePage({ scrollTarget }) {
           text: "오늘의 복싱 훈련 카드",
           files: [file],
         });
-  
+
         return;
       }
-  
+
       const link = document.createElement("a");
       link.download = `boxing-training-card-${Date.now()}.png`;
       link.href = dataUrl;
@@ -842,7 +851,11 @@ ${logLines}${commentText}${mediaText}`;
   }
 
   const cardPreviewHeight =
-    cardStyle === "poster" ? "700px" : cardStyle === "social" && !cardMedia ? "480px" : "650px";
+    cardStyle === "poster"
+      ? "820px"
+      : cardStyle === "social" && !cardMedia
+      ? "480px"
+      : "650px";
 
   const isCardImagePreparing =
     cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
@@ -1401,6 +1414,15 @@ ${logLines}${commentText}${mediaText}`;
                           // decode 실패해도 렌더링은 완료된 것으로 처리
                         }
                       }
+
+                      // 모바일 브라우저는 이미지가 load 된 직후에도
+                      // html-to-image 캡처에는 한 박자 늦게 반영되는 경우가 있음.
+                      await sleep(450);
+                      await new Promise((resolve) => {
+                        requestAnimationFrame(() => {
+                          requestAnimationFrame(resolve);
+                        });
+                      });
 
                       setCardMediaReady(true);
                     }}
@@ -2523,11 +2545,11 @@ const styles = {
   posterCardTextLayer: {
     position: "relative",
     zIndex: 2,
-    minHeight: "700px",
+    minHeight: "820px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: "18px 16px 20px",
+    padding: "20px 16px 26px",
     boxSizing: "border-box",
     color: "#ffffff",
     textAlign: "center",
@@ -2566,21 +2588,22 @@ const styles = {
   posterCenterBlock: {
     marginTop: "auto",
     marginBottom: "10px",
-    paddingTop: "220px",
+    paddingTop: "0",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     textAlign: "center",
+    flexShrink: 0,
   },
 
   posterMainName: {
     margin: 0,
-    maxWidth: "100%",
+    maxWidth: "96%",
     color: "#f4f1ea",
-    fontSize: "clamp(46px, 14vw, 92px)",
-    lineHeight: 0.86,
+    fontSize: "clamp(38px, 10.5vw, 72px)",
+    lineHeight: 0.92,
     fontWeight: 950,
-    letterSpacing: "-0.08em",
+    letterSpacing: "-0.065em",
     textTransform: "uppercase",
     overflowWrap: "break-word",
     textShadow:
@@ -2588,26 +2611,27 @@ const styles = {
   },
 
   posterSubtitle: {
-    margin: "2px 0 0",
+    margin: "4px 0 0",
     color: "#ff3333",
-    fontSize: "clamp(20px, 6.2vw, 38px)",
-    lineHeight: 1,
+    fontSize: "clamp(18px, 5.1vw, 30px)",
+    lineHeight: 1.05,
     fontWeight: 950,
     fontStyle: "italic",
-    letterSpacing: "-0.06em",
+    letterSpacing: "-0.045em",
     textTransform: "uppercase",
     transform: "rotate(-3deg)",
   },
 
   posterStarLine: {
-    margin: "14px 0 8px",
+    margin: "10px 0 6px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "10px",
+    gap: "8px",
     width: "100%",
     color: "#ff3333",
-    fontSize: "15px",
+    fontSize: "13px",
+    flexShrink: 0,
   },
 
   posterStarRule: {
@@ -2619,61 +2643,68 @@ const styles = {
 
   posterEventTitle: {
     margin: "0",
+    maxWidth: "96%",
     color: "#e72a22",
-    fontSize: "clamp(28px, 8.3vw, 50px)",
-    lineHeight: 0.95,
+    fontSize: "clamp(24px, 6.8vw, 42px)",
+    lineHeight: 1.02,
     fontWeight: 950,
-    letterSpacing: "-0.035em",
+    letterSpacing: "-0.025em",
     textTransform: "uppercase",
     overflowWrap: "break-word",
   },
 
   posterDateText: {
-    margin: "8px 0 0",
+    margin: "7px 0 0",
     color: "#ffffff",
-    fontSize: "clamp(22px, 6.4vw, 38px)",
-    lineHeight: 1,
+    fontSize: "clamp(17px, 4.8vw, 28px)",
+    lineHeight: 1.1,
     fontWeight: 950,
-    letterSpacing: "0.04em",
+    letterSpacing: "0.035em",
     textTransform: "uppercase",
+    whiteSpace: "normal",
   },
 
   posterBottomBlock: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "6px",
+    gap: "5px",
+    flexShrink: 0,
   },
 
   posterMetaText: {
     margin: 0,
-    maxWidth: "94%",
+    maxWidth: "92%",
     color: "#ff3333",
-    fontSize: "9px",
-    lineHeight: 1.45,
+    fontSize: "8px",
+    lineHeight: 1.55,
     fontWeight: 950,
-    letterSpacing: "0.18em",
+    letterSpacing: "0.13em",
     textTransform: "uppercase",
     overflowWrap: "break-word",
   },
 
   posterComment: {
     margin: 0,
-    width: "min(360px, 92%)",
+    width: "min(330px, 90%)",
     color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "12px",
+    fontSize: "10px",
     lineHeight: 1.45,
     fontWeight: 850,
+    display: "-webkit-box",
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: "vertical",
+    overflow: "hidden",
   },
 
   posterFooterText: {
-    margin: "2px 0 0",
-    maxWidth: "94%",
+    margin: "1px 0 0",
+    maxWidth: "92%",
     color: "rgba(255, 255, 255, 0.88)",
-    fontSize: "9px",
-    lineHeight: 1.55,
+    fontSize: "8px",
+    lineHeight: 1.65,
     fontWeight: 950,
-    letterSpacing: "0.18em",
+    letterSpacing: "0.13em",
     textTransform: "uppercase",
     overflowWrap: "break-word",
   },

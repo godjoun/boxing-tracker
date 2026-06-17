@@ -841,8 +841,8 @@ ${logLines}${commentText}${mediaText}`;
     }
   }
 
-  const socialEmptyHeight =
-    cardStyle === "social" && !cardMedia ? "480px" : "650px";
+  const cardPreviewHeight =
+    cardStyle === "poster" ? "700px" : cardStyle === "social" && !cardMedia ? "480px" : "650px";
 
   const isCardImagePreparing =
     cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
@@ -1384,7 +1384,7 @@ ${logLines}${commentText}${mediaText}`;
               <div
                 style={{
                   ...styles.trainingCardPhotoArea,
-                  minHeight: socialEmptyHeight,
+                  minHeight: cardPreviewHeight,
                 }}
               >
                 {cardMediaType === "image" && cardMedia && (
@@ -1500,7 +1500,7 @@ ${logLines}${commentText}${mediaText}`;
                   <div
                     style={{
                       ...styles.posterCardTextLayer,
-                      minHeight: socialEmptyHeight,
+                      minHeight: cardPreviewHeight,
                     }}
                   >
                     <div style={styles.posterHeader}>
@@ -1559,7 +1559,7 @@ ${logLines}${commentText}${mediaText}`;
                   <div
                     style={{
                       ...styles.socialCardTextLayer,
-                      minHeight: socialEmptyHeight,
+                      minHeight: cardPreviewHeight,
                     }}
                   >
                     <div style={styles.socialCardTop}>
@@ -2523,11 +2523,11 @@ const styles = {
   posterCardTextLayer: {
     position: "relative",
     zIndex: 2,
-    minHeight: "650px",
+    minHeight: "700px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: "22px 20px 24px",
+    padding: "18px 16px 20px",
     boxSizing: "border-box",
     color: "#ffffff",
     textAlign: "center",
@@ -2539,7 +2539,7 @@ const styles = {
     inset: 0,
     zIndex: 1,
     background:
-      "radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.12), transparent 28%), linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.1) 32%, rgba(0, 0, 0, 0.7) 72%, rgba(0, 0, 0, 0.95)), radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.56))",
+      "radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.08), transparent 26%), linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.08) 28%, rgba(0, 0, 0, 0.58) 70%, rgba(0, 0, 0, 0.96)), radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.46))",
     pointerEvents: "none",
   },
 
@@ -2547,16 +2547,16 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "13px",
+    gap: "10px",
     color: "rgba(255, 255, 255, 0.9)",
-    fontSize: "12px",
+    fontSize: "11px",
     fontWeight: 950,
-    letterSpacing: "0.42em",
+    letterSpacing: "0.34em",
     textTransform: "uppercase",
   },
 
   posterHeaderLine: {
-    width: "74px",
+    width: "58px",
     height: "2px",
     background:
       "linear-gradient(90deg, transparent, rgba(255, 51, 51, 0.9), transparent)",
@@ -2565,7 +2565,8 @@ const styles = {
 
   posterCenterBlock: {
     marginTop: "auto",
-    paddingTop: "270px",
+    marginBottom: "10px",
+    paddingTop: "220px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -2576,36 +2577,37 @@ const styles = {
     margin: 0,
     maxWidth: "100%",
     color: "#f4f1ea",
-    fontSize: "clamp(56px, 17vw, 108px)",
-    lineHeight: 0.82,
+    fontSize: "clamp(46px, 14vw, 92px)",
+    lineHeight: 0.86,
     fontWeight: 950,
-    letterSpacing: "-0.09em",
+    letterSpacing: "-0.08em",
     textTransform: "uppercase",
+    overflowWrap: "break-word",
     textShadow:
       "0 4px 0 rgba(0, 0, 0, 0.6), 0 14px 34px rgba(0, 0, 0, 0.95)",
   },
 
   posterSubtitle: {
-    margin: "-2px 0 0",
+    margin: "2px 0 0",
     color: "#ff3333",
-    fontSize: "clamp(24px, 8vw, 48px)",
+    fontSize: "clamp(20px, 6.2vw, 38px)",
     lineHeight: 1,
     fontWeight: 950,
     fontStyle: "italic",
-    letterSpacing: "-0.08em",
+    letterSpacing: "-0.06em",
     textTransform: "uppercase",
     transform: "rotate(-3deg)",
   },
 
   posterStarLine: {
-    margin: "18px 0 8px",
+    margin: "14px 0 8px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "12px",
+    gap: "10px",
     width: "100%",
     color: "#ff3333",
-    fontSize: "18px",
+    fontSize: "15px",
   },
 
   posterStarRule: {
@@ -2618,17 +2620,18 @@ const styles = {
   posterEventTitle: {
     margin: "0",
     color: "#e72a22",
-    fontSize: "clamp(34px, 10vw, 62px)",
-    lineHeight: 0.9,
+    fontSize: "clamp(28px, 8.3vw, 50px)",
+    lineHeight: 0.95,
     fontWeight: 950,
-    letterSpacing: "-0.04em",
+    letterSpacing: "-0.035em",
     textTransform: "uppercase",
+    overflowWrap: "break-word",
   },
 
   posterDateText: {
-    margin: "12px 0 0",
+    margin: "8px 0 0",
     color: "#ffffff",
-    fontSize: "clamp(30px, 8vw, 52px)",
+    fontSize: "clamp(22px, 6.4vw, 38px)",
     lineHeight: 1,
     fontWeight: 950,
     letterSpacing: "0.04em",
@@ -2639,17 +2642,19 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "9px",
+    gap: "6px",
   },
 
   posterMetaText: {
     margin: 0,
+    maxWidth: "94%",
     color: "#ff3333",
-    fontSize: "10px",
-    lineHeight: 1.5,
+    fontSize: "9px",
+    lineHeight: 1.45,
     fontWeight: 950,
-    letterSpacing: "0.32em",
+    letterSpacing: "0.18em",
     textTransform: "uppercase",
+    overflowWrap: "break-word",
   },
 
   posterComment: {
@@ -2662,13 +2667,15 @@ const styles = {
   },
 
   posterFooterText: {
-    margin: "4px 0 0",
+    margin: "2px 0 0",
+    maxWidth: "94%",
     color: "rgba(255, 255, 255, 0.88)",
-    fontSize: "11px",
-    lineHeight: 1.4,
+    fontSize: "9px",
+    lineHeight: 1.55,
     fontWeight: 950,
-    letterSpacing: "0.28em",
+    letterSpacing: "0.18em",
     textTransform: "uppercase",
+    overflowWrap: "break-word",
   },
 
   saveImageButton: {

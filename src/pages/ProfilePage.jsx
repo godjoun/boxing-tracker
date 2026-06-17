@@ -148,7 +148,7 @@ const CARD_STYLES = [
   {
     id: "poster",
     name: "POSTER",
-    description: "친구와 장난치기 좋은 경기 포스터",
+    description: "한 사람 주인공 포스터",
   },
 ];
 
@@ -331,9 +331,23 @@ export default function ProfilePage({ scrollTarget }) {
   const [customTrainingTitle, setCustomTrainingTitle] = useState("");
   const [cardStyle, setCardStyle] = useState("basic");
   const [posterMainName, setPosterMainName] = useState("");
-  const [posterOpponentName, setPosterOpponentName] = useState("MY LIMIT");
-  const [posterEventTitle, setPosterEventTitle] = useState("SPARRING DAY");
-  const [posterDateText, setPosterDateText] = useState("");
+  const [posterSubtitle, setPosterSubtitle] = useState("THE ROOKIE");
+  const [posterEventTitle, setPosterEventTitle] = useState("TRAINING DAY");
+  const [posterDateText, setPosterDateText] = useState("JUNE 27");
+  const [posterMetaText, setPosterMetaText] = useState(
+    "BOXING TRAINING POSTER | RISING FIGHTER"
+  );
+  const [posterFooterText, setPosterFooterText] = useState(
+    "EVERY ROUND WRITES YOUR STORY"
+  );
+  const [posterVisible, setPosterVisible] = useState({
+    mainName: true,
+    subtitle: true,
+    eventTitle: true,
+    date: true,
+    meta: true,
+    footer: true,
+  });
 
   const profileStats = useMemo(() => {
     const totalLogs = logs.length;
@@ -491,10 +505,30 @@ export default function ProfilePage({ scrollTarget }) {
     "BOXING TRAINING";
 
   const posterMainNameText =
-    posterMainName.trim() || profile.nickname || "나";
-  const posterOpponentNameText = posterOpponentName.trim() || "MY LIMIT";
-  const posterEventTitleText = posterEventTitle.trim() || "SPARRING DAY";
-  const posterDateTextValue = posterDateText.trim() || getTodayString();
+    posterMainName.trim() || profile.nickname || "JO WOON";
+  const posterSubtitleText = posterSubtitle.trim() || "THE ROOKIE";
+  const posterEventTitleText = posterEventTitle.trim() || "TRAINING DAY";
+  const posterDateTextValue = posterDateText.trim() || "JUNE 27";
+  const posterMetaTextValue =
+    posterMetaText.trim() || "BOXING TRAINING POSTER | RISING FIGHTER";
+  const posterFooterTextValue =
+    posterFooterText.trim() || "EVERY ROUND WRITES YOUR STORY";
+
+  const posterTextLines = [
+    posterVisible.mainName ? posterMainNameText : "",
+    posterVisible.subtitle ? posterSubtitleText : "",
+    posterVisible.eventTitle ? posterEventTitleText : "",
+    posterVisible.date ? posterDateTextValue : "",
+    posterVisible.meta ? posterMetaTextValue : "",
+    posterVisible.footer ? posterFooterTextValue : "",
+  ].filter(Boolean);
+
+  function handlePosterVisibleChange(field, checked) {
+    setPosterVisible((prev) => ({
+      ...prev,
+      [field]: checked,
+    }));
+  }
 
   function clearVideoObjectUrl() {
     if (videoObjectUrlRef.current) {
@@ -788,10 +822,8 @@ ${mainComment}`
 
     const text =
       cardStyle === "poster"
-        ? `[POSTER CARD]
-${posterMainNameText} VS ${posterOpponentNameText}
-${posterEventTitleText}
-${posterDateTextValue}${commentText}${mediaText}`
+        ? `[FIGHTER POSTER]
+${posterTextLines.join("\n")}${commentText}${mediaText}`
         : `[TRAINING CARD]
 ${profile.nickname || "나"} · ${profileStats.tierName}
 
@@ -1168,55 +1200,175 @@ ${logLines}${commentText}${mediaText}`;
                 <div style={styles.posterInputBox}>
                   <p style={styles.cardMakerLabel}>POSTER 입력</p>
                   <p style={styles.cardMakerHelp}>
-                    친구와 장난으로 만들거나, 스파링 데이 포스터처럼 쓸 수 있어.
+                    사진은 자동으로 깔리고, 아래 글자만 바꾸면 한 사람 주인공
+                    포스터처럼 만들어져.
                   </p>
 
                   <div style={styles.posterInputGrid}>
-                    <label style={styles.posterInputLabel}>
-                      내 이름
-                      <input
-                        value={posterMainName}
-                        onChange={(event) =>
-                          setPosterMainName(event.target.value)
-                        }
-                        placeholder={profile.nickname || "JO WOON"}
-                        style={styles.posterInput}
-                      />
-                    </label>
+                    <div style={styles.posterInputRow}>
+                      <label style={styles.posterInputLabel}>
+                        <span style={styles.posterInputLabelText}>메인 이름</span>
+                        <input
+                          value={posterMainName}
+                          onChange={(event) =>
+                            setPosterMainName(event.target.value)
+                          }
+                          placeholder={profile.nickname || "JO WOON"}
+                          style={styles.posterInput}
+                        />
+                      </label>
 
-                    <label style={styles.posterInputLabel}>
-                      상대 이름
-                      <input
-                        value={posterOpponentName}
-                        onChange={(event) =>
-                          setPosterOpponentName(event.target.value)
-                        }
-                        placeholder="MY LIMIT"
-                        style={styles.posterInput}
-                      />
-                    </label>
+                      <label style={styles.posterToggleLabel}>
+                        <input
+                          type="checkbox"
+                          checked={posterVisible.mainName}
+                          onChange={(event) =>
+                            handlePosterVisibleChange(
+                              "mainName",
+                              event.target.checked
+                            )
+                          }
+                          style={styles.posterToggleCheckbox}
+                        />
+                        표시
+                      </label>
+                    </div>
 
-                    <label style={styles.posterInputLabel}>
-                      포스터 문구
-                      <input
-                        value={posterEventTitle}
-                        onChange={(event) =>
-                          setPosterEventTitle(event.target.value)
-                        }
-                        placeholder="SPARRING DAY"
-                        style={styles.posterInput}
-                      />
-                    </label>
+                    <div style={styles.posterInputRow}>
+                      <label style={styles.posterInputLabel}>
+                        <span style={styles.posterInputLabelText}>서브 문구</span>
+                        <input
+                          value={posterSubtitle}
+                          onChange={(event) =>
+                            setPosterSubtitle(event.target.value)
+                          }
+                          placeholder="THE ROOKIE"
+                          style={styles.posterInput}
+                        />
+                      </label>
 
-                    <label style={styles.posterInputLabel}>
-                      날짜 / D-DAY
-                      <input
-                        value={posterDateText}
-                        onChange={(event) => setPosterDateText(event.target.value)}
-                        placeholder="2 WEEKS TO GO"
-                        style={styles.posterInput}
-                      />
-                    </label>
+                      <label style={styles.posterToggleLabel}>
+                        <input
+                          type="checkbox"
+                          checked={posterVisible.subtitle}
+                          onChange={(event) =>
+                            handlePosterVisibleChange(
+                              "subtitle",
+                              event.target.checked
+                            )
+                          }
+                          style={styles.posterToggleCheckbox}
+                        />
+                        표시
+                      </label>
+                    </div>
+
+                    <div style={styles.posterInputRow}>
+                      <label style={styles.posterInputLabel}>
+                        <span style={styles.posterInputLabelText}>이벤트</span>
+                        <input
+                          value={posterEventTitle}
+                          onChange={(event) =>
+                            setPosterEventTitle(event.target.value)
+                          }
+                          placeholder="TRAINING DAY"
+                          style={styles.posterInput}
+                        />
+                      </label>
+
+                      <label style={styles.posterToggleLabel}>
+                        <input
+                          type="checkbox"
+                          checked={posterVisible.eventTitle}
+                          onChange={(event) =>
+                            handlePosterVisibleChange(
+                              "eventTitle",
+                              event.target.checked
+                            )
+                          }
+                          style={styles.posterToggleCheckbox}
+                        />
+                        표시
+                      </label>
+                    </div>
+
+                    <div style={styles.posterInputRow}>
+                      <label style={styles.posterInputLabel}>
+                        <span style={styles.posterInputLabelText}>날짜</span>
+                        <input
+                          value={posterDateText}
+                          onChange={(event) =>
+                            setPosterDateText(event.target.value)
+                          }
+                          placeholder="JUNE 27"
+                          style={styles.posterInput}
+                        />
+                      </label>
+
+                      <label style={styles.posterToggleLabel}>
+                        <input
+                          type="checkbox"
+                          checked={posterVisible.date}
+                          onChange={(event) =>
+                            handlePosterVisibleChange("date", event.target.checked)
+                          }
+                          style={styles.posterToggleCheckbox}
+                        />
+                        표시
+                      </label>
+                    </div>
+
+                    <div style={styles.posterInputRow}>
+                      <label style={styles.posterInputLabel}>
+                        <span style={styles.posterInputLabelText}>보조 문구</span>
+                        <input
+                          value={posterMetaText}
+                          onChange={(event) =>
+                            setPosterMetaText(event.target.value)
+                          }
+                          placeholder="BOXING TRAINING POSTER | RISING FIGHTER"
+                          style={styles.posterInput}
+                        />
+                      </label>
+
+                      <label style={styles.posterToggleLabel}>
+                        <input
+                          type="checkbox"
+                          checked={posterVisible.meta}
+                          onChange={(event) =>
+                            handlePosterVisibleChange("meta", event.target.checked)
+                          }
+                          style={styles.posterToggleCheckbox}
+                        />
+                        표시
+                      </label>
+                    </div>
+
+                    <div style={styles.posterInputRow}>
+                      <label style={styles.posterInputLabel}>
+                        <span style={styles.posterInputLabelText}>하단 문구</span>
+                        <input
+                          value={posterFooterText}
+                          onChange={(event) =>
+                            setPosterFooterText(event.target.value)
+                          }
+                          placeholder="EVERY ROUND WRITES YOUR STORY"
+                          style={styles.posterInput}
+                        />
+                      </label>
+
+                      <label style={styles.posterToggleLabel}>
+                        <input
+                          type="checkbox"
+                          checked={posterVisible.footer}
+                          onChange={(event) =>
+                            handlePosterVisibleChange("footer", event.target.checked)
+                          }
+                          style={styles.posterToggleCheckbox}
+                        />
+                        표시
+                      </label>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1287,6 +1439,8 @@ ${logLines}${commentText}${mediaText}`;
                   }}
                 />
 
+                {cardStyle === "poster" && <div style={styles.posterVignette} />}
+
                 {cardStyle === "basic" ? (
                   <div style={styles.trainingCardTextLayer}>
                     <div style={styles.trainingCardTop}>
@@ -1350,36 +1504,54 @@ ${logLines}${commentText}${mediaText}`;
                     }}
                   >
                     <div style={styles.posterHeader}>
-                      <span>FIGHTER PROFILE</span>
-                      <strong>{posterEventTitleText}</strong>
+                      <span style={styles.posterHeaderLine} />
+                      <strong>FIGHTER PROFILE</strong>
+                      <span style={styles.posterHeaderLine} />
                     </div>
 
                     <div style={styles.posterCenterBlock}>
-                      <span style={styles.posterSmallLabel}>
-                        TODAY'S MATCHUP
-                      </span>
+                      {posterVisible.mainName && (
+                        <h2 style={styles.posterMainName}>
+                          {posterMainNameText}
+                        </h2>
+                      )}
 
-                      <h2 style={styles.posterMainName}>
-                        {posterMainNameText}
-                      </h2>
+                      {posterVisible.subtitle && (
+                        <p style={styles.posterSubtitle}>{posterSubtitleText}</p>
+                      )}
 
-                      <div style={styles.posterVs}>VS</div>
+                      {(posterVisible.eventTitle || posterVisible.date) && (
+                        <div style={styles.posterStarLine}>
+                          <span style={styles.posterStarRule} />
+                          <strong>★</strong>
+                          <span style={styles.posterStarRule} />
+                        </div>
+                      )}
 
-                      <h2 style={styles.posterOpponentName}>
-                        {posterOpponentNameText}
-                      </h2>
+                      {posterVisible.eventTitle && (
+                        <p style={styles.posterEventTitle}>
+                          {posterEventTitleText}
+                        </p>
+                      )}
+
+                      {posterVisible.date && (
+                        <p style={styles.posterDateText}>{posterDateTextValue}</p>
+                      )}
                     </div>
 
                     <div style={styles.posterBottomBlock}>
-                      <div style={styles.posterDateLine}>
-                        <span>{posterDateTextValue}</span>
-                        <strong>
-                          {cardTotalRounds || 0}R · {cardTotalMinutes || 0}min
-                        </strong>
-                      </div>
+                      {posterVisible.meta && (
+                        <p style={styles.posterMetaText}>{posterMetaTextValue}</p>
+                      )}
 
                       {showComment && (
                         <p style={styles.posterComment}>{mainComment}</p>
+                      )}
+
+                      {posterVisible.footer && (
+                        <p style={styles.posterFooterText}>
+                          {posterFooterTextValue}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -1955,7 +2127,7 @@ const styles = {
 
   cardStyleGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
     gap: "10px",
   },
 
@@ -2281,21 +2453,39 @@ const styles = {
 
   posterInputGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "1fr",
     gap: "10px",
   },
 
+  posterInputRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) 70px",
+    alignItems: "center",
+    gap: "8px",
+  },
+
   posterInputLabel: {
-    display: "block",
+    display: "grid",
+    gridTemplateColumns: "82px minmax(0, 1fr)",
+    alignItems: "center",
+    gap: "8px",
     color: "rgba(255, 255, 255, 0.82)",
     fontSize: "12px",
     fontWeight: 900,
   },
 
+  posterInputLabelText: {
+    color: "rgba(255, 255, 255, 0.72)",
+    fontSize: "11px",
+    fontWeight: 950,
+    lineHeight: 1.2,
+    whiteSpace: "nowrap",
+  },
+
   posterInput: {
     width: "100%",
     boxSizing: "border-box",
-    marginTop: "7px",
+    marginTop: 0,
     backgroundColor: "#050505",
     color: "#ffffff",
     border: "1px solid rgba(255, 255, 255, 0.14)",
@@ -2306,113 +2496,179 @@ const styles = {
     outline: "none",
   },
 
+  posterToggleLabel: {
+    height: "100%",
+    minHeight: "42px",
+    borderRadius: "13px",
+    background: "rgba(255, 255, 255, 0.06)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    color: "rgba(255, 255, 255, 0.78)",
+    fontSize: "11px",
+    fontWeight: 950,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "5px",
+    cursor: "pointer",
+    boxSizing: "border-box",
+  },
+
+  posterToggleCheckbox: {
+    width: "15px",
+    height: "15px",
+    accentColor: "#ff3333",
+    margin: 0,
+  },
+
   posterCardTextLayer: {
     position: "relative",
-    zIndex: 1,
+    zIndex: 2,
     minHeight: "650px",
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: "24px",
+    padding: "22px 20px 24px",
     boxSizing: "border-box",
     color: "#ffffff",
-    textShadow: "0 6px 20px rgba(0, 0, 0, 0.98)",
+    textAlign: "center",
+    textShadow: "0 7px 24px rgba(0, 0, 0, 0.98)",
+  },
+
+  posterVignette: {
+    position: "absolute",
+    inset: 0,
+    zIndex: 1,
+    background:
+      "radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.12), transparent 28%), linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.1) 32%, rgba(0, 0, 0, 0.7) 72%, rgba(0, 0, 0, 0.95)), radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.56))",
+    pointerEvents: "none",
   },
 
   posterHeader: {
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "12px",
-    color: "rgba(255, 255, 255, 0.86)",
-    fontSize: "11px",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "13px",
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: "12px",
     fontWeight: 950,
-    letterSpacing: "0.14em",
+    letterSpacing: "0.42em",
     textTransform: "uppercase",
+  },
+
+  posterHeaderLine: {
+    width: "74px",
+    height: "2px",
+    background:
+      "linear-gradient(90deg, transparent, rgba(255, 51, 51, 0.9), transparent)",
+    flexShrink: 1,
   },
 
   posterCenterBlock: {
     marginTop: "auto",
-    marginBottom: "auto",
+    paddingTop: "270px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     textAlign: "center",
   },
 
-  posterSmallLabel: {
-    marginBottom: "14px",
-    color: "rgba(255, 255, 255, 0.68)",
-    fontSize: "11px",
-    fontWeight: 950,
-    letterSpacing: "0.18em",
-  },
-
   posterMainName: {
     margin: 0,
     maxWidth: "100%",
-    color: "#ffffff",
-    fontSize: "clamp(42px, 14vw, 76px)",
-    lineHeight: 0.9,
+    color: "#f4f1ea",
+    fontSize: "clamp(56px, 17vw, 108px)",
+    lineHeight: 0.82,
     fontWeight: 950,
-    letterSpacing: "-0.08em",
+    letterSpacing: "-0.09em",
     textTransform: "uppercase",
+    textShadow:
+      "0 4px 0 rgba(0, 0, 0, 0.6), 0 14px 34px rgba(0, 0, 0, 0.95)",
   },
 
-  posterVs: {
-    margin: "12px 0",
-    width: "58px",
-    height: "58px",
-    borderRadius: "999px",
-    background: "rgba(255, 51, 51, 0.92)",
-    border: "1px solid rgba(255, 255, 255, 0.36)",
+  posterSubtitle: {
+    margin: "-2px 0 0",
+    color: "#ff3333",
+    fontSize: "clamp(24px, 8vw, 48px)",
+    lineHeight: 1,
+    fontWeight: 950,
+    fontStyle: "italic",
+    letterSpacing: "-0.08em",
+    textTransform: "uppercase",
+    transform: "rotate(-3deg)",
+  },
+
+  posterStarLine: {
+    margin: "18px 0 8px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#ffffff",
+    gap: "12px",
+    width: "100%",
+    color: "#ff3333",
     fontSize: "18px",
-    fontWeight: 950,
-    boxShadow: "0 14px 35px rgba(0, 0, 0, 0.4)",
   },
 
-  posterOpponentName: {
-    margin: 0,
-    maxWidth: "100%",
-    color: "#ffffff",
-    fontSize: "clamp(34px, 11vw, 60px)",
+  posterStarRule: {
+    width: "78px",
+    height: "2px",
+    background:
+      "linear-gradient(90deg, transparent, rgba(255, 51, 51, 0.9), transparent)",
+  },
+
+  posterEventTitle: {
+    margin: "0",
+    color: "#e72a22",
+    fontSize: "clamp(34px, 10vw, 62px)",
     lineHeight: 0.9,
     fontWeight: 950,
-    letterSpacing: "-0.07em",
+    letterSpacing: "-0.04em",
+    textTransform: "uppercase",
+  },
+
+  posterDateText: {
+    margin: "12px 0 0",
+    color: "#ffffff",
+    fontSize: "clamp(30px, 8vw, 52px)",
+    lineHeight: 1,
+    fontWeight: 950,
+    letterSpacing: "0.04em",
     textTransform: "uppercase",
   },
 
   posterBottomBlock: {
     display: "flex",
     flexDirection: "column",
-    gap: "11px",
+    alignItems: "center",
+    gap: "9px",
   },
 
-  posterDateLine: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    paddingTop: "12px",
-    borderTop: "2px solid rgba(255, 255, 255, 0.76)",
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: "12px",
+  posterMetaText: {
+    margin: 0,
+    color: "#ff3333",
+    fontSize: "10px",
+    lineHeight: 1.5,
     fontWeight: 950,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.32em",
     textTransform: "uppercase",
   },
 
   posterComment: {
     margin: 0,
-    width: "min(360px, 100%)",
-    color: "rgba(255, 255, 255, 0.82)",
-    fontSize: "13px",
+    width: "min(360px, 92%)",
+    color: "rgba(255, 255, 255, 0.78)",
+    fontSize: "12px",
     lineHeight: 1.45,
     fontWeight: 850,
+  },
+
+  posterFooterText: {
+    margin: "4px 0 0",
+    color: "rgba(255, 255, 255, 0.88)",
+    fontSize: "11px",
+    lineHeight: 1.4,
+    fontWeight: 950,
+    letterSpacing: "0.28em",
+    textTransform: "uppercase",
   },
 
   saveImageButton: {

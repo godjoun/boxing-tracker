@@ -323,6 +323,7 @@ export default function ProfilePage({ scrollTarget }) {
   const [cardMediaType, setCardMediaType] = useState("");
   const [cardMediaReady, setCardMediaReady] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState("red");
+  const selectedFilterRef = useRef("red");
   const [filterIntensity, setFilterIntensity] = useState(75);
   const [photoScale, setPhotoScale] = useState(100);
   const [copied, setCopied] = useState(false);
@@ -347,6 +348,31 @@ export default function ProfilePage({ scrollTarget }) {
     date: true,
     meta: true,
     footer: true,
+  });
+
+  const posterExportRef = useRef({
+    selectedFilter: "red",
+    filterIntensity: 75,
+    photoScale: 100,
+    cardMedia: "",
+    cardMediaType: "",
+    showComment: true,
+    fields: {
+      mainName: "",
+      subtitle: "THE ROOKIE",
+      eventTitle: "TRAINING DAY",
+      date: "JUNE 27",
+      meta: "BOXING TRAINING POSTER | RISING FIGHTER",
+      footer: "EVERY ROUND WRITES YOUR STORY",
+    },
+    visible: {
+      mainName: true,
+      subtitle: true,
+      eventTitle: true,
+      date: true,
+      meta: true,
+      footer: true,
+    },
   });
 
   const profileStats = useMemo(() => {
@@ -453,6 +479,55 @@ export default function ProfilePage({ scrollTarget }) {
     return () => clearTimeout(timer);
   }, [scrollTarget]);
 
+  useEffect(() => {
+    if (cardStyle === "poster") {
+      posterExportRef.current.showComment = false;
+      setShowComment(false);
+    }
+  }, [cardStyle]);
+
+  useEffect(() => {
+    selectedFilterRef.current = selectedFilter;
+    posterExportRef.current.selectedFilter = selectedFilter;
+  }, [selectedFilter]);
+
+  function handleSelectFilter(filterId) {
+    // 모바일에서 테마 버튼을 누른 직후 바로 저장해도
+    // canvas export가 이전 테마 값을 쓰지 않도록 ref에도 즉시 저장한다.
+    selectedFilterRef.current = filterId;
+    posterExportRef.current.selectedFilter = filterId;
+    setSelectedFilter(filterId);
+  }
+
+  function updateFilterIntensity(value) {
+    posterExportRef.current.filterIntensity = value;
+    setFilterIntensity(value);
+  }
+
+  function updatePhotoScale(value) {
+    posterExportRef.current.photoScale = value;
+    setPhotoScale(value);
+  }
+
+  function updateShowComment(checked) {
+    posterExportRef.current.showComment = checked;
+    setShowComment(checked);
+  }
+
+  function updatePosterField(field, value) {
+    posterExportRef.current.fields = {
+      ...posterExportRef.current.fields,
+      [field]: value,
+    };
+
+    if (field === "mainName") setPosterMainName(value);
+    if (field === "subtitle") setPosterSubtitle(value);
+    if (field === "eventTitle") setPosterEventTitle(value);
+    if (field === "date") setPosterDateText(value);
+    if (field === "meta") setPosterMetaText(value);
+    if (field === "footer") setPosterFooterText(value);
+  }
+
   const selectedLogs = useMemo(() => {
     return logs.filter((log) => selectedLogIds.includes(log.id));
   }, [logs, selectedLogIds]);
@@ -524,6 +599,11 @@ export default function ProfilePage({ scrollTarget }) {
   ].filter(Boolean);
 
   function handlePosterVisibleChange(field, checked) {
+    posterExportRef.current.visible = {
+      ...posterExportRef.current.visible,
+      [field]: checked,
+    };
+
     setPosterVisible((prev) => ({
       ...prev,
       [field]: checked,
@@ -577,9 +657,13 @@ export default function ProfilePage({ scrollTarget }) {
         setCardMediaReady(false);
         setCardMedia("");
         setCardMediaType("");
+        posterExportRef.current.cardMedia = "";
+        posterExportRef.current.cardMediaType = "";
 
         const resizedImage = await resizeImage(file);
 
+        posterExportRef.current.cardMedia = resizedImage;
+        posterExportRef.current.cardMediaType = "image";
         setCardMedia(resizedImage);
         setCardMediaType("image");
       } catch {
@@ -596,6 +680,8 @@ export default function ProfilePage({ scrollTarget }) {
       const videoUrl = URL.createObjectURL(file);
       videoObjectUrlRef.current = videoUrl;
 
+      posterExportRef.current.cardMedia = videoUrl;
+      posterExportRef.current.cardMediaType = "video";
       setCardMediaReady(true);
       setCardMedia(videoUrl);
       setCardMediaType("video");
@@ -618,6 +704,8 @@ export default function ProfilePage({ scrollTarget }) {
 
   function handleRemoveCardMedia() {
     clearVideoObjectUrl();
+    posterExportRef.current.cardMedia = "";
+    posterExportRef.current.cardMediaType = "";
     setCardMedia("");
     setCardMediaType("");
     setCardMediaReady(true);
@@ -714,10 +802,17 @@ export default function ProfilePage({ scrollTarget }) {
   }
 
   function drawCoverImage(ctx, image, x, y, width, height, scalePercent = 100) {
-    const baseScale = Math.max(width / image.width, height / image.height);
-    const finalScale = baseScale * (scalePercent / 100);
-    const drawWidth = image.width * finalScale;
-    const drawHeight = image.height * finalScale;
+    const imageWidth = image.naturalWidth || image.width;
+    const imageHeight = image.naturalHeight || image.height;
+
+    if (!imageWidth || !imageHeight) return;
+
+    const baseScale = Math.max(width / imageWidth, height / imageHeight);
+    // POSTER 저장에서는 사진이 반드시 화면을 채워야 하므로 100%보다 작게 줄이지 않는다.
+    const safeScale = Math.max(scalePercent / 100, 1);
+    const finalScale = baseScale * safeScale;
+    const drawWidth = imageWidth * finalScale;
+    const drawHeight = imageHeight * finalScale;
     const drawX = x + (width - drawWidth) / 2;
     const drawY = y + (height - drawHeight) / 2;
 
@@ -729,55 +824,53 @@ export default function ProfilePage({ scrollTarget }) {
       size = 80,
       minSize = 32,
       weight = 900,
-      family = "Arial, sans-serif",
-      align = "center",
-      color = "#ffffff",
-      baseline = "alphabetic",
-      letterSpacing = 0,
+      family = 'Arial, sans-serif',
+      align = 'center',
+      color = '#ffffff',
+      baseline = 'alphabetic',
       shadow = true,
+      strokeColor = 'rgba(0, 0, 0, 0.72)',
+      strokeWidth = 0,
     } = options;
 
     if (!text) return size;
 
+    const safeText = String(text).replace(/\s+/g, ' ').trim();
     let fontSize = size;
     ctx.textAlign = align;
     ctx.textBaseline = baseline;
     ctx.fillStyle = color;
+    ctx.lineJoin = 'round';
 
     while (fontSize > minSize) {
       ctx.font = `${weight} ${fontSize}px ${family}`;
-      if (ctx.measureText(text).width <= maxWidth) break;
+      if (ctx.measureText(safeText).width <= maxWidth) break;
       fontSize -= 2;
     }
 
     ctx.font = `${weight} ${fontSize}px ${family}`;
 
     if (shadow) {
-      ctx.shadowColor = "rgba(0, 0, 0, 0.82)";
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.82)';
       ctx.shadowBlur = 22;
       ctx.shadowOffsetY = 8;
     } else {
-      ctx.shadowColor = "transparent";
+      ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
       ctx.shadowOffsetY = 0;
     }
 
-    if (!letterSpacing) {
-      ctx.fillText(text, x, y);
-    } else {
-      const chars = String(text).split("");
-      const totalWidth = chars.reduce((sum, char) => {
-        return sum + ctx.measureText(char).width + letterSpacing;
-      }, -letterSpacing);
-      let currentX = align === "center" ? x - totalWidth / 2 : x;
-
-      chars.forEach((char) => {
-        ctx.fillText(char, currentX, y);
-        currentX += ctx.measureText(char).width + letterSpacing;
-      });
+    // 저장용 canvas에서는 글자 간격을 직접 쪼개 그리지 않는다.
+    // iPhone에서 I 같은 얇은 글자가 사라지는 문제가 생겨서 fillText 한 번으로 그린다.
+    if (strokeWidth > 0) {
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.strokeText(safeText, x, y);
     }
 
-    ctx.shadowColor = "transparent";
+    ctx.fillText(safeText, x, y);
+
+    ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
 
@@ -835,27 +928,240 @@ export default function ProfilePage({ scrollTarget }) {
     return y + Math.min(lines.length, maxLines) * lineHeight;
   }
 
-  function drawPosterBackground(ctx, width, height) {
+  function getPosterCanvasTheme(filterId) {
+    if (filterId === "red") {
+      return {
+        bgA: "#330606",
+        bgB: "#050000",
+        bgC: "#150000",
+        accent: "#ff3333",
+        accentSoft: "rgba(255, 51, 51, 0.32)",
+        overlayTop: "rgba(0, 0, 0, 0.32)",
+        overlayMid: "rgba(40, 0, 0, 0.18)",
+        overlayBottom: "rgba(0, 0, 0, 0.9)",
+      };
+    }
+
+    if (filterId === "dark") {
+      return {
+        bgA: "#111111",
+        bgB: "#020202",
+        bgC: "#000000",
+        accent: "#f2f2f2",
+        accentSoft: "rgba(255, 255, 255, 0.18)",
+        overlayTop: "rgba(0, 0, 0, 0.42)",
+        overlayMid: "rgba(0, 0, 0, 0.18)",
+        overlayBottom: "rgba(0, 0, 0, 0.9)",
+      };
+    }
+
+    if (filterId === "gold") {
+      return {
+        bgA: "#2b1a00",
+        bgB: "#070503",
+        bgC: "#1a0f00",
+        accent: "#f5b942",
+        accentSoft: "rgba(245, 185, 66, 0.24)",
+        overlayTop: "rgba(0, 0, 0, 0.32)",
+        overlayMid: "rgba(0, 0, 0, 0.16)",
+        overlayBottom: "rgba(0, 0, 0, 0.88)",
+      };
+    }
+
+    if (filterId === "blue") {
+      return {
+        bgA: "#061a3d",
+        bgB: "#020510",
+        bgC: "#020915",
+        accent: "#3a7bff",
+        accentSoft: "rgba(58, 123, 255, 0.24)",
+        overlayTop: "rgba(0, 0, 0, 0.34)",
+        overlayMid: "rgba(0, 0, 0, 0.16)",
+        overlayBottom: "rgba(0, 0, 0, 0.9)",
+      };
+    }
+
+    if (filterId === "mono") {
+      return {
+        bgA: "#2b2b2b",
+        bgB: "#050505",
+        bgC: "#111111",
+        accent: "#ffffff",
+        accentSoft: "rgba(255, 255, 255, 0.2)",
+        overlayTop: "rgba(0, 0, 0, 0.38)",
+        overlayMid: "rgba(0, 0, 0, 0.14)",
+        overlayBottom: "rgba(0, 0, 0, 0.9)",
+      };
+    }
+
+    if (filterId === "chrome") {
+      return {
+        bgA: "#3a3a3a",
+        bgB: "#060606",
+        bgC: "#1a1a1a",
+        accent: "#f4f4f4",
+        accentSoft: "rgba(255, 255, 255, 0.28)",
+        overlayTop: "rgba(0, 0, 0, 0.32)",
+        overlayMid: "rgba(0, 0, 0, 0.12)",
+        overlayBottom: "rgba(0, 0, 0, 0.88)",
+      };
+    }
+
+    if (filterId === "future") {
+      return {
+        bgA: "#1c0b3d",
+        bgB: "#03020b",
+        bgC: "#061526",
+        accent: "#8b5cf6",
+        accentSoft: "rgba(14, 165, 233, 0.24)",
+        overlayTop: "rgba(0, 0, 0, 0.32)",
+        overlayMid: "rgba(0, 0, 0, 0.14)",
+        overlayBottom: "rgba(0, 0, 0, 0.88)",
+      };
+    }
+
+    if (filterId === "vintage") {
+      return {
+        bgA: "#3a2412",
+        bgB: "#090503",
+        bgC: "#1d1208",
+        accent: "#d9a15f",
+        accentSoft: "rgba(217, 161, 95, 0.26)",
+        overlayTop: "rgba(0, 0, 0, 0.3)",
+        overlayMid: "rgba(0, 0, 0, 0.12)",
+        overlayBottom: "rgba(0, 0, 0, 0.86)",
+      };
+    }
+
+    return {
+      bgA: "#2a0606",
+      bgB: "#050505",
+      bgC: "#180000",
+      accent: "#ff3b3b",
+      accentSoft: "rgba(255, 59, 59, 0.26)",
+      overlayTop: "rgba(0, 0, 0, 0.32)",
+      overlayMid: "rgba(0, 0, 0, 0.14)",
+      overlayBottom: "rgba(0, 0, 0, 0.9)",
+    };
+  }
+
+  function drawPosterBackground(ctx, width, height, theme) {
     const base = ctx.createLinearGradient(0, 0, width, height);
-    base.addColorStop(0, "#240707");
-    base.addColorStop(0.42, "#050505");
-    base.addColorStop(1, "#160000");
+    base.addColorStop(0, theme.bgA);
+    base.addColorStop(0.44, theme.bgB);
+    base.addColorStop(1, theme.bgC);
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, width, height);
 
-    const glow = ctx.createRadialGradient(width * 0.5, height * 0.18, 20, width * 0.5, height * 0.18, width * 0.72);
-    glow.addColorStop(0, "rgba(255, 255, 255, 0.24)");
-    glow.addColorStop(0.36, "rgba(255, 51, 51, 0.18)");
-    glow.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.fillStyle = glow;
+    const topGlow = ctx.createRadialGradient(
+      width * 0.5,
+      height * 0.12,
+      10,
+      width * 0.5,
+      height * 0.12,
+      width * 0.72
+    );
+    topGlow.addColorStop(0, "rgba(255, 255, 255, 0.28)");
+    topGlow.addColorStop(0.32, theme.accentSoft);
+    topGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = topGlow;
     ctx.fillRect(0, 0, width, height);
   }
 
-  async function createPosterCanvasDataUrl() {
+  function drawPosterOverlay(ctx, width, height, theme) {
+    const overlay = ctx.createLinearGradient(0, 0, 0, height);
+    overlay.addColorStop(0, theme.overlayTop);
+    overlay.addColorStop(0.32, theme.overlayMid);
+    overlay.addColorStop(0.62, "rgba(0, 0, 0, 0.34)");
+    overlay.addColorStop(1, theme.overlayBottom);
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+
+    const lowerGlow = ctx.createRadialGradient(
+      width * 0.5,
+      height * 0.73,
+      10,
+      width * 0.5,
+      height * 0.73,
+      width * 0.78
+    );
+    lowerGlow.addColorStop(0, theme.accentSoft);
+    lowerGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = lowerGlow;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  function drawPosterDivider(ctx, y, width, centerX, theme) {
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
+    ctx.fillRect(190, y, 270, 3);
+    ctx.fillRect(width - 460, y, 270, 3);
+    drawTextFit(ctx, "★", centerX, y - 16, 90, {
+      size: 38,
+      minSize: 30,
+      weight: 900,
+      color: theme.accent,
+      baseline: "top",
+      shadow: false,
+    });
+    ctx.restore();
+  }
+
+  function drawPosterTextTop(ctx, text, x, y, maxWidth, options = {}) {
+    const usedSize = drawTextFit(ctx, text, x, y, maxWidth, {
+      ...options,
+      baseline: "top",
+    });
+
+    return Math.ceil(usedSize * (options.lineHeightRatio || 1.12));
+  }
+
+  async function createPosterCanvasDataUrl(filterIdForExport) {
+    const exportSnapshot = posterExportRef.current || {};
+    const exportFields = exportSnapshot.fields || {};
+    const exportVisible = exportSnapshot.visible || posterVisible;
+    const exportFilterId =
+      filterIdForExport ||
+      exportSnapshot.selectedFilter ||
+      selectedFilterRef.current ||
+      selectedFilter ||
+      "red";
+    const exportFilterIntensity =
+      typeof exportSnapshot.filterIntensity === "number"
+        ? exportSnapshot.filterIntensity
+        : filterIntensity;
+    const exportPhotoScale =
+      typeof exportSnapshot.photoScale === "number"
+        ? exportSnapshot.photoScale
+        : photoScale;
+    const exportCardMedia = exportSnapshot.cardMedia || cardMedia;
+    const exportCardMediaType = exportSnapshot.cardMediaType || cardMediaType;
+
+    const exportMainNameText = String(
+      exportFields.mainName || posterMainName || profile.nickname || "JO WOON"
+    ).trim();
+    const exportSubtitleText = String(
+      exportFields.subtitle || posterSubtitle || "THE ROOKIE"
+    ).trim();
+    const exportEventTitleText = String(
+      exportFields.eventTitle || posterEventTitle || "TRAINING DAY"
+    ).trim();
+    const exportDateTextValue = String(
+      exportFields.date || posterDateText || "JUNE 27"
+    ).trim();
+    const exportMetaTextValue = String(
+      exportFields.meta || posterMetaText || "BOXING TRAINING POSTER | RISING FIGHTER"
+    ).trim();
+    const exportFooterTextValue = String(
+      exportFields.footer || posterFooterText || "EVERY ROUND WRITES YOUR STORY"
+    ).trim();
+
     const canvas = document.createElement("canvas");
     const width = 1080;
     const height = 1920;
     const centerX = width / 2;
+    const theme = getPosterCanvasTheme(exportFilterId);
+    const strength = Math.max(0, Math.min(1, exportFilterIntensity / 100));
 
     canvas.width = width;
     canvas.height = height;
@@ -866,151 +1172,231 @@ export default function ProfilePage({ scrollTarget }) {
       throw new Error("캔버스를 만들지 못했어요.");
     }
 
-    drawPosterBackground(ctx, width, height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
 
-    if (cardMediaType === "image" && cardMedia) {
-      const image = await loadCanvasImage(cardMedia);
+    drawPosterBackground(ctx, width, height, theme);
 
-      ctx.save();
-      if ("filter" in ctx) {
-        ctx.filter = getImageFilter(selectedFilter, filterIntensity);
-      }
-      drawCoverImage(ctx, image, 0, 0, width, height, photoScale);
-      ctx.restore();
+    let hasPosterPhoto = false;
+
+    const candidateImageSources = [];
+
+    if (exportCardMediaType === "image" && exportCardMedia) {
+      candidateImageSources.push(exportCardMedia);
     }
 
-    // 전체 어둡게 + 아래쪽 텍스트 가독성 확보
-    const overlay = ctx.createLinearGradient(0, 0, 0, height);
-    overlay.addColorStop(0, "rgba(0, 0, 0, 0.28)");
-    overlay.addColorStop(0.28, "rgba(0, 0, 0, 0.08)");
-    overlay.addColorStop(0.58, "rgba(0, 0, 0, 0.22)");
-    overlay.addColorStop(1, "rgba(0, 0, 0, 0.88)");
-    ctx.fillStyle = overlay;
+    const previewImage = trainingCardRef.current?.querySelector('img[alt="훈련 카드"]');
+    if (previewImage?.src && !candidateImageSources.includes(previewImage.src)) {
+      candidateImageSources.push(previewImage.src);
+    }
+
+    for (const imageSrc of candidateImageSources) {
+      try {
+        const image = await loadCanvasImage(imageSrc);
+
+        ctx.save();
+        if ("filter" in ctx) {
+          if (exportFilterId === "mono") {
+            ctx.filter = `grayscale(${0.85 * strength}) contrast(${1 + 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
+          } else if (exportFilterId === "dark") {
+            ctx.filter = `contrast(${1 + 0.28 * strength}) brightness(${1 - 0.18 * strength}) saturate(${1 - 0.2 * strength})`;
+          } else if (exportFilterId === "gold") {
+            ctx.filter = `contrast(${1 + 0.18 * strength}) sepia(${0.38 * strength}) saturate(${1 - 0.1 * strength}) brightness(${1 + 0.03 * strength})`;
+          } else if (exportFilterId === "blue") {
+            ctx.filter = `contrast(${1 + 0.18 * strength}) saturate(${1 - 0.08 * strength}) hue-rotate(${165 * strength}deg) brightness(${1 - 0.03 * strength})`;
+          } else if (exportFilterId === "future") {
+            ctx.filter = `contrast(${1 + 0.15 * strength}) saturate(${1 + 0.18 * strength}) hue-rotate(${22 * strength}deg)`;
+          } else if (exportFilterId === "vintage") {
+            ctx.filter = `contrast(${1 + 0.16 * strength}) sepia(${0.42 * strength}) saturate(${1 - 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
+          } else if (exportFilterId === "chrome") {
+            ctx.filter = `contrast(${1 + 0.22 * strength}) saturate(${1 - 0.18 * strength}) brightness(${1 + 0.05 * strength})`;
+          } else {
+            ctx.filter = `contrast(${1 + 0.2 * strength}) saturate(${1 - 0.08 * strength}) brightness(${1 + 0.02 * strength})`;
+          }
+        }
+
+        drawCoverImage(ctx, image, 0, 0, width, height, Math.max(exportPhotoScale, 100));
+        ctx.restore();
+        hasPosterPhoto = true;
+        break;
+      } catch (error) {
+        console.warn("포스터 사진 캔버스 로드 실패:", error);
+      }
+    }
+
+    // 사진이 있어도, 없어도 포스터 느낌이 나도록 조명과 어둠을 따로 깐다.
+    const globalShade = ctx.createLinearGradient(0, 0, 0, height);
+    globalShade.addColorStop(0, hasPosterPhoto ? "rgba(0, 0, 0, 0.36)" : "rgba(0, 0, 0, 0.08)");
+    globalShade.addColorStop(0.22, hasPosterPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.02)");
+    globalShade.addColorStop(0.48, hasPosterPhoto ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.14)");
+    globalShade.addColorStop(0.66, "rgba(0, 0, 0, 0.5)");
+    globalShade.addColorStop(1, "rgba(0, 0, 0, 0.96)");
+    ctx.fillStyle = globalShade;
     ctx.fillRect(0, 0, width, height);
 
-    const redGlow = ctx.createRadialGradient(centerX, height * 0.78, 10, centerX, height * 0.78, width * 0.72);
-    redGlow.addColorStop(0, "rgba(255, 44, 44, 0.32)");
-    redGlow.addColorStop(1, "rgba(255, 44, 44, 0)");
-    ctx.fillStyle = redGlow;
+    const topGlow = ctx.createRadialGradient(centerX, 165, 8, centerX, 165, 720);
+    topGlow.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+    topGlow.addColorStop(0.34, theme.accentSoft);
+    topGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = topGlow;
     ctx.fillRect(0, 0, width, height);
 
-    // 상단 브랜드 라인
-    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-    ctx.fillRect(130, 120, 250, 3);
-    ctx.fillRect(width - 380, 120, 250, 3);
-    drawTextFit(ctx, "FIGHTER PROFILE", centerX, 133, 420, {
-      size: 30,
-      minSize: 22,
-      weight: 900,
-      family: "Arial, sans-serif",
-      color: "rgba(255, 255, 255, 0.92)",
-      letterSpacing: 2,
+    const nameGlow = ctx.createRadialGradient(centerX, 1190, 20, centerX, 1190, 760);
+    nameGlow.addColorStop(0, theme.accentSoft);
+    nameGlow.addColorStop(0.4, "rgba(0, 0, 0, 0)");
+    nameGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = nameGlow;
+    ctx.fillRect(0, 0, width, height);
+
+    // 어두운 포스터 테두리
+    ctx.save();
+    ctx.strokeStyle = hasPosterPhoto ? "rgba(255, 255, 255, 0.16)" : theme.accentSoft;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(34, 34, width - 68, height - 68);
+    ctx.restore();
+
+    // 상단 라벨
+    ctx.save();
+    ctx.fillStyle = theme.accent;
+    ctx.globalAlpha = 0.78;
+    ctx.fillRect(120, 118, 255, 4);
+    ctx.fillRect(width - 375, 118, 255, 4);
+    ctx.globalAlpha = 1;
+    drawTextFit(ctx, "FIGHTER PROFILE", centerX, 92, 430, {
+      size: 34,
+      minSize: 24,
+      weight: 950,
+      family: "Arial Black, Arial, sans-serif",
+      color: "rgba(255, 255, 255, 0.94)",
+      strokeWidth: 3,
+      baseline: "top",
       shadow: false,
     });
+    ctx.restore();
 
-    // 하단 포스터 텍스트 블록: 고정 좌표 + 고정 px라 저장 시 겹침 방지
-    let cursorY = 1110;
+    // 이름 영역. 기존보다 더 아래쪽, 더 크게, 더 포스터처럼.
+    let mainY = 970;
+    const mainBottomLimit = 1588;
 
-    if (posterVisible.mainName) {
-      const usedSize = drawTextFit(ctx, posterMainNameText.toUpperCase(), centerX, cursorY, 920, {
-        size: 138,
-        minSize: 58,
-        weight: 950,
-        family: "Impact, Arial Black, Arial, sans-serif",
-        color: "#ffffff",
-        letterSpacing: 1,
-      });
-      cursorY += Math.max(usedSize * 0.82, 72);
+    if (exportVisible.mainName) {
+      const usedHeight = drawPosterTextTop(
+        ctx,
+        exportMainNameText.toUpperCase(),
+        centerX,
+        mainY,
+        980,
+        {
+          size: 190,
+          minSize: 78,
+          weight: 950,
+          family: "Impact, Arial Black, Arial, sans-serif",
+          color: "#ffffff",
+          strokeWidth: 10,
+          lineHeightRatio: 0.9,
+        }
+      );
+      mainY += Math.max(usedHeight, 144) + 2;
     }
 
-    if (posterVisible.subtitle) {
-      drawTextFit(ctx, posterSubtitleText.toUpperCase(), centerX, cursorY, 760, {
-        size: 42,
-        minSize: 24,
-        weight: 900,
-        family: "Arial, sans-serif",
-        color: "#ff3b3b",
-        letterSpacing: 4,
-      });
-      cursorY += 80;
+    if (exportVisible.subtitle && mainY < mainBottomLimit) {
+      const usedHeight = drawPosterTextTop(
+        ctx,
+        exportSubtitleText.toUpperCase(),
+        centerX,
+        mainY,
+        840,
+        {
+          size: 58,
+          minSize: 28,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          color: theme.accent,
+          strokeWidth: 5,
+          lineHeightRatio: 0.98,
+        }
+      );
+      mainY += Math.max(usedHeight, 56) + 28;
     }
 
-    if (posterVisible.eventTitle || posterVisible.date) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.76)";
-      ctx.fillRect(190, cursorY, 270, 3);
-      ctx.fillRect(width - 460, cursorY, 270, 3);
-      drawTextFit(ctx, "★", centerX, cursorY + 12, 80, {
-        size: 38,
-        minSize: 28,
-        weight: 900,
-        color: "#ffffff",
-        shadow: false,
-      });
-      cursorY += 78;
+    if ((exportVisible.eventTitle || exportVisible.date) && mainY < mainBottomLimit) {
+      drawPosterDivider(ctx, mainY + 10, width, centerX, theme);
+      mainY += 58;
     }
 
-    if (posterVisible.eventTitle) {
-      drawTextFit(ctx, posterEventTitleText.toUpperCase(), centerX, cursorY, 860, {
-        size: 62,
-        minSize: 32,
+    if (exportVisible.eventTitle && mainY < mainBottomLimit) {
+      const usedHeight = drawPosterTextTop(
+        ctx,
+        exportEventTitleText.toUpperCase(),
+        centerX,
+        mainY,
+        920,
+        {
+          size: 96,
+          minSize: 40,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          color: theme.accent,
+          strokeWidth: 7,
+          lineHeightRatio: 0.92,
+        }
+      );
+      mainY += Math.max(usedHeight, 86) + 10;
+    }
+
+    if (exportVisible.date && mainY < mainBottomLimit) {
+      drawPosterTextTop(ctx, exportDateTextValue.toUpperCase(), centerX, mainY, 760, {
+        size: 54,
+        minSize: 26,
         weight: 950,
         family: "Arial Black, Arial, sans-serif",
-        color: "#ffffff",
-        letterSpacing: 1,
-      });
-      cursorY += 74;
-    }
-
-    if (posterVisible.date) {
-      drawTextFit(ctx, posterDateTextValue.toUpperCase(), centerX, cursorY, 780, {
-        size: 48,
-        minSize: 28,
-        weight: 900,
-        family: "Arial, sans-serif",
-        color: "#ff3b3b",
-        letterSpacing: 3,
-      });
-      cursorY += 92;
-    }
-
-    const bottomY = Math.max(cursorY, 1630);
-
-    if (posterVisible.meta) {
-      drawTextFit(ctx, posterMetaTextValue.toUpperCase(), centerX, bottomY, 900, {
-        size: 30,
-        minSize: 20,
-        weight: 900,
-        family: "Arial, sans-serif",
-        color: "rgba(255, 255, 255, 0.86)",
-        letterSpacing: 2,
+        color: theme.accent,
+        strokeWidth: 5,
+        lineHeightRatio: 1.0,
       });
     }
 
-    if (showComment && mainComment) {
-      drawWrappedText(ctx, mainComment, centerX, bottomY + 58, 820, {
-        size: 32,
-        lineHeight: 42,
-        maxLines: 2,
-        weight: 800,
-        color: "rgba(255, 255, 255, 0.78)",
-      });
-    }
+    // 하단 문구는 박스 없이 짧고 세련되게. 코멘트는 POSTER 저장에서 제외한다.
+    if (exportVisible.meta) {
+      ctx.save();
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(150, 1642, width - 300, 5);
+      ctx.restore();
 
-    if (posterVisible.footer) {
-      drawTextFit(ctx, posterFooterTextValue.toUpperCase(), centerX, height - 92, 860, {
+      drawPosterTextTop(ctx, exportMetaTextValue.toUpperCase(), centerX, 1674, 910, {
         size: 28,
+        minSize: 17,
+        weight: 900,
+        family: "Arial Black, Arial, sans-serif",
+        color: theme.accent,
+        strokeWidth: 3,
+        lineHeightRatio: 1.05,
+      });
+    }
+
+    if (exportVisible.footer) {
+      drawPosterTextTop(ctx, exportFooterTextValue.toUpperCase(), centerX, 1830, 900, {
+        size: 30,
         minSize: 18,
         weight: 900,
-        family: "Arial, sans-serif",
-        color: "rgba(255, 255, 255, 0.82)",
-        letterSpacing: 2,
+        family: "Arial Black, Arial, sans-serif",
+        color: theme.accent,
+        strokeWidth: 3,
+        lineHeightRatio: 1.05,
       });
     }
 
-    // 가장자리 어둡게
-    const vignette = ctx.createRadialGradient(centerX, height * 0.48, width * 0.25, centerX, height * 0.48, width * 0.86);
+    // 마지막 비네팅. 가장자리만 눌러준다.
+    const vignette = ctx.createRadialGradient(
+      centerX,
+      height * 0.48,
+      width * 0.2,
+      centerX,
+      height * 0.48,
+      width * 0.94
+    );
     vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
-    vignette.addColorStop(1, "rgba(0, 0, 0, 0.54)");
+    vignette.addColorStop(0.72, "rgba(0, 0, 0, 0.12)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.48)");
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);
 
@@ -1061,7 +1447,12 @@ export default function ProfilePage({ scrollTarget }) {
       // POSTER는 html-to-image를 쓰지 않고 캔버스에 직접 그려서 저장한다.
       // 모바일 Safari에서 미리보기와 저장 결과가 달라지는 문제를 피하기 위한 분리 처리.
       if (cardStyle === "poster") {
-        const posterDataUrl = await createPosterCanvasDataUrl();
+        const filterIdForExport =
+          posterExportRef.current.selectedFilter ||
+          selectedFilterRef.current ||
+          selectedFilter ||
+          "red";
+        const posterDataUrl = await createPosterCanvasDataUrl(filterIdForExport);
         await shareOrDownloadDataUrl(
           posterDataUrl,
           `boxing-fighter-poster-${Date.now()}.png`
@@ -1164,6 +1555,10 @@ ${logLines}${commentText}${mediaText}`;
 
   const cardPreviewHeight =
     cardStyle === "poster" ? "700px" : cardStyle === "social" && !cardMedia ? "480px" : "650px";
+
+  const posterPreviewTheme = getPosterCanvasTheme(selectedFilter);
+  const posterPreviewAccent = posterPreviewTheme.accent;
+  const posterPreviewLine = `linear-gradient(90deg, transparent, ${posterPreviewAccent}, transparent)`;
 
   const isCardImagePreparing =
     cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
@@ -1445,7 +1840,7 @@ ${logLines}${commentText}${mediaText}`;
                         ? styles.activeFilterButton
                         : {}),
                     }}
-                    onClick={() => setSelectedFilter(filter.id)}
+                    onClick={() => handleSelectFilter(filter.id)}
                   >
                     <strong>{filter.name}</strong>
                     <span>{filter.description}</span>
@@ -1467,7 +1862,7 @@ ${logLines}${commentText}${mediaText}`;
                 max="100"
                 value={filterIntensity}
                 onChange={(event) =>
-                  setFilterIntensity(Number(event.target.value))
+                  updateFilterIntensity(Number(event.target.value))
                 }
                 style={styles.rangeInput}
               />
@@ -1481,7 +1876,7 @@ ${logLines}${commentText}${mediaText}`;
                 min="70"
                 max="120"
                 value={photoScale}
-                onChange={(event) => setPhotoScale(Number(event.target.value))}
+                onChange={(event) => updatePhotoScale(Number(event.target.value))}
                 style={styles.rangeInput}
               />
 
@@ -1489,7 +1884,7 @@ ${logLines}${commentText}${mediaText}`;
                 <input
                   type="checkbox"
                   checked={showComment}
-                  onChange={(event) => setShowComment(event.target.checked)}
+                  onChange={(event) => updateShowComment(event.target.checked)}
                   style={styles.commentCheckbox}
                 />
 
@@ -1532,7 +1927,7 @@ ${logLines}${commentText}${mediaText}`;
                         <input
                           value={posterMainName}
                           onChange={(event) =>
-                            setPosterMainName(event.target.value)
+                            updatePosterField("mainName", event.target.value)
                           }
                           placeholder={profile.nickname || "JO WOON"}
                           style={styles.posterInput}
@@ -1561,7 +1956,7 @@ ${logLines}${commentText}${mediaText}`;
                         <input
                           value={posterSubtitle}
                           onChange={(event) =>
-                            setPosterSubtitle(event.target.value)
+                            updatePosterField("subtitle", event.target.value)
                           }
                           placeholder="THE ROOKIE"
                           style={styles.posterInput}
@@ -1590,7 +1985,7 @@ ${logLines}${commentText}${mediaText}`;
                         <input
                           value={posterEventTitle}
                           onChange={(event) =>
-                            setPosterEventTitle(event.target.value)
+                            updatePosterField("eventTitle", event.target.value)
                           }
                           placeholder="TRAINING DAY"
                           style={styles.posterInput}
@@ -1619,7 +2014,7 @@ ${logLines}${commentText}${mediaText}`;
                         <input
                           value={posterDateText}
                           onChange={(event) =>
-                            setPosterDateText(event.target.value)
+                            updatePosterField("date", event.target.value)
                           }
                           placeholder="JUNE 27"
                           style={styles.posterInput}
@@ -1645,7 +2040,7 @@ ${logLines}${commentText}${mediaText}`;
                         <input
                           value={posterMetaText}
                           onChange={(event) =>
-                            setPosterMetaText(event.target.value)
+                            updatePosterField("meta", event.target.value)
                           }
                           placeholder="BOXING TRAINING POSTER | RISING FIGHTER"
                           style={styles.posterInput}
@@ -1671,7 +2066,7 @@ ${logLines}${commentText}${mediaText}`;
                         <input
                           value={posterFooterText}
                           onChange={(event) =>
-                            setPosterFooterText(event.target.value)
+                            updatePosterField("footer", event.target.value)
                           }
                           placeholder="EVERY ROUND WRITES YOUR STORY"
                           style={styles.posterInput}
@@ -1825,9 +2220,19 @@ ${logLines}${commentText}${mediaText}`;
                     }}
                   >
                     <div style={styles.posterHeader}>
-                      <span style={styles.posterHeaderLine} />
+                      <span
+                        style={{
+                          ...styles.posterHeaderLine,
+                          background: posterPreviewLine,
+                        }}
+                      />
                       <strong>FIGHTER PROFILE</strong>
-                      <span style={styles.posterHeaderLine} />
+                      <span
+                        style={{
+                          ...styles.posterHeaderLine,
+                          background: posterPreviewLine,
+                        }}
+                      />
                     </div>
 
                     <div style={styles.posterCenterBlock}>
@@ -1838,31 +2243,72 @@ ${logLines}${commentText}${mediaText}`;
                       )}
 
                       {posterVisible.subtitle && (
-                        <p style={styles.posterSubtitle}>{posterSubtitleText}</p>
+                        <p
+                          style={{
+                            ...styles.posterSubtitle,
+                            color: posterPreviewAccent,
+                          }}
+                        >
+                          {posterSubtitleText}
+                        </p>
                       )}
 
                       {(posterVisible.eventTitle || posterVisible.date) && (
-                        <div style={styles.posterStarLine}>
-                          <span style={styles.posterStarRule} />
+                        <div
+                          style={{
+                            ...styles.posterStarLine,
+                            color: posterPreviewAccent,
+                          }}
+                        >
+                          <span
+                            style={{
+                              ...styles.posterStarRule,
+                              background: posterPreviewLine,
+                            }}
+                          />
                           <strong>★</strong>
-                          <span style={styles.posterStarRule} />
+                          <span
+                            style={{
+                              ...styles.posterStarRule,
+                              background: posterPreviewLine,
+                            }}
+                          />
                         </div>
                       )}
 
                       {posterVisible.eventTitle && (
-                        <p style={styles.posterEventTitle}>
+                        <p
+                          style={{
+                            ...styles.posterEventTitle,
+                            color: posterPreviewAccent,
+                          }}
+                        >
                           {posterEventTitleText}
                         </p>
                       )}
 
                       {posterVisible.date && (
-                        <p style={styles.posterDateText}>{posterDateTextValue}</p>
+                        <p
+                          style={{
+                            ...styles.posterDateText,
+                            color: posterPreviewAccent,
+                          }}
+                        >
+                          {posterDateTextValue}
+                        </p>
                       )}
                     </div>
 
                     <div style={styles.posterBottomBlock}>
                       {posterVisible.meta && (
-                        <p style={styles.posterMetaText}>{posterMetaTextValue}</p>
+                        <p
+                          style={{
+                            ...styles.posterMetaText,
+                            color: posterPreviewAccent,
+                          }}
+                        >
+                          {posterMetaTextValue}
+                        </p>
                       )}
 
                       {showComment && (
@@ -1870,7 +2316,12 @@ ${logLines}${commentText}${mediaText}`;
                       )}
 
                       {posterVisible.footer && (
-                        <p style={styles.posterFooterText}>
+                        <p
+                          style={{
+                            ...styles.posterFooterText,
+                            color: posterPreviewAccent,
+                          }}
+                        >
                           {posterFooterTextValue}
                         </p>
                       )}

@@ -26,6 +26,7 @@ function getTierName(totalRounds, totalLogs) {
   return "루키";
 }
 
+
 function getTodayString() {
   const today = new Date();
   const year = today.getFullYear();
@@ -33,6 +34,18 @@ function getTodayString() {
   const date = String(today.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${date}`;
+}
+
+function isIOSLikeDevice() {
+  if (typeof navigator === "undefined") return false;
+
+  const userAgent = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+
+  return (
+    /iPad|iPhone|iPod/.test(userAgent) ||
+    (platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
 }
 
 function getDisplayComment(log) {
@@ -375,6 +388,20 @@ export default function ProfilePage({ scrollTarget }) {
     },
   });
 
+  // iPhone에서는 저장 버튼을 누른 뒤 이미지를 만드는 시간이 길면
+  // 공유/다운로드 권한이 끊길 수 있다. 그래서 저장 이미지를 미리 만들어 둔다.
+  const exportCacheRef = useRef({
+    key: "",
+    dataUrl: "",
+    file: null,
+    filename: "",
+  });
+  const preparingExportKeyRef = useRef("");
+  const [isPreparingExport, setIsPreparingExport] = useState(false);
+  const [preparedExportKey, setPreparedExportKey] = useState("");
+  const [exportPreview, setExportPreview] = useState(null);
+
+
   const profileStats = useMemo(() => {
     const totalLogs = logs.length;
 
@@ -597,6 +624,43 @@ export default function ProfilePage({ scrollTarget }) {
     posterVisible.meta ? posterMetaTextValue : "",
     posterVisible.footer ? posterFooterTextValue : "",
   ].filter(Boolean);
+
+  function getCardExportKey() {
+    return JSON.stringify({
+      cardStyle,
+      selectedFilter,
+      filterIntensity,
+      photoScale,
+      cardMedia,
+      cardMediaType,
+      selectedLogIds,
+      customTrainingTitle,
+      showComment,
+      profileNickname: profile.nickname || "",
+      profileTier: profileStats.tierName,
+      cardTotalRounds,
+      cardTotalMinutes,
+      mainComment,
+      posterMainName,
+      posterSubtitle,
+      posterEventTitle,
+      posterDateText,
+      posterMetaText,
+      posterFooterText,
+      posterVisible,
+      selectedLogs: selectedLogs.map((log) => ({
+        id: log.id,
+        type: log.type,
+        rounds: getRounds(log),
+        minutes: log.minutes || log.duration || 0,
+        date: log.date || "",
+        memo: log.memo || "",
+        publicComment: log.publicComment || "",
+      })),
+    });
+  }
+
+  const currentExportKey = getCardExportKey();
 
   function handlePosterVisibleChange(field, checked) {
     posterExportRef.current.visible = {
@@ -1796,32 +1860,126 @@ export default function ProfilePage({ scrollTarget }) {
     return canvas.toDataURL("image/png", 1);
   }
 
-  async function shareOrDownloadDataUrl(dataUrl, filename) {
+  async function dataUrlToPngFile(dataUrl, filename) {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
-    const file = new File([blob], filename, { type: "image/png" });
+    return new File([blob], filename, { type: "image/png" });
+  }
 
+  async function buildCardExportDataUrl() {
+    const filterIdForExport =
+      posterExportRef.current.selectedFilter ||
+      selectedFilterRef.current ||
+      selectedFilter ||
+      "red";
+
+    return cardStyle === "poster"
+      ? await createPosterCanvasDataUrl(filterIdForExport)
+      : await createTrainingCardCanvasDataUrl(cardStyle);
+  }
+
+  async function prepareCardExport({ force = false } = {}) {
+    const key = getCardExportKey();
+
+    if (!force && exportCacheRef.current.key === key && exportCacheRef.current.file) {
+      return exportCacheRef.current;
+    }
+
+    if (preparingExportKeyRef.current === key && exportCacheRef.current.promise) {
+      return exportCacheRef.current.promise;
+    }
+
+    preparingExportKeyRef.current = key;
+    setIsPreparingExport(true);
+
+    const promise = (async () => {
+      const filename =
+        cardStyle === "poster"
+          ? `boxing-fighter-poster-${Date.now()}.png`
+          : `boxing-training-card-${Date.now()}.png`;
+
+      const dataUrl = await buildCardExportDataUrl();
+      const file = await dataUrlToPngFile(dataUrl, filename);
+
+      const cache = { key, dataUrl, file, filename };
+      exportCacheRef.current = cache;
+      setPreparedExportKey(key);
+
+      return cache;
+    })();
+
+    exportCacheRef.current = {
+      ...exportCacheRef.current,
+      key,
+      promise,
+    };
+
+    try {
+      return await promise;
+    } finally {
+      if (preparingExportKeyRef.current === key) {
+        preparingExportKeyRef.current = "";
+      }
+      setIsPreparingExport(false);
+    }
+  }
+
+  function showExportPreview(cache) {
+    if (!cache?.dataUrl) return;
+
+    setExportPreview({
+      dataUrl: cache.dataUrl,
+      file: cache.file || null,
+      filename: cache.filename || `boxing-training-card-${Date.now()}.png`,
+    });
+  }
+
+  function shareOrDownloadPreparedExport(cache) {
+    if (!cache?.file || !cache?.dataUrl) {
+      throw new Error("저장할 이미지가 아직 준비되지 않았어요.");
+    }
+
+    const shareData = {
+      title: "Boxing Training Card",
+      text: cardStyle === "poster" ? "오늘의 파이터 포스터" : "오늘의 복싱 훈련 카드",
+      files: [cache.file],
+    };
+
+    // iPhone에서는 사용자 클릭 직후 같은 call stack 안에서 navigator.share를 호출해야 안정적이다.
+    // 그래서 이 함수 안에서는 share 전에 await, 이미지 생성, setState를 하지 않는다.
     if (
-      navigator.canShare &&
-      navigator.canShare({ files: [file] }) &&
-      navigator.share
+      navigator.share &&
+      (!navigator.canShare || navigator.canShare({ files: [cache.file] }))
     ) {
-      await navigator.share({
-        title: "Boxing Training Card",
-        text: cardStyle === "poster" ? "오늘의 파이터 포스터" : "오늘의 복싱 훈련 카드",
-        files: [file],
-      });
+      const sharePromise = navigator.share(shareData);
+
+      if (sharePromise && typeof sharePromise.catch === "function") {
+        sharePromise.catch((error) => {
+          if (error?.name === "AbortError") return;
+          console.warn("공유창 열기 실패:", error);
+          showExportPreview(cache);
+        });
+      }
 
       return;
     }
 
+    // iPhone에서 파일 다운로드는 사진앱 저장과 다르게 동작할 수 있다.
+    // 공유 API가 막히면 바로 이미지 미리보기를 띄워 길게 눌러 저장할 수 있게 한다.
+    if (isIOSLikeDevice()) {
+      showExportPreview(cache);
+      return;
+    }
+
     const link = document.createElement("a");
-    link.download = filename;
-    link.href = dataUrl;
+    link.download = cache.filename;
+    link.href = cache.dataUrl;
+    document.body.appendChild(link);
     link.click();
+    link.remove();
   }
 
-  async function handleSaveCardImage() {
+  function handleSaveCardImage() {
     if (cardMediaType === "video") {
       alert(
         "영상 카드는 다음 단계에서 저장 기능을 붙일게. 지금은 사진 카드만 이미지 저장이 가능해."
@@ -1834,37 +1992,19 @@ export default function ProfilePage({ scrollTarget }) {
       return;
     }
 
+    const key = getCardExportKey();
+    const cache = exportCacheRef.current;
+
+    if (cache.key !== key || !cache.file || !cache.dataUrl) {
+      alert("이미지를 준비 중이야. 버튼이 다시 활성화될 때 저장해줘.");
+      return;
+    }
+
     try {
-      setIsSavingImage(true);
-
-      const filterIdForExport =
-        posterExportRef.current.selectedFilter ||
-        selectedFilterRef.current ||
-        selectedFilter ||
-        "red";
-
-      // 핵심 수정:
-      // 사진 업로드 후 2번 눌러야 저장되는 문제는 html-to-image 캡처가
-      // 이미지 렌더링 타이밍을 놓치면서 생겼다.
-      // 이제 모든 카드 스타일을 canvas에 직접 그려 저장한다.
-      const dataUrl =
-        cardStyle === "poster"
-          ? await createPosterCanvasDataUrl(filterIdForExport)
-          : await createTrainingCardCanvasDataUrl(cardStyle);
-
-      await shareOrDownloadDataUrl(
-        dataUrl,
-        cardStyle === "poster"
-          ? `boxing-fighter-poster-${Date.now()}.png`
-          : `boxing-training-card-${Date.now()}.png`
-      );
+      shareOrDownloadPreparedExport(cache);
     } catch (error) {
       console.error(error);
-      alert(
-        "이미지 저장에 실패했어. 사진을 다시 업로드하거나 새로고침 후 다시 시도해줘."
-      );
-    } finally {
-      setIsSavingImage(false);
+      showExportPreview(cache);
     }
   }
 
@@ -1916,6 +2056,36 @@ ${logLines}${commentText}${mediaText}`;
     }
   }
 
+  useEffect(() => {
+    setPreparedExportKey("");
+    setExportPreview(null);
+
+    if (cardMediaType === "video") return;
+
+    if (cardMediaType === "image" && cardMedia && !cardMediaReady) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        const cache = await prepareCardExport({ force: true });
+
+        if (!cancelled) {
+          setPreparedExportKey(cache.key);
+        }
+      } catch (error) {
+        console.warn("저장 이미지 미리 준비 실패:", error);
+      }
+    }, 650);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [currentExportKey, cardMediaReady, cardMediaType, cardMedia]);
+
   const cardPreviewHeight =
     cardStyle === "poster" ? "700px" : cardStyle === "social" && !cardMedia ? "480px" : "650px";
 
@@ -1926,8 +2096,17 @@ ${logLines}${commentText}${mediaText}`;
   const isCardImagePreparing =
     cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
 
+  const isExportReady =
+    preparedExportKey === currentExportKey &&
+    exportCacheRef.current.key === currentExportKey &&
+    Boolean(exportCacheRef.current.file);
+
   const isSaveCardDisabled =
-    cardMediaType === "video" || isSavingImage || isCardImagePreparing;
+    cardMediaType === "video" ||
+    isSavingImage ||
+    isCardImagePreparing ||
+    isPreparingExport ||
+    !isExportReady;
 
   return (
     <main style={styles.page}>
@@ -2756,6 +2935,8 @@ ${logLines}${commentText}${mediaText}`;
                 ? "이미지 저장 중..."
                 : isCardImagePreparing
                 ? "사진 준비 중..."
+                : isPreparingExport || !isExportReady
+                ? "저장 이미지 준비 중..."
                 : "카드 이미지 저장하기"}
             </button>
 
@@ -2771,6 +2952,39 @@ ${logLines}${commentText}${mediaText}`;
               사진 카드는 저장해서 인스타그램이나 카카오톡에 공유할 수 있어.
               영상 카드는 지금은 미리보기만 가능해.
             </p>
+
+            {exportPreview && (
+              <div style={styles.exportPreviewBox}>
+                <strong style={styles.exportPreviewTitle}>iPhone 저장 안내</strong>
+                <p style={styles.exportPreviewText}>
+                  공유창이 안 뜨면 아래 이미지를 길게 누르고 “사진에 저장”을 선택해.
+                </p>
+
+                <img
+                  src={exportPreview.dataUrl}
+                  alt="저장할 카드 미리보기"
+                  style={styles.exportPreviewImage}
+                />
+
+                <div style={styles.exportPreviewButtonRow}>
+                  <button
+                    type="button"
+                    style={styles.exportPreviewPrimaryButton}
+                    onClick={() => shareOrDownloadPreparedExport(exportPreview)}
+                  >
+                    공유창 다시 열기
+                  </button>
+
+                  <button
+                    type="button"
+                    style={styles.exportPreviewSecondaryButton}
+                    onClick={() => setExportPreview(null)}
+                  >
+                    닫기
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </section>
@@ -3851,6 +4065,68 @@ const styles = {
     color: "rgba(255, 255, 255, 0.5)",
     fontSize: "13px",
     lineHeight: 1.5,
+  },
+
+  exportPreviewBox: {
+    marginTop: "14px",
+    padding: "14px",
+    borderRadius: "18px",
+    background: "rgba(255, 255, 255, 0.06)",
+    border: "1px solid rgba(255, 255, 255, 0.12)",
+  },
+
+  exportPreviewTitle: {
+    display: "block",
+    color: "#ffffff",
+    fontSize: "14px",
+    fontWeight: 950,
+    marginBottom: "6px",
+  },
+
+  exportPreviewText: {
+    margin: "0 0 12px",
+    color: "rgba(255, 255, 255, 0.62)",
+    fontSize: "12px",
+    lineHeight: 1.5,
+  },
+
+  exportPreviewImage: {
+    width: "100%",
+    maxHeight: "520px",
+    objectFit: "contain",
+    borderRadius: "16px",
+    background: "#050505",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    display: "block",
+  },
+
+  exportPreviewButtonRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 0.7fr",
+    gap: "8px",
+    marginTop: "12px",
+  },
+
+  exportPreviewPrimaryButton: {
+    border: "none",
+    borderRadius: "14px",
+    padding: "12px",
+    background: "#ffffff",
+    color: "#050505",
+    fontSize: "13px",
+    fontWeight: 950,
+    cursor: "pointer",
+  },
+
+  exportPreviewSecondaryButton: {
+    border: "1px solid rgba(255, 255, 255, 0.12)",
+    borderRadius: "14px",
+    padding: "12px",
+    background: "rgba(255, 255, 255, 0.06)",
+    color: "#ffffff",
+    fontSize: "13px",
+    fontWeight: 950,
+    cursor: "pointer",
   },
 
   sectionCard: {

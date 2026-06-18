@@ -1403,6 +1403,399 @@ export default function ProfilePage({ scrollTarget }) {
     return canvas.toDataURL("image/png", 1);
   }
 
+
+
+  function roundRect(ctx, x, y, width, height, radius) {
+    const safeRadius = Math.min(radius, width / 2, height / 2);
+
+    ctx.beginPath();
+    ctx.moveTo(x + safeRadius, y);
+    ctx.lineTo(x + width - safeRadius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+    ctx.lineTo(x + width, y + height - safeRadius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+    ctx.lineTo(x + safeRadius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+    ctx.lineTo(x, y + safeRadius);
+    ctx.quadraticCurveTo(x, y, x + safeRadius, y);
+    ctx.closePath();
+  }
+
+  function drawContainImage(ctx, image, x, y, width, height, scalePercent = 100) {
+    const imageWidth = image.naturalWidth || image.width;
+    const imageHeight = image.naturalHeight || image.height;
+
+    if (!imageWidth || !imageHeight) return;
+
+    const baseScale = Math.min(width / imageWidth, height / imageHeight);
+    const safeScale = Math.max(scalePercent / 100, 0.7);
+    const finalScale = baseScale * safeScale;
+    const drawWidth = imageWidth * finalScale;
+    const drawHeight = imageHeight * finalScale;
+    const drawX = x + (width - drawWidth) / 2;
+    const drawY = y + (height - drawHeight) / 2;
+
+    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  }
+
+  function applyCanvasImageFilter(ctx, filterId, strength) {
+    if (!("filter" in ctx)) return;
+
+    if (filterId === "mono") {
+      ctx.filter = `grayscale(${0.85 * strength}) contrast(${1 + 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
+      return;
+    }
+
+    if (filterId === "dark") {
+      ctx.filter = `contrast(${1 + 0.28 * strength}) brightness(${1 - 0.18 * strength}) saturate(${1 - 0.2 * strength})`;
+      return;
+    }
+
+    if (filterId === "gold") {
+      ctx.filter = `contrast(${1 + 0.18 * strength}) sepia(${0.38 * strength}) saturate(${1 - 0.1 * strength}) brightness(${1 + 0.03 * strength})`;
+      return;
+    }
+
+    if (filterId === "blue") {
+      ctx.filter = `contrast(${1 + 0.18 * strength}) saturate(${1 - 0.08 * strength}) hue-rotate(${165 * strength}deg) brightness(${1 - 0.03 * strength})`;
+      return;
+    }
+
+    if (filterId === "future") {
+      ctx.filter = `contrast(${1 + 0.15 * strength}) saturate(${1 + 0.18 * strength}) hue-rotate(${22 * strength}deg)`;
+      return;
+    }
+
+    if (filterId === "vintage") {
+      ctx.filter = `contrast(${1 + 0.16 * strength}) sepia(${0.42 * strength}) saturate(${1 - 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
+      return;
+    }
+
+    if (filterId === "chrome") {
+      ctx.filter = `contrast(${1 + 0.22 * strength}) saturate(${1 - 0.18 * strength}) brightness(${1 + 0.05 * strength})`;
+      return;
+    }
+
+    ctx.filter = `contrast(${1 + 0.2 * strength}) saturate(${1 - 0.08 * strength}) brightness(${1 + 0.02 * strength})`;
+  }
+
+  async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
+    const {
+      fit = "cover",
+      filterId = "red",
+      filterIntensityValue = 75,
+      scalePercent = 100,
+      topInset = 0,
+      bottomInset = 0,
+    } = options;
+
+    const strength = Math.max(0, Math.min(1, filterIntensityValue / 100));
+    const availableHeight = height - topInset - bottomInset;
+    const exportSnapshot = posterExportRef.current || {};
+    const exportCardMedia = exportSnapshot.cardMedia || cardMedia;
+    const exportCardMediaType = exportSnapshot.cardMediaType || cardMediaType;
+    const candidateImageSources = [];
+
+    if (exportCardMediaType === "image" && exportCardMedia) {
+      candidateImageSources.push(exportCardMedia);
+    }
+
+    const previewImage = trainingCardRef.current?.querySelector('img[alt="훈련 카드"]');
+    if (previewImage?.src && !candidateImageSources.includes(previewImage.src)) {
+      candidateImageSources.push(previewImage.src);
+    }
+
+    for (const imageSrc of candidateImageSources) {
+      try {
+        const image = await loadCanvasImage(imageSrc);
+        ctx.save();
+        applyCanvasImageFilter(ctx, filterId, strength);
+
+        if (fit === "contain") {
+          drawContainImage(ctx, image, 0, topInset, width, availableHeight, scalePercent);
+        } else {
+          drawCoverImage(ctx, image, 0, topInset, width, availableHeight, Math.max(scalePercent, 100));
+        }
+
+        ctx.restore();
+        return true;
+      } catch (error) {
+        console.warn("카드 사진 캔버스 로드 실패:", error);
+      }
+    }
+
+    return false;
+  }
+
+  async function createTrainingCardCanvasDataUrl(styleIdForExport) {
+    const exportSnapshot = posterExportRef.current || {};
+    const exportFilterId =
+      exportSnapshot.selectedFilter ||
+      selectedFilterRef.current ||
+      selectedFilter ||
+      "red";
+    const exportFilterIntensity =
+      typeof exportSnapshot.filterIntensity === "number"
+        ? exportSnapshot.filterIntensity
+        : filterIntensity;
+    const exportPhotoScale =
+      typeof exportSnapshot.photoScale === "number"
+        ? exportSnapshot.photoScale
+        : photoScale;
+    const width = 1080;
+    const height = 1600;
+    const centerX = width / 2;
+    const theme = getPosterCanvasTheme(exportFilterId);
+    const canvas = document.createElement("canvas");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      throw new Error("캔버스를 만들지 못했어요.");
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    drawPosterBackground(ctx, width, height, theme);
+
+    const isSocialExport = styleIdForExport === "social";
+    const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
+      fit: isSocialExport ? "contain" : "cover",
+      filterId: exportFilterId,
+      filterIntensityValue: exportFilterIntensity,
+      scalePercent: exportPhotoScale,
+      topInset: 0,
+      bottomInset: 0,
+    });
+
+    drawPosterOverlay(ctx, width, height, theme);
+
+    const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
+    bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
+    bottomShade.addColorStop(0.45, hasPhoto ? "rgba(0, 0, 0, 0.38)" : "rgba(0, 0, 0, 0.2)");
+    bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
+    ctx.fillStyle = bottomShade;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(34, 34, width - 68, height - 68);
+    ctx.restore();
+
+    if (isSocialExport) {
+      drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
+        size: 34,
+        minSize: 24,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: theme.accent,
+        strokeWidth: 3,
+        baseline: "top",
+      });
+
+      drawTextFit(ctx, profileStats.tierName, width - 64, 72, 240, {
+        size: 34,
+        minSize: 22,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "right",
+        color: "#ffffff",
+        strokeWidth: 3,
+        baseline: "top",
+      });
+
+      const panelY = 1060;
+      const panel = ctx.createLinearGradient(0, panelY, 0, height);
+      panel.addColorStop(0, "rgba(0, 0, 0, 0.08)");
+      panel.addColorStop(0.36, "rgba(0, 0, 0, 0.72)");
+      panel.addColorStop(1, "rgba(0, 0, 0, 0.96)");
+      ctx.fillStyle = panel;
+      ctx.fillRect(0, panelY, width, height - panelY);
+
+      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1134, 940, {
+        size: 84,
+        minSize: 44,
+        weight: 950,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "#ffffff",
+        strokeWidth: 6,
+        lineHeightRatio: 0.96,
+      });
+
+      if (showComment) {
+        drawWrappedText(ctx, mainComment, 70, 1252, 910, {
+          size: 34,
+          weight: 850,
+          lineHeight: 48,
+          maxLines: 2,
+          color: "rgba(255, 255, 255, 0.82)",
+          align: "left",
+        });
+      }
+
+      const metricY = 1400;
+      const metricW = 290;
+      const metricGap = 34;
+      const metricX = 70;
+      const metrics = [
+        ["TIME", `${cardTotalMinutes || 0}min`],
+        ["LOGS", `${selectedLogs.length}`],
+        ["FIGHTER", profile.nickname || "나"],
+      ];
+
+      metrics.forEach(([label, value], index) => {
+        const x = metricX + index * (metricW + metricGap);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+        roundRect(ctx, x, metricY, metricW, 112, 24);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        drawTextFit(ctx, label, x + 26, metricY + 24, metricW - 52, {
+          size: 23,
+          minSize: 18,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "left",
+          color: theme.accent,
+          baseline: "top",
+          shadow: false,
+        });
+
+        drawTextFit(ctx, value, x + 26, metricY + 58, metricW - 52, {
+          size: 32,
+          minSize: 20,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "left",
+          color: "#ffffff",
+          strokeWidth: 2,
+          baseline: "top",
+        });
+      });
+    } else {
+      drawTextFit(ctx, "TRAINING CARD", 66, 70, 480, {
+        size: 34,
+        minSize: 24,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "#ffffff",
+        strokeWidth: 3,
+        baseline: "top",
+      });
+
+      drawTextFit(ctx, profileStats.tierName, width - 66, 70, 260, {
+        size: 34,
+        minSize: 22,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "right",
+        color: theme.accent,
+        strokeWidth: 3,
+        baseline: "top",
+      });
+
+      const contentX = 118;
+      const contentY = 1050;
+      ctx.save();
+      const lineGradient = ctx.createLinearGradient(0, contentY, 0, contentY + 390);
+      lineGradient.addColorStop(0, "rgba(255, 255, 255, 0.96)");
+      lineGradient.addColorStop(1, theme.accent);
+      ctx.fillStyle = lineGradient;
+      roundRect(ctx, 72, contentY, 8, 390, 4);
+      ctx.fill();
+      ctx.restore();
+
+      drawTextFit(ctx, "TRAINING", contentX, contentY, 360, {
+        size: 26,
+        minSize: 18,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "rgba(255, 255, 255, 0.64)",
+        baseline: "top",
+        shadow: false,
+      });
+
+      let y = contentY + 48;
+      visibleCardLogs.forEach((log, index) => {
+        const cardTitle = getCardLogTitle(log, index) || "TRAINING";
+        const trainingInfo = `${getRounds(log)}R · ${log.minutes || log.duration}m`;
+
+        drawTextFit(ctx, cardTitle.toUpperCase(), contentX, y, 660, {
+          size: 46,
+          minSize: 28,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "left",
+          color: "#ffffff",
+          strokeWidth: 3,
+          baseline: "top",
+        });
+
+        drawTextFit(ctx, trainingInfo.toUpperCase(), contentX, y + 48, 320, {
+          size: 28,
+          minSize: 20,
+          weight: 900,
+          family: "Arial Black, Arial, sans-serif",
+          align: "left",
+          color: theme.accent,
+          baseline: "top",
+          shadow: false,
+        });
+
+        y += 96;
+      });
+
+      if (hiddenCardLogCount > 0) {
+        drawTextFit(ctx, `+ ${hiddenCardLogCount} MORE`, contentX, y, 300, {
+          size: 24,
+          minSize: 18,
+          weight: 900,
+          family: "Arial Black, Arial, sans-serif",
+          align: "left",
+          color: "rgba(255, 255, 255, 0.66)",
+          baseline: "top",
+          shadow: false,
+        });
+        y += 42;
+      }
+
+      if (showComment) {
+        y = drawWrappedText(ctx, mainComment, contentX, y + 12, 720, {
+          size: 30,
+          weight: 820,
+          lineHeight: 42,
+          maxLines: 2,
+          color: "rgba(255, 255, 255, 0.78)",
+          align: "left",
+        });
+      }
+
+      drawTextFit(ctx, `${profile.nickname || "나"} · ${profileStats.tierName}`, contentX, 1488, 620, {
+        size: 28,
+        minSize: 18,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "rgba(255, 255, 255, 0.78)",
+        strokeWidth: 2,
+        baseline: "top",
+      });
+    }
+
+    return canvas.toDataURL("image/png", 1);
+  }
+
   async function shareOrDownloadDataUrl(dataUrl, filename) {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
@@ -1444,56 +1837,26 @@ export default function ProfilePage({ scrollTarget }) {
     try {
       setIsSavingImage(true);
 
-      // POSTER는 html-to-image를 쓰지 않고 캔버스에 직접 그려서 저장한다.
-      // 모바일 Safari에서 미리보기와 저장 결과가 달라지는 문제를 피하기 위한 분리 처리.
-      if (cardStyle === "poster") {
-        const filterIdForExport =
-          posterExportRef.current.selectedFilter ||
-          selectedFilterRef.current ||
-          selectedFilter ||
-          "red";
-        const posterDataUrl = await createPosterCanvasDataUrl(filterIdForExport);
-        await shareOrDownloadDataUrl(
-          posterDataUrl,
-          `boxing-fighter-poster-${Date.now()}.png`
-        );
-        return;
-      }
+      const filterIdForExport =
+        posterExportRef.current.selectedFilter ||
+        selectedFilterRef.current ||
+        selectedFilter ||
+        "red";
 
-      const card = trainingCardRef.current;
-
-      await waitForCardReady();
-
-      await new Promise((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(resolve);
-        });
-      });
-
-      if (cardMediaType === "image" && cardMedia) {
-        try {
-          await toPng(card, {
-            cacheBust: true,
-            pixelRatio: 1,
-            backgroundColor: "#050505",
-          });
-        } catch (warmupError) {
-          console.warn("예비 캡처 실패:", warmupError);
-        }
-
-        await sleep(500);
-        await waitForCardReady();
-      }
-
-      const dataUrl = await toPng(card, {
-        cacheBust: true,
-        pixelRatio: 2,
-        backgroundColor: "#050505",
-      });
+      // 핵심 수정:
+      // 사진 업로드 후 2번 눌러야 저장되는 문제는 html-to-image 캡처가
+      // 이미지 렌더링 타이밍을 놓치면서 생겼다.
+      // 이제 모든 카드 스타일을 canvas에 직접 그려 저장한다.
+      const dataUrl =
+        cardStyle === "poster"
+          ? await createPosterCanvasDataUrl(filterIdForExport)
+          : await createTrainingCardCanvasDataUrl(cardStyle);
 
       await shareOrDownloadDataUrl(
         dataUrl,
-        `boxing-training-card-${Date.now()}.png`
+        cardStyle === "poster"
+          ? `boxing-fighter-poster-${Date.now()}.png`
+          : `boxing-training-card-${Date.now()}.png`
       );
     } catch (error) {
       console.error(error);

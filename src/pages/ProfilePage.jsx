@@ -1260,23 +1260,7 @@ export default function ProfilePage({ scrollTarget }) {
 
         ctx.save();
         if ("filter" in ctx) {
-          if (exportFilterId === "mono") {
-            ctx.filter = `grayscale(${0.85 * strength}) contrast(${1 + 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
-          } else if (exportFilterId === "dark") {
-            ctx.filter = `contrast(${1 + 0.28 * strength}) brightness(${1 - 0.18 * strength}) saturate(${1 - 0.2 * strength})`;
-          } else if (exportFilterId === "gold") {
-            ctx.filter = `contrast(${1 + 0.18 * strength}) sepia(${0.38 * strength}) saturate(${1 - 0.1 * strength}) brightness(${1 + 0.03 * strength})`;
-          } else if (exportFilterId === "blue") {
-            ctx.filter = `contrast(${1 + 0.18 * strength}) saturate(${1 - 0.08 * strength}) hue-rotate(${165 * strength}deg) brightness(${1 - 0.03 * strength})`;
-          } else if (exportFilterId === "future") {
-            ctx.filter = `contrast(${1 + 0.15 * strength}) saturate(${1 + 0.18 * strength}) hue-rotate(${22 * strength}deg)`;
-          } else if (exportFilterId === "vintage") {
-            ctx.filter = `contrast(${1 + 0.16 * strength}) sepia(${0.42 * strength}) saturate(${1 - 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
-          } else if (exportFilterId === "chrome") {
-            ctx.filter = `contrast(${1 + 0.22 * strength}) saturate(${1 - 0.18 * strength}) brightness(${1 + 0.05 * strength})`;
-          } else {
-            ctx.filter = `contrast(${1 + 0.2 * strength}) saturate(${1 - 0.08 * strength}) brightness(${1 + 0.02 * strength})`;
-          }
+          ctx.filter = getImageFilter(exportFilterId, exportFilterIntensity);
         }
 
         drawCoverImage(ctx, image, 0, 0, width, height, Math.max(exportPhotoScale, 100));
@@ -1311,13 +1295,6 @@ export default function ProfilePage({ scrollTarget }) {
     nameGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = nameGlow;
     ctx.fillRect(0, 0, width, height);
-
-    // 어두운 포스터 테두리
-    ctx.save();
-    ctx.strokeStyle = hasPosterPhoto ? "rgba(255, 255, 255, 0.16)" : theme.accentSoft;
-    ctx.lineWidth = 4;
-    ctx.strokeRect(34, 34, width - 68, height - 68);
-    ctx.restore();
 
     // 상단 라벨
     ctx.save();
@@ -1505,42 +1482,8 @@ export default function ProfilePage({ scrollTarget }) {
   function applyCanvasImageFilter(ctx, filterId, strength) {
     if (!("filter" in ctx)) return;
 
-    if (filterId === "mono") {
-      ctx.filter = `grayscale(${0.85 * strength}) contrast(${1 + 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
-      return;
-    }
-
-    if (filterId === "dark") {
-      ctx.filter = `contrast(${1 + 0.28 * strength}) brightness(${1 - 0.18 * strength}) saturate(${1 - 0.2 * strength})`;
-      return;
-    }
-
-    if (filterId === "gold") {
-      ctx.filter = `contrast(${1 + 0.18 * strength}) sepia(${0.38 * strength}) saturate(${1 - 0.1 * strength}) brightness(${1 + 0.03 * strength})`;
-      return;
-    }
-
-    if (filterId === "blue") {
-      ctx.filter = `contrast(${1 + 0.18 * strength}) saturate(${1 - 0.08 * strength}) hue-rotate(${165 * strength}deg) brightness(${1 - 0.03 * strength})`;
-      return;
-    }
-
-    if (filterId === "future") {
-      ctx.filter = `contrast(${1 + 0.15 * strength}) saturate(${1 + 0.18 * strength}) hue-rotate(${22 * strength}deg)`;
-      return;
-    }
-
-    if (filterId === "vintage") {
-      ctx.filter = `contrast(${1 + 0.16 * strength}) sepia(${0.42 * strength}) saturate(${1 - 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
-      return;
-    }
-
-    if (filterId === "chrome") {
-      ctx.filter = `contrast(${1 + 0.22 * strength}) saturate(${1 - 0.18 * strength}) brightness(${1 + 0.05 * strength})`;
-      return;
-    }
-
-    ctx.filter = `contrast(${1 + 0.2 * strength}) saturate(${1 - 0.08 * strength}) brightness(${1 + 0.02 * strength})`;
+    const intensity = Math.round(strength * 100);
+    ctx.filter = getImageFilter(filterId, intensity);
   }
 
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
@@ -1644,12 +1587,6 @@ export default function ProfilePage({ scrollTarget }) {
     bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
     ctx.fillStyle = bottomShade;
     ctx.fillRect(0, 0, width, height);
-
-    ctx.save();
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(34, 34, width - 68, height - 68);
-    ctx.restore();
 
     if (isSocialExport) {
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
@@ -3573,8 +3510,8 @@ const styles = {
     marginTop: "16px",
     borderRadius: "30px",
     overflow: "hidden",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
-    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.4)",
+    border: "none",
+    boxShadow: "none",
   },
 
   trainingCardPhotoArea: {

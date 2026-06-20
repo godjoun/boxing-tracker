@@ -1674,14 +1674,6 @@ export default function ProfilePage({ scrollTarget }) {
     
     ctx.fillStyle = bottomShade;
     ctx.fillRect(0, 0, width, height);
-    
-    if (!isSocialExport) {
-      ctx.save();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(34, 34, width - 68, height - 68);
-      ctx.restore();
-    }
 
     if (isSocialExport) {
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {

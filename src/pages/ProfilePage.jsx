@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useTraining } from "../store/TrainingContext";
 
+const CARD_MAKER_LOG_STORAGE_KEY = "fitness-league-card-maker-log-id";
+
 function getRounds(log) {
   const value =
     log?.rounds ||
@@ -483,6 +485,18 @@ export default function ProfilePage({ scrollTarget }) {
 
       return validIds;
     });
+  }, [logs]);
+
+  useEffect(() => {
+    const targetLogId = localStorage.getItem(CARD_MAKER_LOG_STORAGE_KEY);
+    if (!targetLogId) return;
+
+    const targetLogExists = logs.some((log) => log.id === targetLogId);
+    if (!targetLogExists) return;
+
+    setSelectedLogIds([targetLogId]);
+    setCardStyle("social");
+    localStorage.removeItem(CARD_MAKER_LOG_STORAGE_KEY);
   }, [logs]);
 
   useEffect(() => {

@@ -45,7 +45,8 @@ export default function App() {
             />
           )}
 
-          {currentPage === "log" && <LogPage />}
+          {currentPage === "log" && <LogPage onGoProfileCardMaker={goProfileCardMaker} />}
+          
 
           {currentPage === "stats" && <StatsPage />}
 

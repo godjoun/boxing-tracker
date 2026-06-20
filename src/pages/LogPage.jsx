@@ -157,7 +157,7 @@ function OptionButton({ isActive, title, description, onClick }) {
   );
 }
 
-export default function LogPage() {
+export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const {
     logs,
     weeklyLogs,
@@ -348,6 +348,19 @@ export default function LogPage() {
     resetAllLogs();
     setReward(null);
     setEditingId(null);
+  }
+
+  function handleMakeCard(logId) {
+    localStorage.setItem("fitness-league-card-maker-log-id", logId);
+
+    const goCardMaker = onGoProfileCardMaker || onGoProfile;
+
+    if (typeof goCardMaker === "function") {
+      goCardMaker();
+      return;
+    }
+
+    alert("프로필 페이지의 카드 만들기 영역으로 이동해줘. 방금 선택한 기록이 카드에 자동 선택될 거야.");
   }
 
   return (
@@ -658,6 +671,14 @@ export default function LogPage() {
                                 style={styles.smallButton}
                               >
                                 수정
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleMakeCard(log.id)}
+                                style={styles.cardButton}
+                              >
+                                카드
                               </button>
 
                               <button
@@ -1117,6 +1138,17 @@ const styles = {
   smallButton: {
     backgroundColor: "#ffffff",
     color: "#111111",
+    border: "none",
+    borderRadius: "999px",
+    padding: "7px 10px",
+    fontSize: "12px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  cardButton: {
+    backgroundColor: "#ef4444",
+    color: "#ffffff",
     border: "none",
     borderRadius: "999px",
     padding: "7px 10px",

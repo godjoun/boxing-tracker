@@ -202,36 +202,58 @@ function getImageFilter(filterId, intensity) {
 
   if (filterId === "gold") {
     return `contrast(${1 + 0.32 * strength}) saturate(${
-      1 + 0.18 * strength
-    }) sepia(${0.22 + 0.34 * strength}) brightness(${
-      0.98 - 0.07 * strength
+      1 + 0.22 * strength
+    }) sepia(${0.24 + 0.36 * strength}) brightness(${
+      0.98 - 0.05 * strength
     })`;
   }
 
   if (filterId === "blue") {
-    return `contrast(${1 + 0.28 * strength}) saturate(${
-      1 + 0.16 * strength
+    return `contrast(${1 + 0.3 * strength}) saturate(${
+      1 + 0.2 * strength
     }) hue-rotate(${165 * strength}deg) brightness(${
-      0.98 - 0.08 * strength
+      0.98 - 0.06 * strength
     })`;
   }
 
   if (filterId === "mono") {
     return `grayscale(${0.45 + 0.55 * strength}) contrast(${
-      1.12 + 0.32 * strength
-    }) brightness(${1 - 0.06 * strength})`;
+      1.15 + 0.36 * strength
+    }) brightness(${1 - 0.05 * strength})`;
   }
 
   if (filterId === "dark") {
-    return `contrast(${1.08 + 0.42 * strength}) brightness(${
-      0.96 - 0.2 * strength
-    }) saturate(${0.95 - 0.16 * strength})`;
+    return `contrast(${1.1 + 0.46 * strength}) brightness(${
+      0.96 - 0.18 * strength
+    }) saturate(${0.95 - 0.12 * strength})`;
   }
 
-  return `contrast(${1.08 + 0.34 * strength}) saturate(${
-    1.08 + 0.32 * strength
-  }) brightness(${0.98 - 0.08 * strength}) sepia(${
-    0.08 + 0.22 * strength
+  if (filterId === "chrome") {
+    return `contrast(${1.14 + 0.36 * strength}) saturate(${
+      0.98 + 0.12 * strength
+    }) brightness(${1 + 0.08 * strength}) sepia(${0.06 * strength})`;
+  }
+
+  if (filterId === "future") {
+    return `contrast(${1.1 + 0.34 * strength}) saturate(${
+      1.18 + 0.38 * strength
+    }) hue-rotate(${20 * strength}deg) brightness(${
+      1 - 0.03 * strength
+    })`;
+  }
+
+  if (filterId === "vintage") {
+    return `contrast(${1.08 + 0.34 * strength}) sepia(${
+      0.24 + 0.42 * strength
+    }) saturate(${0.92 - 0.12 * strength}) brightness(${
+      1 - 0.04 * strength
+    })`;
+  }
+
+  return `contrast(${1.12 + 0.46 * strength}) saturate(${
+    1.12 + 0.42 * strength
+  }) brightness(${0.98 - 0.06 * strength}) sepia(${
+    0.1 + 0.28 * strength
   })`;
 }
 
@@ -1530,7 +1552,7 @@ export default function ProfilePage({ scrollTarget }) {
       return;
     }
 
-    ctx.filter = `contrast(${1 + 0.2 * strength}) saturate(${1 - 0.08 * strength}) brightness(${1 + 0.02 * strength})`;
+    ctx.filter = `contrast(${1.12 + 0.34 * strength}) saturate(${1.08 + 0.34 * strength}) brightness(${0.98 - 0.04 * strength}) sepia(${0.12 + 0.2 * strength})`;
   }
 
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
@@ -2423,11 +2445,11 @@ ${logLines}${commentText}${mediaText}`;
                 <span>확대</span>
                 <strong>{photoScale}%</strong>
               </label>
-               <input
-                type="range"
-                min="70"
-                max="120"
-                value={photoScale}
+              <input
+              type="range"
+              min={cardStyle === "social" ? "100" : "70"}
+              max={cardStyle === "social" ? "110" : "120"}
+              value={photoScale}
                 onChange={(event) => updatePhotoScale(Number(event.target.value))}
                 style={styles.rangeInput}
               />
@@ -2707,10 +2729,13 @@ ${logLines}${commentText}${mediaText}`;
                 {!cardMedia && <div style={styles.trainingCardDefaultBg} />}
 
                 <div
-                  style={{
-                    ...styles.trainingCardOverlay,
-                    background: getOverlayStyle(selectedFilter, filterIntensity),
-                  }}
+                    style={{
+                      ...styles.trainingCardOverlay,
+                      background:
+                        cardStyle === "social"
+                          ? "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.06) 58%, rgba(0,0,0,0.38) 100%)"
+                          : getOverlayStyle(selectedFilter, filterIntensity),
+                    }}
                 />
 
                 {cardStyle === "poster" && <div style={styles.posterVignette} />}

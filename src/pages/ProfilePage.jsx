@@ -2468,10 +2468,10 @@ ${logLines}${commentText}${mediaText}`;
                 <strong>{photoScale}%</strong>
               </label>
               <input
-              type="range"
-              min={cardStyle === "social" ? "100" : "70"}
-              max={cardStyle === "social" ? "110" : "120"}
-              value={photoScale}
+                type="range"
+                min="100"
+                max="120"
+                value={photoScale}
                 onChange={(event) => updatePhotoScale(Number(event.target.value))}
                 style={styles.rangeInput}
               />

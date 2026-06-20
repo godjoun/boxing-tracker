@@ -200,49 +200,39 @@ function getCardBackground(filterId) {
 function getImageFilter(filterId, intensity) {
   const strength = intensity / 100;
 
-  if (filterId === "chrome") {
-    return `contrast(${1 + 0.22 * strength}) saturate(${
-      1 - 0.18 * strength
-    }) brightness(${1 + 0.04 * strength})`;
-  }
-
-  if (filterId === "future") {
-    return `contrast(${1 + 0.16 * strength}) saturate(${
-      1 + 0.18 * strength
-    }) hue-rotate(${18 * strength}deg) brightness(${1 - 0.02 * strength})`;
-  }
-
-  if (filterId === "vintage") {
-    return `contrast(${1 + 0.12 * strength}) saturate(${
-      1 - 0.34 * strength
-    }) sepia(${0.42 * strength}) brightness(${1 - 0.05 * strength})`;
-  }
-
   if (filterId === "gold") {
-    return `contrast(${1 + 0.16 * strength}) saturate(${
-      1 - 0.12 * strength
-    }) sepia(${0.3 * strength}) brightness(${1 - 0.04 * strength})`;
+    return `contrast(${1 + 0.32 * strength}) saturate(${
+      1 + 0.18 * strength
+    }) sepia(${0.22 + 0.34 * strength}) brightness(${
+      0.98 - 0.07 * strength
+    })`;
   }
 
   if (filterId === "blue") {
-    return `contrast(${1 + 0.12 * strength}) saturate(${
-      1 - 0.1 * strength
-    }) hue-rotate(${178 * strength}deg) brightness(${1 - 0.04 * strength})`;
+    return `contrast(${1 + 0.28 * strength}) saturate(${
+      1 + 0.16 * strength
+    }) hue-rotate(${165 * strength}deg) brightness(${
+      0.98 - 0.08 * strength
+    })`;
   }
 
   if (filterId === "mono") {
-    return `grayscale(${strength}) contrast(${1 + 0.2 * strength})`;
+    return `grayscale(${0.45 + 0.55 * strength}) contrast(${
+      1.12 + 0.32 * strength
+    }) brightness(${1 - 0.06 * strength})`;
   }
 
   if (filterId === "dark") {
-    return `contrast(${1 + 0.24 * strength}) brightness(${
-      1 - 0.26 * strength
-    }) saturate(${1 - 0.28 * strength})`;
+    return `contrast(${1.08 + 0.42 * strength}) brightness(${
+      0.96 - 0.2 * strength
+    }) saturate(${0.95 - 0.16 * strength})`;
   }
 
-  return `contrast(${1 + 0.15 * strength}) saturate(${
-    1 - 0.18 * strength
-  }) brightness(${1 - 0.1 * strength}) sepia(${0.12 * strength})`;
+  return `contrast(${1.08 + 0.34 * strength}) saturate(${
+    1.08 + 0.32 * strength
+  }) brightness(${0.98 - 0.08 * strength}) sepia(${
+    0.08 + 0.22 * strength
+  })`;
 }
 
 function getOverlayStyle(filterId, intensity) {

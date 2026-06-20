@@ -1516,43 +1516,71 @@ export default function ProfilePage({ scrollTarget }) {
 
   function applyCanvasImageFilter(ctx, filterId, strength) {
     if (!("filter" in ctx)) return;
-
+  
     if (filterId === "mono") {
-      ctx.filter = `grayscale(${0.85 * strength}) contrast(${1 + 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
+      ctx.filter = `grayscale(${0.65 + 0.35 * strength}) contrast(${
+        1.18 + 0.34 * strength
+      }) brightness(${1 - 0.04 * strength})`;
       return;
     }
-
+  
     if (filterId === "dark") {
-      ctx.filter = `contrast(${1 + 0.28 * strength}) brightness(${1 - 0.18 * strength}) saturate(${1 - 0.2 * strength})`;
+      ctx.filter = `contrast(${1.12 + 0.48 * strength}) brightness(${
+        0.94 - 0.2 * strength
+      }) saturate(${0.92 - 0.18 * strength})`;
       return;
     }
-
+  
     if (filterId === "gold") {
-      ctx.filter = `contrast(${1 + 0.18 * strength}) sepia(${0.38 * strength}) saturate(${1 - 0.1 * strength}) brightness(${1 + 0.03 * strength})`;
+      ctx.filter = `contrast(${1.08 + 0.34 * strength}) sepia(${
+        0.28 + 0.38 * strength
+      }) saturate(${1.05 + 0.2 * strength}) brightness(${
+        0.98 - 0.04 * strength
+      })`;
       return;
     }
-
+  
     if (filterId === "blue") {
-      ctx.filter = `contrast(${1 + 0.18 * strength}) saturate(${1 - 0.08 * strength}) hue-rotate(${165 * strength}deg) brightness(${1 - 0.03 * strength})`;
+      ctx.filter = `contrast(${1.08 + 0.36 * strength}) saturate(${
+        1.08 + 0.28 * strength
+      }) hue-rotate(${165 * strength}deg) brightness(${
+        0.98 - 0.05 * strength
+      })`;
       return;
     }
-
+  
     if (filterId === "future") {
-      ctx.filter = `contrast(${1 + 0.15 * strength}) saturate(${1 + 0.18 * strength}) hue-rotate(${22 * strength}deg)`;
+      ctx.filter = `contrast(${1.1 + 0.38 * strength}) saturate(${
+        1.22 + 0.42 * strength
+      }) hue-rotate(${24 * strength}deg) brightness(${
+        1 - 0.03 * strength
+      })`;
       return;
     }
-
+  
     if (filterId === "vintage") {
-      ctx.filter = `contrast(${1 + 0.16 * strength}) sepia(${0.42 * strength}) saturate(${1 - 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
+      ctx.filter = `contrast(${1.08 + 0.34 * strength}) sepia(${
+        0.28 + 0.48 * strength
+      }) saturate(${0.9 - 0.08 * strength}) brightness(${
+        0.98 - 0.04 * strength
+      })`;
       return;
     }
-
+  
     if (filterId === "chrome") {
-      ctx.filter = `contrast(${1 + 0.22 * strength}) saturate(${1 - 0.18 * strength}) brightness(${1 + 0.05 * strength})`;
+      ctx.filter = `contrast(${1.16 + 0.42 * strength}) saturate(${
+        0.96 + 0.14 * strength
+      }) brightness(${1.04 + 0.08 * strength}) sepia(${
+        0.04 * strength
+      })`;
       return;
     }
-
-    ctx.filter = `contrast(${1.12 + 0.34 * strength}) saturate(${1.08 + 0.34 * strength}) brightness(${0.98 - 0.04 * strength}) sepia(${0.12 + 0.2 * strength})`;
+  
+    ctx.filter = `contrast(${1.16 + 0.48 * strength}) saturate(${
+      1.18 + 0.46 * strength
+    }) brightness(${0.98 - 0.05 * strength}) sepia(${
+      0.12 + 0.26 * strength
+    })`;
   }
 
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {

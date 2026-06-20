@@ -201,59 +201,61 @@ function getImageFilter(filterId, intensity) {
   const strength = intensity / 100;
 
   if (filterId === "gold") {
-    return `contrast(${1 + 0.32 * strength}) saturate(${
-      1 + 0.22 * strength
-    }) sepia(${0.24 + 0.36 * strength}) brightness(${
-      0.98 - 0.05 * strength
+    return `contrast(${1.08 + 0.42 * strength}) saturate(${
+      1.14 + 0.34 * strength
+    }) sepia(${0.3 + 0.44 * strength}) brightness(${
+      0.98 - 0.04 * strength
     })`;
   }
 
   if (filterId === "blue") {
-    return `contrast(${1 + 0.3 * strength}) saturate(${
-      1 + 0.2 * strength
-    }) hue-rotate(${165 * strength}deg) brightness(${
-      0.98 - 0.06 * strength
+    return `contrast(${1.08 + 0.42 * strength}) saturate(${
+      1.12 + 0.34 * strength
+    }) hue-rotate(${170 * strength}deg) brightness(${
+      0.98 - 0.05 * strength
     })`;
   }
 
   if (filterId === "mono") {
-    return `grayscale(${0.45 + 0.55 * strength}) contrast(${
-      1.15 + 0.36 * strength
-    }) brightness(${1 - 0.05 * strength})`;
+    return `grayscale(${0.65 + 0.35 * strength}) contrast(${
+      1.18 + 0.42 * strength
+    }) brightness(${1 - 0.04 * strength})`;
   }
 
   if (filterId === "dark") {
-    return `contrast(${1.1 + 0.46 * strength}) brightness(${
-      0.96 - 0.18 * strength
-    }) saturate(${0.95 - 0.12 * strength})`;
+    return `contrast(${1.12 + 0.52 * strength}) brightness(${
+      0.94 - 0.2 * strength
+    }) saturate(${0.92 - 0.18 * strength})`;
   }
 
   if (filterId === "chrome") {
-    return `contrast(${1.14 + 0.36 * strength}) saturate(${
-      0.98 + 0.12 * strength
-    }) brightness(${1 + 0.08 * strength}) sepia(${0.06 * strength})`;
+    return `contrast(${1.24 + 0.5 * strength}) saturate(${
+      1.02 + 0.22 * strength
+    }) brightness(${1.06 + 0.1 * strength}) sepia(${
+      0.08 * strength
+    })`;
   }
 
   if (filterId === "future") {
-    return `contrast(${1.1 + 0.34 * strength}) saturate(${
-      1.18 + 0.38 * strength
-    }) hue-rotate(${20 * strength}deg) brightness(${
-      1 - 0.03 * strength
+    return `contrast(${1.18 + 0.48 * strength}) saturate(${
+      1.36 + 0.56 * strength
+    }) hue-rotate(${30 * strength}deg) brightness(${
+      1.01 - 0.02 * strength
     })`;
   }
 
   if (filterId === "vintage") {
-    return `contrast(${1.08 + 0.34 * strength}) sepia(${
-      0.24 + 0.42 * strength
-    }) saturate(${0.92 - 0.12 * strength}) brightness(${
-      1 - 0.04 * strength
+    return `contrast(${1.16 + 0.44 * strength}) sepia(${
+      0.42 + 0.56 * strength
+    }) saturate(${0.86 - 0.08 * strength}) brightness(${
+      0.97 - 0.05 * strength
     })`;
   }
 
-  return `contrast(${1.12 + 0.46 * strength}) saturate(${
-    1.12 + 0.42 * strength
-  }) brightness(${0.98 - 0.06 * strength}) sepia(${
-    0.1 + 0.28 * strength
+  return `contrast(${1.16 + 0.5 * strength}) saturate(${
+    1.2 + 0.48 * strength
+  }) brightness(${0.98 - 0.05 * strength}) sepia(${
+    0.12 + 0.28 * strength
   })`;
 }
 

@@ -1618,28 +1618,48 @@ export default function ProfilePage({ scrollTarget }) {
 
     const isSocialExport = styleIdForExport === "social";
     const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
-      fit: isSocialExport ? "contain" : "cover",
+      fit: "cover",
       filterId: exportFilterId,
       filterIntensityValue: exportFilterIntensity,
-      scalePercent: exportPhotoScale,
+      scalePercent: isSocialExport
+        ? Math.max(exportPhotoScale, 100)
+        : exportPhotoScale,
       topInset: 0,
       bottomInset: 0,
     });
 
-    drawPosterOverlay(ctx, width, height, theme);
-
+    if (!isSocialExport) {
+      drawPosterOverlay(ctx, width, height, theme);
+    }
+    
     const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
-    bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
-    bottomShade.addColorStop(0.45, hasPhoto ? "rgba(0, 0, 0, 0.38)" : "rgba(0, 0, 0, 0.2)");
-    bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
+    
+    if (isSocialExport) {
+      bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
+      bottomShade.addColorStop(
+        0.52,
+        hasPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.1)"
+      );
+      bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.48)");
+    } else {
+      bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
+      bottomShade.addColorStop(
+        0.45,
+        hasPhoto ? "rgba(0, 0, 0, 0.38)" : "rgba(0, 0, 0, 0.2)"
+      );
+      bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
+    }
+    
     ctx.fillStyle = bottomShade;
     ctx.fillRect(0, 0, width, height);
-
-    ctx.save();
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
-    ctx.lineWidth = 4;
-    ctx.strokeRect(34, 34, width - 68, height - 68);
-    ctx.restore();
+    
+    if (!isSocialExport) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+      ctx.lineWidth = 4;
+      ctx.strokeRect(34, 34, width - 68, height - 68);
+      ctx.restore();
+    }
 
     if (isSocialExport) {
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
@@ -2655,9 +2675,12 @@ ${logLines}${commentText}${mediaText}`;
                     onError={() => setCardMediaReady(true)}
                     style={{
                       ...styles.trainingCardImage,
-                      objectFit: cardStyle === "social" ? "contain" : "cover",
-                      filter: getImageFilter(selectedFilter, filterIntensity),
-                      transform: `scale(${photoScale / 100})`,
+                          objectFit: "cover",
+                          filter: getImageFilter(selectedFilter, filterIntensity),
+                          transform:
+                            cardStyle === "social"
+                              ? `scale(${Math.max(photoScale, 100) / 100})`
+                              : `scale(${photoScale / 100})`,
                     }}
                   />
                 )}
@@ -2671,9 +2694,12 @@ ${logLines}${commentText}${mediaText}`;
                     playsInline
                     style={{
                       ...styles.trainingCardImage,
-                      objectFit: cardStyle === "social" ? "contain" : "cover",
-                      filter: getImageFilter(selectedFilter, filterIntensity),
-                      transform: `scale(${photoScale / 100})`,
+                          objectFit: "cover",
+                          filter: getImageFilter(selectedFilter, filterIntensity),
+                          transform:
+                            cardStyle === "social"
+                              ? `scale(${Math.max(photoScale, 100) / 100})`
+                              : `scale(${photoScale / 100})`,
                     }}
                   />
                 )}

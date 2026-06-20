@@ -2,8 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { useTraining } from "../store/TrainingContext";
 
-const CARD_MAKER_LOG_STORAGE_KEY = "fitness-league-card-maker-log-id";
-
 function getRounds(log) {
   const value =
     log?.rounds ||
@@ -485,18 +483,6 @@ export default function ProfilePage({ scrollTarget }) {
 
       return validIds;
     });
-  }, [logs]);
-
-  useEffect(() => {
-    const targetLogId = localStorage.getItem(CARD_MAKER_LOG_STORAGE_KEY);
-    if (!targetLogId) return;
-
-    const targetLogExists = logs.some((log) => log.id === targetLogId);
-    if (!targetLogExists) return;
-
-    setSelectedLogIds([targetLogId]);
-    setCardStyle("social");
-    localStorage.removeItem(CARD_MAKER_LOG_STORAGE_KEY);
   }, [logs]);
 
   useEffect(() => {
@@ -1650,25 +1636,20 @@ export default function ProfilePage({ scrollTarget }) {
       bottomInset: 0,
     });
 
-    if (!isSocialExport) {
-      drawPosterOverlay(ctx, width, height, theme);
+    drawPosterOverlay(ctx, width, height, theme);
 
-      const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
-      bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
-      bottomShade.addColorStop(
-        0.45,
-        hasPhoto ? "rgba(0, 0, 0, 0.38)" : "rgba(0, 0, 0, 0.2)"
-      );
-      bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
-      ctx.fillStyle = bottomShade;
-      ctx.fillRect(0, 0, width, height);
+    const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
+    bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
+    bottomShade.addColorStop(0.45, hasPhoto ? "rgba(0, 0, 0, 0.38)" : "rgba(0, 0, 0, 0.2)");
+    bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
+    ctx.fillStyle = bottomShade;
+    ctx.fillRect(0, 0, width, height);
 
-      ctx.save();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(34, 34, width - 68, height - 68);
-      ctx.restore();
-    }
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.14)";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(34, 34, width - 68, height - 68);
+    ctx.restore();
 
     if (isSocialExport) {
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
@@ -2709,14 +2690,12 @@ ${logLines}${commentText}${mediaText}`;
 
                 {!cardMedia && <div style={styles.trainingCardDefaultBg} />}
 
-                {cardStyle !== "social" && (
-                  <div
-                    style={{
-                      ...styles.trainingCardOverlay,
-                      background: getOverlayStyle(selectedFilter, filterIntensity),
-                    }}
-                  />
-                )}
+                <div
+                  style={{
+                    ...styles.trainingCardOverlay,
+                    background: getOverlayStyle(selectedFilter, filterIntensity),
+                  }}
+                />
 
                 {cardStyle === "poster" && <div style={styles.posterVignette} />}
 
@@ -3594,8 +3573,8 @@ const styles = {
     marginTop: "16px",
     borderRadius: "30px",
     overflow: "hidden",
-    border: "none",
-    boxShadow: "none",
+    border: "1px solid rgba(255, 255, 255, 0.14)",
+    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.4)",
   },
 
   trainingCardPhotoArea: {

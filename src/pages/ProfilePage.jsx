@@ -2740,8 +2740,8 @@ ${logLines}${commentText}${mediaText}`;
                     ...styles.trainingCardOverlay,
                     background:
                     cardStyle === "social"
-                      ? "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 66%, rgba(0,0,0,0.9) 66%, rgba(0,0,0,0.96) 100%)"
-                      : getOverlayStyle(selectedFilter, filterIntensity),
+                    ? "transparent"
+                    : getOverlayStyle(selectedFilter, filterIntensity),
                   }}
                 />
 

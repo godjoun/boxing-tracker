@@ -1670,12 +1670,10 @@ export default function ProfilePage({ scrollTarget }) {
 
     const isSocialExport = styleIdForExport === "social";
     const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
-      fit: "cover",
+      fit: isSocialExport ? "contain" : "cover",
       filterId: exportFilterId,
       filterIntensityValue: exportFilterIntensity,
-      scalePercent: isSocialExport
-        ? Math.max(exportPhotoScale, 100)
-        : exportPhotoScale,
+      scalePercent: isSocialExport ? 100 : exportPhotoScale,
       topInset: 0,
       bottomInset: 0,
     });
@@ -1684,26 +1682,19 @@ export default function ProfilePage({ scrollTarget }) {
       drawPosterOverlay(ctx, width, height, theme);
     }
     
-    const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
+    if (!isSocialExport) {
+      const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
     
-    if (isSocialExport) {
-      bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
-      bottomShade.addColorStop(
-        0.52,
-        hasPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.1)"
-      );
-      bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.48)");
-    } else {
       bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
       bottomShade.addColorStop(
         0.45,
         hasPhoto ? "rgba(0, 0, 0, 0.38)" : "rgba(0, 0, 0, 0.2)"
       );
       bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
-    }
     
-    ctx.fillStyle = bottomShade;
-    ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = bottomShade;
+      ctx.fillRect(0, 0, width, height);
+    }
 
     if (isSocialExport) {
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
@@ -1728,13 +1719,7 @@ export default function ProfilePage({ scrollTarget }) {
         baseline: "top",
       });
 
-      const panelY = 1060;
-      const panel = ctx.createLinearGradient(0, panelY, 0, height);
-      panel.addColorStop(0, "rgba(0, 0, 0, 0.08)");
-      panel.addColorStop(0.36, "rgba(0, 0, 0, 0.72)");
-      panel.addColorStop(1, "rgba(0, 0, 0, 0.96)");
-      ctx.fillStyle = panel;
-      ctx.fillRect(0, panelY, width, height - panelY);
+      // SOCIAL 저장에서는 사진 위에 별도 그라데이션 패널을 깔지 않는다.
 
       drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1134, 940, {
         size: 84,
@@ -2719,12 +2704,12 @@ ${logLines}${commentText}${mediaText}`;
                     onError={() => setCardMediaReady(true)}
                     style={{
                       ...styles.trainingCardImage,
-                          objectFit: "cover",
-                          filter: getImageFilter(selectedFilter, filterIntensity),
-                          transform:
-                            cardStyle === "social"
-                              ? `scale(${Math.max(photoScale, 100) / 100})`
-                              : `scale(${photoScale / 100})`,
+                      objectFit: cardStyle === "social" ? "contain" : "cover",
+                      filter: getImageFilter(selectedFilter, filterIntensity),
+                      transform:
+                        cardStyle === "social"
+                          ? "scale(1)"
+                          : `scale(${photoScale / 100})`,
                     }}
                   />
                 )}
@@ -2738,12 +2723,12 @@ ${logLines}${commentText}${mediaText}`;
                     playsInline
                     style={{
                       ...styles.trainingCardImage,
-                          objectFit: "cover",
-                          filter: getImageFilter(selectedFilter, filterIntensity),
-                          transform:
-                            cardStyle === "social"
-                              ? `scale(${Math.max(photoScale, 100) / 100})`
-                              : `scale(${photoScale / 100})`,
+                      objectFit: cardStyle === "social" ? "contain" : "cover",
+                      filter: getImageFilter(selectedFilter, filterIntensity),
+                      transform:
+                        cardStyle === "social"
+                          ? "scale(1)"
+                          : `scale(${photoScale / 100})`,
                     }}
                   />
                 )}
@@ -2751,13 +2736,13 @@ ${logLines}${commentText}${mediaText}`;
                 {!cardMedia && <div style={styles.trainingCardDefaultBg} />}
 
                 <div
-                    style={{
-                      ...styles.trainingCardOverlay,
-                      background:
-                        cardStyle === "social"
-                          ? "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.06) 58%, rgba(0,0,0,0.38) 100%)"
-                          : getOverlayStyle(selectedFilter, filterIntensity),
-                    }}
+                  style={{
+                    ...styles.trainingCardOverlay,
+                    background:
+                    cardStyle === "social"
+                      ? "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 66%, rgba(0,0,0,0.9) 66%, rgba(0,0,0,0.96) 100%)"
+                      : getOverlayStyle(selectedFilter, filterIntensity),
+                  }}
                 />
 
                 {cardStyle === "poster" && <div style={styles.posterVignette} />}
@@ -3636,8 +3621,8 @@ const styles = {
     marginTop: "16px",
     borderRadius: "30px",
     overflow: "hidden",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
-    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.4)",
+    border: "none",
+    boxShadow: "none",
   },
 
   trainingCardPhotoArea: {

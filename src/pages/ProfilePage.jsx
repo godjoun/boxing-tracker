@@ -1673,16 +1673,16 @@ export default function ProfilePage({ scrollTarget }) {
         const socialBottomBandY = 1510;
         const socialBottomInset = height - socialBottomBandY;
 
-    const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
-      fit: "cover",
-      filterId: exportFilterId,
-      filterIntensityValue: exportFilterIntensity,
-      scalePercent: isSocialExport
-        ? exportPhotoScale
-        : Math.max(exportPhotoScale, 100),
-      topInset: isSocialExport ? socialTopBandHeight : 0,
-      bottomInset: isSocialExport ? socialBottomInset : 0,
-    });
+        const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
+          fit: "cover",
+          filterId: exportFilterId,
+          filterIntensityValue: exportFilterIntensity,
+          scalePercent: isSocialExport
+            ? exportPhotoScale
+            : Math.max(exportPhotoScale, 100),
+          topInset: 0,
+          bottomInset: 0,
+        });
 
     if (!isSocialExport) {
       drawPosterOverlay(ctx, width, height, theme);
@@ -1703,11 +1703,8 @@ export default function ProfilePage({ scrollTarget }) {
     }
 
     if (isSocialExport) {
-      ctx.fillStyle = "#050505";
-ctx.fillRect(0, 0, width, socialTopBandHeight);
-
-      ctx.fillStyle = "rgba(0, 0, 0, 0.96)";
-      ctx.fillRect(0, socialBottomBandY, width, height - socialBottomBandY);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+      ctx.fillRect(0, 0, width, height);
 
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
         size: 34,

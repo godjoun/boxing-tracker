@@ -900,6 +900,50 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.fillRect(0, 0, width, height);
   }
 
+  function drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto) {
+    const mood = ctx.createLinearGradient(0, 0, 0, height);
+  
+    mood.addColorStop(0, hasPhoto ? "rgba(0, 0, 0, 0.28)" : "rgba(0, 0, 0, 0.12)");
+    mood.addColorStop(0.35, "rgba(0, 0, 0, 0.08)");
+    mood.addColorStop(0.68, "rgba(0, 0, 0, 0.24)");
+    mood.addColorStop(1, "rgba(0, 0, 0, 0.64)");
+  
+    ctx.fillStyle = mood;
+    ctx.fillRect(0, 0, width, height);
+  
+    const accentGlow = ctx.createRadialGradient(
+      width * 0.82,
+      height * 0.12,
+      10,
+      width * 0.82,
+      height * 0.12,
+      width * 0.72
+    );
+  
+    accentGlow.addColorStop(0, theme.accentSoft);
+    accentGlow.addColorStop(0.38, "rgba(0, 0, 0, 0)");
+    accentGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  
+    ctx.fillStyle = accentGlow;
+    ctx.fillRect(0, 0, width, height);
+  
+    const vignette = ctx.createRadialGradient(
+      width * 0.5,
+      height * 0.45,
+      width * 0.2,
+      width * 0.5,
+      height * 0.45,
+      width * 0.9
+    );
+  
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(0.72, "rgba(0, 0, 0, 0.08)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.42)");
+  
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+  }
+
   function drawPosterDivider(ctx, y, width, centerX, theme) {
     ctx.save();
     ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
@@ -1422,6 +1466,9 @@ export default function ProfilePage({ scrollTarget }) {
 
     if (!isSocialExport) {
       drawPosterOverlay(ctx, width, height, theme);
+    }
+    if (isSocialExport) {
+      drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto);
     }
     
     if (!isSocialExport) {
@@ -2629,7 +2676,7 @@ ${logLines}${commentText}${mediaText}`;
                     ...styles.trainingCardOverlay,
                     background:
                       cardStyle === "social"
-                        ? "transparent"
+                        ? "linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.08) 36%, rgba(0, 0, 0, 0.54)), radial-gradient(circle at 82% 12%, rgba(245, 185, 66, 0.18), transparent 38%)"
                         : getOverlayStyle(selectedFilter, filterIntensity),
                   }}
                 />

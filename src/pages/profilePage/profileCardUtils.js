@@ -14,12 +14,27 @@ export function getTotalMinutes(log) {
   return Number(log?.minutes || log?.duration || 0);
 }
 
-export function getTierName(totalRounds, totalLogs) {
-  if (totalRounds >= 100 || totalLogs >= 50) return "챔피언";
-  if (totalRounds >= 60 || totalLogs >= 30) return "파이터";
-  if (totalRounds >= 30 || totalLogs >= 15) return "컨텐더";
-  if (totalRounds >= 10 || totalLogs >= 5) return "아마추어";
-  return "루키";
+export function getFighterProgress(totalRounds, totalMinutes, totalLogs) {
+  const roundXp = totalRounds * 10;
+  const minuteXp = totalMinutes * 2;
+  const logXp = totalLogs * 5;
+
+  const totalXp = roundXp + minuteXp + logXp;
+  const level = Math.floor(totalXp / 100) + 1;
+  const currentLevelXp = totalXp % 100;
+  const nextLevelXp = 100;
+  const xpToNextLevel = nextLevelXp - currentLevelXp;
+  const progressPercent = Math.min(100, Math.round((currentLevelXp / nextLevelXp) * 100));
+
+  return {
+    level,
+    totalXp,
+    currentLevelXp,
+    nextLevelXp,
+    xpToNextLevel,
+    progressPercent,
+    levelLabel: `LEVEL ${level}`,
+  };
 }
 
 

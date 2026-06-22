@@ -5,7 +5,7 @@ import {
   getDisplayComment,
   getRounds,
   getTodayString,
-  getTierName,
+  getFighterProgress,
   getTotalMinutes,
   getTrainingStreak,
   isIOSLikeDevice,
@@ -131,7 +131,11 @@ export default function ProfilePage({ scrollTarget }) {
     const timerLogs = logs.filter((log) => log.source === "timer");
     const manualLogs = logs.filter((log) => log.source === "manual");
 
-    const tierName = getTierName(totalRounds, totalLogs);
+    const fighterProgress = getFighterProgress(
+      totalRounds,
+      totalMinutes,
+      totalLogs
+    );
 
     const featuredLogs = logs
       .filter((log) => log.publicComment || log.memo)
@@ -172,7 +176,14 @@ export default function ProfilePage({ scrollTarget }) {
       todayCount: todayLogs.length,
       timerCount: timerLogs.length,
       manualCount: manualLogs.length,
-      tierName,
+      fighterProgress,
+      levelLabel: fighterProgress.levelLabel,
+      level: fighterProgress.level,
+      totalXp: fighterProgress.totalXp,
+      currentLevelXp: fighterProgress.currentLevelXp,
+      nextLevelXp: fighterProgress.nextLevelXp,
+      xpToNextLevel: fighterProgress.xpToNextLevel,
+      progressPercent: fighterProgress.progressPercent,
       achievements,
       featuredLogs,
     };
@@ -369,7 +380,7 @@ export default function ProfilePage({ scrollTarget }) {
       levelUpSlogan,
       showComment,
       profileNickname: profile.nickname || "",
-      profileTier: profileStats.tierName,
+      profileTier: profileStats.levelLabel,
       cardTotalRounds,
       cardTotalMinutes,
       mainComment,
@@ -1498,7 +1509,7 @@ export default function ProfilePage({ scrollTarget }) {
         baseline: "top",
       });
 
-      drawTextFit(ctx, profileStats.tierName, width - 64, 72, 240, {
+      drawTextFit(ctx, profileStats.levelLabel, width - 64, 72, 240, {
         size: 34,
         minSize: 22,
         weight: 950,
@@ -1975,7 +1986,7 @@ ${mainComment}`
         ? `[FIGHTER POSTER]
 ${posterTextLines.join("\n")}${commentText}${mediaText}`
         : `[TRAINING CARD]
-${profile.nickname || "나"} · ${profileStats.tierName}
+${profile.nickname || "나"} · ${profileStats.levelLabel}
 
 ${logLines}${commentText}${mediaText}`;
 
@@ -2058,7 +2069,7 @@ ${logLines}${commentText}${mediaText}`;
 
           <div style={styles.tierBadge}>
             <span style={styles.tierLabel}>등급</span>
-            <strong style={styles.tierName}>{profileStats.tierName}</strong>
+            <strong style={styles.tierName}>{profileStats.levelLabel}</strong>
           </div>
         </div>
 
@@ -2879,7 +2890,7 @@ ${logLines}${commentText}${mediaText}`;
                       <span style={styles.socialCardKicker}>
                         BOXING TRAINING
                       </span>
-                      <strong>{profileStats.tierName}</strong>
+                      <strong>{profileStats.levelLabel}</strong>
                     </div>
 
                     <div

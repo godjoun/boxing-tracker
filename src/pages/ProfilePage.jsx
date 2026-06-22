@@ -1,327 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toPng } from "html-to-image";
 import { useTraining } from "../store/TrainingContext";
-
-function getRounds(log) {
-  const value =
-    log?.rounds ||
-    log?.round ||
-    log?.totalRounds ||
-    log?.completedRounds ||
-    log?.sets ||
-    0;
-
-  return Number(value) || 0;
-}
-
-function getTotalMinutes(log) {
-  return Number(log?.minutes || log?.duration || 0);
-}
-
-function getTierName(totalRounds, totalLogs) {
-  if (totalRounds >= 100 || totalLogs >= 50) return "챔피언";
-  if (totalRounds >= 60 || totalLogs >= 30) return "파이터";
-  if (totalRounds >= 30 || totalLogs >= 15) return "컨텐더";
-  if (totalRounds >= 10 || totalLogs >= 5) return "아마추어";
-  return "루키";
-}
-
-
-function getTodayString() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const date = String(today.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${date}`;
-}
-
-function isIOSLikeDevice() {
-  if (typeof navigator === "undefined") return false;
-
-  const userAgent = navigator.userAgent || "";
-  const platform = navigator.platform || "";
-
-  return (
-    /iPad|iPhone|iPod/.test(userAgent) ||
-    (platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
-
-function getDisplayComment(log) {
-  return log?.publicComment || log?.memo || "";
-}
-
-function resizeImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const originalImageData = reader.result;
-      const image = new Image();
-
-      image.onload = () => {
-        try {
-          const maxSize = 700;
-          const scale = Math.min(
-            maxSize / image.width,
-            maxSize / image.height,
-            1
-          );
-
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.round(image.width * scale);
-          canvas.height = Math.round(image.height * scale);
-
-          const ctx = canvas.getContext("2d");
-
-          if (!ctx) {
-            resolve(originalImageData);
-            return;
-          }
-
-          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-          const compressedImage = canvas.toDataURL("image/jpeg", 0.72);
-          resolve(compressedImage);
-        } catch {
-          resolve(originalImageData);
-        }
-      };
-
-      image.onerror = () => {
-        resolve(originalImageData);
-      };
-
-      image.src = originalImageData;
-    };
-
-    reader.onerror = () => {
-      reject(new Error("파일을 읽지 못했어요."));
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
-const CARD_FILTERS = [
-  {
-    id: "red",
-    name: "RED CORNER",
-    description: "빨간 링 코너 느낌",
-  },
-  {
-    id: "dark",
-    name: "DARK GYM",
-    description: "어두운 체육관 느낌",
-  },
-  {
-    id: "gold",
-    name: "CHAMPION GOLD",
-    description: "승리 카드 느낌",
-  },
-  {
-    id: "blue",
-    name: "BLUE CORNER",
-    description: "파란 코너 느낌",
-  },
-  {
-    id: "mono",
-    name: "CLASSIC MONO",
-    description: "흑백 복싱 다큐 느낌",
-  },
-  {
-    id: "chrome",
-    name: "CHROME CARD",
-    description: "반짝이는 트레이딩 카드 느낌",
-  },
-  {
-    id: "future",
-    name: "FUTURE STAR",
-    description: "신예 파이터 카드 느낌",
-  },
-  {
-    id: "vintage",
-    name: "VINTAGE RINGSIDE",
-    description: "올드 복싱 포스터 느낌",
-  },
-];
-
-const CARD_STYLES = [
-  {
-    id: "basic",
-    name: "BASIC",
-    description: "기존 복싱 카드",
-  },
-  {
-    id: "social",
-    name: "SOCIAL",
-    description: "사진 중심 공유 카드",
-  },
-  {
-    id: "poster",
-    name: "POSTER",
-    description: "한 사람 주인공 포스터",
-  },
-];
-
-function getCardBackground(filterId) {
-  if (filterId === "chrome") {
-    return "radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.58), transparent 18%), radial-gradient(circle at 82% 12%, rgba(255, 51, 51, 0.45), transparent 30%), linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 28%, rgba(255, 255, 255, 0.08) 42%, transparent 58%, rgba(255, 255, 255, 0.16) 76%), linear-gradient(145deg, #262626, #050505)";
-  }
-
-  if (filterId === "future") {
-    return "radial-gradient(circle at 80% 12%, rgba(139, 92, 246, 0.48), transparent 34%), radial-gradient(circle at 15% 82%, rgba(14, 165, 233, 0.36), transparent 32%), linear-gradient(145deg, #120a2f, #050505)";
-  }
-
-  if (filterId === "vintage") {
-    return "radial-gradient(circle at 20% 18%, rgba(255, 220, 140, 0.22), transparent 28%), linear-gradient(145deg, #2a1b10, #070504)";
-  }
-
-  if (filterId === "gold") {
-    return "radial-gradient(circle at 80% 12%, rgba(255, 198, 41, 0.42), transparent 34%), linear-gradient(145deg, #241800, #050505)";
-  }
-
-  if (filterId === "blue") {
-    return "radial-gradient(circle at 82% 10%, rgba(54, 124, 255, 0.42), transparent 35%), linear-gradient(145deg, #07152f, #050505)";
-  }
-
-  if (filterId === "mono") {
-    return "radial-gradient(circle at 82% 10%, rgba(255, 255, 255, 0.18), transparent 35%), linear-gradient(145deg, #202020, #050505)";
-  }
-
-  if (filterId === "dark") {
-    return "radial-gradient(circle at 82% 10%, rgba(255, 255, 255, 0.1), transparent 35%), linear-gradient(145deg, #151515, #000000)";
-  }
-
-  return "radial-gradient(circle at 82% 10%, rgba(255, 51, 51, 0.46), transparent 35%), linear-gradient(145deg, #250909, #050505)";
-}
-
-function getImageFilter(filterId, intensity) {
-  const strength = intensity / 100;
-
-  if (filterId === "gold") {
-    return `contrast(${1.08 + 0.42 * strength}) saturate(${
-      1.14 + 0.34 * strength
-    }) sepia(${0.3 + 0.44 * strength}) brightness(${
-      0.98 - 0.04 * strength
-    })`;
-  }
-
-  if (filterId === "blue") {
-    return `contrast(${1.08 + 0.42 * strength}) saturate(${
-      1.12 + 0.34 * strength
-    }) hue-rotate(${170 * strength}deg) brightness(${
-      0.98 - 0.05 * strength
-    })`;
-  }
-
-  if (filterId === "mono") {
-    return `grayscale(${0.65 + 0.35 * strength}) contrast(${
-      1.18 + 0.42 * strength
-    }) brightness(${1 - 0.04 * strength})`;
-  }
-
-  if (filterId === "dark") {
-    return `contrast(${1.12 + 0.52 * strength}) brightness(${
-      0.94 - 0.2 * strength
-    }) saturate(${0.92 - 0.18 * strength})`;
-  }
-
-  if (filterId === "chrome") {
-    return `contrast(${1.24 + 0.5 * strength}) saturate(${
-      1.02 + 0.22 * strength
-    }) brightness(${1.06 + 0.1 * strength}) sepia(${
-      0.08 * strength
-    })`;
-  }
-
-  if (filterId === "future") {
-    return `contrast(${1.18 + 0.48 * strength}) saturate(${
-      1.36 + 0.56 * strength
-    }) hue-rotate(${30 * strength}deg) brightness(${
-      1.01 - 0.02 * strength
-    })`;
-  }
-
-  if (filterId === "vintage") {
-    return `contrast(${1.16 + 0.44 * strength}) sepia(${
-      0.42 + 0.56 * strength
-    }) saturate(${0.86 - 0.08 * strength}) brightness(${
-      0.97 - 0.05 * strength
-    })`;
-  }
-
-  return `contrast(${1.16 + 0.5 * strength}) saturate(${
-    1.2 + 0.48 * strength
-  }) brightness(${0.98 - 0.05 * strength}) sepia(${
-    0.12 + 0.28 * strength
-  })`;
-}
-
-function getOverlayStyle(filterId, intensity) {
-  const strength = intensity / 100;
-
-  if (filterId === "chrome") {
-    return `linear-gradient(135deg, rgba(255, 255, 255, ${
-      0.05 + 0.16 * strength
-    }), transparent 22%, rgba(255, 51, 51, ${
-      0.04 + 0.12 * strength
-    }) 48%, transparent 68%, rgba(255, 255, 255, ${
-      0.06 + 0.14 * strength
-    })), linear-gradient(180deg, rgba(0, 0, 0, ${
-      0.18 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.46 + 0.18 * strength}))`;
-  }
-
-  if (filterId === "future") {
-    return `linear-gradient(180deg, rgba(88, 28, 135, ${
-      0.06 + 0.16 * strength
-    }), rgba(0, 0, 0, ${
-      0.42 + 0.22 * strength
-    })), linear-gradient(135deg, rgba(14, 165, 233, ${
-      0.04 + 0.12 * strength
-    }), transparent 42%, rgba(255, 51, 51, ${0.04 + 0.08 * strength}))`;
-  }
-
-  if (filterId === "vintage") {
-    return `linear-gradient(180deg, rgba(255, 214, 150, ${
-      0.04 + 0.1 * strength
-    }), rgba(0, 0, 0, ${
-      0.5 + 0.2 * strength
-    })), radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, ${
-      0.18 + 0.18 * strength
-    }))`;
-  }
-
-  if (filterId === "gold") {
-    return `linear-gradient(180deg, rgba(255, 180, 35, ${
-      0.02 + 0.1 * strength
-    }), rgba(0, 0, 0, ${0.42 + 0.24 * strength}))`;
-  }
-
-  if (filterId === "blue") {
-    return `linear-gradient(180deg, rgba(35, 105, 255, ${
-      0.03 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.42 + 0.25 * strength}))`;
-  }
-
-  if (filterId === "mono") {
-    return `linear-gradient(180deg, rgba(255, 255, 255, ${
-      0.01 + 0.04 * strength
-    }), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
-  }
-
-  if (filterId === "dark") {
-    return `linear-gradient(180deg, rgba(0, 0, 0, ${
-      0.04 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.5 + 0.25 * strength}))`;
-  }
-
-  return `linear-gradient(180deg, rgba(255, 35, 35, ${
-    0.03 + 0.14 * strength
-  }), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
-}
+import { styles } from "./ProfilePage.styles";
+import {
+  getDisplayComment,
+  getRounds,
+  getTodayString,
+  getTierName,
+  getTotalMinutes,
+  getTrainingStreak,
+  isIOSLikeDevice,
+  resizeImage,
+} from "./profilePage/profileCardUtils";
+import {
+  CARD_FILTERS,
+  CARD_STYLES,
+  getCardBackground,
+  getImageFilter,
+  getOverlayStyle,
+} from "./profilePage/cardConfig";
 
 export default function ProfilePage({ scrollTarget }) {
   const {
@@ -349,14 +45,16 @@ export default function ProfilePage({ scrollTarget }) {
   const [cardMedia, setCardMedia] = useState("");
   const [cardMediaType, setCardMediaType] = useState("");
   const [cardMediaReady, setCardMediaReady] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState("red");
-  const selectedFilterRef = useRef("red");
+  const [selectedFilter, setSelectedFilter] = useState("levelup");
+  const selectedFilterRef = useRef("levelup");
   const [filterIntensity, setFilterIntensity] = useState(75);
   const [photoScale, setPhotoScale] = useState(100);
   const [copied, setCopied] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showComment, setShowComment] = useState(true);
   const [customTrainingTitle, setCustomTrainingTitle] = useState("");
+  const [levelUpLevel, setLevelUpLevel] = useState("56");
+  const [levelUpSlogan, setLevelUpSlogan] = useState("ONE ROUND AT A TIME");
   const [cardStyle, setCardStyle] = useState("basic");
   const [posterMainName, setPosterMainName] = useState("");
   const [posterSubtitle, setPosterSubtitle] = useState("THE ROOKIE");
@@ -378,7 +76,7 @@ export default function ProfilePage({ scrollTarget }) {
   });
 
   const posterExportRef = useRef({
-    selectedFilter: "red",
+    selectedFilter: "levelup",
     filterIntensity: 75,
     photoScale: 100,
     cardMedia: "",
@@ -589,6 +287,24 @@ export default function ProfilePage({ scrollTarget }) {
     return sum + getTotalMinutes(log);
   }, 0);
 
+  const levelUpDisplayName = String(
+    profile.nickname || nickname || "JOUN"
+  ).trim().toUpperCase();
+  const levelUpDisplayLevel =
+    String(levelUpLevel || "")
+      .replace(/[^0-9]/g, "")
+      .slice(0, 3) || "1";
+  const levelUpDisplaySlogan = String(
+    levelUpSlogan || "ONE ROUND AT A TIME"
+  ).trim().toUpperCase();
+  const levelUpXpToday = cardTotalRounds * 7;
+  const levelUpStreakDays = getTrainingStreak(logs);
+  const levelUpNextTierXp = Math.max(0, 100 - (profileStats.totalRounds % 100));
+  const levelUpProgressPercent = Math.min(
+    100,
+    Math.max(8, profileStats.totalRounds % 100)
+  );
+
   const mainComment = useMemo(() => {
     const firstLogWithComment = selectedLogs.find(
       (log) => log.publicComment || log.memo
@@ -649,6 +365,8 @@ export default function ProfilePage({ scrollTarget }) {
       cardMediaType,
       selectedLogIds,
       customTrainingTitle,
+      levelUpLevel,
+      levelUpSlogan,
       showComment,
       profileNickname: profile.nickname || "",
       profileTier: profileStats.tierName,
@@ -1007,6 +725,19 @@ export default function ProfilePage({ scrollTarget }) {
   }
 
   function getPosterCanvasTheme(filterId) {
+    if (filterId === "levelup") {
+      return {
+        bgA: "#1d1607",
+        bgB: "#030303",
+        bgC: "#090603",
+        accent: "#d6a234",
+        accentSoft: "rgba(214, 162, 52, 0.28)",
+        overlayTop: "rgba(0, 0, 0, 0.36)",
+        overlayMid: "rgba(0, 0, 0, 0.18)",
+        overlayBottom: "rgba(0, 0, 0, 0.92)",
+      };
+    }
+
     if (filterId === "red") {
       return {
         bgA: "#330606",
@@ -1203,7 +934,7 @@ export default function ProfilePage({ scrollTarget }) {
       exportSnapshot.selectedFilter ||
       selectedFilterRef.current ||
       selectedFilter ||
-      "red";
+      "levelup";
     const exportFilterIntensity =
       typeof exportSnapshot.filterIntensity === "number"
         ? exportSnapshot.filterIntensity
@@ -1519,6 +1250,11 @@ export default function ProfilePage({ scrollTarget }) {
   function applyCanvasImageFilter(ctx, filterId, strength) {
     if (!("filter" in ctx)) return;
   
+    if (filterId === "levelup") {
+      ctx.filter = `contrast(${1.16 + 0.42 * strength}) saturate(${0.84 + 0.2 * strength}) sepia(${0.32 + 0.34 * strength}) brightness(${0.9 - 0.12 * strength})`;
+      return;
+    }
+  
     if (filterId === "mono") {
       ctx.filter = `grayscale(${0.65 + 0.35 * strength}) contrast(${
         1.18 + 0.34 * strength
@@ -1792,115 +1528,219 @@ export default function ProfilePage({ scrollTarget }) {
         });
       });
     } else {
-      drawTextFit(ctx, "TRAINING CARD", 66, 70, 480, {
-        size: 34,
-        minSize: 24,
+      const accent = theme.accent || "#d6a234";
+      const cardPadding = 58;
+
+      const sideShade = ctx.createLinearGradient(0, 0, width * 0.75, 0);
+      sideShade.addColorStop(0, "rgba(0, 0, 0, 0.76)");
+      sideShade.addColorStop(0.58, "rgba(0, 0, 0, 0.42)");
+      sideShade.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = sideShade;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(214, 162, 52, 0.7)";
+      ctx.lineWidth = 4;
+      roundRect(ctx, 34, 34, width - 68, height - 68, 42);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.36)";
+      roundRect(ctx, 78, 74, 112, 112, 28);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(214, 162, 52, 0.78)";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      drawTextFit(ctx, "♛", 134, 94, 78, {
+        size: 56,
+        minSize: 42,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        color: accent,
+        strokeWidth: 2,
+        baseline: "top",
+      });
+      ctx.restore();
+
+      drawTextFit(ctx, "PERSONAL TRAINING ID", 210, 108, 520, {
+        size: 32,
+        minSize: 22,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "rgba(255, 255, 255, 0.92)",
+        strokeWidth: 3,
+        baseline: "top",
+      });
+
+      drawTextFit(ctx, levelUpDisplayName, cardPadding, 210, 720, {
+        size: 154,
+        minSize: 72,
+        weight: 950,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "#ffffff",
+        strokeWidth: 8,
+        baseline: "top",
+      });
+
+      drawTextFit(ctx, "LEVEL", cardPadding, 420, 240, {
+        size: 44,
+        minSize: 30,
         weight: 950,
         family: "Arial Black, Arial, sans-serif",
         align: "left",
         color: "#ffffff",
-        strokeWidth: 3,
+        strokeWidth: 4,
         baseline: "top",
       });
 
-      drawTextFit(ctx, profileStats.tierName, width - 66, 70, 260, {
-        size: 34,
-        minSize: 22,
+      drawTextFit(ctx, levelUpDisplayLevel, cardPadding, 470, 420, {
+        size: 210,
+        minSize: 110,
         weight: 950,
-        family: "Arial Black, Arial, sans-serif",
-        align: "right",
-        color: theme.accent,
-        strokeWidth: 3,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        align: "left",
+        color: accent,
+        strokeWidth: 8,
         baseline: "top",
       });
 
-      const contentX = 118;
-      const contentY = 1050;
       ctx.save();
-      const lineGradient = ctx.createLinearGradient(0, contentY, 0, contentY + 390);
-      lineGradient.addColorStop(0, "rgba(255, 255, 255, 0.96)");
-      lineGradient.addColorStop(1, theme.accent);
-      ctx.fillStyle = lineGradient;
-      roundRect(ctx, 72, contentY, 8, 390, 4);
-      ctx.fill();
+      ctx.fillStyle = accent;
+      ctx.fillRect(cardPadding, 744, 300, 6);
       ctx.restore();
 
-      drawTextFit(ctx, "TRAINING", contentX, contentY, 360, {
-        size: 26,
-        minSize: 18,
+      drawWrappedText(ctx, levelUpDisplaySlogan, cardPadding, 790, 620, {
+        size: 64,
+        weight: 950,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        lineHeight: 72,
+        maxLines: 2,
+        color: "#ffffff",
+        align: "left",
+      });
+
+      const statY = 1096;
+      const statW = 292;
+      const statH = 178;
+      const statGap = 34;
+      const statItems = [
+        ["🥊", `${profileStats.totalRounds}`, "ROUNDS", "COMPLETED"],
+        ["⚡", `+${levelUpXpToday}`, "XP", "TODAY"],
+        ["🔥", `${levelUpStreakDays || 1}`, "STREAK", "DAYS"],
+      ];
+
+      statItems.forEach(([icon, value, labelA, labelB], index) => {
+        const x = 68 + index * (statW + statGap);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.48)";
+        roundRect(ctx, x, statY, statW, statH, 26);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(214, 162, 52, 0.62)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        drawTextFit(ctx, icon, x + 32, statY + 38, 58, {
+          size: 42,
+          minSize: 32,
+          weight: 950,
+          align: "left",
+          color: accent,
+          baseline: "top",
+          shadow: false,
+        });
+
+        drawTextFit(ctx, value, x + statW - 34, statY + 36, statW - 112, {
+          size: 56,
+          minSize: 32,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "right",
+          color: "#ffffff",
+          strokeWidth: 4,
+          baseline: "top",
+        });
+
+        drawTextFit(ctx, labelA, x + statW - 34, statY + 98, statW - 80, {
+          size: 27,
+          minSize: 20,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "right",
+          color: accent,
+          baseline: "top",
+          shadow: false,
+        });
+
+        drawTextFit(ctx, labelB, x + statW - 34, statY + 130, statW - 80, {
+          size: 24,
+          minSize: 18,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "right",
+          color: "#ffffff",
+          baseline: "top",
+          shadow: false,
+        });
+      });
+
+      const tierX = 68;
+      const tierY = 1350;
+      const tierW = width - 136;
+      const tierH = 176;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.66)";
+      roundRect(ctx, tierX, tierY, tierW, tierH, 28);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(214, 162, 52, 0.7)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      drawTextFit(ctx, "NEXT TIER:", tierX + 36, tierY + 34, 280, {
+        size: 36,
+        minSize: 24,
         weight: 950,
         family: "Arial Black, Arial, sans-serif",
         align: "left",
-        color: "rgba(255, 255, 255, 0.64)",
+        color: "rgba(255, 255, 255, 0.86)",
         baseline: "top",
         shadow: false,
       });
 
-      let y = contentY + 48;
-      visibleCardLogs.forEach((log, index) => {
-        const cardTitle = getCardLogTitle(log, index) || "TRAINING";
-        const trainingInfo = `${getRounds(log)}R · ${log.minutes || log.duration}m`;
-
-        drawTextFit(ctx, cardTitle.toUpperCase(), contentX, y, 660, {
-          size: 46,
-          minSize: 28,
-          weight: 950,
-          family: "Arial Black, Arial, sans-serif",
-          align: "left",
-          color: "#ffffff",
-          strokeWidth: 3,
-          baseline: "top",
-        });
-
-        drawTextFit(ctx, trainingInfo.toUpperCase(), contentX, y + 48, 320, {
-          size: 28,
-          minSize: 20,
-          weight: 900,
-          family: "Arial Black, Arial, sans-serif",
-          align: "left",
-          color: theme.accent,
-          baseline: "top",
-          shadow: false,
-        });
-
-        y += 96;
-      });
-
-      if (hiddenCardLogCount > 0) {
-        drawTextFit(ctx, `+ ${hiddenCardLogCount} MORE`, contentX, y, 300, {
-          size: 24,
-          minSize: 18,
-          weight: 900,
-          family: "Arial Black, Arial, sans-serif",
-          align: "left",
-          color: "rgba(255, 255, 255, 0.66)",
-          baseline: "top",
-          shadow: false,
-        });
-        y += 42;
-      }
-
-      if (showComment) {
-        y = drawWrappedText(ctx, mainComment, contentX, y + 12, 720, {
-          size: 30,
-          weight: 820,
-          lineHeight: 42,
-          maxLines: 2,
-          color: "rgba(255, 255, 255, 0.78)",
-          align: "left",
-        });
-      }
-
-      drawTextFit(ctx, `${profile.nickname || "나"} · ${profileStats.tierName}`, contentX, 1488, 620, {
-        size: 28,
-        minSize: 18,
+      drawTextFit(ctx, "ELITE", tierX + 330, tierY + 26, 330, {
+        size: 76,
+        minSize: 44,
         weight: 950,
-        family: "Arial Black, Arial, sans-serif",
+        family: "Impact, Arial Black, Arial, sans-serif",
         align: "left",
-        color: "rgba(255, 255, 255, 0.78)",
-        strokeWidth: 2,
+        color: accent,
+        strokeWidth: 4,
         baseline: "top",
       });
+
+      drawTextFit(ctx, `${levelUpNextTierXp || 100} XP`, tierX + tierW - 42, tierY + 36, 220, {
+        size: 56,
+        minSize: 34,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "right",
+        color: accent,
+        strokeWidth: 4,
+        baseline: "top",
+      });
+
+      ctx.save();
+      const barX = tierX + 36;
+      const barY = tierY + 122;
+      const barW = tierW - 72;
+      const barH = 28;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+      roundRect(ctx, barX, barY, barW, barH, 14);
+      ctx.fill();
+      ctx.fillStyle = accent;
+      roundRect(ctx, barX, barY, barW * (levelUpProgressPercent / 100), barH, 14);
+      ctx.fill();
+      ctx.restore();
     }
 
     return canvas.toDataURL("image/png", 1);
@@ -1942,6 +1782,8 @@ export default function ProfilePage({ scrollTarget }) {
       const filename =
         cardStyle === "poster"
           ? `boxing-fighter-poster-${Date.now()}.png`
+          : cardStyle === "basic"
+          ? `boxing-level-up-card-${Date.now()}.png`
           : `boxing-training-card-${Date.now()}.png`;
 
       const dataUrl = await buildCardExportDataUrl();
@@ -2483,22 +2325,58 @@ ${logLines}${commentText}${mediaText}`;
                 끄면 카드 이미지와 공유 문구에서 코멘트가 빠져.
               </p>
 
-              <label style={{ ...styles.label, marginTop: "16px" }}>
-                카드에 보여줄 이름
-                <input
-                  value={customTrainingTitle}
-                  onChange={(event) =>
-                    setCustomTrainingTitle(event.target.value)
-                  }
-                  placeholder="예: 아침 샌드백"
-                  style={styles.input}
-                />
-              </label>
+              {cardStyle === "basic" ? (
+                <div style={styles.levelUpInputBox}>
+                  <p style={styles.cardMakerLabel}>LEVEL UP 입력</p>
+                  <p style={styles.cardMakerHelp}>
+                    업로드한 사진 위에 표시할 레벨과 한 줄 문구를 정해줘.
+                  </p>
 
-              <p style={styles.commentToggleHelp}>
-                비워두면 “직접 설정 루틴”은 카드에 표시되지 않아. 이름을 쓰면
-                카드와 공유 문구에 그 이름이 표시돼.
-              </p>
+                  <label style={styles.label}>
+                    레벨
+                    <input
+                      value={levelUpLevel}
+                      onChange={(event) =>
+                        setLevelUpLevel(
+                          event.target.value.replace(/[^0-9]/g, "").slice(0, 3)
+                        )
+                      }
+                      placeholder="예: 56"
+                      inputMode="numeric"
+                      style={styles.input}
+                    />
+                  </label>
+
+                  <label style={{ ...styles.label, marginTop: "12px" }}>
+                    카드 문구
+                    <input
+                      value={levelUpSlogan}
+                      onChange={(event) => setLevelUpSlogan(event.target.value)}
+                      placeholder="예: ONE ROUND AT A TIME"
+                      style={styles.input}
+                    />
+                  </label>
+                </div>
+              ) : (
+                <>
+                  <label style={{ ...styles.label, marginTop: "16px" }}>
+                    카드에 보여줄 이름
+                    <input
+                      value={customTrainingTitle}
+                      onChange={(event) =>
+                        setCustomTrainingTitle(event.target.value)
+                      }
+                      placeholder="예: 아침 샌드백"
+                      style={styles.input}
+                    />
+                  </label>
+
+                  <p style={styles.commentToggleHelp}>
+                    비워두면 “직접 설정 루틴”은 카드에 표시되지 않아. 이름을 쓰면
+                    카드와 공유 문구에 그 이름이 표시돼.
+                  </p>
+                </>
+              )}
 
               {cardStyle === "poster" && (
                 <div style={styles.posterInputBox}>
@@ -2755,56 +2633,64 @@ ${logLines}${commentText}${mediaText}`;
                 {cardStyle === "poster" && <div style={styles.posterVignette} />}
 
                 {cardStyle === "basic" ? (
-                  <div style={styles.trainingCardTextLayer}>
-                    <div style={styles.trainingCardTop}>
-                      <span style={styles.trainingCardKicker}>
-                        TRAINING CARD
-                      </span>
-                      <strong>{profileStats.tierName}</strong>
+                  <div style={styles.levelUpCardTextLayer}>
+                    <div style={styles.levelUpHeader}>
+                      <div style={styles.levelUpBadge}>♛</div>
+                      <span>PERSONAL TRAINING ID</span>
                     </div>
 
-                    <div style={styles.trainingCardBottomContent}>
-                      <div style={styles.basicPosterInfo}>
-                        <div style={styles.basicPosterLine} />
+                    <div style={styles.levelUpMainBlock}>
+                      <h2 style={styles.levelUpName}>{levelUpDisplayName}</h2>
 
-                        <div style={styles.basicPosterContent}>
-                          <span style={styles.basicPosterLabel}>TRAINING</span>
+                      <span style={styles.levelUpLabel}>LEVEL</span>
+                      <strong style={styles.levelUpNumber}>
+                        {levelUpDisplayLevel}
+                      </strong>
 
-                          <div style={styles.basicTrainingLineList}>
-                            {visibleCardLogs.map((log, index) => {
-                              const cardTitle = getCardLogTitle(log, index);
-                              const trainingInfo = `${getRounds(log)}R · ${
-                                log.minutes || log.duration
-                              }m`;
+                      <p style={styles.levelUpSlogan}>{levelUpDisplaySlogan}</p>
+                    </div>
 
-                              return (
-                                <div
-                                  key={log.id}
-                                  style={styles.basicTrainingLine}
-                                >
-                                  <strong>{cardTitle || "TRAINING"}</strong>
-                                  <span>{trainingInfo}</span>
-                                </div>
-                              );
-                            })}
+                    <div style={styles.levelUpBottomBlock}>
+                      <div style={styles.levelUpStatsRow}>
+                        <div style={styles.levelUpStatBox}>
+                          <span style={styles.levelUpStatIcon}>🥊</span>
+                          <strong>{profileStats.totalRounds}</strong>
+                          <span>ROUNDS</span>
+                          <small>COMPLETED</small>
+                        </div>
 
-                            {hiddenCardLogCount > 0 && (
-                              <div style={styles.basicTrainingMore}>
-                                + {hiddenCardLogCount} more
-                              </div>
-                            )}
-                          </div>
+                        <div style={styles.levelUpStatBox}>
+                          <span style={styles.levelUpStatIcon}>⚡</span>
+                          <strong>+{levelUpXpToday}</strong>
+                          <span>XP</span>
+                          <small>TODAY</small>
+                        </div>
 
-                          {showComment && (
-                            <p style={styles.basicCardComment}>
-                              {mainComment}
-                            </p>
-                          )}
+                        <div style={styles.levelUpStatBox}>
+                          <span style={styles.levelUpStatIcon}>🔥</span>
+                          <strong>{levelUpStreakDays || 1}</strong>
+                          <span>STREAK</span>
+                          <small>DAYS</small>
+                        </div>
+                      </div>
 
-                          <div style={styles.basicFighterMeta}>
-                            <span>{profile.nickname || "나"}</span>
-                            <strong>{profileStats.tierName}</strong>
-                          </div>
+                      <div style={styles.levelUpTierBox}>
+                        <div>
+                          <span style={styles.levelUpTierLabel}>NEXT TIER:</span>
+                          <strong style={styles.levelUpTierName}>ELITE</strong>
+                        </div>
+
+                        <strong style={styles.levelUpXpText}>
+                          {levelUpNextTierXp || 100} XP
+                        </strong>
+
+                        <div style={styles.levelUpProgressTrack}>
+                          <div
+                            style={{
+                              ...styles.levelUpProgressFill,
+                              width: `${levelUpProgressPercent}%`,
+                            }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -3160,1210 +3046,3 @@ ${logLines}${commentText}${mediaText}`;
     </main>
   );
 }
-
-const styles = {
-  page: {
-    width: "100%",
-    maxWidth: "720px",
-    margin: "0 auto",
-    padding: "18px 16px 110px",
-    color: "#ffffff",
-    boxSizing: "border-box",
-  },
-
-  profileCard: {
-    borderRadius: "30px",
-    padding: "26px",
-    background:
-      "radial-gradient(circle at 90% 10%, rgba(255, 51, 51, 0.42), transparent 34%), linear-gradient(145deg, #222222, #050505)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    boxShadow: "0 22px 55px rgba(0, 0, 0, 0.45)",
-  },
-
-  cardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "16px",
-  },
-
-  kicker: {
-    margin: "0 0 10px",
-    color: "#ff5555",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.16em",
-  },
-
-  title: {
-    margin: 0,
-    fontSize: "34px",
-    lineHeight: 1.12,
-    letterSpacing: "-0.05em",
-  },
-
-  tierBadge: {
-    flexShrink: 0,
-    width: "92px",
-    height: "92px",
-    borderRadius: "24px",
-    background: "rgba(255, 59, 59, 0.16)",
-    border: "1px solid rgba(255, 85, 85, 0.5)",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  tierLabel: {
-    color: "rgba(255, 255, 255, 0.55)",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  tierName: {
-    marginTop: "6px",
-    fontSize: "18px",
-  },
-
-  photoSection: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-    marginTop: "24px",
-  },
-
-  photoCircle: {
-    width: "108px",
-    height: "108px",
-    borderRadius: "30px",
-    overflow: "hidden",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    flexShrink: 0,
-  },
-
-  profileImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  },
-
-  photoPlaceholder: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-
-  photoButtons: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    flex: 1,
-  },
-
-  profileActionButton: {
-    flex: "1 1 120px",
-    minWidth: "120px",
-  },
-
-  photoButton: {
-    border: "none",
-    borderRadius: "16px",
-    padding: "13px 14px",
-    background: "#ff3333",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  darkButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: "16px",
-    padding: "13px 14px",
-    background: "rgba(255, 255, 255, 0.06)",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  profileSaveInlineButton: {
-    border: "none",
-    borderRadius: "16px",
-    padding: "13px 14px",
-    background: "#ffffff",
-    color: "#050505",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  profileNameBox: {
-    marginTop: "18px",
-    borderRadius: "20px",
-    padding: "16px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  profileNameLabel: {
-    display: "block",
-    color: "rgba(255, 255, 255, 0.45)",
-    fontSize: "11px",
-    fontWeight: 900,
-    letterSpacing: "0.12em",
-    marginBottom: "8px",
-  },
-
-  profileName: {
-    fontSize: "24px",
-  },
-
-  profileBio: {
-    margin: "10px 0 0",
-    color: "rgba(255, 255, 255, 0.68)",
-    fontSize: "14px",
-    lineHeight: 1.5,
-  },
-
-  profileEditInsideBox: {
-    marginTop: "18px",
-    paddingTop: "18px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-  },
-
-  label: {
-    display: "block",
-    marginBottom: "14px",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-  },
-
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    marginTop: "8px",
-    backgroundColor: "#050505",
-    color: "#ffffff",
-    border: "1px solid #44444a",
-    borderRadius: "14px",
-    padding: "13px",
-    fontSize: "15px",
-    fontWeight: 800,
-    outline: "none",
-  },
-
-  textarea: {
-    width: "100%",
-    minHeight: "88px",
-    boxSizing: "border-box",
-    marginTop: "8px",
-    backgroundColor: "#050505",
-    color: "#ffffff",
-    border: "1px solid #44444a",
-    borderRadius: "14px",
-    padding: "13px",
-    fontSize: "15px",
-    fontWeight: 700,
-    outline: "none",
-    resize: "vertical",
-    lineHeight: 1.5,
-  },
-
-  statGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "12px",
-    marginTop: "16px",
-  },
-
-  statBox: {
-    borderRadius: "24px",
-    padding: "18px",
-    background: "#171717",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
-  },
-
-  statLabel: {
-    display: "block",
-    color: "rgba(255, 255, 255, 0.52)",
-    fontSize: "13px",
-    fontWeight: 700,
-    marginBottom: "10px",
-  },
-
-  statValue: {
-    display: "block",
-    fontSize: "30px",
-    lineHeight: 1,
-  },
-
-  cardMakerSection: {
-    marginTop: "16px",
-    scrollMarginTop: "18px",
-    borderRadius: "26px",
-    padding: "21px",
-    background: "#121212",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
-  },
-
-  recentTrainingNotice: {
-    marginBottom: "16px",
-    padding: "15px",
-    borderRadius: "18px",
-    background: "rgba(255, 51, 51, 0.1)",
-    border: "1px solid rgba(255, 85, 85, 0.28)",
-  },
-
-  recentTrainingBadge: {
-    display: "inline-block",
-    marginBottom: "9px",
-    padding: "6px 9px",
-    borderRadius: "999px",
-    background: "#ff3333",
-    color: "#ffffff",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  recentTrainingTitle: {
-    display: "block",
-    color: "#ffffff",
-    fontSize: "15px",
-    fontWeight: 900,
-    marginBottom: "5px",
-  },
-
-  recentTrainingText: {
-    margin: 0,
-    color: "rgba(255, 255, 255, 0.68)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  selectorSection: {
-    marginBottom: "16px",
-  },
-
-  logSelectList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-
-  logSelectItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    width: "100%",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-    borderRadius: "18px",
-    background: "#050505",
-    padding: "14px",
-    color: "#ffffff",
-    cursor: "pointer",
-    textAlign: "left",
-  },
-
-  logSelectItemActive: {
-    border: "1px solid #ff3333",
-    background: "rgba(255, 51, 51, 0.08)",
-  },
-
-  logSelectCheck: {
-    width: "24px",
-    height: "24px",
-    borderRadius: "999px",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "13px",
-    fontWeight: 900,
-    flexShrink: 0,
-  },
-
-  logSelectTitle: {
-    display: "block",
-    fontSize: "15px",
-    fontWeight: 900,
-  },
-
-  logSelectMeta: {
-    margin: "6px 0 0",
-    color: "rgba(255, 255, 255, 0.54)",
-    fontSize: "13px",
-    lineHeight: 1.4,
-  },
-
-  cardPhotoBox: {
-    marginTop: "6px",
-    marginBottom: "16px",
-    padding: "16px",
-    borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  cardMakerLabel: {
-    margin: "0 0 8px",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-  },
-
-  cardMakerHelp: {
-    margin: "0 0 14px",
-    color: "rgba(255, 255, 255, 0.56)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  cardPhotoButtonRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "8px",
-  },
-
-  videoNotice: {
-    margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.55)",
-    fontSize: "12px",
-    lineHeight: 1.5,
-  },
-
-  filterSection: {
-    marginBottom: "16px",
-  },
-
-  cardStyleGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: "10px",
-  },
-
-  cardStyleButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: "16px",
-    padding: "14px",
-    background: "#050505",
-    color: "#ffffff",
-    textAlign: "left",
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-
-  activeCardStyleButton: {
-    background: "#ffffff",
-    color: "#050505",
-    border: "1px solid #ffffff",
-  },
-
-  filterGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "10px",
-  },
-
-  filterButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: "16px",
-    padding: "13px",
-    background: "#050505",
-    color: "#ffffff",
-    textAlign: "left",
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-
-  activeFilterButton: {
-    background: "#ff3333",
-    border: "1px solid #ff3333",
-  },
-
-  adjustSection: {
-    marginBottom: "16px",
-    padding: "16px",
-    borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  rangeLabel: {
-    marginTop: "12px",
-    marginBottom: "8px",
-    display: "flex",
-    justifyContent: "space-between",
-    color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: 900,
-  },
-
-  rangeInput: {
-    width: "100%",
-    accentColor: "#ff3333",
-  },
-
-  commentToggle: {
-    marginTop: "16px",
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-  },
-
-  commentCheckbox: {
-    width: "18px",
-    height: "18px",
-    accentColor: "#ff3333",
-  },
-
-  commentToggleHelp: {
-    margin: "8px 0 0",
-    color: "rgba(255, 255, 255, 0.5)",
-    fontSize: "12px",
-    lineHeight: 1.5,
-  },
-
-  trainingCard: {
-    marginTop: "16px",
-    borderRadius: "30px",
-    overflow: "hidden",
-    border: "none",
-    boxShadow: "none",
-  },
-
-  trainingCardPhotoArea: {
-    position: "relative",
-    minHeight: "650px",
-    overflow: "hidden",
-  },
-
-  trainingCardImage: {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    objectPosition: "center",
-    transformOrigin: "center",
-  },
-
-  trainingCardDefaultBg: {
-    position: "absolute",
-    inset: 0,
-    background:
-      "radial-gradient(circle at center, rgba(255, 255, 255, 0.04), transparent 34%)",
-  },
-
-  trainingCardOverlay: {
-    position: "absolute",
-    inset: 0,
-  },
-
-  trainingCardTextLayer: {
-    position: "relative",
-    zIndex: 1,
-    minHeight: "650px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: "22px",
-    boxSizing: "border-box",
-  },
-
-  trainingCardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-    alignItems: "center",
-  },
-
-  trainingCardKicker: {
-    color: "#ffffff",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.16em",
-  },
-
-  trainingCardBottomContent: {
-    marginTop: "auto",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    width: "100%",
-  },
-
-
-  basicPosterInfo: {
-    width: "min(320px, 86%)",
-    display: "flex",
-    alignItems: "stretch",
-    gap: "12px",
-    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
-  },
-  
-  basicPosterLine: {
-    width: "3px",
-    borderRadius: "999px",
-    background:
-      "linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 51, 51, 0.85))",
-    boxShadow: "0 0 18px rgba(255, 51, 51, 0.38)",
-    flexShrink: 0,
-  },
-  
-  basicPosterContent: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    minWidth: 0,
-  },
-  
-  basicPosterLabel: {
-    color: "rgba(255, 255, 255, 0.56)",
-    fontSize: "10px",
-    fontWeight: 950,
-    letterSpacing: "0.16em",
-  },
-  
-  basicTrainingLineList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-  
-  basicTrainingLine: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    color: "#ffffff",
-    lineHeight: 1.18,
-  },
-  
-  basicTrainingMore: {
-    color: "rgba(255, 255, 255, 0.62)",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-  
-  basicCardComment: {
-    margin: "4px 0 0",
-    width: "min(270px, 94%)",
-    color: "rgba(255, 255, 255, 0.76)",
-    fontSize: "12px",
-    lineHeight: 1.45,
-    fontWeight: 800,
-  },
-  
-  basicFighterMeta: {
-    marginTop: "4px",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    color: "rgba(255, 255, 255, 0.72)",
-    fontSize: "11px",
-    fontWeight: 900,
-    letterSpacing: "0.04em",
-  },
-
-
-  socialCardTextLayer: {
-    position: "relative",
-    zIndex: 1,
-    minHeight: "650px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: "24px",
-    boxSizing: "border-box",
-    color: "#ffffff",
-    textShadow: "0 5px 18px rgba(0, 0, 0, 0.95)",
-  },
-
-  socialCardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.14em",
-  },
-
-  socialCardKicker: {
-    color: "rgba(255, 255, 255, 0.86)",
-  },
-
-  socialCardBottom: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-
-  socialTitle: {
-    margin: 0,
-    color: "#ffffff",
-    fontSize: "24px",
-    fontWeight: 950,
-    lineHeight: 1.12,
-    letterSpacing: "-0.04em",
-    maxWidth: "320px",
-  },
-
-  socialComment: {
-    margin: "9px 0 0",
-    width: "min(310px, 88%)",
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: "13px",
-    lineHeight: 1.45,
-    fontWeight: 800,
-  },
-
-  socialMetricRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "7px",
-  },
-
-  socialMetricBox: {
-    padding: "9px 8px",
-    borderRadius: "14px",
-    background: "rgba(0, 0, 0, 0.08)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    backdropFilter: "none",
-  },
-  
-  socialMetricLabel: {
-    display: "block",
-    color: "rgba(255, 255, 255, 0.52)",
-    fontSize: "9px",
-    fontWeight: 900,
-    letterSpacing: "0.12em",
-    marginBottom: "5px",
-  },
-
-  socialMetricValue: {
-    display: "block",
-    color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: 950,
-    lineHeight: 1.15,
-  },
-
-  posterInputBox: {
-    marginTop: "18px",
-    paddingTop: "16px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  posterInputGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "10px",
-  },
-
-  posterInputRow: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) 70px",
-    alignItems: "center",
-    gap: "8px",
-  },
-
-  posterInputLabel: {
-    display: "grid",
-    gridTemplateColumns: "82px minmax(0, 1fr)",
-    alignItems: "center",
-    gap: "8px",
-    color: "rgba(255, 255, 255, 0.82)",
-    fontSize: "12px",
-    fontWeight: 900,
-  },
-
-  posterInputLabelText: {
-    color: "rgba(255, 255, 255, 0.72)",
-    fontSize: "11px",
-    fontWeight: 950,
-    lineHeight: 1.2,
-    whiteSpace: "nowrap",
-  },
-
-  posterInput: {
-    width: "100%",
-    boxSizing: "border-box",
-    marginTop: 0,
-    backgroundColor: "#050505",
-    color: "#ffffff",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
-    borderRadius: "13px",
-    padding: "11px",
-    fontSize: "13px",
-    fontWeight: 900,
-    outline: "none",
-  },
-
-  posterToggleLabel: {
-    height: "100%",
-    minHeight: "42px",
-    borderRadius: "13px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "11px",
-    fontWeight: 950,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "5px",
-    cursor: "pointer",
-    boxSizing: "border-box",
-  },
-
-  posterToggleCheckbox: {
-    width: "15px",
-    height: "15px",
-    accentColor: "#ff3333",
-    margin: 0,
-  },
-
-  posterCardTextLayer: {
-    position: "relative",
-    zIndex: 2,
-    minHeight: "700px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: "18px 16px 20px",
-    boxSizing: "border-box",
-    color: "#ffffff",
-    textAlign: "center",
-    textShadow: "0 7px 24px rgba(0, 0, 0, 0.98)",
-  },
-
-  posterVignette: {
-    position: "absolute",
-    inset: 0,
-    zIndex: 1,
-    background:
-      "radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.08), transparent 26%), linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.08) 28%, rgba(0, 0, 0, 0.58) 70%, rgba(0, 0, 0, 0.96)), radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.46))",
-    pointerEvents: "none",
-  },
-
-  posterHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: "11px",
-    fontWeight: 950,
-    letterSpacing: "0.34em",
-    textTransform: "uppercase",
-  },
-
-  posterHeaderLine: {
-    width: "58px",
-    height: "2px",
-    background:
-      "linear-gradient(90deg, transparent, rgba(255, 51, 51, 0.9), transparent)",
-    flexShrink: 1,
-  },
-
-  posterCenterBlock: {
-    marginTop: "auto",
-    marginBottom: "10px",
-    paddingTop: "220px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    textAlign: "center",
-  },
-
-  posterMainName: {
-    margin: 0,
-    maxWidth: "100%",
-    color: "#f4f1ea",
-    fontSize: "clamp(46px, 14vw, 92px)",
-    lineHeight: 0.86,
-    fontWeight: 950,
-    letterSpacing: "-0.08em",
-    textTransform: "uppercase",
-    overflowWrap: "break-word",
-    textShadow:
-      "0 4px 0 rgba(0, 0, 0, 0.6), 0 14px 34px rgba(0, 0, 0, 0.95)",
-  },
-
-  posterSubtitle: {
-    margin: "2px 0 0",
-    color: "#ff3333",
-    fontSize: "clamp(20px, 6.2vw, 38px)",
-    lineHeight: 1,
-    fontWeight: 950,
-    fontStyle: "italic",
-    letterSpacing: "-0.06em",
-    textTransform: "uppercase",
-    transform: "rotate(-3deg)",
-  },
-
-  posterStarLine: {
-    margin: "14px 0 8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    width: "100%",
-    color: "#ff3333",
-    fontSize: "15px",
-  },
-
-  posterStarRule: {
-    width: "78px",
-    height: "2px",
-    background:
-      "linear-gradient(90deg, transparent, rgba(255, 51, 51, 0.9), transparent)",
-  },
-
-  posterEventTitle: {
-    margin: "0",
-    color: "#e72a22",
-    fontSize: "clamp(28px, 8.3vw, 50px)",
-    lineHeight: 0.95,
-    fontWeight: 950,
-    letterSpacing: "-0.035em",
-    textTransform: "uppercase",
-    overflowWrap: "break-word",
-  },
-
-  posterDateText: {
-    margin: "8px 0 0",
-    color: "#ffffff",
-    fontSize: "clamp(22px, 6.4vw, 38px)",
-    lineHeight: 1,
-    fontWeight: 950,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-  },
-
-  posterBottomBlock: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "6px",
-  },
-
-  posterMetaText: {
-    margin: 0,
-    maxWidth: "94%",
-    color: "#ff3333",
-    fontSize: "9px",
-    lineHeight: 1.45,
-    fontWeight: 950,
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    overflowWrap: "break-word",
-  },
-
-  posterComment: {
-    margin: 0,
-    width: "min(360px, 92%)",
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "12px",
-    lineHeight: 1.45,
-    fontWeight: 850,
-  },
-
-  posterFooterText: {
-    margin: "2px 0 0",
-    maxWidth: "94%",
-    color: "rgba(255, 255, 255, 0.88)",
-    fontSize: "9px",
-    lineHeight: 1.55,
-    fontWeight: 950,
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    overflowWrap: "break-word",
-  },
-
-  saveImageButton: {
-    width: "100%",
-    marginTop: "14px",
-    border: "none",
-    borderRadius: "16px",
-    padding: "15px",
-    background: "#ffffff",
-    color: "#050505",
-    fontSize: "15px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  disabledSaveButton: {
-    background: "rgba(255, 255, 255, 0.14)",
-    color: "rgba(255, 255, 255, 0.62)",
-    cursor: "not-allowed",
-    opacity: 0.82,
-  },
-
-  copyButton: {
-    width: "100%",
-    marginTop: "14px",
-    border: "none",
-    borderRadius: "16px",
-    padding: "15px",
-    background: "#ff3333",
-    color: "#ffffff",
-    fontSize: "15px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  shareHint: {
-    margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.5)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  exportPreviewBox: {
-    marginTop: "14px",
-    padding: "14px",
-    borderRadius: "18px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-  },
-
-  exportPreviewTitle: {
-    display: "block",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 950,
-    marginBottom: "6px",
-  },
-
-  exportPreviewText: {
-    margin: "0 0 12px",
-    color: "rgba(255, 255, 255, 0.62)",
-    fontSize: "12px",
-    lineHeight: 1.5,
-  },
-
-  exportPreviewImage: {
-    width: "100%",
-    maxHeight: "520px",
-    objectFit: "contain",
-    borderRadius: "16px",
-    background: "#050505",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    display: "block",
-  },
-
-  exportPreviewButtonRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 0.7fr",
-    gap: "8px",
-    marginTop: "12px",
-  },
-
-  exportPreviewPrimaryButton: {
-    border: "none",
-    borderRadius: "14px",
-    padding: "12px",
-    background: "#ffffff",
-    color: "#050505",
-    fontSize: "13px",
-    fontWeight: 950,
-    cursor: "pointer",
-  },
-
-  exportPreviewSecondaryButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: "14px",
-    padding: "12px",
-    background: "rgba(255, 255, 255, 0.06)",
-    color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: 950,
-    cursor: "pointer",
-  },
-
-  sectionCard: {
-    marginTop: "16px",
-    borderRadius: "26px",
-    padding: "21px",
-    background: "#121212",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
-  },
-
-  sectionTitle: {
-    margin: "0 0 14px",
-    fontSize: "22px",
-    letterSpacing: "-0.03em",
-  },
-
-  proofBox: {
-    padding: "18px",
-    borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-  },
-
-  proofText: {
-    margin: 0,
-    color: "rgba(255, 255, 255, 0.75)",
-    fontSize: "15px",
-    lineHeight: 1.6,
-  },
-
-  proofSmallText: {
-    margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.46)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  redText: {
-    color: "#ff5555",
-  },
-
-  emptyFeaturedLog: {
-    padding: "18px",
-    borderRadius: "18px",
-    background: "rgba(255, 255, 255, 0.05)",
-    color: "rgba(255, 255, 255, 0.55)",
-    fontSize: "14px",
-    lineHeight: 1.5,
-  },
-
-  featuredLogList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-
-  featuredLogItem: {
-    padding: "16px",
-    borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  featuredLogTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-  },
-
-  featuredBadgeRow: {
-    display: "flex",
-    gap: "6px",
-    flexWrap: "wrap",
-  },
-
-  featuredBadge: {
-    display: "inline-block",
-    padding: "5px 8px",
-    borderRadius: "999px",
-    background: "rgba(255, 51, 51, 0.14)",
-    color: "#ff7777",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  featuredEditedBadge: {
-    display: "inline-block",
-    padding: "5px 8px",
-    borderRadius: "999px",
-    background: "rgba(255, 255, 255, 0.08)",
-    color: "rgba(255, 255, 255, 0.65)",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  featuredLogTitle: {
-    margin: "10px 0 6px",
-    fontSize: "17px",
-    fontWeight: 900,
-  },
-
-  featuredLogMeta: {
-    margin: 0,
-    color: "rgba(255, 255, 255, 0.52)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  featuredScore: {
-    color: "#ff5555",
-    fontSize: "16px",
-    whiteSpace: "nowrap",
-  },
-
-  featuredComment: {
-    margin: "14px 0 0",
-    padding: "13px",
-    borderRadius: "16px",
-    background: "rgba(0, 0, 0, 0.28)",
-    color: "rgba(255, 255, 255, 0.82)",
-    fontSize: "14px",
-    lineHeight: 1.55,
-    fontWeight: 800,
-  },
-
-  achievementList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-
-  achievementItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "14px",
-    borderRadius: "18px",
-    fontSize: "14px",
-  },
-
-  unlocked: {
-    background: "rgba(255, 51, 51, 0.12)",
-    color: "#ffffff",
-    border: "1px solid rgba(255, 85, 85, 0.26)",
-  },
-
-  locked: {
-    background: "rgba(255, 255, 255, 0.04)",
-    color: "rgba(255, 255, 255, 0.45)",
-    border: "1px solid rgba(255, 255, 255, 0.06)",
-  },
-
-  achievementIcon: {
-    width: "38px",
-    height: "30px",
-    borderRadius: "12px",
-    background: "rgba(255, 255, 255, 0.08)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "12px",
-    fontWeight: 900,
-    flexShrink: 0,
-  },
-
-  achievementDescription: {
-    margin: "5px 0 0",
-    color: "rgba(255, 255, 255, 0.55)",
-    fontSize: "12px",
-    lineHeight: 1.4,
-  },
-};

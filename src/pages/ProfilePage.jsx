@@ -1669,14 +1669,18 @@ export default function ProfilePage({ scrollTarget }) {
     drawPosterBackground(ctx, width, height, theme);
 
     const isSocialExport = styleIdForExport === "social";
-    const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
-      fit: isSocialExport ? "contain" : "cover",
-      filterId: exportFilterId,
-      filterIntensityValue: exportFilterIntensity,
-      scalePercent: isSocialExport ? 100 : exportPhotoScale,
-      topInset: 0,
-      bottomInset: 0,
-    });
+const socialTopBandHeight = 260;
+const socialBottomBandY = 1260;
+const socialBottomInset = height - socialBottomBandY;
+
+const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
+  fit: "cover",
+  filterId: exportFilterId,
+  filterIntensityValue: exportFilterIntensity,
+  scalePercent: exportPhotoScale,
+  topInset: isSocialExport ? socialTopBandHeight : 0,
+  bottomInset: isSocialExport ? socialBottomInset : 0,
+});
 
     if (!isSocialExport) {
       drawPosterOverlay(ctx, width, height, theme);
@@ -1697,6 +1701,16 @@ export default function ProfilePage({ scrollTarget }) {
     }
 
     if (isSocialExport) {
+      const topBand = ctx.createLinearGradient(0, 0, width, 0);
+      topBand.addColorStop(0, theme.bgA);
+      topBand.addColorStop(0.55, theme.bgB);
+      topBand.addColorStop(1, theme.accent);
+
+      ctx.fillStyle = topBand;
+      ctx.fillRect(0, 0, width, socialTopBandHeight);
+
+      ctx.fillStyle = "rgba(0, 0, 0, 0.96)";
+      ctx.fillRect(0, socialBottomBandY, width, height - socialBottomBandY);
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
         size: 34,
         minSize: 24,
@@ -1721,7 +1735,7 @@ export default function ProfilePage({ scrollTarget }) {
 
       // SOCIAL 저장에서는 사진 위에 별도 그라데이션 패널을 깔지 않는다.
 
-      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1134, 940, {
+      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1292, 940, {
         size: 84,
         minSize: 44,
         weight: 950,
@@ -1733,7 +1747,7 @@ export default function ProfilePage({ scrollTarget }) {
       });
 
       if (showComment) {
-        drawWrappedText(ctx, mainComment, 70, 1252, 910, {
+        drawWrappedText(ctx, mainComment, 70, 1372, 910, {
           size: 34,
           weight: 850,
           lineHeight: 48,
@@ -1743,7 +1757,7 @@ export default function ProfilePage({ scrollTarget }) {
         });
       }
 
-      const metricY = 1400;
+      const metricY = 1450;
       const metricW = 290;
       const metricGap = 34;
       const metricX = 70;
@@ -2706,10 +2720,7 @@ ${logLines}${commentText}${mediaText}`;
                       ...styles.trainingCardImage,
                       objectFit: cardStyle === "social" ? "contain" : "cover",
                       filter: getImageFilter(selectedFilter, filterIntensity),
-                      transform:
-                        cardStyle === "social"
-                          ? "scale(1)"
-                          : `scale(${photoScale / 100})`,
+                      transform: `scale(${photoScale / 100})`,
                     }}
                   />
                 )}
@@ -2725,10 +2736,7 @@ ${logLines}${commentText}${mediaText}`;
                       ...styles.trainingCardImage,
                       objectFit: cardStyle === "social" ? "contain" : "cover",
                       filter: getImageFilter(selectedFilter, filterIntensity),
-                      transform:
-                        cardStyle === "social"
-                          ? "scale(1)"
-                          : `scale(${photoScale / 100})`,
+                      transform: `scale(${photoScale / 100})`,
                     }}
                   />
                 )}
@@ -2739,9 +2747,9 @@ ${logLines}${commentText}${mediaText}`;
                   style={{
                     ...styles.trainingCardOverlay,
                     background:
-                    cardStyle === "social"
-                    ? "transparent"
-                    : getOverlayStyle(selectedFilter, filterIntensity),
+                      cardStyle === "social"
+                        ? "transparent"
+                        : getOverlayStyle(selectedFilter, filterIntensity),
                   }}
                 />
 
@@ -2924,14 +2932,28 @@ ${logLines}${commentText}${mediaText}`;
                       minHeight: cardPreviewHeight,
                     }}
                   >
-                    <div style={styles.socialCardTop}>
+                    <div
+                      style={{
+                        ...styles.socialCardTop,
+                        margin: "-24px -24px 0",
+                        padding: "24px 24px 22px",
+                        background: getCardBackground(selectedFilter),
+                      }}
+                    >
                       <span style={styles.socialCardKicker}>
                         BOXING TRAINING
                       </span>
                       <strong>{profileStats.tierName}</strong>
                     </div>
 
-                    <div style={styles.socialCardBottom}>
+                    <div
+                      style={{
+                        ...styles.socialCardBottom,
+                        margin: "0 -24px -24px",
+                        padding: "18px 24px 22px",
+                        background: "rgba(0, 0, 0, 0.96)",
+                      }}
+                    >
                       <div>
                         <p style={styles.socialTitle}>{primaryCardTitle}</p>
 

@@ -1703,13 +1703,8 @@ export default function ProfilePage({ scrollTarget }) {
     }
 
     if (isSocialExport) {
-      const topBand = ctx.createLinearGradient(0, 0, width, 0);
-      topBand.addColorStop(0, theme.bgA);
-      topBand.addColorStop(0.55, theme.bgB);
-      topBand.addColorStop(1, theme.accent);
-
-      ctx.fillStyle = topBand;
-      ctx.fillRect(0, 0, width, socialTopBandHeight);
+      ctx.fillStyle = "#050505";
+ctx.fillRect(0, 0, width, socialTopBandHeight);
 
       ctx.fillStyle = "rgba(0, 0, 0, 0.96)";
       ctx.fillRect(0, socialBottomBandY, width, height - socialBottomBandY);

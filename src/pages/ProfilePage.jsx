@@ -1738,7 +1738,7 @@ export default function ProfilePage({ scrollTarget }) {
 
       // SOCIAL 저장에서는 사진 위에 별도 그라데이션 패널을 깔지 않는다.
 
-      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1540, 940, {
+      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1556, 940, {
         size: 84,
         minSize: 44,
         weight: 950,
@@ -1750,7 +1750,7 @@ export default function ProfilePage({ scrollTarget }) {
       });
 
       if (showComment) {
-        drawWrappedText(ctx, mainComment, 70, 1620, 910, {
+        drawWrappedText(ctx, mainComment, 70, 1648, 910, {
           size: 34,
           weight: 850,
           lineHeight: 48,
@@ -1760,7 +1760,7 @@ export default function ProfilePage({ scrollTarget }) {
         });
       }
 
-      const metricY = 1748;
+      const metricY = 1766;
       const metricW = 290;
       const metricGap = 34;
       const metricX = 70;

@@ -887,7 +887,7 @@ export default function ProfilePage({ scrollTarget }) {
 
     const baseScale = Math.max(width / imageWidth, height / imageHeight);
     // POSTER 저장에서는 사진이 반드시 화면을 채워야 하므로 100%보다 작게 줄이지 않는다.
-    const safeScale = Math.max(scalePercent / 100, 1);
+    const safeScale = Math.max(scalePercent / 100, 0.85);
     const finalScale = baseScale * safeScale;
     const drawWidth = imageWidth * finalScale;
     const drawHeight = imageHeight * finalScale;
@@ -1648,39 +1648,41 @@ export default function ProfilePage({ scrollTarget }) {
       typeof exportSnapshot.photoScale === "number"
         ? exportSnapshot.photoScale
         : photoScale;
-    const width = 1080;
-    const height = 1600;
-    const centerX = width / 2;
-    const theme = getPosterCanvasTheme(exportFilterId);
-    const canvas = document.createElement("canvas");
+        const isSocialExport = styleIdForExport === "social";
+        const width = 1080;
+        const height = isSocialExport ? 1920 : 1600;
+        const centerX = width / 2;
+        const theme = getPosterCanvasTheme(exportFilterId);
+        const canvas = document.createElement("canvas");
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext("2d");
+        
+        if (!ctx) {
+          throw new Error("캔버스를 만들지 못했어요.");
+        }
+        
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        
+        drawPosterBackground(ctx, width, height, theme);
+        
+        const socialTopBandHeight = 320;
+        const socialBottomBandY = 1510;
+        const socialBottomInset = height - socialBottomBandY;
 
-    canvas.width = width;
-    canvas.height = height;
-
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) {
-      throw new Error("캔버스를 만들지 못했어요.");
-    }
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-
-    drawPosterBackground(ctx, width, height, theme);
-
-    const isSocialExport = styleIdForExport === "social";
-const socialTopBandHeight = 260;
-const socialBottomBandY = 1260;
-const socialBottomInset = height - socialBottomBandY;
-
-const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
-  fit: "cover",
-  filterId: exportFilterId,
-  filterIntensityValue: exportFilterIntensity,
-  scalePercent: exportPhotoScale,
-  topInset: isSocialExport ? socialTopBandHeight : 0,
-  bottomInset: isSocialExport ? socialBottomInset : 0,
-});
+    const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
+      fit: "cover",
+      filterId: exportFilterId,
+      filterIntensityValue: exportFilterIntensity,
+      scalePercent: isSocialExport
+        ? exportPhotoScale
+        : Math.max(exportPhotoScale, 100),
+      topInset: isSocialExport ? socialTopBandHeight : 0,
+      bottomInset: isSocialExport ? socialBottomInset : 0,
+    });
 
     if (!isSocialExport) {
       drawPosterOverlay(ctx, width, height, theme);
@@ -1711,6 +1713,7 @@ const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
 
       ctx.fillStyle = "rgba(0, 0, 0, 0.96)";
       ctx.fillRect(0, socialBottomBandY, width, height - socialBottomBandY);
+
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
         size: 34,
         minSize: 24,
@@ -1735,7 +1738,7 @@ const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
 
       // SOCIAL 저장에서는 사진 위에 별도 그라데이션 패널을 깔지 않는다.
 
-      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1292, 940, {
+      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1540, 940, {
         size: 84,
         minSize: 44,
         weight: 950,
@@ -1747,7 +1750,7 @@ const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
       });
 
       if (showComment) {
-        drawWrappedText(ctx, mainComment, 70, 1372, 910, {
+        drawWrappedText(ctx, mainComment, 70, 1620, 910, {
           size: 34,
           weight: 850,
           lineHeight: 48,
@@ -1757,7 +1760,7 @@ const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
         });
       }
 
-      const metricY = 1450;
+      const metricY = 1748;
       const metricW = 290;
       const metricGap = 34;
       const metricX = 70;
@@ -2463,12 +2466,12 @@ ${logLines}${commentText}${mediaText}`;
               />
 
               <label style={styles.rangeLabel}>
-                <span>확대</span>
+                <span>사진 크기</span>
                 <strong>{photoScale}%</strong>
               </label>
               <input
                 type="range"
-                min="100"
+                min="85"
                 max="120"
                 value={photoScale}
                 onChange={(event) => updatePhotoScale(Number(event.target.value))}
@@ -2718,10 +2721,13 @@ ${logLines}${commentText}${mediaText}`;
                     onError={() => setCardMediaReady(true)}
                     style={{
                       ...styles.trainingCardImage,
-                      objectFit: cardStyle === "social" ? "contain" : "cover",
+                      objectFit: "cover",
                       filter: getImageFilter(selectedFilter, filterIntensity),
-                      transform: `scale(${photoScale / 100})`,
-                    }}
+                      transform:
+                        cardStyle === "social"
+                          ? `scale(${photoScale / 100})`
+                          : `scale(${Math.max(photoScale, 100) / 100})`,
+                                          }}
                   />
                 )}
 
@@ -2734,9 +2740,12 @@ ${logLines}${commentText}${mediaText}`;
                     playsInline
                     style={{
                       ...styles.trainingCardImage,
-                      objectFit: cardStyle === "social" ? "contain" : "cover",
+                      objectFit: "cover",
                       filter: getImageFilter(selectedFilter, filterIntensity),
-                      transform: `scale(${photoScale / 100})`,
+                      transform:
+                        cardStyle === "social"
+                          ? `scale(${photoScale / 100})`
+                          : `scale(${Math.max(photoScale, 100) / 100})`,
                     }}
                   />
                 )}

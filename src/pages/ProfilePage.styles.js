@@ -477,11 +477,12 @@ export const styles = {
   },
 
   trainingCard: {
-    marginTop: "16px",
+    margin: "16px auto 0",
+    width: "min(100%, 390px)",
     borderRadius: "30px",
     overflow: "hidden",
-    border: "none",
-    boxShadow: "none",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    boxShadow: "0 22px 55px rgba(0, 0, 0, 0.45)",
   },
 
   trainingCardPhotoArea: {

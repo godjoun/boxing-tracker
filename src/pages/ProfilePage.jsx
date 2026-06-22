@@ -1975,7 +1975,11 @@ ${logLines}${commentText}${mediaText}`;
   }, [currentExportKey, cardMediaReady, cardMediaType, cardMedia]);
 
   const cardPreviewHeight =
-    cardStyle === "poster" ? "700px" : cardStyle === "social" && !cardMedia ? "480px" : "650px";
+  cardStyle === "poster"
+    ? "620px"
+    : cardStyle === "social"
+    ? "520px"
+    : "560px";
 
   const posterPreviewTheme = getPosterCanvasTheme(selectedFilter);
   const posterPreviewAccent = posterPreviewTheme.accent;

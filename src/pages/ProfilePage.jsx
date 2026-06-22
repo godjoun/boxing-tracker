@@ -1703,10 +1703,8 @@ export default function ProfilePage({ scrollTarget }) {
     }
 
     if (isSocialExport) {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
-      ctx.fillRect(0, 0, width, height);
-
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
+
         size: 34,
         minSize: 24,
         weight: 950,
@@ -3843,11 +3841,11 @@ const styles = {
   socialMetricBox: {
     padding: "9px 8px",
     borderRadius: "14px",
-    background: "rgba(0, 0, 0, 0.26)",
+    background: "rgba(0, 0, 0, 0.08)",
     border: "1px solid rgba(255, 255, 255, 0.12)",
-    backdropFilter: "blur(8px)",
+    backdropFilter: "none",
   },
-
+  
   socialMetricLabel: {
     display: "block",
     color: "rgba(255, 255, 255, 0.52)",

@@ -974,7 +974,7 @@ export default function ProfilePage({ scrollTarget }) {
   }
   
   function drawCardThemeWash(ctx, width, height, filterId, intensity = 75) {
-    const strength = Math.max(0, Math.min(1, intensity / 100));
+    const strength = Math.max(0, Math.min(1, filterIntensityValue / 100));
     const color = getFilterWashColor(filterId);
   
     ctx.save();
@@ -1091,7 +1091,7 @@ export default function ProfilePage({ scrollTarget }) {
     const height = 1920;
     const centerX = width / 2;
     const theme = getPosterCanvasTheme(exportFilterId);
-    const strength = Math.max(0, Math.min(1, exportFilterIntensity / 100));
+    const strength = Math.max(0, Math.min(1, filterIntensityValue / 100));
 
     canvas.width = width;
     canvas.height = height;
@@ -1371,80 +1371,80 @@ export default function ProfilePage({ scrollTarget }) {
   function applyCanvasImageFilter(ctx, filterId, strength) {
     if (!("filter" in ctx)) return;
   
-    const safeStrength = Math.max(0, Math.min(1.15, strength));
+    const safeStrength = Math.max(0, Math.min(1, strength));
   
     if (filterId === "levelup") {
-      ctx.filter = `contrast(${1.16 + 0.42 * safeStrength}) saturate(${
-        1.1 + 0.26 * safeStrength
-      }) sepia(${0.32 + 0.45 * safeStrength}) brightness(${
-        0.97 - 0.05 * safeStrength
+      ctx.filter = `contrast(${1.18 + 0.44 * safeStrength}) saturate(${
+        1.12 + 0.26 * safeStrength
+      }) sepia(${0.34 + 0.46 * safeStrength}) brightness(${
+        0.95 - 0.06 * safeStrength
       })`;
       return;
     }
   
     if (filterId === "gold") {
-      ctx.filter = `contrast(${1.12 + 0.46 * safeStrength}) saturate(${
-        1.18 + 0.38 * safeStrength
-      }) sepia(${0.34 + 0.48 * safeStrength}) brightness(${
-        0.97 - 0.05 * safeStrength
+      ctx.filter = `contrast(${1.16 + 0.48 * safeStrength}) saturate(${
+        1.22 + 0.42 * safeStrength
+      }) sepia(${0.38 + 0.52 * safeStrength}) brightness(${
+        0.95 - 0.06 * safeStrength
       })`;
       return;
     }
   
     if (filterId === "blue") {
-      ctx.filter = `contrast(${1.12 + 0.46 * safeStrength}) saturate(${
-        1.18 + 0.38 * safeStrength
-      }) hue-rotate(${180 * safeStrength}deg) brightness(${
-        0.97 - 0.05 * safeStrength
+      ctx.filter = `contrast(${1.16 + 0.48 * safeStrength}) saturate(${
+        1.18 + 0.4 * safeStrength
+      }) hue-rotate(${188 * safeStrength}deg) brightness(${
+        0.95 - 0.06 * safeStrength
       })`;
       return;
     }
   
     if (filterId === "mono") {
-      ctx.filter = `grayscale(${0.7 + 0.3 * safeStrength}) contrast(${
-        1.22 + 0.46 * safeStrength
-      }) brightness(${0.98 - 0.05 * safeStrength})`;
+      ctx.filter = `grayscale(${0.88 + 0.12 * safeStrength}) contrast(${
+        1.32 + 0.52 * safeStrength
+      }) brightness(${0.84 - 0.12 * safeStrength})`;
       return;
     }
   
     if (filterId === "dark") {
-      ctx.filter = `contrast(${1.16 + 0.56 * safeStrength}) brightness(${
-        0.92 - 0.22 * safeStrength
-      }) saturate(${0.9 - 0.2 * safeStrength})`;
+      ctx.filter = `contrast(${1.2 + 0.58 * safeStrength}) brightness(${
+        0.84 - 0.2 * safeStrength
+      }) saturate(${0.84 - 0.18 * safeStrength})`;
       return;
     }
   
     if (filterId === "chrome") {
-      ctx.filter = `contrast(${1.28 + 0.54 * safeStrength}) saturate(${
-        1.06 + 0.24 * safeStrength
-      }) brightness(${1.08 + 0.12 * safeStrength}) sepia(${
-        0.1 * safeStrength
+      ctx.filter = `contrast(${1.3 + 0.52 * safeStrength}) saturate(${
+        0.96 + 0.18 * safeStrength
+      }) brightness(${1.08 + 0.08 * safeStrength}) sepia(${
+        0.08 + 0.08 * safeStrength
       })`;
       return;
     }
   
     if (filterId === "future") {
-      ctx.filter = `contrast(${1.22 + 0.52 * safeStrength}) saturate(${
-        1.42 + 0.62 * safeStrength
-      }) hue-rotate(${34 * safeStrength}deg) brightness(${
-        1 - 0.03 * safeStrength
+      ctx.filter = `contrast(${1.24 + 0.54 * safeStrength}) saturate(${
+        1.46 + 0.66 * safeStrength
+      }) hue-rotate(${38 * safeStrength}deg) brightness(${
+        0.97 - 0.03 * safeStrength
       })`;
       return;
     }
   
     if (filterId === "vintage") {
-      ctx.filter = `contrast(${1.2 + 0.48 * safeStrength}) sepia(${
-        0.46 + 0.6 * safeStrength
-      }) saturate(${0.84 - 0.08 * safeStrength}) brightness(${
-        0.96 - 0.06 * safeStrength
+      ctx.filter = `contrast(${1.22 + 0.5 * safeStrength}) sepia(${
+        0.52 + 0.62 * safeStrength
+      }) saturate(${0.82 - 0.06 * safeStrength}) brightness(${
+        0.93 - 0.06 * safeStrength
       })`;
       return;
     }
   
-    ctx.filter = `contrast(${1.2 + 0.54 * safeStrength}) saturate(${
-      1.24 + 0.52 * safeStrength
-    }) brightness(${0.97 - 0.06 * safeStrength}) sepia(${
-      0.14 + 0.32 * safeStrength
+    ctx.filter = `contrast(${1.18 + 0.52 * safeStrength}) saturate(${
+      1.22 + 0.5 * safeStrength
+    }) brightness(${0.95 - 0.06 * safeStrength}) sepia(${
+      0.16 + 0.34 * safeStrength
     })`;
   }
 
@@ -1553,9 +1553,9 @@ export default function ProfilePage({ scrollTarget }) {
         
         ctx.filter = "none";
         
-        if (isMobileCardExportDevice()) {
+        /*if (isMobileCardExportDevice()) {
           drawMobileCanvasFilterBoost(ctx, width, height, filterId, strength);
-        }
+        }*/
         
         ctx.restore();
         return true;

@@ -1371,74 +1371,80 @@ export default function ProfilePage({ scrollTarget }) {
   function applyCanvasImageFilter(ctx, filterId, strength) {
     if (!("filter" in ctx)) return;
   
+    const safeStrength = Math.max(0, Math.min(1, strength));
+  
     if (filterId === "levelup") {
-      ctx.filter = `contrast(${1.16 + 0.42 * strength}) saturate(${0.84 + 0.2 * strength}) sepia(${0.32 + 0.34 * strength}) brightness(${0.9 - 0.12 * strength})`;
-      return;
-    }
-  
-    if (filterId === "mono") {
-      ctx.filter = `grayscale(${0.65 + 0.35 * strength}) contrast(${
-        1.18 + 0.34 * strength
-      }) brightness(${1 - 0.04 * strength})`;
-      return;
-    }
-  
-    if (filterId === "dark") {
-      ctx.filter = `contrast(${1.12 + 0.48 * strength}) brightness(${
-        0.94 - 0.2 * strength
-      }) saturate(${0.92 - 0.18 * strength})`;
+      ctx.filter = `contrast(${1.12 + 0.38 * safeStrength}) saturate(${
+        1.06 + 0.22 * safeStrength
+      }) sepia(${0.28 + 0.4 * safeStrength}) brightness(${
+        0.98 - 0.04 * safeStrength
+      })`;
       return;
     }
   
     if (filterId === "gold") {
-      ctx.filter = `contrast(${1.08 + 0.34 * strength}) sepia(${
-        0.28 + 0.38 * strength
-      }) saturate(${1.05 + 0.2 * strength}) brightness(${
-        0.98 - 0.04 * strength
+      ctx.filter = `contrast(${1.08 + 0.42 * safeStrength}) saturate(${
+        1.14 + 0.34 * safeStrength
+      }) sepia(${0.3 + 0.44 * safeStrength}) brightness(${
+        0.98 - 0.04 * safeStrength
       })`;
       return;
     }
   
     if (filterId === "blue") {
-      ctx.filter = `contrast(${1.08 + 0.36 * strength}) saturate(${
-        1.08 + 0.28 * strength
-      }) hue-rotate(${165 * strength}deg) brightness(${
-        0.98 - 0.05 * strength
+      ctx.filter = `contrast(${1.08 + 0.42 * safeStrength}) saturate(${
+        1.12 + 0.34 * safeStrength
+      }) hue-rotate(${170 * safeStrength}deg) brightness(${
+        0.98 - 0.05 * safeStrength
+      })`;
+      return;
+    }
+  
+    if (filterId === "mono") {
+      ctx.filter = `grayscale(${0.65 + 0.35 * safeStrength}) contrast(${
+        1.18 + 0.42 * safeStrength
+      }) brightness(${1 - 0.04 * safeStrength})`;
+      return;
+    }
+  
+    if (filterId === "dark") {
+      ctx.filter = `contrast(${1.12 + 0.52 * safeStrength}) brightness(${
+        0.94 - 0.2 * safeStrength
+      }) saturate(${0.92 - 0.18 * safeStrength})`;
+      return;
+    }
+  
+    if (filterId === "chrome") {
+      ctx.filter = `contrast(${1.24 + 0.5 * safeStrength}) saturate(${
+        1.02 + 0.22 * safeStrength
+      }) brightness(${1.06 + 0.1 * safeStrength}) sepia(${
+        0.08 * safeStrength
       })`;
       return;
     }
   
     if (filterId === "future") {
-      ctx.filter = `contrast(${1.1 + 0.38 * strength}) saturate(${
-        1.22 + 0.42 * strength
-      }) hue-rotate(${24 * strength}deg) brightness(${
-        1 - 0.03 * strength
+      ctx.filter = `contrast(${1.18 + 0.48 * safeStrength}) saturate(${
+        1.36 + 0.56 * safeStrength
+      }) hue-rotate(${30 * safeStrength}deg) brightness(${
+        1.01 - 0.02 * safeStrength
       })`;
       return;
     }
   
     if (filterId === "vintage") {
-      ctx.filter = `contrast(${1.08 + 0.34 * strength}) sepia(${
-        0.28 + 0.48 * strength
-      }) saturate(${0.9 - 0.08 * strength}) brightness(${
-        0.98 - 0.04 * strength
+      ctx.filter = `contrast(${1.16 + 0.44 * safeStrength}) sepia(${
+        0.42 + 0.56 * safeStrength
+      }) saturate(${0.86 - 0.08 * safeStrength}) brightness(${
+        0.97 - 0.05 * safeStrength
       })`;
       return;
     }
   
-    if (filterId === "chrome") {
-      ctx.filter = `contrast(${1.16 + 0.42 * strength}) saturate(${
-        0.96 + 0.14 * strength
-      }) brightness(${1.04 + 0.08 * strength}) sepia(${
-        0.04 * strength
-      })`;
-      return;
-    }
-  
-    ctx.filter = `contrast(${1.16 + 0.48 * strength}) saturate(${
-      1.18 + 0.46 * strength
-    }) brightness(${0.98 - 0.05 * strength}) sepia(${
-      0.12 + 0.26 * strength
+    ctx.filter = `contrast(${1.16 + 0.5 * safeStrength}) saturate(${
+      1.2 + 0.48 * safeStrength
+    }) brightness(${0.98 - 0.05 * safeStrength}) sepia(${
+      0.12 + 0.28 * safeStrength
     })`;
   }
 
@@ -1452,10 +1458,8 @@ export default function ProfilePage({ scrollTarget }) {
       bottomInset = 0,
     } = options;
 
-    const strength = Math.max(
-      0,
-      Math.min(1.35, (filterIntensityValue / 100) * 1.35)
-    );
+    const strength = Math.max(0, Math.min(1, filterIntensityValue / 100));
+    
     const availableHeight = height - topInset - bottomInset;
     const exportSnapshot = posterExportRef.current || {};
     const exportCardMedia = exportSnapshot.cardMedia || cardMedia;
@@ -1552,7 +1556,7 @@ export default function ProfilePage({ scrollTarget }) {
           drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto);
         }
         
-        drawCardThemeWash(ctx, width, height, exportFilterId, exportFilterIntensity);
+        //drawCardThemeWash(ctx, width, height, exportFilterId, exportFilterIntensity);
     
     if (!isSocialExport) {
       const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);

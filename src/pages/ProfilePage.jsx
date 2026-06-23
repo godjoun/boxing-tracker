@@ -959,6 +959,67 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.fillRect(0, 0, width, height);
   }
 
+  function getFilterWashColor(filterId) {
+    if (filterId === "levelup") return "214, 162, 52";
+    if (filterId === "gold") return "245, 185, 66";
+    if (filterId === "red") return "255, 45, 45";
+    if (filterId === "blue") return "58, 123, 255";
+    if (filterId === "future") return "139, 92, 246";
+    if (filterId === "vintage") return "217, 161, 95";
+    if (filterId === "chrome") return "255, 255, 255";
+    if (filterId === "mono") return "255, 255, 255";
+    if (filterId === "dark") return "0, 0, 0";
+  
+    return "255, 45, 45";
+  }
+  
+  function drawCardThemeWash(ctx, width, height, filterId, intensity = 75) {
+    const strength = Math.max(0, Math.min(1, intensity / 100));
+    const color = getFilterWashColor(filterId);
+  
+    ctx.save();
+  
+    ctx.globalCompositeOperation = "soft-light";
+    ctx.fillStyle = `rgba(${color}, ${0.18 + 0.18 * strength})`;
+    ctx.fillRect(0, 0, width, height);
+  
+    ctx.globalCompositeOperation = "source-over";
+  
+    const glow = ctx.createRadialGradient(
+      width * 0.82,
+      height * 0.14,
+      10,
+      width * 0.82,
+      height * 0.14,
+      width * 0.78
+    );
+  
+    glow.addColorStop(0, `rgba(${color}, ${0.24 + 0.22 * strength})`);
+    glow.addColorStop(0.38, `rgba(${color}, ${0.08 + 0.08 * strength})`);
+    glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+  
+    const vignette = ctx.createRadialGradient(
+      width * 0.5,
+      height * 0.44,
+      width * 0.16,
+      width * 0.5,
+      height * 0.44,
+      width * 0.92
+    );
+  
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(0.62, "rgba(0, 0, 0, 0.12)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.48)");
+  
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+  
+    ctx.restore();
+  }
+
   function drawPosterDivider(ctx, y, width, centerX, theme) {
     ctx.save();
     ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
@@ -1481,6 +1542,8 @@ export default function ProfilePage({ scrollTarget }) {
           topInset: 0,
           bottomInset: 0,
         });
+
+        drawCardThemeWash(ctx, width, height, exportFilterId, exportFilterIntensity);
 
     if (!isSocialExport) {
       drawPosterOverlay(ctx, width, height, theme);
@@ -2694,8 +2757,15 @@ ${logLines}${commentText}${mediaText}`;
                     ...styles.trainingCardOverlay,
                     background:
                       cardStyle === "social"
-                        ? "linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.08) 36%, rgba(0, 0, 0, 0.54)), radial-gradient(circle at 82% 12%, rgba(245, 185, 66, 0.18), transparent 38%)"
-                        : getOverlayStyle(selectedFilter, filterIntensity),
+                        ? `
+                          radial-gradient(circle at 82% 14%, rgba(${getFilterWashColor(selectedFilter)}, 0.34), transparent 42%),
+                          linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.08) 36%, rgba(0, 0, 0, 0.56))
+                        `
+                        : `
+                          radial-gradient(circle at 82% 14%, rgba(${getFilterWashColor(selectedFilter)}, 0.34), transparent 42%),
+                          ${getOverlayStyle(selectedFilter, filterIntensity)}
+                        `,
+                    mixBlendMode: cardStyle === "social" ? "normal" : "normal",
                   }}
                 />
 

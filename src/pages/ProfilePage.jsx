@@ -978,26 +978,13 @@ export default function ProfilePage({ scrollTarget }) {
     const color = getFilterWashColor(filterId);
   
     ctx.save();
-  
     ctx.globalCompositeOperation = "source-over";
-
-    if (filterId === "dark") {
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.16 + 0.18 * strength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else if (filterId === "mono") {
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.02 + 0.04 * strength})`;
-      ctx.fillRect(0, 0, width, height);
-    
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.1 + 0.14 * strength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else if (filterId === "chrome") {
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.04 + 0.07 * strength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else {
-      ctx.fillStyle = `rgba(${color}, ${0.08 + 0.12 * strength})`;
-      ctx.fillRect(0, 0, width, height);
-    }
   
+    // 전체 색상 레이어 약하게
+    ctx.fillStyle = `rgba(${color}, ${0.025 + 0.05 * strength})`;
+    ctx.fillRect(0, 0, width, height);
+  
+    // 상단 조명도 약하게
     const glow = ctx.createRadialGradient(
       width * 0.82,
       height * 0.14,
@@ -1007,13 +994,14 @@ export default function ProfilePage({ scrollTarget }) {
       width * 0.78
     );
   
-    glow.addColorStop(0, `rgba(${color}, ${0.14 + 0.12 * strength})`);
-    glow.addColorStop(0.38, `rgba(${color}, ${0.04 + 0.05 * strength})`);
+    glow.addColorStop(0, `rgba(${color}, ${0.07 + 0.06 * strength})`);
+    glow.addColorStop(0.38, `rgba(${color}, ${0.02 + 0.025 * strength})`);
     glow.addColorStop(1, "rgba(0, 0, 0, 0)");
   
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, width, height);
   
+    // 가장자리 어둠도 조금만
     const vignette = ctx.createRadialGradient(
       width * 0.5,
       height * 0.44,
@@ -1024,8 +1012,8 @@ export default function ProfilePage({ scrollTarget }) {
     );
   
     vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
-    vignette.addColorStop(0.62, "rgba(0, 0, 0, 0.12)");
-    vignette.addColorStop(1, "rgba(0, 0, 0, 0.34)");
+    vignette.addColorStop(0.62, "rgba(0, 0, 0, 0.05)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.18)");
   
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);

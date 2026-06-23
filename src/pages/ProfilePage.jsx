@@ -316,6 +316,10 @@ export default function ProfilePage({ scrollTarget }) {
     Math.max(8, profileStats.totalRounds % 100)
   );
 
+  const levelUpTheme = getPosterCanvasTheme(selectedFilter);
+  const levelUpAccent = levelUpTheme.accent;
+  const levelUpAccentSoft = levelUpTheme.accentSoft;
+
   const mainComment = useMemo(() => {
     const firstLogWithComment = selectedLogs.find(
       (log) => log.publicComment || log.memo
@@ -1386,7 +1390,10 @@ export default function ProfilePage({ scrollTarget }) {
       bottomInset = 0,
     } = options;
 
-    const strength = Math.max(0, Math.min(1, filterIntensityValue / 100));
+    const strength = Math.max(
+      0,
+      Math.min(1.35, (filterIntensityValue / 100) * 1.35)
+    );
     const availableHeight = height - topInset - bottomInset;
     const exportSnapshot = posterExportRef.current || {};
     const exportCardMedia = exportSnapshot.cardMedia || cardMedia;
@@ -2695,9 +2702,24 @@ ${logLines}${commentText}${mediaText}`;
                 {cardStyle === "poster" && <div style={styles.posterVignette} />}
 
                 {cardStyle === "basic" ? (
-                  <div style={styles.levelUpCardTextLayer}>
+                    <div
+                      style={{
+                        ...styles.levelUpCardTextLayer,
+                        border: `1px solid ${levelUpAccentSoft}`,
+                        boxShadow: `inset 0 0 32px ${levelUpAccentSoft}`,
+                      }}
+                    >
                     <div style={styles.levelUpHeader}>
-                      <div style={styles.levelUpBadge}>♛</div>
+                    <div
+                          style={{
+                            ...styles.levelUpBadge,
+                            color: levelUpAccent,
+                            border: `1px solid ${levelUpAccent}`,
+                            boxShadow: `0 0 24px ${levelUpAccentSoft}`,
+                          }}
+                        >
+                          ♛
+                        </div>
                       <span>PERSONAL TRAINING ID</span>
                     </div>
 
@@ -2705,54 +2727,77 @@ ${logLines}${commentText}${mediaText}`;
                       <h2 style={styles.levelUpName}>{levelUpDisplayName}</h2>
 
                       <span style={styles.levelUpLabel}>LEVEL</span>
-                      <strong style={styles.levelUpNumber}>
-                        {levelUpDisplayLevel}
-                      </strong>
+                      <strong
+                    style={{
+                      ...styles.levelUpNumber,
+                      color: levelUpAccent,
+                      textShadow: `0 5px 20px rgba(0, 0, 0, 0.98), 0 0 24px ${levelUpAccentSoft}`,
+                    }}
+                  >
+                    {levelUpDisplayLevel}
+                  </strong>
 
-                      <p style={styles.levelUpSlogan}>{levelUpDisplaySlogan}</p>
+                  <p
+                      style={{
+                        ...styles.levelUpSlogan,
+                        borderTop: `2px solid ${levelUpAccent}`,
+                      }}
+                    >
+                      {levelUpDisplaySlogan}
+                    </p>
                     </div>
 
                     <div style={styles.levelUpBottomBlock}>
                       <div style={styles.levelUpStatsRow}>
                         <div style={styles.levelUpStatBox}>
-                          <span style={styles.levelUpStatIcon}>🥊</span>
+                        <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>🥊</span>
                           <strong>{profileStats.totalRounds}</strong>
                           <span>ROUNDS</span>
                           <small>COMPLETED</small>
                         </div>
 
                         <div style={styles.levelUpStatBox}>
-                          <span style={styles.levelUpStatIcon}>⚡</span>
+                        <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>⚡</span>
                           <strong>+{levelUpXpToday}</strong>
                           <span>XP</span>
                           <small>TODAY</small>
                         </div>
 
                         <div style={styles.levelUpStatBox}>
-                          <span style={styles.levelUpStatIcon}>🔥</span>
+                        <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>🔥</span>
                           <strong>{levelUpStreakDays || 1}</strong>
                           <span>STREAK</span>
                           <small>DAYS</small>
                         </div>
                       </div>
 
-                      <div style={styles.levelUpTierBox}>
+                      <div
+                        style={{
+                          ...styles.levelUpTierBox,
+                          border: `1px solid ${levelUpAccent}`,
+                          boxShadow: `0 12px 26px rgba(0, 0, 0, 0.28), 0 0 18px ${levelUpAccentSoft}`,
+                        }}
+                      >
                         <div>
-                          <span style={styles.levelUpTierLabel}>NEXT TIER:</span>
-                          <strong style={styles.levelUpTierName}>ELITE</strong>
+                        <strong style={{ ...styles.levelUpTierName, color: levelUpAccent }}>
+                          ELITE
+                        </strong>
+                          
                         </div>
 
-                        <strong style={styles.levelUpXpText}>
+                        <strong style={{ ...styles.levelUpXpText, color: levelUpAccent }}>
                           {levelUpNextTierXp || 100} XP
                         </strong>
 
                         <div style={styles.levelUpProgressTrack}>
-                          <div
-                            style={{
-                              ...styles.levelUpProgressFill,
-                              width: `${levelUpProgressPercent}%`,
-                            }}
-                          />
+                        <div
+                          style={{
+                            ...styles.levelUpProgressFill,
+                            width: `${levelUpProgressPercent}%`,
+                            background: `linear-gradient(90deg, ${levelUpAccent}, #ffffff)`,
+                            boxShadow: `0 0 16px ${levelUpAccentSoft}`,
+                          }}
+                        />
                         </div>
                       </div>
                     </div>

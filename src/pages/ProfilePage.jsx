@@ -979,11 +979,24 @@ export default function ProfilePage({ scrollTarget }) {
   
     ctx.save();
   
-    ctx.globalCompositeOperation = "soft-light";
-    ctx.fillStyle = `rgba(${color}, ${0.18 + 0.18 * strength})`;
-    ctx.fillRect(0, 0, width, height);
-  
     ctx.globalCompositeOperation = "source-over";
+
+    if (filterId === "dark") {
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.16 + 0.18 * strength})`;
+      ctx.fillRect(0, 0, width, height);
+    } else if (filterId === "mono") {
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.02 + 0.04 * strength})`;
+      ctx.fillRect(0, 0, width, height);
+    
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.1 + 0.14 * strength})`;
+      ctx.fillRect(0, 0, width, height);
+    } else if (filterId === "chrome") {
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.04 + 0.07 * strength})`;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      ctx.fillStyle = `rgba(${color}, ${0.08 + 0.12 * strength})`;
+      ctx.fillRect(0, 0, width, height);
+    }
   
     const glow = ctx.createRadialGradient(
       width * 0.82,
@@ -994,8 +1007,8 @@ export default function ProfilePage({ scrollTarget }) {
       width * 0.78
     );
   
-    glow.addColorStop(0, `rgba(${color}, ${0.24 + 0.22 * strength})`);
-    glow.addColorStop(0.38, `rgba(${color}, ${0.08 + 0.08 * strength})`);
+    glow.addColorStop(0, `rgba(${color}, ${0.14 + 0.12 * strength})`);
+    glow.addColorStop(0.38, `rgba(${color}, ${0.04 + 0.05 * strength})`);
     glow.addColorStop(1, "rgba(0, 0, 0, 0)");
   
     ctx.fillStyle = glow;
@@ -1012,7 +1025,7 @@ export default function ProfilePage({ scrollTarget }) {
   
     vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
     vignette.addColorStop(0.62, "rgba(0, 0, 0, 0.12)");
-    vignette.addColorStop(1, "rgba(0, 0, 0, 0.48)");
+    vignette.addColorStop(1, "rgba(0, 0, 0, 0.34)");
   
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);
@@ -1543,14 +1556,15 @@ export default function ProfilePage({ scrollTarget }) {
           bottomInset: 0,
         });
 
+        if (!isSocialExport) {
+          drawPosterOverlay(ctx, width, height, theme);
+        }
+        
+        if (isSocialExport) {
+          drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto);
+        }
+        
         drawCardThemeWash(ctx, width, height, exportFilterId, exportFilterIntensity);
-
-    if (!isSocialExport) {
-      drawPosterOverlay(ctx, width, height, theme);
-    }
-    if (isSocialExport) {
-      drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto);
-    }
     
     if (!isSocialExport) {
       const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
@@ -2757,15 +2771,9 @@ ${logLines}${commentText}${mediaText}`;
                     ...styles.trainingCardOverlay,
                     background:
                       cardStyle === "social"
-                        ? `
-                          radial-gradient(circle at 82% 14%, rgba(${getFilterWashColor(selectedFilter)}, 0.34), transparent 42%),
-                          linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.08) 36%, rgba(0, 0, 0, 0.56))
-                        `
-                        : `
-                          radial-gradient(circle at 82% 14%, rgba(${getFilterWashColor(selectedFilter)}, 0.34), transparent 42%),
-                          ${getOverlayStyle(selectedFilter, filterIntensity)}
-                        `,
-                    mixBlendMode: cardStyle === "social" ? "normal" : "normal",
+                        ? "linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.01) 38%, rgba(0, 0, 0, 0.24))"
+                        : "linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.03) 40%, rgba(0, 0, 0, 0.36))",
+                    mixBlendMode: "normal",
                   }}
                 />
 

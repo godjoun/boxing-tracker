@@ -101,7 +101,7 @@ export function getCardBackground(filterId) {
 }
 
 export function getImageFilter(filterId, intensity) {
-  const strength = Math.min(1.35, Math.max(0, intensity / 100) * 1.35);
+  const strength = Math.max(0, Math.min(1.15, (intensity / 100) * 1.15));
 
   if (filterId === "levelup") {
     return `contrast(${1.18 + 0.5 * strength}) saturate(${0.86 + 0.22 * strength}) sepia(${0.26 + 0.36 * strength}) brightness(${0.9 - 0.14 * strength})`;
@@ -167,7 +167,7 @@ export function getImageFilter(filterId, intensity) {
 }
 
 export function getOverlayStyle(filterId, intensity) {
-  const strength = Math.min(1.35, Math.max(0, intensity / 100) * 1.35);
+  const strength = Math.max(0, Math.min(1.15, (intensity / 100) * 1.15));
 
   if (filterId === "levelup") {
     return `linear-gradient(90deg, rgba(0, 0, 0, ${0.72 + 0.1 * strength}) 0%, rgba(0, 0, 0, ${0.42 + 0.18 * strength}) 48%, rgba(0, 0, 0, ${0.06 + 0.1 * strength}) 100%), linear-gradient(180deg, rgba(0, 0, 0, ${0.08 + 0.12 * strength}), rgba(0, 0, 0, ${0.72 + 0.18 * strength})), radial-gradient(circle at 80% 18%, rgba(214, 162, 52, ${0.08 + 0.18 * strength}), transparent 42%)`;

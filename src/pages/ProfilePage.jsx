@@ -1448,6 +1448,67 @@ export default function ProfilePage({ scrollTarget }) {
     })`;
   }
 
+  function isMobileCardExportDevice() {
+    if (typeof window === "undefined") return false;
+  
+    return (
+      isIOSLikeDevice() ||
+      window.innerWidth <= 820 ||
+      navigator.maxTouchPoints > 1
+    );
+  }
+  
+  function drawMobileCanvasFilterBoost(ctx, width, height, filterId, strength) {
+    const safeStrength = Math.max(0, Math.min(1, strength));
+  
+    const filterColors = {
+      levelup: "214, 162, 52",
+      red: "255, 35, 35",
+      dark: "0, 0, 0",
+      gold: "255, 190, 45",
+      blue: "35, 105, 255",
+      mono: "255, 255, 255",
+      chrome: "255, 255, 255",
+      future: "120, 76, 255",
+      vintage: "230, 160, 85",
+    };
+  
+    const color = filterColors[filterId] || filterColors.red;
+  
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+  
+    if (filterId === "mono") {
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.18 + 0.18 * safeStrength})`;
+      ctx.fillRect(0, 0, width, height);
+  
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.04 + 0.08 * safeStrength})`;
+      ctx.fillRect(0, 0, width, height);
+    } else if (filterId === "dark") {
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.24 + 0.26 * safeStrength})`;
+      ctx.fillRect(0, 0, width, height);
+    } else if (filterId === "chrome") {
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.08 + 0.12 * safeStrength})`;
+      ctx.fillRect(0, 0, width, height);
+  
+      ctx.fillStyle = `rgba(255, 35, 35, ${0.04 + 0.08 * safeStrength})`;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      ctx.fillStyle = `rgba(${color}, ${0.12 + 0.18 * safeStrength})`;
+      ctx.fillRect(0, 0, width, height);
+    }
+  
+    const bottomShade = ctx.createLinearGradient(0, height * 0.42, 0, height);
+    bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
+    bottomShade.addColorStop(0.55, "rgba(0, 0, 0, 0.12)");
+    bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.36)");
+  
+    ctx.fillStyle = bottomShade;
+    ctx.fillRect(0, 0, width, height);
+  
+    ctx.restore();
+  }
+
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",
@@ -1489,9 +1550,16 @@ export default function ProfilePage({ scrollTarget }) {
         } else {
           drawCoverImage(ctx, image, 0, topInset, width, availableHeight, Math.max(scalePercent, 100));
         }
-
+        
+        ctx.filter = "none";
+        
+        if (isMobileCardExportDevice()) {
+          drawMobileCanvasFilterBoost(ctx, width, height, filterId, strength);
+        }
+        
         ctx.restore();
         return true;
+
       } catch (error) {
         console.warn("카드 사진 캔버스 로드 실패:", error);
       }

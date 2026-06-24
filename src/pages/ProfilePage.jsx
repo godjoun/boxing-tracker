@@ -1518,11 +1518,6 @@ export default function ProfilePage({ scrollTarget }) {
       topInset = 0,
       bottomInset = 0,
     } = options;
-
-    const strength = Math.max(
-      0,
-      Math.min(1.15, (filterIntensityValue / 100) * 1.15)
-    );
     
     const availableHeight = height - topInset - bottomInset;
     const exportSnapshot = posterExportRef.current || {};
@@ -1543,7 +1538,10 @@ export default function ProfilePage({ scrollTarget }) {
       try {
         const image = await loadCanvasImage(imageSrc);
         ctx.save();
-        applyCanvasImageFilter(ctx, filterId, strength);
+        
+        if ("filter" in ctx) {
+          ctx.filter = getImageFilter(filterId, filterIntensityValue);
+        }
 
         if (fit === "contain") {
           drawContainImage(ctx, image, 0, topInset, width, availableHeight, scalePercent);

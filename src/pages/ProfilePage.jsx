@@ -1697,10 +1697,17 @@ export default function ProfilePage({ scrollTarget }) {
         ctx.filter = "none";
 
         if (isMobileCardExportDevice()) {
-          ctx.save();
-          ctx.fillStyle = "rgba(255, 0, 0, 0.45)";
-          ctx.fillRect(0, topInset, width, availableHeight);
-          ctx.restore();
+          applySavedCardPixelFilter(
+            ctx,
+            0,
+            topInset,
+            width,
+            availableHeight,
+            filterId,
+            strength
+          );
+        
+          drawSavedCardFilterLayer(ctx, width, height, filterId, strength);
         }
 
 /*if (isMobileCardExportDevice()) {

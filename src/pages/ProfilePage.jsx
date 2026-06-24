@@ -2201,7 +2201,11 @@ ${logLines}${commentText}${mediaText}`;
     ? "520px"
     : "560px";
 
-    const previewFilterIntensity = filterIntensity;
+    const previewFilterIntensity =
+  typeof window !== "undefined" &&
+  (window.innerWidth <= 820 || navigator.maxTouchPoints > 1)
+    ? Math.round(filterIntensity * 0.78)
+    : filterIntensity;
 
   const posterPreviewTheme = getPosterCanvasTheme(selectedFilter);
   const posterPreviewAccent = posterPreviewTheme.accent;

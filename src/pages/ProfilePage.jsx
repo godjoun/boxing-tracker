@@ -2201,12 +2201,6 @@ ${logLines}${commentText}${mediaText}`;
     ? "520px"
     : "560px";
 
-    const previewFilterIntensity =
-  typeof window !== "undefined" &&
-  (window.innerWidth <= 820 || navigator.maxTouchPoints > 1)
-    ? Math.round(filterIntensity * 0.58)
-    : filterIntensity;
-
   const posterPreviewTheme = getPosterCanvasTheme(selectedFilter);
   const posterPreviewAccent = posterPreviewTheme.accent;
   const posterPreviewLine = `linear-gradient(90deg, transparent, ${posterPreviewAccent}, transparent)`;
@@ -2820,7 +2814,7 @@ ${logLines}${commentText}${mediaText}`;
                     style={{
                       ...styles.trainingCardImage,
                       objectFit: "cover",
-                      filter: getImageFilter(selectedFilter, previewFilterIntensity),
+                      filter: getImageFilter(selectedFilter, filterIntensity),
                       transform:
                         cardStyle === "social"
                           ? `scale(${photoScale / 100})`
@@ -2839,7 +2833,7 @@ ${logLines}${commentText}${mediaText}`;
                     style={{
                       ...styles.trainingCardImage,
                       objectFit: "cover",
-                      filter: getImageFilter(selectedFilter, previewFilterIntensity),
+                      filter: getImageFilter(selectedFilter, filterIntensity),
                       transform:
                         cardStyle === "social"
                           ? `scale(${photoScale / 100})`

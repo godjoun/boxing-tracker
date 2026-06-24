@@ -101,72 +101,68 @@ export function getCardBackground(filterId) {
 }
 
 export function getImageFilter(filterId, intensity) {
-  const strength = Math.max(0, Math.min(1, intensity / 100));
+  const strength = intensity / 100;(0, Math.min(1.15, (intensity / 100) * 1.15));
 
   if (filterId === "levelup") {
-    return `contrast(${1.18 + 0.48 * strength}) saturate(${
-      1.12 + 0.38 * strength
-    }) sepia(${0.28 + 0.5 * strength}) brightness(${
-      0.98 - 0.08 * strength
-    })`;
+    return `contrast(${1.18 + 0.5 * strength}) saturate(${0.86 + 0.22 * strength}) sepia(${0.26 + 0.36 * strength}) brightness(${0.9 - 0.14 * strength})`;
   }
 
   if (filterId === "gold") {
-    return `contrast(${1.16 + 0.56 * strength}) saturate(${
-      1.2 + 0.48 * strength
-    }) sepia(${0.42 + 0.58 * strength}) brightness(${
-      0.96 - 0.08 * strength
+    return `contrast(${1.08 + 0.42 * strength}) saturate(${
+      1.14 + 0.34 * strength
+    }) sepia(${0.3 + 0.44 * strength}) brightness(${
+      0.98 - 0.04 * strength
     })`;
   }
 
   if (filterId === "blue") {
-    return `contrast(${1.18 + 0.54 * strength}) saturate(${
-      1.24 + 0.52 * strength
-    }) hue-rotate(${185 * strength}deg) brightness(${
-      0.96 - 0.08 * strength
+    return `contrast(${1.08 + 0.42 * strength}) saturate(${
+      1.12 + 0.34 * strength
+    }) hue-rotate(${170 * strength}deg) brightness(${
+      0.98 - 0.05 * strength
     })`;
   }
 
   if (filterId === "mono") {
-    return `grayscale(${0.82 + 0.18 * strength}) contrast(${
-      1.28 + 0.62 * strength
-    }) brightness(${0.86 - 0.18 * strength})`;
+    return `grayscale(${0.65 + 0.35 * strength}) contrast(${
+      1.18 + 0.42 * strength
+    }) brightness(${1 - 0.04 * strength})`;
   }
 
   if (filterId === "dark") {
-    return `contrast(${1.22 + 0.64 * strength}) brightness(${
-      0.88 - 0.28 * strength
-    }) saturate(${0.9 - 0.24 * strength})`;
+    return `contrast(${1.12 + 0.52 * strength}) brightness(${
+      0.94 - 0.2 * strength
+    }) saturate(${0.92 - 0.18 * strength})`;
   }
 
   if (filterId === "chrome") {
-    return `contrast(${1.3 + 0.58 * strength}) saturate(${
-      1.08 + 0.28 * strength
-    }) brightness(${1.04 + 0.08 * strength}) sepia(${
-      0.08 + 0.12 * strength
+    return `contrast(${1.24 + 0.5 * strength}) saturate(${
+      1.02 + 0.22 * strength
+    }) brightness(${1.06 + 0.1 * strength}) sepia(${
+      0.08 * strength
     })`;
   }
 
   if (filterId === "future") {
-    return `contrast(${1.22 + 0.58 * strength}) saturate(${
-      1.45 + 0.78 * strength
-    }) hue-rotate(${34 * strength}deg) brightness(${
-      1 - 0.06 * strength
+    return `contrast(${1.18 + 0.48 * strength}) saturate(${
+      1.36 + 0.56 * strength
+    }) hue-rotate(${30 * strength}deg) brightness(${
+      1.01 - 0.02 * strength
     })`;
   }
 
   if (filterId === "vintage") {
-    return `contrast(${1.18 + 0.54 * strength}) sepia(${
-      0.55 + 0.45 * strength
-    }) saturate(${0.82 - 0.08 * strength}) brightness(${
-      0.94 - 0.08 * strength
+    return `contrast(${1.16 + 0.44 * strength}) sepia(${
+      0.42 + 0.56 * strength
+    }) saturate(${0.86 - 0.08 * strength}) brightness(${
+      0.97 - 0.05 * strength
     })`;
   }
 
-  return `contrast(${1.2 + 0.58 * strength}) saturate(${
-    1.28 + 0.56 * strength
-  }) brightness(${0.96 - 0.08 * strength}) sepia(${
-    0.18 + 0.38 * strength
+  return `contrast(${1.16 + 0.5 * strength}) saturate(${
+    1.2 + 0.48 * strength
+  }) brightness(${0.98 - 0.05 * strength}) sepia(${
+    0.12 + 0.28 * strength
   })`;
 }
 

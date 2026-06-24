@@ -1510,54 +1510,6 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.restore();
   }
 
-  function drawSavedCardFilterLayer(ctx, width, height, filterId, strength) {
-    const safeStrength = Math.max(0, Math.min(1, strength));
-  
-    const colors = {
-      levelup: "214, 162, 52",
-      red: "255, 40, 40",
-      dark: "0, 0, 0",
-      gold: "245, 185, 66",
-      blue: "58, 123, 255",
-      mono: "0, 0, 0",
-      chrome: "255, 255, 255",
-      future: "139, 92, 246",
-      vintage: "217, 161, 95",
-    };
-  
-    const color = colors[filterId] || colors.red;
-  
-    ctx.save();
-    ctx.globalCompositeOperation = "source-over";
-  
-    if (filterId === "mono") {
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.18 + 0.22 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-  
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.03 + 0.04 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else if (filterId === "dark") {
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.22 + 0.28 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else if (filterId === "chrome") {
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.06 + 0.08 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else {
-      ctx.fillStyle = `rgba(${color}, ${0.1 + 0.16 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-    }
-  
-    const contrastShade = ctx.createLinearGradient(0, 0, 0, height);
-    contrastShade.addColorStop(0, "rgba(0, 0, 0, 0.08)");
-    contrastShade.addColorStop(0.45, "rgba(0, 0, 0, 0)");
-    contrastShade.addColorStop(1, "rgba(0, 0, 0, 0.28)");
-  
-    ctx.fillStyle = contrastShade;
-    ctx.fillRect(0, 0, width, height);
-  
-    ctx.restore();
-  }
-
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",
@@ -1599,14 +1551,10 @@ export default function ProfilePage({ scrollTarget }) {
         }
         
         ctx.filter = "none";
-
-        if (isMobileCardExportDevice()) {
-          drawSavedCardFilterLayer(ctx, width, height, filterId, strength);
-        }
-
-/*if (isMobileCardExportDevice()) {
-  drawMobileCanvasFilterBoost(ctx, width, height, filterId, strength);
-}*/
+        
+        /*if (isMobileCardExportDevice()) {
+          drawMobileCanvasFilterBoost(ctx, width, height, filterId, strength);
+        }*/
         
         ctx.restore();
         return true;

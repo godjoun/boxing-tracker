@@ -2204,7 +2204,7 @@ ${logLines}${commentText}${mediaText}`;
     const previewFilterIntensity =
   typeof window !== "undefined" &&
   (window.innerWidth <= 820 || navigator.maxTouchPoints > 1)
-    ? Math.round(filterIntensity * 0.78)
+    ? Math.round(filterIntensity * 0.58)
     : filterIntensity;
 
   const posterPreviewTheme = getPosterCanvasTheme(selectedFilter);

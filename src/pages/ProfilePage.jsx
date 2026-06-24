@@ -1769,6 +1769,11 @@ export default function ProfilePage({ scrollTarget }) {
           bottomInset: 0,
         });
 
+        ctx.save();
+        ctx.fillStyle = "rgba(255, 0, 0, 0.45)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+
         if (!isSocialExport) {
           drawPosterOverlay(ctx, width, height, theme);
         }

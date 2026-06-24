@@ -1558,102 +1558,6 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.restore();
   }
 
-  function clampColor(value) {
-    return Math.max(0, Math.min(255, value));
-  }
-  
-  function applySavedCardPixelFilter(ctx, x, y, width, height, filterId, strength) {
-    const safeStrength = Math.max(0, Math.min(1, strength));
-  
-    try {
-      const imageData = ctx.getImageData(x, y, width, height);
-      const data = imageData.data;
-  
-      const tintColors = {
-        levelup: [214, 162, 52],
-        red: [255, 40, 40],
-        gold: [245, 185, 66],
-        blue: [58, 123, 255],
-        future: [139, 92, 246],
-        vintage: [217, 161, 95],
-        chrome: [255, 255, 255],
-      };
-  
-      const tint = tintColors[filterId] || tintColors.red;
-  
-      for (let i = 0; i < data.length; i += 4) {
-        let r = data[i];
-        let g = data[i + 1];
-        let b = data[i + 2];
-  
-        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-  
-        if (filterId === "mono") {
-          const contrast = 1.18 + 0.62 * safeStrength;
-          const brightness = -16 - 26 * safeStrength;
-          const v = clampColor((luma - 128) * contrast + 128 + brightness);
-  
-          data[i] = v;
-          data[i + 1] = v;
-          data[i + 2] = v;
-          continue;
-        }
-  
-        if (filterId === "dark") {
-          const contrast = 1.12 + 0.52 * safeStrength;
-          const brightness = -22 - 28 * safeStrength;
-  
-          data[i] = clampColor((r - 128) * contrast + 128 + brightness);
-          data[i + 1] = clampColor((g - 128) * contrast + 128 + brightness);
-          data[i + 2] = clampColor((b - 128) * contrast + 128 + brightness);
-          continue;
-        }
-  
-        if (filterId === "vintage" || filterId === "gold" || filterId === "levelup") {
-          const sepiaAmount =
-            filterId === "vintage"
-              ? 0.42 + 0.28 * safeStrength
-              : 0.26 + 0.24 * safeStrength;
-  
-          const sr = clampColor(r * 0.393 + g * 0.769 + b * 0.189);
-          const sg = clampColor(r * 0.349 + g * 0.686 + b * 0.168);
-          const sb = clampColor(r * 0.272 + g * 0.534 + b * 0.131);
-  
-          r = r * (1 - sepiaAmount) + sr * sepiaAmount;
-          g = g * (1 - sepiaAmount) + sg * sepiaAmount;
-          b = b * (1 - sepiaAmount) + sb * sepiaAmount;
-        }
-  
-        const contrast = 1.08 + 0.32 * safeStrength;
-        const brightness = filterId === "chrome" ? 8 * safeStrength : -8 * safeStrength;
-        const saturation =
-          filterId === "future" || filterId === "blue"
-            ? 1.22 + 0.36 * safeStrength
-            : 1.04 + 0.18 * safeStrength;
-  
-        r = (r - 128) * contrast + 128 + brightness;
-        g = (g - 128) * contrast + 128 + brightness;
-        b = (b - 128) * contrast + 128 + brightness;
-  
-        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-        r = gray + (r - gray) * saturation;
-        g = gray + (g - gray) * saturation;
-        b = gray + (b - gray) * saturation;
-  
-        const tintAmount =
-          filterId === "chrome" ? 0.04 : 0.08 + 0.14 * safeStrength;
-  
-        data[i] = clampColor(r * (1 - tintAmount) + tint[0] * tintAmount);
-        data[i + 1] = clampColor(g * (1 - tintAmount) + tint[1] * tintAmount);
-        data[i + 2] = clampColor(b * (1 - tintAmount) + tint[2] * tintAmount);
-      }
-  
-      ctx.putImageData(imageData, x, y);
-    } catch (error) {
-      console.warn("저장 이미지 픽셀 필터 적용 실패:", error);
-    }
-  }
-
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",
@@ -1697,16 +1601,6 @@ export default function ProfilePage({ scrollTarget }) {
         ctx.filter = "none";
 
         if (isMobileCardExportDevice()) {
-          applySavedCardPixelFilter(
-            ctx,
-            0,
-            topInset,
-            width,
-            availableHeight,
-            filterId,
-            strength
-          );
-        
           drawSavedCardFilterLayer(ctx, width, height, filterId, strength);
         }
 

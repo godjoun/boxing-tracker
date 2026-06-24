@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toPng } from "html-to-image";
 import { useTraining } from "../store/TrainingContext";
 import { styles } from "./ProfilePage.styles";
 import {
@@ -1513,7 +1512,7 @@ export default function ProfilePage({ scrollTarget }) {
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",
-      filterId = "red",
+      filterId = "levelup",
       filterIntensityValue = 75,
       scalePercent = 100,
       topInset = 0,
@@ -1570,10 +1569,10 @@ export default function ProfilePage({ scrollTarget }) {
   async function createTrainingCardCanvasDataUrl(styleIdForExport) {
     const exportSnapshot = posterExportRef.current || {};
     const exportFilterId =
-      exportSnapshot.selectedFilter ||
-      selectedFilterRef.current ||
-      selectedFilter ||
-      "red";
+  exportSnapshot.selectedFilter ||
+  selectedFilterRef.current ||
+  selectedFilter ||
+  "levelup";
     const exportFilterIntensity =
       typeof exportSnapshot.filterIntensity === "number"
         ? exportSnapshot.filterIntensity
@@ -1950,22 +1949,6 @@ export default function ProfilePage({ scrollTarget }) {
     return canvas.toDataURL("image/png", 1);
   }
 
-  async function createPreviewCardDataUrl() {
-    await waitForCardReady();
-  
-    const card = trainingCardRef.current;
-  
-    if (!card) {
-      throw new Error("저장할 카드 미리보기를 찾지 못했어요.");
-    }
-  
-    return await toPng(card, {
-      cacheBust: true,
-      pixelRatio: 3,
-      backgroundColor: "#000000",
-    });
-  }
-
   async function dataUrlToPngFile(dataUrl, filename) {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
@@ -1977,7 +1960,7 @@ export default function ProfilePage({ scrollTarget }) {
       posterExportRef.current.selectedFilter ||
       selectedFilterRef.current ||
       selectedFilter ||
-      "red";
+      "levelup";
   
       return cardStyle === "poster"
       ? await createPosterCanvasDataUrl(filterIdForExport)

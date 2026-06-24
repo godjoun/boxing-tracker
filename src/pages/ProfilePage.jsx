@@ -1509,6 +1509,81 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.restore();
   }
 
+  function clampPixel(value) {
+    return Math.max(0, Math.min(255, Math.round(value)));
+  }
+  
+  function applyMobilePixelFilter(ctx, x, y, width, height, filterId, intensity = 75) {
+    if (!isMobileCardExportDevice()) return;
+  
+    const strength = Math.max(0, Math.min(1, intensity / 100));
+  
+    let imageData;
+  
+    try {
+      imageData = ctx.getImageData(x, y, width, height);
+    } catch (error) {
+      console.warn("모바일 픽셀 필터 적용 실패:", error);
+      return;
+    }
+  
+    const data = imageData.data;
+  
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i];
+      let g = data[i + 1];
+      let b = data[i + 2];
+  
+      const gray = r * 0.299 + g * 0.587 + b * 0.114;
+  
+      if (filterId === "mono") {
+        r = gray;
+        g = gray;
+        b = gray;
+  
+        const contrast = 1 + 0.45 * strength;
+        r = (r - 128) * contrast + 128;
+        g = (g - 128) * contrast + 128;
+        b = (b - 128) * contrast + 128;
+      } else if (filterId === "dark") {
+        r *= 0.8 - 0.18 * strength;
+        g *= 0.8 - 0.18 * strength;
+        b *= 0.8 - 0.18 * strength;
+      } else if (filterId === "red") {
+        r = r * (1 + 0.22 * strength) + 28 * strength;
+        g = g * (0.78 - 0.12 * strength);
+        b = b * (0.72 - 0.14 * strength);
+      } else if (filterId === "blue") {
+        r = r * (0.72 - 0.12 * strength);
+        g = g * (0.86 - 0.08 * strength);
+        b = b * (1 + 0.28 * strength) + 24 * strength;
+      } else if (filterId === "gold" || filterId === "levelup") {
+        r = r * (1 + 0.14 * strength) + 18 * strength;
+        g = g * (0.95 + 0.08 * strength) + 10 * strength;
+        b = b * (0.72 - 0.1 * strength);
+      } else if (filterId === "vintage") {
+        r = r * (1 + 0.1 * strength) + 12 * strength;
+        g = g * (0.94 + 0.02 * strength);
+        b = b * (0.72 - 0.12 * strength);
+      } else if (filterId === "future") {
+        r = r * (0.92 + 0.08 * strength);
+        g = g * (0.86 + 0.04 * strength);
+        b = b * (1 + 0.22 * strength) + 18 * strength;
+      } else if (filterId === "chrome") {
+        const chromeGray = gray * (0.35 * strength);
+        r = r * (1 - 0.22 * strength) + chromeGray;
+        g = g * (1 - 0.22 * strength) + chromeGray;
+        b = b * (1 - 0.22 * strength) + chromeGray;
+      }
+  
+      data[i] = clampPixel(r);
+      data[i + 1] = clampPixel(g);
+      data[i + 2] = clampPixel(b);
+    }
+  
+    ctx.putImageData(imageData, x, y);
+  }
+
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",
@@ -1550,6 +1625,16 @@ export default function ProfilePage({ scrollTarget }) {
         }
         
         ctx.filter = "none";
+
+        applyMobilePixelFilter(
+          ctx,
+          0,
+          topInset,
+          width,
+          availableHeight,
+          filterId,
+          filterIntensityValue
+        );
         
         /*if (isMobileCardExportDevice()) {
           drawMobileCanvasFilterBoost(ctx, width, height, filterId, strength);

@@ -1516,7 +1516,8 @@ export default function ProfilePage({ scrollTarget }) {
   function applyMobilePixelFilter(ctx, x, y, width, height, filterId, intensity = 75) {
     if (!isMobileCardExportDevice()) return;
   
-    const strength = Math.max(0, Math.min(1, intensity / 100));
+    const baseStrength = Math.max(0, Math.min(1, intensity / 100));
+    const strength = baseStrength * 0.72;
   
     let imageData;
   

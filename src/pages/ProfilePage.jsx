@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toPng } from "html-to-image";
 import { useTraining } from "../store/TrainingContext";
 import { styles } from "./ProfilePage.styles";
 import {
@@ -974,7 +975,7 @@ export default function ProfilePage({ scrollTarget }) {
   }
   
   function drawCardThemeWash(ctx, width, height, filterId, intensity = 75) {
-    const strength = Math.max(0, Math.min(1, filterIntensityValue / 100));
+    const strength = Math.max(0, Math.min(1, intensity / 100));
     const color = getFilterWashColor(filterId);
   
     ctx.save();
@@ -1091,7 +1092,7 @@ export default function ProfilePage({ scrollTarget }) {
     const height = 1920;
     const centerX = width / 2;
     const theme = getPosterCanvasTheme(exportFilterId);
-    const strength = Math.max(0, Math.min(1, filterIntensityValue / 100));
+    const strength = Math.max(0, Math.min(1, exportFilterIntensity / 100));
 
     canvas.width = width;
     canvas.height = height;
@@ -1949,6 +1950,22 @@ export default function ProfilePage({ scrollTarget }) {
     return canvas.toDataURL("image/png", 1);
   }
 
+  async function createPreviewCardDataUrl() {
+    await waitForCardReady();
+  
+    const card = trainingCardRef.current;
+  
+    if (!card) {
+      throw new Error("저장할 카드 미리보기를 찾지 못했어요.");
+    }
+  
+    return await toPng(card, {
+      cacheBust: true,
+      pixelRatio: 3,
+      backgroundColor: "#000000",
+    });
+  }
+
   async function dataUrlToPngFile(dataUrl, filename) {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
@@ -1961,8 +1978,8 @@ export default function ProfilePage({ scrollTarget }) {
       selectedFilterRef.current ||
       selectedFilter ||
       "red";
-
-    return cardStyle === "poster"
+  
+      return cardStyle === "poster"
       ? await createPosterCanvasDataUrl(filterIdForExport)
       : await createTrainingCardCanvasDataUrl(cardStyle);
   }

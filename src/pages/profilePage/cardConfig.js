@@ -101,7 +101,7 @@ export function getCardBackground(filterId) {
 }
 
 export function getImageFilter(filterId, intensity) {
-  const strength = Math.max(0, Math.min(1.15, (intensity / 100) * 1.15));
+  const strength = intensity / 100;(0, Math.min(1.15, (intensity / 100) * 1.15));
 
   if (filterId === "levelup") {
     return `contrast(${1.18 + 0.5 * strength}) saturate(${0.86 + 0.22 * strength}) sepia(${0.26 + 0.36 * strength}) brightness(${0.9 - 0.14 * strength})`;

@@ -104,134 +104,78 @@ export function getImageFilter(filterId, intensity) {
   const strength = Math.max(0, Math.min(1, intensity / 100));
 
   if (filterId === "levelup") {
-    return `contrast(${1.14 + 0.34 * strength}) saturate(${0.84 + 0.14 * strength}) sepia(${0.12 + 0.14 * strength}) hue-rotate(${-2 * strength}deg) brightness(${0.94 - 0.04 * strength})`;
-  }
-
-  if (filterId === "gold") {
-    return `contrast(${1.08 + 0.42 * strength}) saturate(${
-      1.14 + 0.34 * strength
-    }) sepia(${0.3 + 0.44 * strength}) brightness(${
-      0.98 - 0.04 * strength
-    })`;
-  }
-
-  if (filterId === "blue") {
-    return `contrast(${1.08 + 0.42 * strength}) saturate(${
-      1.12 + 0.34 * strength
-    }) hue-rotate(${170 * strength}deg) brightness(${
-      0.98 - 0.05 * strength
-    })`;
-  }
-
-  if (filterId === "mono") {
-    return `grayscale(1) contrast(${1.16 + 0.26 * strength}) brightness(${1.02 - 0.02 * strength})`;
-  }
-
-  if (filterId === "dark") {
-    return `contrast(${1.12 + 0.52 * strength}) brightness(${
-      0.94 - 0.2 * strength
-    }) saturate(${0.92 - 0.18 * strength})`;
-  }
-
-  if (filterId === "chrome") {
-    return `contrast(${1.24 + 0.5 * strength}) saturate(${
-      1.02 + 0.22 * strength
-    }) brightness(${1.06 + 0.1 * strength}) sepia(${
-      0.08 * strength
-    })`;
-  }
-
-  if (filterId === "future") {
-    return `contrast(${1.18 + 0.48 * strength}) saturate(${
-      1.36 + 0.56 * strength
-    }) hue-rotate(${30 * strength}deg) brightness(${
-      1.01 - 0.02 * strength
-    })`;
-  }
-
-  if (filterId === "vintage") {
-    return `contrast(${1.16 + 0.44 * strength}) sepia(${
-      0.42 + 0.56 * strength
-    }) saturate(${0.86 - 0.08 * strength}) brightness(${
-      0.97 - 0.05 * strength
-    })`;
+    return `contrast(${1.28 + 0.52 * strength}) saturate(${0.98 + 0.28 * strength}) sepia(${0.24 + 0.38 * strength}) brightness(${0.96 - 0.08 * strength})`;
   }
 
   if (filterId === "red") {
-    return `contrast(${1.08 + 0.18 * strength}) saturate(${1.06 + 0.16 * strength}) sepia(${0.08 + 0.08 * strength}) brightness(${0.98 - 0.02 * strength})`;
-  }
-
-  return `contrast(${1.16 + 0.5 * strength}) saturate(${
-    1.2 + 0.48 * strength
-  }) brightness(${0.98 - 0.05 * strength}) sepia(${
-    0.12 + 0.28 * strength
-  })`;
-}
-
-export function getOverlayStyle(filterId, intensity) {
-  const strength = Math.max(0, Math.min(1.15, (intensity / 100) * 1.15));
-
-  if (filterId === "levelup") {
-    return `linear-gradient(90deg, rgba(0, 0, 0, ${0.72 + 0.1 * strength}) 0%, rgba(0, 0, 0, ${0.42 + 0.18 * strength}) 48%, rgba(0, 0, 0, ${0.06 + 0.1 * strength}) 100%), linear-gradient(180deg, rgba(0, 0, 0, ${0.08 + 0.12 * strength}), rgba(0, 0, 0, ${0.72 + 0.18 * strength})), radial-gradient(circle at 80% 18%, rgba(214, 162, 52, ${0.08 + 0.18 * strength}), transparent 42%)`;
-  }
-
-  if (filterId === "chrome") {
-    return `linear-gradient(135deg, rgba(255, 255, 255, ${
-      0.05 + 0.16 * strength
-    }), transparent 22%, rgba(255, 51, 51, ${
-      0.04 + 0.12 * strength
-    }) 48%, transparent 68%, rgba(255, 255, 255, ${
-      0.06 + 0.14 * strength
-    })), linear-gradient(180deg, rgba(0, 0, 0, ${
-      0.18 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.46 + 0.18 * strength}))`;
-  }
-
-  if (filterId === "future") {
-    return `linear-gradient(180deg, rgba(88, 28, 135, ${
-      0.06 + 0.16 * strength
-    }), rgba(0, 0, 0, ${
-      0.42 + 0.22 * strength
-    })), linear-gradient(135deg, rgba(14, 165, 233, ${
-      0.04 + 0.12 * strength
-    }), transparent 42%, rgba(255, 51, 51, ${0.04 + 0.08 * strength}))`;
-  }
-
-  if (filterId === "vintage") {
-    return `linear-gradient(180deg, rgba(255, 214, 150, ${
-      0.04 + 0.1 * strength
-    }), rgba(0, 0, 0, ${
-      0.5 + 0.2 * strength
-    })), radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, ${
-      0.18 + 0.18 * strength
-    }))`;
+    return `contrast(${1.26 + 0.5 * strength}) saturate(${1.12 + 0.34 * strength}) sepia(${0.16 + 0.26 * strength}) brightness(${0.96 - 0.07 * strength})`;
   }
 
   if (filterId === "gold") {
-    return `linear-gradient(180deg, rgba(255, 180, 35, ${
-      0.02 + 0.1 * strength
-    }), rgba(0, 0, 0, ${0.42 + 0.24 * strength}))`;
+    return `contrast(${1.24 + 0.52 * strength}) saturate(${1.12 + 0.34 * strength}) sepia(${0.34 + 0.46 * strength}) brightness(${0.96 - 0.07 * strength})`;
   }
 
   if (filterId === "blue") {
-    return `linear-gradient(180deg, rgba(35, 105, 255, ${
-      0.03 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.42 + 0.25 * strength}))`;
+    return `contrast(${1.22 + 0.5 * strength}) saturate(${1.14 + 0.4 * strength}) hue-rotate(${168 * strength}deg) brightness(${0.96 - 0.07 * strength})`;
   }
 
   if (filterId === "mono") {
-    return `linear-gradient(180deg, rgba(255, 255, 255, ${
-      0.01 + 0.04 * strength
-    }), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
+    return `grayscale(1) contrast(${1.32 + 0.48 * strength}) brightness(${0.98 - 0.08 * strength})`;
   }
 
   if (filterId === "dark") {
-    return `linear-gradient(180deg, rgba(0, 0, 0, ${
-      0.04 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.5 + 0.25 * strength}))`;
+    return `contrast(${1.24 + 0.58 * strength}) brightness(${0.9 - 0.18 * strength}) saturate(${0.86 - 0.16 * strength})`;
   }
 
-  return `linear-gradient(180deg, rgba(255, 35, 35, ${
-    0.03 + 0.14 * strength
-  }), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
+  if (filterId === "chrome") {
+    return `contrast(${1.34 + 0.48 * strength}) saturate(${1.02 + 0.22 * strength}) brightness(${1.08 + 0.06 * strength}) sepia(${0.08 + 0.1 * strength})`;
+  }
+
+  if (filterId === "future") {
+    return `contrast(${1.28 + 0.52 * strength}) saturate(${1.42 + 0.62 * strength}) hue-rotate(${32 * strength}deg) brightness(${0.99 - 0.04 * strength})`;
+  }
+
+  if (filterId === "vintage") {
+    return `contrast(${1.24 + 0.5 * strength}) sepia(${0.48 + 0.56 * strength}) saturate(${0.86 - 0.08 * strength}) brightness(${0.95 - 0.08 * strength})`;
+  }
+
+  return `contrast(${1.24 + 0.5 * strength}) saturate(${1.12 + 0.34 * strength}) sepia(${0.16 + 0.26 * strength}) brightness(${0.96 - 0.07 * strength})`;
+}
+
+export function getOverlayStyle(filterId, intensity) {
+  const strength = Math.max(0, Math.min(1, intensity / 100));
+
+  if (filterId === "levelup") {
+    return `linear-gradient(90deg, rgba(0, 0, 0, ${0.72 + 0.1 * strength}) 0%, rgba(0, 0, 0, ${0.42 + 0.18 * strength}) 48%, rgba(0, 0, 0, ${0.08 + 0.1 * strength}) 100%), linear-gradient(180deg, rgba(0, 0, 0, ${0.1 + 0.12 * strength}), rgba(0, 0, 0, ${0.72 + 0.18 * strength})), radial-gradient(circle at 80% 18%, rgba(214, 162, 52, ${0.08 + 0.18 * strength}), transparent 42%)`;
+  }
+
+  if (filterId === "chrome") {
+    return `linear-gradient(135deg, rgba(255, 255, 255, ${0.05 + 0.16 * strength}), transparent 22%, rgba(255, 51, 51, ${0.04 + 0.12 * strength}) 48%, transparent 68%, rgba(255, 255, 255, ${0.06 + 0.14 * strength})), linear-gradient(180deg, rgba(0, 0, 0, ${0.18 + 0.12 * strength}), rgba(0, 0, 0, ${0.46 + 0.18 * strength}))`;
+  }
+
+  if (filterId === "future") {
+    return `linear-gradient(180deg, rgba(88, 28, 135, ${0.06 + 0.16 * strength}), rgba(0, 0, 0, ${0.42 + 0.22 * strength})), linear-gradient(135deg, rgba(14, 165, 233, ${0.04 + 0.12 * strength}), transparent 42%, rgba(255, 51, 51, ${0.04 + 0.08 * strength}))`;
+  }
+
+  if (filterId === "vintage") {
+    return `linear-gradient(180deg, rgba(255, 214, 150, ${0.04 + 0.1 * strength}), rgba(0, 0, 0, ${0.5 + 0.2 * strength})), radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, ${0.18 + 0.18 * strength}))`;
+  }
+
+  if (filterId === "gold") {
+    return `linear-gradient(180deg, rgba(255, 180, 35, ${0.03 + 0.12 * strength}), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
+  }
+
+  if (filterId === "blue") {
+    return `linear-gradient(180deg, rgba(35, 105, 255, ${0.04 + 0.14 * strength}), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
+  }
+
+  if (filterId === "mono") {
+    return `linear-gradient(180deg, rgba(255, 255, 255, ${0.015 + 0.05 * strength}), rgba(0, 0, 0, ${0.46 + 0.22 * strength}))`;
+  }
+
+  if (filterId === "dark") {
+    return `linear-gradient(180deg, rgba(0, 0, 0, ${0.08 + 0.12 * strength}), rgba(0, 0, 0, ${0.54 + 0.24 * strength}))`;
+  }
+
+  return `linear-gradient(180deg, rgba(255, 35, 35, ${0.025 + 0.08 * strength}), rgba(0, 0, 0, ${0.46 + 0.24 * strength}))`;
 }

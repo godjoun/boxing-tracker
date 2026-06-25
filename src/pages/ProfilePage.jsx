@@ -16,7 +16,6 @@ import {
   CARD_STYLES,
   getCardBackground,
   getImageFilter,
-  getOverlayStyle,
 } from "./profilePage/cardConfig";
 
 export default function ProfilePage({ scrollTarget }) {
@@ -537,70 +536,7 @@ export default function ProfilePage({ scrollTarget }) {
     });
   }
 
-  function sleep(ms) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }
   
-  async function waitForCardReady() {
-    const card = trainingCardRef.current;
-
-    if (!card) return;
-
-    await sleep(120);
-
-    if (document.fonts?.ready) {
-      try {
-        await document.fonts.ready;
-      } catch {
-        // 폰트 준비 실패는 저장을 막지 않음
-      }
-    }
-
-    await new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(resolve);
-      });
-    });
-
-    const images = Array.from(card.querySelectorAll("img"));
-
-    await Promise.all(
-      images.map(async (image) => {
-        if (image.complete && image.naturalWidth > 0) {
-          if (image.decode) {
-            try {
-              await image.decode();
-            } catch {
-              // decode 실패해도 화면에 보이면 저장 시도
-            }
-          }
-
-          return;
-        }
-
-        await new Promise((resolve) => {
-          const timer = setTimeout(resolve, 3000);
-
-          image.onload = () => {
-            clearTimeout(timer);
-            resolve();
-          };
-
-          image.onerror = () => {
-            clearTimeout(timer);
-            resolve();
-          };
-        });
-      })
-    );
-
-    await new Promise((resolve) => {
-      requestAnimationFrame(resolve);
-    });
-  }
-
 
   function loadCanvasImage(src) {
     return new Promise((resolve, reject) => {
@@ -959,68 +895,7 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.fillRect(0, 0, width, height);
   }
 
-  function getFilterWashColor(filterId) {
-    if (filterId === "levelup") return "214, 162, 52";
-    if (filterId === "gold") return "245, 185, 66";
-    if (filterId === "red") return "255, 45, 45";
-    if (filterId === "blue") return "58, 123, 255";
-    if (filterId === "future") return "139, 92, 246";
-    if (filterId === "vintage") return "217, 161, 95";
-    if (filterId === "chrome") return "255, 255, 255";
-    if (filterId === "mono") return "255, 255, 255";
-    if (filterId === "dark") return "0, 0, 0";
   
-    return "255, 45, 45";
-  }
-  
-  function drawCardThemeWash(ctx, width, height, filterId, intensity = 75) {
-    const strength = Math.max(0, Math.min(1, intensity / 100));
-    const color = getFilterWashColor(filterId);
-  
-    ctx.save();
-    ctx.globalCompositeOperation = "source-over";
-  
-    // 전체 색상 레이어 약하게
-    ctx.fillStyle = `rgba(${color}, ${0.025 + 0.05 * strength})`;
-    ctx.fillRect(0, 0, width, height);
-  
-    // 상단 조명도 약하게
-    const glow = ctx.createRadialGradient(
-      width * 0.82,
-      height * 0.14,
-      10,
-      width * 0.82,
-      height * 0.14,
-      width * 0.78
-    );
-  
-    glow.addColorStop(0, `rgba(${color}, ${0.07 + 0.06 * strength})`);
-    glow.addColorStop(0.38, `rgba(${color}, ${0.02 + 0.025 * strength})`);
-    glow.addColorStop(1, "rgba(0, 0, 0, 0)");
-  
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, width, height);
-  
-    // 가장자리 어둠도 조금만
-    const vignette = ctx.createRadialGradient(
-      width * 0.5,
-      height * 0.44,
-      width * 0.16,
-      width * 0.5,
-      height * 0.44,
-      width * 0.92
-    );
-  
-    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
-    vignette.addColorStop(0.62, "rgba(0, 0, 0, 0.05)");
-    vignette.addColorStop(1, "rgba(0, 0, 0, 0.18)");
-  
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, width, height);
-  
-    ctx.restore();
-  }
-
   function drawPosterDivider(ctx, y, width, centerX, theme) {
     ctx.save();
     ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
@@ -1368,86 +1243,6 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
   }
 
-  function applyCanvasImageFilter(ctx, filterId, strength) {
-    if (!("filter" in ctx)) return;
-  
-    const safeStrength = Math.max(0, Math.min(1, strength));
-  
-    if (filterId === "levelup") {
-      ctx.filter = `contrast(${1.18 + 0.44 * safeStrength}) saturate(${
-        1.12 + 0.26 * safeStrength
-      }) sepia(${0.34 + 0.46 * safeStrength}) brightness(${
-        0.95 - 0.06 * safeStrength
-      })`;
-      return;
-    }
-  
-    if (filterId === "gold") {
-      ctx.filter = `contrast(${1.16 + 0.48 * safeStrength}) saturate(${
-        1.22 + 0.42 * safeStrength
-      }) sepia(${0.38 + 0.52 * safeStrength}) brightness(${
-        0.95 - 0.06 * safeStrength
-      })`;
-      return;
-    }
-  
-    if (filterId === "blue") {
-      ctx.filter = `contrast(${1.16 + 0.48 * safeStrength}) saturate(${
-        1.18 + 0.4 * safeStrength
-      }) hue-rotate(${188 * safeStrength}deg) brightness(${
-        0.95 - 0.06 * safeStrength
-      })`;
-      return;
-    }
-  
-    if (filterId === "mono") {
-      ctx.filter = `grayscale(${0.88 + 0.12 * safeStrength}) contrast(${
-        1.32 + 0.52 * safeStrength
-      }) brightness(${0.84 - 0.12 * safeStrength})`;
-      return;
-    }
-  
-    if (filterId === "dark") {
-      ctx.filter = `contrast(${1.2 + 0.58 * safeStrength}) brightness(${
-        0.84 - 0.2 * safeStrength
-      }) saturate(${0.84 - 0.18 * safeStrength})`;
-      return;
-    }
-  
-    if (filterId === "chrome") {
-      ctx.filter = `contrast(${1.3 + 0.52 * safeStrength}) saturate(${
-        0.96 + 0.18 * safeStrength
-      }) brightness(${1.08 + 0.08 * safeStrength}) sepia(${
-        0.08 + 0.08 * safeStrength
-      })`;
-      return;
-    }
-  
-    if (filterId === "future") {
-      ctx.filter = `contrast(${1.24 + 0.54 * safeStrength}) saturate(${
-        1.46 + 0.66 * safeStrength
-      }) hue-rotate(${38 * safeStrength}deg) brightness(${
-        0.97 - 0.03 * safeStrength
-      })`;
-      return;
-    }
-  
-    if (filterId === "vintage") {
-      ctx.filter = `contrast(${1.22 + 0.5 * safeStrength}) sepia(${
-        0.52 + 0.62 * safeStrength
-      }) saturate(${0.82 - 0.06 * safeStrength}) brightness(${
-        0.93 - 0.06 * safeStrength
-      })`;
-      return;
-    }
-  
-    ctx.filter = `contrast(${1.18 + 0.52 * safeStrength}) saturate(${
-      1.22 + 0.5 * safeStrength
-    }) brightness(${0.95 - 0.06 * safeStrength}) sepia(${
-      0.16 + 0.34 * safeStrength
-    })`;
-  }
-
   function isMobileCardExportDevice() {
     if (typeof window === "undefined") return false;
   
@@ -1458,57 +1253,6 @@ export default function ProfilePage({ scrollTarget }) {
     );
   }
   
-  function drawMobileCanvasFilterBoost(ctx, width, height, filterId, strength) {
-    const safeStrength = Math.max(0, Math.min(1, strength));
-  
-    const filterColors = {
-      levelup: "214, 162, 52",
-      red: "255, 35, 35",
-      dark: "0, 0, 0",
-      gold: "255, 190, 45",
-      blue: "35, 105, 255",
-      mono: "255, 255, 255",
-      chrome: "255, 255, 255",
-      future: "120, 76, 255",
-      vintage: "230, 160, 85",
-    };
-  
-    const color = filterColors[filterId] || filterColors.red;
-  
-    ctx.save();
-    ctx.globalCompositeOperation = "source-over";
-  
-    if (filterId === "mono") {
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.18 + 0.18 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-  
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.04 + 0.08 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else if (filterId === "dark") {
-      ctx.fillStyle = `rgba(0, 0, 0, ${0.24 + 0.26 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else if (filterId === "chrome") {
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.08 + 0.12 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-  
-      ctx.fillStyle = `rgba(255, 35, 35, ${0.04 + 0.08 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-    } else {
-      ctx.fillStyle = `rgba(${color}, ${0.12 + 0.18 * safeStrength})`;
-      ctx.fillRect(0, 0, width, height);
-    }
-  
-    const bottomShade = ctx.createLinearGradient(0, height * 0.42, 0, height);
-    bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
-    bottomShade.addColorStop(0.55, "rgba(0, 0, 0, 0.12)");
-    bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.36)");
-  
-    ctx.fillStyle = bottomShade;
-    ctx.fillRect(0, 0, width, height);
-  
-    ctx.restore();
-  }
-
   function clampPixel(value) {
     return Math.max(0, Math.min(255, Math.round(value)));
   }
@@ -1636,11 +1380,8 @@ export default function ProfilePage({ scrollTarget }) {
           filterId,
           filterIntensityValue
         );
-        
-        /*if (isMobileCardExportDevice()) {
-          drawMobileCanvasFilterBoost(ctx, width, height, filterId, strength);
-        }*/
-        
+
+
         ctx.restore();
         return true;
 
@@ -1655,10 +1396,10 @@ export default function ProfilePage({ scrollTarget }) {
   async function createTrainingCardCanvasDataUrl(styleIdForExport) {
     const exportSnapshot = posterExportRef.current || {};
     const exportFilterId =
-  exportSnapshot.selectedFilter ||
-  selectedFilterRef.current ||
-  selectedFilter ||
-  "levelup";
+      exportSnapshot.selectedFilter ||
+      selectedFilterRef.current ||
+      selectedFilter ||
+      "levelup";
     const exportFilterIntensity =
       typeof exportSnapshot.filterIntensity === "number"
         ? exportSnapshot.filterIntensity
@@ -1667,30 +1408,25 @@ export default function ProfilePage({ scrollTarget }) {
       typeof exportSnapshot.photoScale === "number"
         ? exportSnapshot.photoScale
         : photoScale;
-        const isSocialExport = styleIdForExport === "social";
-        const width = 1080;
-        const height = isSocialExport ? 1920 : 1600;
-        const centerX = width / 2;
-        const theme = getPosterCanvasTheme(exportFilterId);
-        const canvas = document.createElement("canvas");
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext("2d");
-        
-        if (!ctx) {
-          throw new Error("캔버스를 만들지 못했어요.");
-        }
-        
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        
-        drawPosterBackground(ctx, width, height, theme);
-        
-        const socialTopBandHeight = 320;
-        const socialBottomBandY = 1510;
-        const socialBottomInset = height - socialBottomBandY;
+    const isSocialExport = styleIdForExport === "social";
+    const width = 1080;
+    const height = isSocialExport ? 1920 : 1600;
+    const theme = getPosterCanvasTheme(exportFilterId);
+    const canvas = document.createElement("canvas");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      throw new Error("캔버스를 만들지 못했어요.");
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    drawPosterBackground(ctx, width, height, theme);
 
         const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
           fit: "cover",
@@ -1711,8 +1447,6 @@ export default function ProfilePage({ scrollTarget }) {
           drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto);
         }
         
-        //drawCardThemeWash(ctx, width, height, exportFilterId, exportFilterIntensity);
-    
     if (!isSocialExport) {
       const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
     

@@ -1295,9 +1295,14 @@ export default function ProfilePage({ scrollTarget }) {
         g *= 0.8 - 0.18 * strength;
         b *= 0.8 - 0.18 * strength;
       } else if (filterId === "red") {
-        r = r * (1 + 0.22 * strength) + 28 * strength;
-        g = g * (0.78 - 0.12 * strength);
-        b = b * (0.72 - 0.14 * strength);
+        // RED CORNER는 모바일 저장에서 색을 한 번 더 덮지 않는다.
+        // 기본 필터(getImageFilter)만으로 분위기를 만들고,
+        // 여기서는 아주 약한 대비만 보정해서 얼굴이 빨갛게 뭉개지는 걸 막는다.
+        const contrast = 1 + 0.12 * strength;
+      
+        r = (r - 128) * contrast + 128;
+        g = (g - 128) * contrast + 128;
+        b = (b - 128) * contrast + 128;
       } else if (filterId === "blue") {
         r = r * (0.72 - 0.12 * strength);
         g = g * (0.86 - 0.08 * strength);

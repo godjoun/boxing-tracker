@@ -104,7 +104,7 @@ export function getImageFilter(filterId, intensity) {
   const strength = Math.max(0, Math.min(1, intensity / 100));
 
   if (filterId === "levelup") {
-    return `contrast(${1.18 + 0.5 * strength}) saturate(${0.86 + 0.22 * strength}) sepia(${0.26 + 0.36 * strength}) brightness(${0.9 - 0.14 * strength})`;
+    return `contrast(${1.14 + 0.34 * strength}) saturate(${0.84 + 0.14 * strength}) sepia(${0.12 + 0.14 * strength}) hue-rotate(${-2 * strength}deg) brightness(${0.94 - 0.04 * strength})`;
   }
 
   if (filterId === "gold") {
@@ -124,9 +124,7 @@ export function getImageFilter(filterId, intensity) {
   }
 
   if (filterId === "mono") {
-    return `grayscale(${0.65 + 0.35 * strength}) contrast(${
-      1.18 + 0.42 * strength
-    }) brightness(${1 - 0.04 * strength})`;
+    return `grayscale(1) contrast(${1.16 + 0.26 * strength}) brightness(${1.02 - 0.02 * strength})`;
   }
 
   if (filterId === "dark") {
@@ -157,6 +155,10 @@ export function getImageFilter(filterId, intensity) {
     }) saturate(${0.86 - 0.08 * strength}) brightness(${
       0.97 - 0.05 * strength
     })`;
+  }
+
+  if (filterId === "red") {
+    return `contrast(${1.08 + 0.18 * strength}) saturate(${1.06 + 0.16 * strength}) sepia(${0.08 + 0.08 * strength}) brightness(${0.98 - 0.02 * strength})`;
   }
 
   return `contrast(${1.16 + 0.5 * strength}) saturate(${

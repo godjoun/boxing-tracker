@@ -104,42 +104,42 @@ export function getImageFilter(filterId, intensity) {
   const strength = Math.max(0, Math.min(1, intensity / 100));
 
   if (filterId === "levelup") {
-    return `contrast(${1.28 + 0.52 * strength}) saturate(${0.98 + 0.28 * strength}) sepia(${0.24 + 0.38 * strength}) brightness(${0.96 - 0.08 * strength})`;
+    return `contrast(${1.42 + 0.58 * strength}) saturate(${1.18 + 0.42 * strength}) sepia(${0.28 + 0.42 * strength}) brightness(${0.95 - 0.08 * strength})`;
   }
 
   if (filterId === "red") {
-    return `contrast(${1.26 + 0.5 * strength}) saturate(${1.12 + 0.34 * strength}) sepia(${0.16 + 0.26 * strength}) brightness(${0.96 - 0.07 * strength})`;
+    return `contrast(${1.45 + 0.6 * strength}) saturate(${1.28 + 0.55 * strength}) sepia(${0.28 + 0.38 * strength}) hue-rotate(${-8 * strength}deg) brightness(${0.94 - 0.08 * strength})`;
   }
 
   if (filterId === "gold") {
-    return `contrast(${1.24 + 0.52 * strength}) saturate(${1.12 + 0.34 * strength}) sepia(${0.34 + 0.46 * strength}) brightness(${0.96 - 0.07 * strength})`;
+    return `contrast(${1.42 + 0.6 * strength}) saturate(${1.24 + 0.5 * strength}) sepia(${0.46 + 0.5 * strength}) brightness(${0.94 - 0.08 * strength})`;
   }
 
   if (filterId === "blue") {
-    return `contrast(${1.22 + 0.5 * strength}) saturate(${1.14 + 0.4 * strength}) hue-rotate(${168 * strength}deg) brightness(${0.96 - 0.07 * strength})`;
+    return `contrast(${1.4 + 0.58 * strength}) saturate(${1.25 + 0.55 * strength}) sepia(${0.08 + 0.18 * strength}) hue-rotate(${175 * strength}deg) brightness(${0.95 - 0.08 * strength})`;
   }
 
   if (filterId === "mono") {
-    return `grayscale(1) contrast(${1.32 + 0.48 * strength}) brightness(${0.98 - 0.08 * strength})`;
+    return `grayscale(1) contrast(${1.55 + 0.55 * strength}) brightness(${0.96 - 0.1 * strength})`;
   }
 
   if (filterId === "dark") {
-    return `contrast(${1.24 + 0.58 * strength}) brightness(${0.9 - 0.18 * strength}) saturate(${0.86 - 0.16 * strength})`;
+    return `contrast(${1.5 + 0.65 * strength}) brightness(${0.82 - 0.18 * strength}) saturate(${0.92 - 0.18 * strength})`;
   }
 
   if (filterId === "chrome") {
-    return `contrast(${1.34 + 0.48 * strength}) saturate(${1.02 + 0.22 * strength}) brightness(${1.08 + 0.06 * strength}) sepia(${0.08 + 0.1 * strength})`;
+    return `contrast(${1.52 + 0.58 * strength}) saturate(${1.12 + 0.35 * strength}) brightness(${1.04 + 0.08 * strength}) sepia(${0.08 + 0.12 * strength})`;
   }
 
   if (filterId === "future") {
-    return `contrast(${1.28 + 0.52 * strength}) saturate(${1.42 + 0.62 * strength}) hue-rotate(${32 * strength}deg) brightness(${0.99 - 0.04 * strength})`;
+    return `contrast(${1.45 + 0.6 * strength}) saturate(${1.55 + 0.75 * strength}) hue-rotate(${30 * strength}deg) brightness(${0.98 - 0.05 * strength})`;
   }
 
   if (filterId === "vintage") {
-    return `contrast(${1.24 + 0.5 * strength}) sepia(${0.48 + 0.56 * strength}) saturate(${0.86 - 0.08 * strength}) brightness(${0.95 - 0.08 * strength})`;
+    return `contrast(${1.42 + 0.58 * strength}) sepia(${0.58 + 0.5 * strength}) saturate(${0.95 + 0.18 * strength}) brightness(${0.92 - 0.08 * strength})`;
   }
 
-  return `contrast(${1.24 + 0.5 * strength}) saturate(${1.12 + 0.34 * strength}) sepia(${0.16 + 0.26 * strength}) brightness(${0.96 - 0.07 * strength})`;
+  return `contrast(${1.45 + 0.6 * strength}) saturate(${1.28 + 0.55 * strength}) sepia(${0.28 + 0.38 * strength}) brightness(${0.94 - 0.08 * strength})`;
 }
 
 export function getOverlayStyle(filterId, intensity) {

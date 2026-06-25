@@ -1260,8 +1260,9 @@ export default function ProfilePage({ scrollTarget }) {
   function applyMobilePixelFilter(ctx, x, y, width, height, filterId, intensity = 75) {
     if (!isMobileCardExportDevice()) return;
   
-    const baseStrength = Math.max(0, Math.min(1, intensity / 100));
-    const strength = baseStrength * 0.72;
+    const strength = Math.max(0, Math.min(1, intensity / 100));
+  
+    if (!strength) return;
   
     let imageData;
   
@@ -1274,56 +1275,119 @@ export default function ProfilePage({ scrollTarget }) {
   
     const data = imageData.data;
   
+    function getFilterProfile() {
+      if (filterId === "mono") {
+        return {
+          contrast: 1.75 + 0.5 * strength,
+          saturation: 0,
+          brightness: 0.94 - 0.08 * strength,
+          sepia: 0,
+        };
+      }
+  
+      if (filterId === "red") {
+        return {
+          contrast: 1.48 + 0.5 * strength,
+          saturation: 1.18 + 0.36 * strength,
+          brightness: 0.94 - 0.06 * strength,
+          sepia: 0.22 + 0.26 * strength,
+        };
+      }
+  
+      if (filterId === "levelup" || filterId === "gold") {
+        return {
+          contrast: 1.46 + 0.48 * strength,
+          saturation: 1.12 + 0.3 * strength,
+          brightness: 0.94 - 0.06 * strength,
+          sepia: 0.32 + 0.3 * strength,
+        };
+      }
+  
+      if (filterId === "blue") {
+        return {
+          contrast: 1.42 + 0.46 * strength,
+          saturation: 1.16 + 0.36 * strength,
+          brightness: 0.94 - 0.06 * strength,
+          sepia: 0.08 + 0.08 * strength,
+        };
+      }
+  
+      if (filterId === "dark") {
+        return {
+          contrast: 1.55 + 0.5 * strength,
+          saturation: 0.9 - 0.12 * strength,
+          brightness: 0.82 - 0.1 * strength,
+          sepia: 0.04,
+        };
+      }
+  
+      if (filterId === "chrome") {
+        return {
+          contrast: 1.5 + 0.48 * strength,
+          saturation: 1.02 + 0.18 * strength,
+          brightness: 1.02 + 0.04 * strength,
+          sepia: 0.04,
+        };
+      }
+  
+      if (filterId === "future") {
+        return {
+          contrast: 1.46 + 0.48 * strength,
+          saturation: 1.36 + 0.46 * strength,
+          brightness: 0.96 - 0.04 * strength,
+          sepia: 0.05,
+        };
+      }
+  
+      if (filterId === "vintage") {
+        return {
+          contrast: 1.42 + 0.46 * strength,
+          saturation: 1.0 + 0.12 * strength,
+          brightness: 0.92 - 0.06 * strength,
+          sepia: 0.44 + 0.34 * strength,
+        };
+      }
+  
+      return {
+        contrast: 1.44 + 0.46 * strength,
+        saturation: 1.12 + 0.28 * strength,
+        brightness: 0.94 - 0.06 * strength,
+        sepia: 0.16 + 0.2 * strength,
+      };
+    }
+  
+    const profile = getFilterProfile();
+  
     for (let i = 0; i < data.length; i += 4) {
       let r = data[i];
       let g = data[i + 1];
       let b = data[i + 2];
   
+      // 밝기
+      r *= profile.brightness;
+      g *= profile.brightness;
+      b *= profile.brightness;
+  
+      // 대비
+      r = (r - 128) * profile.contrast + 128;
+      g = (g - 128) * profile.contrast + 128;
+      b = (b - 128) * profile.contrast + 128;
+  
+      // 채도
       const gray = r * 0.299 + g * 0.587 + b * 0.114;
+      r = gray + (r - gray) * profile.saturation;
+      g = gray + (g - gray) * profile.saturation;
+      b = gray + (b - gray) * profile.saturation;
   
-      if (filterId === "mono") {
-        r = gray;
-        g = gray;
-        b = gray;
+      // 세피아는 색 덮개가 아니라 따뜻한 톤만 섞는 방식
+      if (profile.sepia > 0) {
+        const sr = r * 0.393 + g * 0.769 + b * 0.189;
+        const sg = r * 0.349 + g * 0.686 + b * 0.168;
+        const sb = r * 0.272 + g * 0.534 + b * 0.131;
   
-        const contrast = 1 + 0.45 * strength;
-        r = (r - 128) * contrast + 128;
-        g = (g - 128) * contrast + 128;
-        b = (b - 128) * contrast + 128;
-      } else if (filterId === "dark") {
-        r *= 0.8 - 0.18 * strength;
-        g *= 0.8 - 0.18 * strength;
-        b *= 0.8 - 0.18 * strength;
-      } else if (filterId === "red") {
-        // RED CORNER는 모바일 저장에서 색을 한 번 더 덮지 않는다.
-        // 기본 필터(getImageFilter)만으로 분위기를 만들고,
-        // 여기서는 아주 약한 대비만 보정해서 얼굴이 빨갛게 뭉개지는 걸 막는다.
-        const contrast = 1 + 0.12 * strength;
-      
-        r = (r - 128) * contrast + 128;
-        g = (g - 128) * contrast + 128;
-        b = (b - 128) * contrast + 128;
-      } else if (filterId === "blue") {
-        r = r * (0.72 - 0.12 * strength);
-        g = g * (0.86 - 0.08 * strength);
-        b = b * (1 + 0.28 * strength) + 24 * strength;
-      } else if (filterId === "gold" || filterId === "levelup") {
-        r = r * (1 + 0.14 * strength) + 18 * strength;
-        g = g * (0.95 + 0.08 * strength) + 10 * strength;
-        b = b * (0.72 - 0.1 * strength);
-      } else if (filterId === "vintage") {
-        r = r * (1 + 0.1 * strength) + 12 * strength;
-        g = g * (0.94 + 0.02 * strength);
-        b = b * (0.72 - 0.12 * strength);
-      } else if (filterId === "future") {
-        r = r * (0.92 + 0.08 * strength);
-        g = g * (0.86 + 0.04 * strength);
-        b = b * (1 + 0.22 * strength) + 18 * strength;
-      } else if (filterId === "chrome") {
-        const chromeGray = gray * (0.35 * strength);
-        r = r * (1 - 0.22 * strength) + chromeGray;
-        g = g * (1 - 0.22 * strength) + chromeGray;
-        b = b * (1 - 0.22 * strength) + chromeGray;
+        r = r * (1 - profile.sepia) + sr * profile.sepia;
+        g = g * (1 - profile.sepia) + sg * profile.sepia;
+        b = b * (1 - profile.sepia) + sb * profile.sepia;
       }
   
       data[i] = clampPixel(r);
@@ -1333,7 +1397,6 @@ export default function ProfilePage({ scrollTarget }) {
   
     ctx.putImageData(imageData, x, y);
   }
-
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",
@@ -1376,15 +1439,17 @@ export default function ProfilePage({ scrollTarget }) {
         
         ctx.filter = "none";
 
-       //
-         // ctx,
-          //0,
-          //topInset,           화면 필터 물감처럼 번지는 필터... 주석처리함
-         // width,
-         // availableHeight,
-         // filterId,
-         // filterIntensityValue
-       // );*/ 
+        if (isMobileCardExportDevice()) {
+          applyMobilePixelFilter(
+            ctx,
+            0,
+            topInset,
+            width,
+            availableHeight,
+            filterId,
+            filterIntensityValue
+          );
+        } 
 
 
         ctx.restore();

@@ -1376,15 +1376,15 @@ export default function ProfilePage({ scrollTarget }) {
         
         ctx.filter = "none";
 
-        applyMobilePixelFilter(
-          ctx,
-          0,
-          topInset,
-          width,
-          availableHeight,
-          filterId,
-          filterIntensityValue
-        );
+       //
+         // ctx,
+          //0,
+          //topInset,           화면 필터 물감처럼 번지는 필터... 주석처리함
+         // width,
+         // availableHeight,
+         // filterId,
+         // filterIntensityValue
+       // );*/ 
 
 
         ctx.restore();

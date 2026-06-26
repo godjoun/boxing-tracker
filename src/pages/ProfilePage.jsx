@@ -1003,7 +1003,7 @@ export default function ProfilePage({ scrollTarget }) {
 
 if ("filter" in ctx) {
   // 포스터 저장 결과만 전체적으로 조금 더 강하게 적용
-  const posterFilterIntensity = Math.min(100, exportFilterIntensity + 20);
+  const posterFilterIntensity = Math.min(100, exportFilterIntensity + 30);
   ctx.filter = getImageFilter(exportFilterId, posterFilterIntensity);
 }
 

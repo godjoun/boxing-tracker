@@ -1258,145 +1258,143 @@ export default function ProfilePage({ scrollTarget }) {
   }
   
   function applyMobilePixelFilter(ctx, x, y, width, height, filterId, intensity = 75) {
-    if (!isMobileCardExportDevice()) return;
-  
-    const strength = Math.max(0, Math.min(1, intensity / 100));
-  
-    if (!strength) return;
-  
-    let imageData;
-  
-    try {
-      imageData = ctx.getImageData(x, y, width, height);
-    } catch (error) {
-      console.warn("모바일 픽셀 필터 적용 실패:", error);
-      return;
-    }
-  
-    const data = imageData.data;
-  
-    function getFilterProfile() {
-      if (filterId === "mono") {
-        return {
-          contrast: 1.75 + 0.5 * strength,
-          saturation: 0,
-          brightness: 0.94 - 0.08 * strength,
-          sepia: 0,
-        };
-      }
-  
-      if (filterId === "red") {
-        return {
-          contrast: 1.48 + 0.5 * strength,
-          saturation: 1.18 + 0.36 * strength,
-          brightness: 0.94 - 0.06 * strength,
-          sepia: 0.22 + 0.26 * strength,
-        };
-      }
-  
-      if (filterId === "levelup" || filterId === "gold") {
-        return {
-          contrast: 1.46 + 0.48 * strength,
-          saturation: 1.12 + 0.3 * strength,
-          brightness: 0.94 - 0.06 * strength,
-          sepia: 0.32 + 0.3 * strength,
-        };
-      }
-  
-      if (filterId === "blue") {
-        return {
-          contrast: 1.42 + 0.46 * strength,
-          saturation: 1.16 + 0.36 * strength,
-          brightness: 0.94 - 0.06 * strength,
-          sepia: 0.08 + 0.08 * strength,
-        };
-      }
-  
-      if (filterId === "dark") {
-        return {
-          contrast: 1.55 + 0.5 * strength,
-          saturation: 0.9 - 0.12 * strength,
-          brightness: 0.82 - 0.1 * strength,
-          sepia: 0.04,
-        };
-      }
-  
-      if (filterId === "chrome") {
-        return {
-          contrast: 1.5 + 0.48 * strength,
-          saturation: 1.02 + 0.18 * strength,
-          brightness: 1.02 + 0.04 * strength,
-          sepia: 0.04,
-        };
-      }
-  
-      if (filterId === "future") {
-        return {
-          contrast: 1.46 + 0.48 * strength,
-          saturation: 1.36 + 0.46 * strength,
-          brightness: 0.96 - 0.04 * strength,
-          sepia: 0.05,
-        };
-      }
-  
-      if (filterId === "vintage") {
-        return {
-          contrast: 1.42 + 0.46 * strength,
-          saturation: 1.0 + 0.12 * strength,
-          brightness: 0.92 - 0.06 * strength,
-          sepia: 0.44 + 0.34 * strength,
-        };
-      }
-  
+  if (!isMobileCardExportDevice()) return;
+
+  const strength = Math.max(0, Math.min(1, intensity / 100));
+
+  if (!strength) return;
+
+  let imageData;
+
+  try {
+    imageData = ctx.getImageData(x, y, width, height);
+  } catch (error) {
+    console.warn("모바일 픽셀 필터 적용 실패:", error);
+    return;
+  }
+
+  const data = imageData.data;
+
+  function getFilterProfile() {
+    if (filterId === "mono") {
       return {
-        contrast: 1.44 + 0.46 * strength,
-        saturation: 1.12 + 0.28 * strength,
-        brightness: 0.94 - 0.06 * strength,
-        sepia: 0.16 + 0.2 * strength,
+        contrast: 1.45 + 0.28 * strength,
+        saturation: 0,
+        brightness: 0.97 - 0.04 * strength,
+        sepia: 0,
       };
     }
-  
-    const profile = getFilterProfile();
-  
-    for (let i = 0; i < data.length; i += 4) {
-      let r = data[i];
-      let g = data[i + 1];
-      let b = data[i + 2];
-  
-      // 밝기
-      r *= profile.brightness;
-      g *= profile.brightness;
-      b *= profile.brightness;
-  
-      // 대비
-      r = (r - 128) * profile.contrast + 128;
-      g = (g - 128) * profile.contrast + 128;
-      b = (b - 128) * profile.contrast + 128;
-  
-      // 채도
-      const gray = r * 0.299 + g * 0.587 + b * 0.114;
-      r = gray + (r - gray) * profile.saturation;
-      g = gray + (g - gray) * profile.saturation;
-      b = gray + (b - gray) * profile.saturation;
-  
-      // 세피아는 색 덮개가 아니라 따뜻한 톤만 섞는 방식
-      if (profile.sepia > 0) {
-        const sr = r * 0.393 + g * 0.769 + b * 0.189;
-        const sg = r * 0.349 + g * 0.686 + b * 0.168;
-        const sb = r * 0.272 + g * 0.534 + b * 0.131;
-  
-        r = r * (1 - profile.sepia) + sr * profile.sepia;
-        g = g * (1 - profile.sepia) + sg * profile.sepia;
-        b = b * (1 - profile.sepia) + sb * profile.sepia;
-      }
-  
-      data[i] = clampPixel(r);
-      data[i + 1] = clampPixel(g);
-      data[i + 2] = clampPixel(b);
+
+    if (filterId === "red") {
+      return {
+        contrast: 1.28 + 0.26 * strength,
+        saturation: 1.08 + 0.18 * strength,
+        brightness: 0.97 - 0.03 * strength,
+        sepia: 0.12 + 0.12 * strength,
+      };
     }
-  
-    ctx.putImageData(imageData, x, y);
+
+    if (filterId === "levelup" || filterId === "gold") {
+      return {
+        contrast: 1.26 + 0.24 * strength,
+        saturation: 1.06 + 0.16 * strength,
+        brightness: 0.97 - 0.03 * strength,
+        sepia: 0.18 + 0.16 * strength,
+      };
+    }
+
+    if (filterId === "blue") {
+      return {
+        contrast: 1.24 + 0.24 * strength,
+        saturation: 1.08 + 0.18 * strength,
+        brightness: 0.97 - 0.03 * strength,
+        sepia: 0.04 + 0.04 * strength,
+      };
+    }
+
+    if (filterId === "dark") {
+      return {
+        contrast: 1.3 + 0.26 * strength,
+        saturation: 0.94 - 0.08 * strength,
+        brightness: 0.9 - 0.06 * strength,
+        sepia: 0.02,
+      };
+    }
+
+    if (filterId === "chrome") {
+      return {
+        contrast: 1.28 + 0.24 * strength,
+        saturation: 1.02 + 0.1 * strength,
+        brightness: 1.01 + 0.02 * strength,
+        sepia: 0.02,
+      };
+    }
+
+    if (filterId === "future") {
+      return {
+        contrast: 1.26 + 0.24 * strength,
+        saturation: 1.18 + 0.22 * strength,
+        brightness: 0.98 - 0.02 * strength,
+        sepia: 0.02,
+      };
+    }
+
+    if (filterId === "vintage") {
+      return {
+        contrast: 1.24 + 0.24 * strength,
+        saturation: 1.0 + 0.08 * strength,
+        brightness: 0.95 - 0.04 * strength,
+        sepia: 0.28 + 0.18 * strength,
+      };
+    }
+
+    return {
+      contrast: 1.24 + 0.22 * strength,
+      saturation: 1.06 + 0.14 * strength,
+      brightness: 0.97 - 0.03 * strength,
+      sepia: 0.08 + 0.1 * strength,
+    };
   }
+
+  const profile = getFilterProfile();
+
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i];
+    let g = data[i + 1];
+    let b = data[i + 2];
+
+    r *= profile.brightness;
+    g *= profile.brightness;
+    b *= profile.brightness;
+
+    r = (r - 128) * profile.contrast + 128;
+    g = (g - 128) * profile.contrast + 128;
+    b = (b - 128) * profile.contrast + 128;
+
+    const gray = r * 0.299 + g * 0.587 + b * 0.114;
+
+    r = gray + (r - gray) * profile.saturation;
+    g = gray + (g - gray) * profile.saturation;
+    b = gray + (b - gray) * profile.saturation;
+
+    if (profile.sepia > 0) {
+      const sr = r * 0.393 + g * 0.769 + b * 0.189;
+      const sg = r * 0.349 + g * 0.686 + b * 0.168;
+      const sb = r * 0.272 + g * 0.534 + b * 0.131;
+
+      r = r * (1 - profile.sepia) + sr * profile.sepia;
+      g = g * (1 - profile.sepia) + sg * profile.sepia;
+      b = b * (1 - profile.sepia) + sb * profile.sepia;
+    }
+
+    data[i] = clampPixel(r);
+    data[i + 1] = clampPixel(g);
+    data[i + 2] = clampPixel(b);
+  }
+
+  ctx.putImageData(imageData, x, y);
+}
+
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",

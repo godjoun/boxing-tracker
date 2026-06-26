@@ -1000,25 +1000,12 @@ export default function ProfilePage({ scrollTarget }) {
         const image = await loadCanvasImage(imageSrc);
 
         ctx.save();
-        if ("filter" in ctx) {
-          if (exportFilterId === "mono") {
-            ctx.filter = `grayscale(${0.85 * strength}) contrast(${1 + 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
-          } else if (exportFilterId === "dark") {
-            ctx.filter = `contrast(${1 + 0.28 * strength}) brightness(${1 - 0.18 * strength}) saturate(${1 - 0.2 * strength})`;
-          } else if (exportFilterId === "gold") {
-            ctx.filter = `contrast(${1 + 0.18 * strength}) sepia(${0.38 * strength}) saturate(${1 - 0.1 * strength}) brightness(${1 + 0.03 * strength})`;
-          } else if (exportFilterId === "blue") {
-            ctx.filter = `contrast(${1 + 0.18 * strength}) saturate(${1 - 0.08 * strength}) hue-rotate(${165 * strength}deg) brightness(${1 - 0.03 * strength})`;
-          } else if (exportFilterId === "future") {
-            ctx.filter = `contrast(${1 + 0.15 * strength}) saturate(${1 + 0.18 * strength}) hue-rotate(${22 * strength}deg)`;
-          } else if (exportFilterId === "vintage") {
-            ctx.filter = `contrast(${1 + 0.16 * strength}) sepia(${0.42 * strength}) saturate(${1 - 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
-          } else if (exportFilterId === "chrome") {
-            ctx.filter = `contrast(${1 + 0.22 * strength}) saturate(${1 - 0.18 * strength}) brightness(${1 + 0.05 * strength})`;
-          } else {
-            ctx.filter = `contrast(${1 + 0.2 * strength}) saturate(${1 - 0.08 * strength}) brightness(${1 + 0.02 * strength})`;
-          }
-        }
+
+if ("filter" in ctx) {
+  // 포스터 저장 결과만 전체적으로 조금 더 강하게 적용
+  const posterFilterIntensity = Math.min(100, exportFilterIntensity + 20);
+  ctx.filter = getImageFilter(exportFilterId, posterFilterIntensity);
+}
 
         drawCoverImage(ctx, image, 0, 0, width, height, Math.max(exportPhotoScale, 100));
         ctx.restore();

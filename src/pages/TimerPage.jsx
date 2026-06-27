@@ -7,32 +7,32 @@ const MATCH_PRESETS = [
     title: "3R",
     description: "가볍게 실전 감각을 올리는 기본 경기식",
     rounds: 3,
-    workMinutes: 3,
-    restMinutes: 1,
+    workSeconds: 180,
+    restSeconds: 30,
   },
   {
     id: "match6",
     title: "6R",
     description: "체력과 집중력을 같이 올리는 중간 강도",
     rounds: 6,
-    workMinutes: 3,
-    restMinutes: 1,
+    workSeconds: 180,
+    restSeconds: 30,
   },
   {
     id: "match9",
     title: "9R",
     description: "길게 버티는 훈련용 경기식",
     rounds: 9,
-    workMinutes: 3,
-    restMinutes: 1,
+    workSeconds: 180,
+    restSeconds: 30,
   },
   {
     id: "match12",
     title: "12R",
     description: "챔피언 라운드 감각으로 끝까지 버티기",
     rounds: 12,
-    workMinutes: 3,
-    restMinutes: 1,
+    workSeconds: 180,
+    restSeconds: 30,
   },
 ];
 
@@ -64,6 +64,30 @@ const formatTime = (seconds) => {
   return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 };
 
+const formatDurationLabel = (seconds) => {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const min = Math.floor(safeSeconds / 60);
+  const sec = safeSeconds % 60;
+
+  if (min > 0 && sec > 0) {
+    return `${min}분 ${sec}초`;
+  }
+
+  if (min > 0) {
+    return `${min}분`;
+  }
+
+  return `${sec}초`;
+};
+
+const clampSeconds = (value, min, max) => {
+  const number = Number(value);
+
+  if (Number.isNaN(number)) return min;
+
+  return Math.max(min, Math.min(max, number));
+};
+
 export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   const { addLog } = useTraining();
 
@@ -74,8 +98,8 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   });
 
   const [totalRounds, setTotalRounds] = useState(3);
-  const [workMinutes, setWorkMinutes] = useState(3);
-  const [restMinutes, setRestMinutes] = useState(1);
+  const [workSecondsSetting, setWorkSecondsSetting] = useState(180);
+  const [restSecondsSetting, setRestSecondsSetting] = useState(30);
 
   const [currentRound, setCurrentRound] = useState(1);
   const [phase, setPhase] = useState("work"); // prep, work, rest, done
@@ -89,12 +113,13 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   const previousPhaseRef = useRef("work");
   const audioContextRef = useRef(null);
 
-  const workSeconds = workMinutes * 60;
-  const restSeconds = restMinutes * 60;
+  const workSeconds = workSecondsSetting;
+  const restSeconds = restSecondsSetting;
 
-  const totalWorkMinutes = totalRounds * workMinutes;
-  const totalSessionMinutes =
-    totalRounds * workMinutes + Math.max(totalRounds - 1, 0) * restMinutes;
+  const totalWorkSeconds = totalRounds * workSecondsSetting;
+  const totalSessionSeconds =
+    totalWorkSeconds + Math.max(totalRounds - 1, 0) * restSecondsSetting;
+  const totalWorkMinutes = Math.max(1, Math.round(totalWorkSeconds / 60));
 
   const routineTitle = selectedPreset
     ? selectedPreset.title
@@ -269,7 +294,11 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       totalRounds,
       completedRounds: totalRounds,
       difficulty: "normal",
-      memo: `${totalRounds}라운드 완료 / 운동 ${workMinutes}분 / 휴식 ${restMinutes}분 / 준비 ${PREP_SECONDS}초`,
+      memo: `${totalRounds}라운드 완료 / 운동 ${formatDurationLabel(
+        workSecondsSetting
+      )} / 휴식 ${formatDurationLabel(
+        restSecondsSetting
+      )} / 준비 ${PREP_SECONDS}초`,
       publicComment: `${totalRounds}라운드 완료. 오늘도 끝까지 버텼다.`,
     });
 
@@ -280,17 +309,17 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     addLog,
     routineTitle,
     totalRounds,
-    workMinutes,
-    restMinutes,
+    workSecondsSetting,
+    restSecondsSetting,
     totalWorkMinutes,
   ]);
 
-  const resetTimerState = (nextWorkMinutes = workMinutes) => {
+  const resetTimerState = (nextWorkSeconds = workSecondsSetting) => {
     setIsRunning(false);
     setCurrentRound(1);
     setPhase("work");
     previousPhaseRef.current = "work";
-    setRemainingTime(nextWorkMinutes * 60);
+    setRemainingTime(nextWorkSeconds);
     setHasStartedSession(false);
     setHasSavedLog(false);
     savedLogRef.current = false;
@@ -299,9 +328,9 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   const applyPreset = (preset) => {
     setSelectedPresetId(preset.id);
     setTotalRounds(preset.rounds);
-    setWorkMinutes(preset.workMinutes);
-    setRestMinutes(preset.restMinutes);
-    resetTimerState(preset.workMinutes);
+    setWorkSecondsSetting(preset.workSeconds);
+    setRestSecondsSetting(preset.restSeconds);
+    resetTimerState(preset.workSeconds);
   };
 
   const handleStart = () => {
@@ -348,29 +377,44 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
     setSelectedPresetId("custom");
     setTotalRounds(number);
-    resetTimerState(workMinutes);
+    resetTimerState(workSecondsSetting);
   };
 
-  const handleWorkMinutesChange = (value) => {
-    const number = Number(value);
+  const handleWorkSecondsChange = (deltaSeconds) => {
+    if (isRunning) return;
 
-    if (!number || number < 1) return;
+    const nextSeconds = clampSeconds(
+      workSecondsSetting + deltaSeconds,
+      10,
+      600
+    );
 
     setSelectedPresetId("custom");
-    setWorkMinutes(number);
+    setWorkSecondsSetting(nextSeconds);
 
     if (!isRunning && phase === "work") {
-      setRemainingTime(number * 60);
+      setRemainingTime(nextSeconds);
     }
   };
 
-  const handleRestMinutesChange = (value) => {
-    const number = Number(value);
+  const handleRestSecondsChange = (deltaSeconds) => {
+    if (isRunning) return;
 
-    if (!number || number < 0) return;
+    const nextSeconds = clampSeconds(
+      restSecondsSetting + deltaSeconds,
+      0,
+      300
+    );
 
     setSelectedPresetId("custom");
-    setRestMinutes(number);
+    setRestSecondsSetting(nextSeconds);
+  };
+
+  const handleRestQuickSelect = (seconds) => {
+    if (isRunning) return;
+
+    setSelectedPresetId("custom");
+    setRestSecondsSetting(seconds);
   };
 
   const getPhaseText = () => {
@@ -417,7 +461,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
         <h1 style={styles.title}>오늘 몇 라운드 버텼나?</h1>
 
         <p style={styles.subtitle}>
-          10초 준비 후 3분 라운드와 1분 휴식으로 훈련하고, 완료 기록을
+          10초 준비 후 3분 라운드와 30초 휴식으로 훈련하고, 완료 기록을
           프로필 카드로 남기세요.
         </p>
 
@@ -483,7 +527,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
           <div style={styles.sessionInfoBox}>
             <span style={styles.sessionInfoLabel}>전체</span>
             <strong style={styles.sessionInfoValue}>
-              {totalSessionMinutes}분
+              {formatDurationLabel(totalSessionSeconds)}
             </strong>
           </div>
         </div>
@@ -541,7 +585,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       <section style={styles.routineCard}>
         <div style={styles.cardHeaderRow}>
           <h2 style={styles.cardTitle}>경기식 라운드 선택</h2>
-          <span style={styles.cardHint}>3분 / 1분</span>
+          <span style={styles.cardHint}>3분 / 30초</span>
         </div>
 
         <div style={styles.routineButtonGrid}>
@@ -577,12 +621,12 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
           <div style={styles.roundPreviewGrid}>
             <div>
               <span>운동</span>
-              <strong>{workMinutes}분</strong>
+              <strong>{formatDurationLabel(workSecondsSetting)}</strong>
             </div>
 
             <div>
               <span>휴식</span>
-              <strong>{restMinutes}분</strong>
+              <strong>{formatDurationLabel(restSecondsSetting)}</strong>
             </div>
 
             <div>
@@ -596,7 +640,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       <section style={styles.settingCard}>
         <div style={styles.cardHeaderRow}>
           <h2 style={styles.cardTitle}>직접 설정</h2>
-          <span style={styles.cardHint}>커스텀</span>
+          <span style={styles.cardHint}>버튼으로 조절</span>
         </div>
 
         <label style={styles.label}>
@@ -612,31 +656,118 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
           />
         </label>
 
-        <label style={styles.label}>
-          운동 시간 / 분
-          <input
-            style={styles.input}
-            type="number"
-            min="1"
-            max="10"
-            value={workMinutes}
-            onChange={(event) => handleWorkMinutesChange(event.target.value)}
-            disabled={isRunning}
-          />
-        </label>
+        <div style={styles.settingGroup}>
+          <div style={styles.settingLabelRow}>
+            <span style={styles.settingLabel}>운동 시간</span>
+            <strong style={styles.timeDisplay}>
+              {formatTime(workSecondsSetting)}
+            </strong>
+          </div>
 
-        <label style={styles.label}>
-          휴식 시간 / 분
-          <input
-            style={styles.input}
-            type="number"
-            min="0"
-            max="5"
-            value={restMinutes}
-            onChange={(event) => handleRestMinutesChange(event.target.value)}
-            disabled={isRunning}
-          />
-        </label>
+          <div style={styles.timeButtonRow}>
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleWorkSecondsChange(-10)}
+              disabled={isRunning}
+            >
+              -10초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleWorkSecondsChange(-1)}
+              disabled={isRunning}
+            >
+              -1초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleWorkSecondsChange(1)}
+              disabled={isRunning}
+            >
+              +1초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleWorkSecondsChange(10)}
+              disabled={isRunning}
+            >
+              +10초
+            </button>
+          </div>
+        </div>
+
+        <div style={styles.settingGroup}>
+          <div style={styles.settingLabelRow}>
+            <span style={styles.settingLabel}>휴식 시간</span>
+            <strong style={styles.timeDisplay}>
+              {formatTime(restSecondsSetting)}
+            </strong>
+          </div>
+
+          <div style={styles.quickButtonRow}>
+            {[30, 45, 60].map((seconds) => (
+              <button
+                key={seconds}
+                type="button"
+                style={{
+                  ...styles.quickSelectButton,
+                  ...(restSecondsSetting === seconds
+                    ? styles.activeQuickSelectButton
+                    : {}),
+                }}
+                onClick={() => handleRestQuickSelect(seconds)}
+                disabled={isRunning}
+              >
+                {formatDurationLabel(seconds)}
+              </button>
+            ))}
+          </div>
+
+          <div style={styles.timeButtonRow}>
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleRestSecondsChange(-10)}
+              disabled={isRunning}
+            >
+              -10초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleRestSecondsChange(-1)}
+              disabled={isRunning}
+            >
+              -1초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleRestSecondsChange(1)}
+              disabled={isRunning}
+            >
+              +1초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleRestSecondsChange(10)}
+              disabled={isRunning}
+            >
+              +10초
+            </button>
+          </div>
+        </div>
       </section>
     </div>
   );
@@ -1042,5 +1173,74 @@ const styles = {
     fontSize: "15px",
     fontWeight: 800,
     outline: "none",
+  },
+
+  settingGroup: {
+    backgroundColor: "#0f0f11",
+    border: "1px solid #303036",
+    borderRadius: "18px",
+    padding: "14px",
+    marginBottom: "12px",
+  },
+
+  settingLabelRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "10px",
+  },
+
+  settingLabel: {
+    color: "#dddddd",
+    fontSize: "13px",
+    fontWeight: 900,
+  },
+
+  timeDisplay: {
+    color: "#ffffff",
+    fontSize: "18px",
+    fontWeight: 950,
+    letterSpacing: "0.5px",
+  },
+
+  timeButtonRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr",
+    gap: "8px",
+  },
+
+  timeAdjustButton: {
+    backgroundColor: "#18181b",
+    color: "#ffffff",
+    border: "1px solid #3a3a40",
+    borderRadius: "12px",
+    padding: "12px 6px",
+    fontSize: "13px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  quickButtonRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: "8px",
+    marginBottom: "8px",
+  },
+
+  quickSelectButton: {
+    backgroundColor: "#18181b",
+    color: "#ffffff",
+    border: "1px solid #3a3a40",
+    borderRadius: "12px",
+    padding: "12px 6px",
+    fontSize: "13px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  activeQuickSelectButton: {
+    backgroundColor: "#ff3333",
+    border: "1px solid #ff3333",
   },
 };

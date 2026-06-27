@@ -931,83 +931,273 @@ export default function ProfilePage({ scrollTarget }) {
       selectedFilterRef.current ||
       selectedFilter ||
       "levelup";
+  
     const exportFilterIntensity =
       typeof exportSnapshot.filterIntensity === "number"
         ? exportSnapshot.filterIntensity
         : filterIntensity;
+  
     const exportPhotoScale =
       typeof exportSnapshot.photoScale === "number"
         ? exportSnapshot.photoScale
         : photoScale;
+  
     const exportCardMedia = exportSnapshot.cardMedia || cardMedia;
     const exportCardMediaType = exportSnapshot.cardMediaType || cardMediaType;
-
+  
     const exportMainNameText = String(
       exportFields.mainName || posterMainName || profile.nickname || "JO WOON"
     ).trim();
+  
     const exportSubtitleText = String(
       exportFields.subtitle || posterSubtitle || "THE ROOKIE"
     ).trim();
+  
     const exportEventTitleText = String(
       exportFields.eventTitle || posterEventTitle || "TRAINING DAY"
     ).trim();
+  
     const exportDateTextValue = String(
       exportFields.date || posterDateText || "JUNE 27"
     ).trim();
+  
     const exportMetaTextValue = String(
       exportFields.meta || posterMetaText || "BOXING TRAINING POSTER | RISING FIGHTER"
     ).trim();
+  
     const exportFooterTextValue = String(
       exportFields.footer || posterFooterText || "EVERY ROUND WRITES YOUR STORY"
     ).trim();
-
+  
     const canvas = document.createElement("canvas");
     const width = 1080;
     const height = 1920;
     const centerX = width / 2;
     const theme = getPosterCanvasTheme(exportFilterId);
-    const strength = Math.max(0, Math.min(1, exportFilterIntensity / 100));
-
+  
     canvas.width = width;
     canvas.height = height;
-
+  
     const ctx = canvas.getContext("2d");
-
+  
     if (!ctx) {
       throw new Error("캔버스를 만들지 못했어요.");
     }
-
+  
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-
+  
+    function boostPosterSavedPhotoPixels(
+      targetCtx,
+      x,
+      y,
+      targetWidth,
+      targetHeight,
+      filterId,
+      intensity
+    ) {
+      const strength = Math.max(0, Math.min(1, intensity / 100));
+  
+      if (!strength) return;
+  
+      let imageData;
+  
+      try {
+        imageData = targetCtx.getImageData(x, y, targetWidth, targetHeight);
+      } catch (error) {
+        console.warn("포스터 모바일 필터 보정 실패:", error);
+        return;
+      }
+  
+      const data = imageData.data;
+      const clamp = (value) => Math.max(0, Math.min(255, Math.round(value)));
+  
+      function getProfile() {
+        if (filterId === "mono") {
+          return {
+            contrast: 1.55 + 0.35 * strength,
+            saturation: 0,
+            brightness: 0.96 - 0.06 * strength,
+            sepia: 0,
+          };
+        }
+  
+        if (filterId === "red") {
+          return {
+            contrast: 1.42 + 0.34 * strength,
+            saturation: 1.14 + 0.24 * strength,
+            brightness: 0.96 - 0.04 * strength,
+            sepia: 0.16 + 0.16 * strength,
+          };
+        }
+  
+        if (filterId === "levelup" || filterId === "gold") {
+          return {
+            contrast: 1.4 + 0.32 * strength,
+            saturation: 1.1 + 0.2 * strength,
+            brightness: 0.96 - 0.04 * strength,
+            sepia: 0.24 + 0.22 * strength,
+          };
+        }
+  
+        if (filterId === "blue") {
+          return {
+            contrast: 1.36 + 0.3 * strength,
+            saturation: 1.14 + 0.22 * strength,
+            brightness: 0.96 - 0.04 * strength,
+            sepia: 0.04,
+          };
+        }
+  
+        if (filterId === "dark") {
+          return {
+            contrast: 1.46 + 0.36 * strength,
+            saturation: 0.92 - 0.08 * strength,
+            brightness: 0.88 - 0.08 * strength,
+            sepia: 0.02,
+          };
+        }
+  
+        if (filterId === "chrome") {
+          return {
+            contrast: 1.42 + 0.34 * strength,
+            saturation: 1.02 + 0.12 * strength,
+            brightness: 1.02 + 0.02 * strength,
+            sepia: 0.02,
+          };
+        }
+  
+        if (filterId === "future") {
+          return {
+            contrast: 1.4 + 0.34 * strength,
+            saturation: 1.24 + 0.32 * strength,
+            brightness: 0.98 - 0.03 * strength,
+            sepia: 0.02,
+          };
+        }
+  
+        if (filterId === "vintage") {
+          return {
+            contrast: 1.36 + 0.32 * strength,
+            saturation: 1.0 + 0.08 * strength,
+            brightness: 0.94 - 0.05 * strength,
+            sepia: 0.36 + 0.26 * strength,
+          };
+        }
+  
+        return {
+          contrast: 1.36 + 0.3 * strength,
+          saturation: 1.08 + 0.18 * strength,
+          brightness: 0.96 - 0.04 * strength,
+          sepia: 0.1 + 0.12 * strength,
+        };
+      }
+  
+      const profile = getProfile();
+  
+      for (let i = 0; i < data.length; i += 4) {
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+  
+        r *= profile.brightness;
+        g *= profile.brightness;
+        b *= profile.brightness;
+  
+        r = (r - 128) * profile.contrast + 128;
+        g = (g - 128) * profile.contrast + 128;
+        b = (b - 128) * profile.contrast + 128;
+  
+        const gray = r * 0.299 + g * 0.587 + b * 0.114;
+  
+        r = gray + (r - gray) * profile.saturation;
+        g = gray + (g - gray) * profile.saturation;
+        b = gray + (b - gray) * profile.saturation;
+  
+        if (profile.sepia > 0) {
+          const sr = r * 0.393 + g * 0.769 + b * 0.189;
+          const sg = r * 0.349 + g * 0.686 + b * 0.168;
+          const sb = r * 0.272 + g * 0.534 + b * 0.131;
+  
+          r = r * (1 - profile.sepia) + sr * profile.sepia;
+          g = g * (1 - profile.sepia) + sg * profile.sepia;
+          b = b * (1 - profile.sepia) + sb * profile.sepia;
+        }
+  
+        if (filterId === "red") {
+          r *= 1.03;
+          b *= 0.97;
+        }
+  
+        if (filterId === "levelup" || filterId === "gold") {
+          r *= 1.03;
+          b *= 0.94;
+        }
+  
+        if (filterId === "blue") {
+          r *= 0.95;
+          b *= 1.08;
+        }
+  
+        data[i] = clamp(r);
+        data[i + 1] = clamp(g);
+        data[i + 2] = clamp(b);
+      }
+  
+      targetCtx.putImageData(imageData, x, y);
+    }
+  
     drawPosterBackground(ctx, width, height, theme);
-
+  
     let hasPosterPhoto = false;
-
+  
     const candidateImageSources = [];
-
+  
     if (exportCardMediaType === "image" && exportCardMedia) {
       candidateImageSources.push(exportCardMedia);
     }
-
+  
     const previewImage = trainingCardRef.current?.querySelector('img[alt="훈련 카드"]');
+  
     if (previewImage?.src && !candidateImageSources.includes(previewImage.src)) {
       candidateImageSources.push(previewImage.src);
     }
-
+  
     for (const imageSrc of candidateImageSources) {
       try {
         const image = await loadCanvasImage(imageSrc);
-
+        const posterFilterIntensity = Math.min(100, exportFilterIntensity + 35);
+  
         ctx.save();
-
-if ("filter" in ctx) {
-  // 포스터 저장 결과만 전체적으로 조금 더 강하게 적용
-  const posterFilterIntensity = Math.min(100, exportFilterIntensity + 30);
-  ctx.filter = getImageFilter(exportFilterId, posterFilterIntensity);
-}
-
-        drawCoverImage(ctx, image, 0, 0, width, height, Math.max(exportPhotoScale, 100));
+  
+        if ("filter" in ctx) {
+          ctx.filter = getImageFilter(exportFilterId, posterFilterIntensity);
+        }
+  
+        drawCoverImage(
+          ctx,
+          image,
+          0,
+          0,
+          width,
+          height,
+          Math.max(exportPhotoScale, 100)
+        );
+  
+        ctx.filter = "none";
+  
+        if (isMobileCardExportDevice()) {
+          boostPosterSavedPhotoPixels(
+            ctx,
+            0,
+            0,
+            width,
+            height,
+            exportFilterId,
+            posterFilterIntensity
+          );
+        }
+  
         ctx.restore();
         hasPosterPhoto = true;
         break;
@@ -1015,45 +1205,67 @@ if ("filter" in ctx) {
         console.warn("포스터 사진 캔버스 로드 실패:", error);
       }
     }
-
-    // 사진이 있어도, 없어도 포스터 느낌이 나도록 조명과 어둠을 따로 깐다.
+  
     const globalShade = ctx.createLinearGradient(0, 0, 0, height);
-    globalShade.addColorStop(0, hasPosterPhoto ? "rgba(0, 0, 0, 0.36)" : "rgba(0, 0, 0, 0.08)");
-    globalShade.addColorStop(0.22, hasPosterPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.02)");
-    globalShade.addColorStop(0.48, hasPosterPhoto ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.14)");
+  
+    globalShade.addColorStop(
+      0,
+      hasPosterPhoto ? "rgba(0, 0, 0, 0.36)" : "rgba(0, 0, 0, 0.08)"
+    );
+    globalShade.addColorStop(
+      0.22,
+      hasPosterPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.02)"
+    );
+    globalShade.addColorStop(
+      0.48,
+      hasPosterPhoto ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.14)"
+    );
     globalShade.addColorStop(0.66, "rgba(0, 0, 0, 0.5)");
     globalShade.addColorStop(1, "rgba(0, 0, 0, 0.96)");
+  
     ctx.fillStyle = globalShade;
     ctx.fillRect(0, 0, width, height);
-
+  
     const topGlow = ctx.createRadialGradient(centerX, 165, 8, centerX, 165, 720);
+  
     topGlow.addColorStop(0, "rgba(255, 255, 255, 0.22)");
     topGlow.addColorStop(0.34, theme.accentSoft);
     topGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  
     ctx.fillStyle = topGlow;
     ctx.fillRect(0, 0, width, height);
-
-    const nameGlow = ctx.createRadialGradient(centerX, 1190, 20, centerX, 1190, 760);
+  
+    const nameGlow = ctx.createRadialGradient(
+      centerX,
+      1190,
+      20,
+      centerX,
+      1190,
+      760
+    );
+  
     nameGlow.addColorStop(0, theme.accentSoft);
     nameGlow.addColorStop(0.4, "rgba(0, 0, 0, 0)");
     nameGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  
     ctx.fillStyle = nameGlow;
     ctx.fillRect(0, 0, width, height);
-
-    // 어두운 포스터 테두리
+  
     ctx.save();
-    ctx.strokeStyle = hasPosterPhoto ? "rgba(255, 255, 255, 0.16)" : theme.accentSoft;
+    ctx.strokeStyle = hasPosterPhoto
+      ? "rgba(255, 255, 255, 0.16)"
+      : theme.accentSoft;
     ctx.lineWidth = 4;
     ctx.strokeRect(34, 34, width - 68, height - 68);
     ctx.restore();
-
-    // 상단 라벨
+  
     ctx.save();
     ctx.fillStyle = theme.accent;
     ctx.globalAlpha = 0.78;
     ctx.fillRect(120, 118, 255, 4);
     ctx.fillRect(width - 375, 118, 255, 4);
     ctx.globalAlpha = 1;
+  
     drawTextFit(ctx, "FIGHTER PROFILE", centerX, 92, 430, {
       size: 34,
       minSize: 24,
@@ -1064,12 +1276,12 @@ if ("filter" in ctx) {
       baseline: "top",
       shadow: false,
     });
+  
     ctx.restore();
-
-    // 이름 영역. 기존보다 더 아래쪽, 더 크게, 더 포스터처럼.
+  
     let mainY = 970;
     const mainBottomLimit = 1588;
-
+  
     if (exportVisible.mainName) {
       const usedHeight = drawPosterTextTop(
         ctx,
@@ -1087,9 +1299,10 @@ if ("filter" in ctx) {
           lineHeightRatio: 0.9,
         }
       );
+  
       mainY += Math.max(usedHeight, 144) + 2;
     }
-
+  
     if (exportVisible.subtitle && mainY < mainBottomLimit) {
       const usedHeight = drawPosterTextTop(
         ctx,
@@ -1107,14 +1320,15 @@ if ("filter" in ctx) {
           lineHeightRatio: 0.98,
         }
       );
+  
       mainY += Math.max(usedHeight, 56) + 28;
     }
-
+  
     if ((exportVisible.eventTitle || exportVisible.date) && mainY < mainBottomLimit) {
       drawPosterDivider(ctx, mainY + 10, width, centerX, theme);
       mainY += 58;
     }
-
+  
     if (exportVisible.eventTitle && mainY < mainBottomLimit) {
       const usedHeight = drawPosterTextTop(
         ctx,
@@ -1132,52 +1346,72 @@ if ("filter" in ctx) {
           lineHeightRatio: 0.92,
         }
       );
+  
       mainY += Math.max(usedHeight, 86) + 10;
     }
-
+  
     if (exportVisible.date && mainY < mainBottomLimit) {
-      drawPosterTextTop(ctx, exportDateTextValue.toUpperCase(), centerX, mainY, 760, {
-        size: 54,
-        minSize: 26,
-        weight: 950,
-        family: "Arial Black, Arial, sans-serif",
-        color: theme.accent,
-        strokeWidth: 5,
-        lineHeightRatio: 1.0,
-      });
+      drawPosterTextTop(
+        ctx,
+        exportDateTextValue.toUpperCase(),
+        centerX,
+        mainY,
+        760,
+        {
+          size: 54,
+          minSize: 26,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          color: theme.accent,
+          strokeWidth: 5,
+          lineHeightRatio: 1.0,
+        }
+      );
     }
-
-    // 하단 문구는 박스 없이 짧고 세련되게. 코멘트는 POSTER 저장에서 제외한다.
+  
     if (exportVisible.meta) {
       ctx.save();
       ctx.fillStyle = theme.accent;
       ctx.fillRect(150, 1642, width - 300, 5);
       ctx.restore();
-
-      drawPosterTextTop(ctx, exportMetaTextValue.toUpperCase(), centerX, 1674, 910, {
-        size: 28,
-        minSize: 17,
-        weight: 900,
-        family: "Arial Black, Arial, sans-serif",
-        color: theme.accent,
-        strokeWidth: 3,
-        lineHeightRatio: 1.05,
-      });
+  
+      drawPosterTextTop(
+        ctx,
+        exportMetaTextValue.toUpperCase(),
+        centerX,
+        1674,
+        910,
+        {
+          size: 28,
+          minSize: 17,
+          weight: 900,
+          family: "Arial Black, Arial, sans-serif",
+          color: theme.accent,
+          strokeWidth: 3,
+          lineHeightRatio: 1.05,
+        }
+      );
     }
-
+  
     if (exportVisible.footer) {
-      drawPosterTextTop(ctx, exportFooterTextValue.toUpperCase(), centerX, 1830, 900, {
-        size: 30,
-        minSize: 18,
-        weight: 900,
-        family: "Arial Black, Arial, sans-serif",
-        color: theme.accent,
-        strokeWidth: 3,
-        lineHeightRatio: 1.05,
-      });
+      drawPosterTextTop(
+        ctx,
+        exportFooterTextValue.toUpperCase(),
+        centerX,
+        1830,
+        900,
+        {
+          size: 30,
+          minSize: 18,
+          weight: 900,
+          family: "Arial Black, Arial, sans-serif",
+          color: theme.accent,
+          strokeWidth: 3,
+          lineHeightRatio: 1.05,
+        }
+      );
     }
-
-    // 마지막 비네팅. 가장자리만 눌러준다.
+  
     const vignette = ctx.createRadialGradient(
       centerX,
       height * 0.48,
@@ -1186,12 +1420,14 @@ if ("filter" in ctx) {
       height * 0.48,
       width * 0.94
     );
+  
     vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
     vignette.addColorStop(0.72, "rgba(0, 0, 0, 0.12)");
     vignette.addColorStop(1, "rgba(0, 0, 0, 0.48)");
+  
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);
-
+  
     return canvas.toDataURL("image/png", 1);
   }
 

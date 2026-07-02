@@ -5,11 +5,25 @@ import LogPage from "./pages/LogPage";
 import TimerPage from "./pages/TimerPage";
 import StatsPage from "./pages/StatsPage";
 import ProfilePage from "./pages/ProfilePage";
+import CategoryPage from "./pages/CategoryPage";
+import GymFinderPage from "./pages/GymFinderPage";
 import "./App.css";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("fitness-league-theme") || "light";
+  });
+  const isDark = theme === "dark";
+
+  const toggleTheme = () => {
+    setTheme((currentTheme) => {
+      const nextTheme = currentTheme === "light" ? "dark" : "light";
+      localStorage.setItem("fitness-league-theme", nextTheme);
+      return nextTheme;
+    });
+  };
 
   const goPage = (page) => {
     if (page !== "profile") {
@@ -31,10 +45,33 @@ export default function App() {
 
   return (
     <TrainingProvider>
-      <div style={styles.app}>
+      <div
+        className={`app-shell theme-${theme}`}
+        style={{
+          ...styles.app,
+          background: isDark ? "#0d0d0e" : "#f6f5f2",
+          color: isDark ? "#ffffff" : "#171717",
+        }}
+      >
         <main style={styles.main}>
           {currentPage === "home" && (
-            <HomePage onStartTraining={() => goPage("timer")} />
+            <HomePage
+              onStartTraining={() => goPage("timer")}
+              onNavigate={goPage}
+              onOpenCardMaker={goProfileCardMaker}
+            />
+          )}
+
+          {currentPage === "category" && (
+            <CategoryPage
+              onGoHome={() => goPage("home")}
+              onNavigate={goPage}
+              onOpenCardMaker={goProfileCardMaker}
+            />
+          )}
+
+          {currentPage === "gym" && (
+            <GymFinderPage onGoBack={() => goPage("category")} />
           )}
 
           {currentPage === "timer" && (
@@ -55,10 +92,35 @@ export default function App() {
           )}
         </main>
 
-        <nav style={styles.nav}>
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label={
+            isDark ? "밝은 화면으로 변경" : "다크 화면으로 변경"
+          }
+        >
+          <span aria-hidden="true">{isDark ? "☀" : "☾"}</span>
+        </button>
+
+        <nav
+          style={{
+            ...styles.nav,
+            background: isDark
+              ? "rgba(25, 25, 27, 0.94)"
+              : "rgba(255, 255, 255, 0.94)",
+            borderColor: isDark
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(22, 22, 22, 0.08)",
+            boxShadow: isDark
+              ? "0 12px 34px rgba(0, 0, 0, 0.35)"
+              : "0 12px 34px rgba(25, 20, 16, 0.12)",
+          }}
+        >
           <button
             style={{
               ...styles.navButton,
+              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
               ...(currentPage === "home" ? styles.activeButton : {}),
             }}
             onClick={() => goPage("home")}
@@ -69,16 +131,18 @@ export default function App() {
           <button
             style={{
               ...styles.navButton,
+              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
               ...(currentPage === "timer" ? styles.activeButton : {}),
             }}
             onClick={() => goPage("timer")}
           >
-            타이머
+            훈련
           </button>
 
           <button
             style={{
               ...styles.navButton,
+              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
               ...(currentPage === "log" ? styles.activeButton : {}),
             }}
             onClick={() => goPage("log")}
@@ -89,21 +153,29 @@ export default function App() {
           <button
             style={{
               ...styles.navButton,
-              ...(currentPage === "stats" ? styles.activeButton : {}),
+              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
+              ...(currentPage === "profile" ? styles.activeButton : {}),
             }}
-            onClick={() => goPage("stats")}
+            onClick={goProfile}
           >
-            성장
+            파이터
           </button>
 
           <button
             style={{
               ...styles.navButton,
-              ...(currentPage === "profile" ? styles.activeButton : {}),
+              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
+              ...(currentPage === "category" ? styles.activeButton : {}),
             }}
-            onClick={goProfile}
+            onClick={() => goPage("category")}
           >
-            프로필
+            <span className="nav-category-icon" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+            <span>더보기</span>
           </button>
         </nav>
       </div>
@@ -114,8 +186,8 @@ export default function App() {
 const styles = {
   app: {
     minHeight: "100vh",
-    background: "#050505",
-    color: "#ffffff",
+    background: "#f6f5f2",
+    color: "#171717",
     paddingBottom: "86px",
   },
 
@@ -136,8 +208,9 @@ const styles = {
     gap: "8px",
     padding: "10px",
     borderRadius: "24px",
-    background: "rgba(20, 20, 20, 0.92)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
+    background: "rgba(255, 255, 255, 0.94)",
+    border: "1px solid rgba(22, 22, 22, 0.08)",
+    boxShadow: "0 12px 34px rgba(25, 20, 16, 0.12)",
     backdropFilter: "blur(14px)",
     zIndex: 100,
   },
@@ -145,16 +218,23 @@ const styles = {
   navButton: {
     border: "none",
     borderRadius: "16px",
-    padding: "12px 8px",
+    minHeight: "48px",
+    padding: "8px 6px",
     background: "transparent",
-    color: "rgba(255, 255, 255, 0.55)",
+    color: "#74706b",
     fontSize: "13px",
     fontWeight: 800,
     cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "3px",
   },
 
   activeButton: {
-    background: "#ff3b3b",
+    background: "#ef3f36",
     color: "#ffffff",
+    boxShadow: "0 7px 16px rgba(239, 63, 54, 0.2)",
   },
 };

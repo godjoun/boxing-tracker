@@ -88,8 +88,16 @@ const clampSeconds = (value, min, max) => {
   return Math.max(min, Math.min(max, number));
 };
 
+const getLogExp = (log) => {
+  const score = Number(log.score);
+  if (Number.isFinite(score) && score > 0) return score;
+  return Math.max(0, Number(log.minutes || log.duration || 0));
+};
+
+const getLevelFromExp = (exp) => Math.floor(exp / 100) + 1;
+
 export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
-  const { addLog } = useTraining();
+  const { addLog, logs } = useTraining();
 
   const [selectedPresetId, setSelectedPresetId] = useState("match3");
 
@@ -107,6 +115,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   const [isRunning, setIsRunning] = useState(false);
   const [hasStartedSession, setHasStartedSession] = useState(false);
   const [hasSavedLog, setHasSavedLog] = useState(false);
+  const [completionResult, setCompletionResult] = useState(null);
   const [soundMode, setSoundMode] = useState("basic");
 
   const savedLogRef = useRef(false);
@@ -286,7 +295,8 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
     savedLogRef.current = true;
 
-    addLog({
+    const totalExpBefore = logs.reduce((sum, log) => sum + getLogExp(log), 0);
+    const savedLog = addLog({
       type: routineTitle,
       minutes: totalWorkMinutes,
       duration: totalWorkMinutes,
@@ -294,6 +304,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       totalRounds,
       completedRounds: totalRounds,
       difficulty: "normal",
+      source: "timer",
       memo: `${totalRounds}라운드 완료 / 운동 ${formatDurationLabel(
         workSecondsSetting
       )} / 휴식 ${formatDurationLabel(
@@ -302,6 +313,20 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       publicComment: `${totalRounds}라운드 완료. 오늘도 끝까지 버텼다.`,
     });
 
+    const gainedExp = getLogExp(savedLog);
+    const totalExpAfter = totalExpBefore + gainedExp;
+    const previousLevel = getLevelFromExp(totalExpBefore);
+    const currentLevel = getLevelFromExp(totalExpAfter);
+
+    setCompletionResult({
+      gainedExp,
+      totalExp: totalExpAfter,
+      previousLevel,
+      currentLevel,
+      currentLevelExp: totalExpAfter % 100,
+      expToNextLevel: 100 - (totalExpAfter % 100),
+      didLevelUp: currentLevel > previousLevel,
+    });
     setHasSavedLog(true);
   }, [
     phase,
@@ -312,6 +337,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     workSecondsSetting,
     restSecondsSetting,
     totalWorkMinutes,
+    logs,
   ]);
 
   const resetTimerState = (nextWorkSeconds = workSecondsSetting) => {
@@ -322,6 +348,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     setRemainingTime(nextWorkSeconds);
     setHasStartedSession(false);
     setHasSavedLog(false);
+    setCompletionResult(null);
     savedLogRef.current = false;
   };
 
@@ -537,21 +564,77 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
             <div style={styles.completeTitle}>SESSION COMPLETE</div>
 
             <p style={styles.savedText}>
-              운동 기록에 자동 저장됐습니다. 이제 프로필 카드에서 인증 카드로
-              만들 수 있어요.
+              운동 기록에 자동 저장됐습니다.
             </p>
+
+            {completionResult && (
+              <div style={styles.growthResult}>
+                {completionResult.didLevelUp && (
+                  <div style={styles.levelUpBadge}>LEVEL UP!</div>
+                )}
+
+                <div style={styles.growthResultGrid}>
+                  <div style={styles.growthResultItem}>
+                    <span style={styles.growthResultLabel}>완료 라운드</span>
+                    <strong style={styles.growthResultValue}>{totalRounds}R</strong>
+                  </div>
+                  <div style={styles.growthResultItem}>
+                    <span style={styles.growthResultLabel}>훈련 시간</span>
+                    <strong style={styles.growthResultValue}>
+                      {totalWorkMinutes}분
+                    </strong>
+                  </div>
+                  <div style={styles.growthResultItem}>
+                    <span style={styles.growthResultLabel}>획득 경험치</span>
+                    <strong style={styles.growthExpValue}>
+                      +{completionResult.gainedExp} EXP
+                    </strong>
+                  </div>
+                </div>
+
+                <div style={styles.levelProgressHeader}>
+                  <strong style={styles.levelText}>
+                    LV. {completionResult.currentLevel}
+                  </strong>
+                  <span style={styles.levelProgressText}>
+                    {completionResult.currentLevelExp} / 100 EXP
+                  </span>
+                </div>
+                <div style={styles.levelProgressTrack}>
+                  <div
+                    style={{
+                      ...styles.levelProgressFill,
+                      width: `${completionResult.currentLevelExp}%`,
+                    }}
+                  />
+                </div>
+                <p style={styles.nextLevelText}>
+                  다음 레벨까지 {completionResult.expToNextLevel} EXP
+                </p>
+              </div>
+            )}
 
             <button
               type="button"
               style={styles.goLogButton}
               onClick={handleGoProfile}
             >
-              내 프로필 확인하기
+              파이터 카드 만들기
             </button>
 
             <button
               type="button"
-              style={styles.secondaryButton}
+              style={styles.homeResultButton}
+              onClick={() => {
+                if (onGoHome) onGoHome();
+              }}
+            >
+              홈에서 성장 확인
+            </button>
+
+            <button
+              type="button"
+              style={styles.textResultButton}
               onClick={() => {
                 if (onGoLog) onGoLog();
               }}
@@ -997,6 +1080,99 @@ const styles = {
     margin: "0 0 12px",
   },
 
+  growthResult: {
+    marginBottom: "12px",
+    padding: "12px",
+    border: "1px solid rgba(124, 255, 124, 0.18)",
+    borderRadius: "15px",
+    background: "rgba(0, 0, 0, 0.18)",
+  },
+
+  levelUpBadge: {
+    display: "inline-block",
+    marginBottom: "10px",
+    padding: "5px 8px",
+    borderRadius: "999px",
+    background: "#d6a234",
+    color: "#111111",
+    fontSize: "10px",
+    fontWeight: 950,
+    letterSpacing: "0.08em",
+  },
+
+  growthResultGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: "6px",
+  },
+
+  growthResultItem: {
+    minWidth: 0,
+    padding: "8px 4px",
+    borderRadius: "11px",
+    background: "rgba(255, 255, 255, 0.045)",
+  },
+
+  growthResultLabel: {
+    display: "block",
+    marginBottom: "5px",
+    color: "rgba(255, 255, 255, 0.52)",
+    fontSize: "9px",
+    fontWeight: 800,
+  },
+
+  growthResultValue: {
+    display: "block",
+    color: "#ffffff",
+    fontSize: "14px",
+  },
+
+  growthExpValue: {
+    display: "block",
+    color: "#7CFF7C",
+    fontSize: "13px",
+  },
+
+  levelProgressHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: "12px",
+  },
+
+  levelText: {
+    color: "#ffffff",
+    fontSize: "12px",
+  },
+
+  levelProgressText: {
+    color: "rgba(255, 255, 255, 0.52)",
+    fontSize: "10px",
+    fontWeight: 800,
+  },
+
+  levelProgressTrack: {
+    height: "7px",
+    marginTop: "7px",
+    overflow: "hidden",
+    borderRadius: "999px",
+    background: "rgba(255, 255, 255, 0.09)",
+  },
+
+  levelProgressFill: {
+    height: "100%",
+    minWidth: "3px",
+    borderRadius: "999px",
+    background: "linear-gradient(90deg, #7CFF7C, #d6ff9b)",
+  },
+
+  nextLevelText: {
+    margin: "7px 0 0",
+    color: "rgba(255, 255, 255, 0.52)",
+    fontSize: "10px",
+    textAlign: "right",
+  },
+
   goLogButton: {
     width: "100%",
     backgroundColor: "#ffffff",
@@ -1019,6 +1195,31 @@ const styles = {
     padding: "13px 16px",
     fontSize: "14px",
     fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  homeResultButton: {
+    width: "100%",
+    marginTop: "8px",
+    backgroundColor: "#ff3333",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "14px",
+    padding: "13px 16px",
+    fontSize: "14px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  textResultButton: {
+    width: "100%",
+    marginTop: "6px",
+    padding: "8px",
+    border: "none",
+    background: "transparent",
+    color: "rgba(255, 255, 255, 0.58)",
+    fontSize: "12px",
+    fontWeight: 800,
     cursor: "pointer",
   },
 

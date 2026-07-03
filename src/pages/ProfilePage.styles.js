@@ -819,7 +819,7 @@ export const styles = {
     padding: "24px",
     boxSizing: "border-box",
     color: "#ffffff",
-    textShadow: "0 5px 18px rgba(0, 0, 0, 0.95)",
+    textShadow: "0 2px 12px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9)",
   },
 
   socialCardTop: {
@@ -870,9 +870,9 @@ export const styles = {
   socialMetricBox: {
     padding: "9px 8px",
     borderRadius: "14px",
-    background: "rgba(0, 0, 0, 0.08)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    backdropFilter: "none",
+    background: "rgba(0, 0, 0, 0.22)",
+    border: "1px solid rgba(255, 255, 255, 0.18)",
+    backdropFilter: "blur(6px)",
   },
   
   socialMetricLabel: {

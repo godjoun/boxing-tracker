@@ -7,6 +7,7 @@ import StatsPage from "./pages/StatsPage";
 import ProfilePage from "./pages/ProfilePage";
 import CategoryPage from "./pages/CategoryPage";
 import GymFinderPage from "./pages/GymFinderPage";
+import WeeklyReportPage from "./pages/WeeklyReportPage";
 import "./App.css";
 
 export default function App() {
@@ -85,7 +86,13 @@ export default function App() {
           {currentPage === "log" && <LogPage onGoProfileCardMaker={goProfileCardMaker} />}
           
 
-          {currentPage === "stats" && <StatsPage />}
+          {currentPage === "stats" && (
+            <StatsPage onGoWeekly={() => goPage("weekly")} />
+          )}
+
+          {currentPage === "weekly" && (
+            <WeeklyReportPage onGoBack={() => goPage("category")} />
+          )}
 
           {currentPage === "profile" && (
             <ProfilePage scrollTarget={profileScrollTarget} />

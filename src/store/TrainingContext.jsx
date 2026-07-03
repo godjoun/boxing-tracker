@@ -5,6 +5,15 @@ import {
   useMemo,
   useState,
 } from "react";
+import {
+  calculateLogScore,
+  getConditionLabel,
+  getLogRounds,
+  getWeekEnd,
+  getWeekStart,
+  isThisWeek,
+  normalizeLogScores,
+} from "../utils/trainingStats";
 
 const TrainingContext = createContext(null);
 
@@ -20,13 +29,6 @@ const DEFAULT_PROFILE = {
   nickname: "나",
   bio: "아직 초보지만 링에 계속 올라가는 중",
   photo: "",
-};
-
-const DIFFICULTY_MULTIPLIER = {
-  easy: 0.8,
-  normal: 1,
-  hard: 1.2,
-  crazy: 1.5,
 };
 
 const DIFFICULTY_LABEL = {
@@ -80,34 +82,6 @@ function getTodayString() {
   return `${year}-${month}-${date}`;
 }
 
-function getWeekStart(date = new Date()) {
-  const target = new Date(date);
-  const day = target.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-
-  target.setDate(target.getDate() + diff);
-  target.setHours(0, 0, 0, 0);
-
-  return target;
-}
-
-function getWeekEnd(date = new Date()) {
-  const weekStart = getWeekStart(date);
-  const weekEnd = new Date(weekStart);
-
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
-
-  return weekEnd;
-}
-
-function getShortDateText(date) {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${month}.${day}`;
-}
-
 function getSeasonInfo() {
   const now = new Date();
   const weekStart = getWeekStart(now);
@@ -129,19 +103,11 @@ function getSeasonInfo() {
   };
 }
 
-function isThisWeek(dateString) {
-  const date = new Date(`${dateString}T00:00:00`);
-  const weekStart = getWeekStart();
-  const nextWeekStart = new Date(weekStart);
+function getShortDateText(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
-  nextWeekStart.setDate(weekStart.getDate() + 7);
-
-  return date >= weekStart && date < nextWeekStart;
-}
-
-function calculateLogScore(minutes, difficulty) {
-  const multiplier = DIFFICULTY_MULTIPLIER[difficulty] || 1;
-  return Math.round(Number(minutes || 0) * multiplier);
+  return `${month}.${day}`;
 }
 
 function calculateWeeklyScore(logs) {
@@ -149,9 +115,7 @@ function calculateWeeklyScore(logs) {
   const scoreByDate = {};
 
   thisWeekLogs.forEach((log) => {
-    const minutes = Number(log.minutes || log.duration || 0);
-    const difficulty = log.difficulty || "normal";
-    const rawScore = calculateLogScore(minutes, difficulty);
+    const rawScore = calculateLogScore(log);
 
     if (!scoreByDate[log.date]) {
       scoreByDate[log.date] = 0;
@@ -212,8 +176,12 @@ function loadStorage(key, defaultValue) {
   }
 }
 
-function getFinalRounds({ rounds, totalRounds, completedRounds }) {
-  return Number(rounds || totalRounds || completedRounds || 0);
+function getFinalRounds(logLike) {
+  if (typeof logLike === "object") {
+    return getLogRounds(logLike);
+  }
+
+  return Number(logLike || 0);
 }
 
 function getRecordSourceLabel(source) {
@@ -224,7 +192,7 @@ function getRecordSourceLabel(source) {
 
 export function TrainingProvider({ children }) {
   const [logs, setLogs] = useState(() => {
-    return loadStorage(STORAGE_KEY, []);
+    return normalizeLogScores(loadStorage(STORAGE_KEY, []));
   });
 
   const [feed, setFeed] = useState(() => {
@@ -333,6 +301,7 @@ export function TrainingProvider({ children }) {
     minutes,
     duration,
     difficulty = "normal",
+    condition = "normal",
     memo = "",
     date,
     rounds = 0,
@@ -348,6 +317,7 @@ export function TrainingProvider({ children }) {
       completedRounds,
     });
     const finalDate = date || getTodayString();
+    const finalType = type || "복싱 훈련";
 
     const finalSource =
       source || (finalRounds > 0 && memo.includes("라운드") ? "timer" : "manual");
@@ -355,7 +325,7 @@ export function TrainingProvider({ children }) {
     const newLog = {
       id: crypto.randomUUID(),
       date: finalDate,
-      type: type || "복싱 훈련",
+      type: finalType,
       minutes: finalMinutes,
       duration: finalMinutes,
       rounds: finalRounds,
@@ -363,15 +333,19 @@ export function TrainingProvider({ children }) {
       completedRounds: finalRounds,
       difficulty,
       difficultyLabel: DIFFICULTY_LABEL[difficulty] || "보통",
+      condition: condition || "normal",
+      conditionLabel: getConditionLabel(condition),
       memo,
       publicComment,
       source: finalSource,
       sourceLabel: getRecordSourceLabel(finalSource),
       isEdited: false,
-      score: calculateLogScore(finalMinutes, difficulty),
+      score: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    newLog.score = calculateLogScore(newLog);
 
     setLogs((prevLogs) => [newLog, ...prevLogs]);
 
@@ -386,6 +360,7 @@ export function TrainingProvider({ children }) {
         }
 
         const nextDifficulty = updates.difficulty || log.difficulty || "normal";
+        const nextCondition = updates.condition || log.condition || "normal";
         const nextMinutes = Number(
           updates.minutes ?? updates.duration ?? log.minutes ?? log.duration ?? 0
         );
@@ -398,7 +373,7 @@ export function TrainingProvider({ children }) {
 
         const nextSource = updates.source || log.source || "manual";
 
-        return {
+        const nextLog = {
           ...log,
           ...updates,
           minutes: nextMinutes,
@@ -408,11 +383,17 @@ export function TrainingProvider({ children }) {
           completedRounds: nextRounds,
           difficulty: nextDifficulty,
           difficultyLabel: DIFFICULTY_LABEL[nextDifficulty] || "보통",
+          condition: nextCondition,
+          conditionLabel: getConditionLabel(nextCondition),
           source: nextSource,
           sourceLabel: getRecordSourceLabel(nextSource),
-          score: calculateLogScore(nextMinutes, nextDifficulty),
           isEdited: true,
           updatedAt: new Date().toISOString(),
+        };
+
+        return {
+          ...nextLog,
+          score: calculateLogScore(nextLog),
         };
       });
     });

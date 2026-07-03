@@ -1,10 +1,160 @@
-const BOXING_KEYWORDS = /복싱|boxing|boxeo|kickbox|킥복싱|주짓수|무에타이|격투|체육관|도장|짐|gym|fight/i;
+import { fetchNearbyGyms as fetchGymsFromApi } from "../api/dojoApi";
 
-function toRadians(value) {
-  return (value * Math.PI) / 180;
+const LOCATION_STORAGE_KEY = "fitness-league-search-location";
+
+export const PRESET_AREAS = [
+  { id: "seoul-gangnam", label: "서울 강남", lat: 37.4979, lon: 127.0276 },
+  { id: "seoul-hongdae", label: "서울 홍대", lat: 37.5563, lon: 126.9236 },
+  { id: "seoul-jamsil", label: "서울 잠실", lat: 37.5133, lon: 127.1028 },
+  { id: "seoul-mapo", label: "서울 마포", lat: 37.566, lon: 126.901 },
+  { id: "busan-seomyeon", label: "부산 서면", lat: 35.1579, lon: 129.0595 },
+  { id: "daegu-dongseong", label: "대구 동성로", lat: 35.8694, lon: 128.5938 },
+  { id: "incheon-bupyeong", label: "인천 부평", lat: 37.507, lon: 126.7219 },
+  { id: "gwangju-sangmu", label: "광주 상무", lat: 35.1466, lon: 126.8514 },
+];
+
+const DEFAULT_LOCATION = {
+  lat: 37.5665,
+  lon: 126.978,
+  label: "서울 시청 (기본)",
+  source: "default",
+  accuracy: null,
+};
+
+function normalizePosition(position) {
+  return {
+    lat: position.lat,
+    lon: position.lon,
+    label: position.label || "선택한 위치",
+    source: position.source || "manual",
+    accuracy: position.accuracy ?? null,
+  };
+}
+
+function saveSearchLocation(position) {
+  try {
+    localStorage.setItem(
+      LOCATION_STORAGE_KEY,
+      JSON.stringify(normalizePosition(position))
+    );
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function getSavedSearchLocation() {
+  try {
+    const raw = localStorage.getItem(LOCATION_STORAGE_KEY);
+    if (!raw) return null;
+    return normalizePosition(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+function getGeolocationErrorMessage(error) {
+  if (!error) return "현재 위치를 가져오지 못했습니다.";
+
+  if (error.code === 1) {
+    return "위치 권한이 거부되었습니다. 아래에서 지역을 선택해 주세요.";
+  }
+
+  if (error.code === 2) {
+    return "GPS 신호를 찾지 못했습니다. 지역 버튼으로 선택해 주세요.";
+  }
+
+  if (error.code === 3) {
+    return "위치 확인 시간이 초과되었습니다. 지역 버튼으로 선택해 주세요.";
+  }
+
+  return error.message || "현재 위치를 가져오지 못했습니다.";
+}
+
+function tryGeolocation(highAccuracy) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("이 브라우저에서는 GPS를 사용할 수 없습니다."));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+          label: "현재 위치 (GPS)",
+          source: "gps",
+          accuracy: position.coords.accuracy,
+        });
+      },
+      reject,
+      {
+        enableHighAccuracy: highAccuracy,
+        timeout: highAccuracy ? 10000 : 8000,
+        maximumAge: 300000,
+      }
+    );
+  });
+}
+
+async function getGpsPosition() {
+  try {
+    return await tryGeolocation(true);
+  } catch (highAccuracyError) {
+    return tryGeolocation(false).catch(() => {
+      throw highAccuracyError;
+    });
+  }
+}
+
+export async function resolveSearchLocation(options = {}) {
+  const {
+    preferGps = true,
+    preset = null,
+    allowFallback = true,
+  } = options;
+
+  if (preset) {
+    const area = PRESET_AREAS.find((item) => item.id === preset);
+    if (area) {
+      const position = normalizePosition({
+        lat: area.lat,
+        lon: area.lon,
+        label: area.label,
+        source: "preset",
+        accuracy: 1000,
+      });
+      saveSearchLocation(position);
+      return position;
+    }
+  }
+
+  if (preferGps) {
+    try {
+      const position = normalizePosition(await getGpsPosition());
+      saveSearchLocation(position);
+      return position;
+    } catch (gpsError) {
+      if (!allowFallback) {
+        throw new Error(getGeolocationErrorMessage(gpsError));
+      }
+    }
+  }
+
+  const saved = getSavedSearchLocation();
+  if (saved) {
+    return saved;
+  }
+
+  if (allowFallback) {
+    return normalizePosition(DEFAULT_LOCATION);
+  }
+
+  throw new Error("위치를 확인할 수 없습니다.");
 }
 
 export function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const toRadians = (value) => (value * Math.PI) / 180;
   const earthRadiusKm = 6371;
   const dLat = toRadians(lat2 - lat1);
   const dLon = toRadians(lon2 - lon1);
@@ -17,239 +167,44 @@ export function getDistanceKm(lat1, lon1, lat2, lon2) {
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function formatDistance(km) {
-  if (km < 1) return `${Math.round(km * 1000)}m`;
-  return `${km.toFixed(1)}km`;
-}
-
-function getElementCoords(element) {
-  if (element.type === "node") {
-    return { lat: element.lat, lon: element.lon };
-  }
-
-  if (element.center) {
-    return { lat: element.center.lat, lon: element.center.lon };
-  }
-
-  return null;
-}
-
-function getGymLabel(tags = {}) {
-  return (
-    tags.name ||
-    tags["name:ko"] ||
-    tags["name:en"] ||
-    tags.operator ||
-    tags.brand ||
-    ""
-  );
-}
-
-function getGymAddress(tags = {}) {
-  const parts = [
-    tags["addr:city"] || tags.city,
-    tags["addr:district"] || tags.district,
-    tags["addr:street"] || tags.street,
-    tags["addr:housenumber"] || tags.housenumber,
-  ].filter(Boolean);
-
-  if (parts.length > 0) return parts.join(" ");
-  return tags["addr:full"] || tags.address || "";
-}
-
-function isBoxingRelated(tags = {}) {
-  const label = getGymLabel(tags);
-  const sport = tags.sport || "";
-  const leisure = tags.leisure || "";
-  const amenity = tags.amenity || "";
-  const description = `${label} ${sport} ${leisure} ${amenity}`;
-
-  return (
-    BOXING_KEYWORDS.test(description) ||
-    sport.includes("boxing") ||
-    sport.includes("kickboxing")
-  );
-}
-
-function normalizeGym(element, originLat, originLon) {
-  const coords = getElementCoords(element);
-  if (!coords) return null;
-
-  const tags = element.tags || {};
-  const name = getGymLabel(tags);
-
-  if (!name) return null;
-
-  const distanceKm = getDistanceKm(
-    originLat,
-    originLon,
-    coords.lat,
-    coords.lon
-  );
-
-  return {
-    id: `${element.type}-${element.id}`,
-    name,
-    address: getGymAddress(tags),
-    lat: coords.lat,
-    lon: coords.lon,
-    distanceKm,
-    distanceLabel: formatDistance(distanceKm),
-    sport: tags.sport || "",
-    source: "openstreetmap",
-  };
-}
-
-async function searchOverpass(lat, lon, radiusMeters = 8000) {
-  const query = `
-    [out:json][timeout:25];
-    (
-      node["leisure"="fitness_centre"](around:${radiusMeters},${lat},${lon});
-      way["leisure"="fitness_centre"](around:${radiusMeters},${lat},${lon});
-      node["sport"="boxing"](around:${radiusMeters},${lat},${lon});
-      way["sport"="boxing"](around:${radiusMeters},${lat},${lon});
-      node["sport"="kickboxing"](around:${radiusMeters},${lat},${lon});
-      way["sport"="kickboxing"](around:${radiusMeters},${lat},${lon});
-      node["amenity"="dojo"](around:${radiusMeters},${lat},${lon});
-      way["amenity"="dojo"](around:${radiusMeters},${lat},${lon});
-    );
-    out center 40;
-  `;
-
-  const response = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-    },
-    body: `data=${encodeURIComponent(query)}`,
-  });
-
-  if (!response.ok) {
-    throw new Error("주변 체육관 검색에 실패했습니다.");
-  }
-
-  const data = await response.json();
-  const gyms = (data.elements || [])
-    .map((element) => normalizeGym(element, lat, lon))
-    .filter(Boolean)
-    .filter((gym) => isBoxingRelated({ name: gym.name, sport: gym.sport }));
-
-  const unique = new Map();
-  gyms.forEach((gym) => {
-    const key = `${gym.name}-${gym.lat.toFixed(4)}-${gym.lon.toFixed(4)}`;
-    if (!unique.has(key) || unique.get(key).distanceKm > gym.distanceKm) {
-      unique.set(key, gym);
-    }
-  });
-
-  return Array.from(unique.values()).sort(
-    (a, b) => a.distanceKm - b.distanceKm
-  );
-}
-
-async function searchNominatim(lat, lon) {
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", "복싱 체육관");
-  url.searchParams.set("format", "json");
-  url.searchParams.set("limit", "12");
-  url.searchParams.set("addressdetails", "1");
-  url.searchParams.set("viewbox", `${lon - 0.08},${lat + 0.08},${lon + 0.08},${lat - 0.08}`);
-  url.searchParams.set("bounded", "1");
-
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) return [];
-
-  const results = await response.json();
-
-  return results
-    .map((item) => {
-      const itemLat = Number(item.lat);
-      const itemLon = Number(item.lon);
-      const distanceKm = getDistanceKm(lat, lon, itemLat, itemLon);
-
-      return {
-        id: `nominatim-${item.place_id}`,
-        name: item.display_name?.split(",")[0] || item.name || "복싱 체육관",
-        address: item.display_name || "",
-        lat: itemLat,
-        lon: itemLon,
-        distanceKm,
-        distanceLabel: formatDistance(distanceKm),
-        sport: "boxing",
-        source: "nominatim",
-      };
-    })
-    .filter((gym) => gym.distanceKm <= 12);
-}
-
-export function getCurrentPosition() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("이 브라우저에서는 위치 정보를 사용할 수 없습니다."));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        });
-      },
-      (error) => {
-        if (error.code === error.PERMISSION_DENIED) {
-          reject(new Error("위치 권한이 필요합니다. 설정에서 위치를 허용해 주세요."));
-          return;
-        }
-
-        reject(new Error("현재 위치를 가져오지 못했습니다."));
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 60000,
-      }
-    );
-  });
-}
-
 export async function searchNearbyGyms(lat, lon) {
-  const [overpassResults, nominatimResults] = await Promise.allSettled([
-    searchOverpass(lat, lon),
-    searchNominatim(lat, lon),
-  ]);
+  return fetchGymsFromApi(lat, lon, 12);
+}
 
-  const merged = new Map();
+export function isGymSearchAvailable() {
+  return true;
+}
 
-  [overpassResults, nominatimResults].forEach((result) => {
-    if (result.status !== "fulfilled") return;
+export function getGymDataSourceLabel(source) {
+  if (source === "server") return "자체 서버";
+  if (source === "local") return "자체 데이터";
+  return "자체 데이터";
+}
 
-    result.value.forEach((gym) => {
-      const key = `${gym.name}-${gym.lat.toFixed(3)}-${gym.lon.toFixed(3)}`;
-      if (!merged.has(key) || merged.get(key).distanceKm > gym.distanceKm) {
-        merged.set(key, gym);
-      }
-    });
-  });
-
-  return Array.from(merged.values())
-    .sort((a, b) => a.distanceKm - b.distanceKm)
-    .slice(0, 12);
+export function getLocationSourceLabel(source) {
+  switch (source) {
+    case "gps":
+      return "GPS";
+    case "preset":
+      return "지역 선택";
+    case "default":
+      return "기본 위치";
+    default:
+      return "저장된 위치";
+  }
 }
 
 export function getMapLinks(gym) {
-  const query = encodeURIComponent(`${gym.name} ${gym.address}`.trim());
+  const query = encodeURIComponent(`${gym.name} ${gym.address || ""}`.trim());
   const coords = `${gym.lat},${gym.lon}`;
 
   return {
     google: `https://www.google.com/maps/search/?api=1&query=${coords}`,
-    naver: `https://map.naver.com/v5/search/${query}`,
-    kakao: `https://map.kakao.com/?q=${query}`,
+    coords,
+    query,
   };
+}
+
+export function getSavedLocation() {
+  return getSavedSearchLocation();
 }

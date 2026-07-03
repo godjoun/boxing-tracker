@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
+import { buildWeeklyReport } from "../utils/trainingStats";
 import { styles } from "./ProfilePage.styles";
 import {
   getDisplayComment,
@@ -14,7 +15,9 @@ import {
 import {
   CARD_FILTERS,
   CARD_STYLES,
+  applyPixelImageFilter,
   getCardBackground,
+  getCardPreviewOverlay,
   getImageFilter,
 } from "./profilePage/cardConfig";
 
@@ -129,6 +132,7 @@ export default function ProfilePage({ scrollTarget }) {
 
     const timerLogs = logs.filter((log) => log.source === "timer");
     const manualLogs = logs.filter((log) => log.source === "manual");
+    const weeklyRounds = buildWeeklyReport(logs).totalRounds;
 
     const fighterProgress = getFighterProgress(
       totalRounds,
@@ -171,6 +175,7 @@ export default function ProfilePage({ scrollTarget }) {
     return {
       totalLogs,
       totalRounds,
+      weeklyRounds,
       totalMinutes,
       todayCount: todayLogs.length,
       timerCount: timerLogs.length,
@@ -307,7 +312,6 @@ export default function ProfilePage({ scrollTarget }) {
   const levelUpDisplaySlogan = String(
     levelUpSlogan || "ONE ROUND AT A TIME"
   ).trim().toUpperCase();
-  const levelUpXpToday = cardTotalRounds * 7;
   const levelUpStreakDays = getTrainingStreak(logs);
   const levelUpNextTierXp = Math.max(0, 100 - (profileStats.totalRounds % 100));
   const levelUpProgressPercent = Math.min(
@@ -851,13 +855,20 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.fillRect(0, 0, width, height);
   }
 
-  function drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto) {
+  function drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto, natural = false) {
     const mood = ctx.createLinearGradient(0, 0, 0, height);
-  
-    mood.addColorStop(0, hasPhoto ? "rgba(0, 0, 0, 0.28)" : "rgba(0, 0, 0, 0.12)");
-    mood.addColorStop(0.35, "rgba(0, 0, 0, 0.08)");
-    mood.addColorStop(0.68, "rgba(0, 0, 0, 0.24)");
-    mood.addColorStop(1, "rgba(0, 0, 0, 0.64)");
+
+    if (natural) {
+      mood.addColorStop(0, hasPhoto ? "rgba(0, 0, 0, 0.1)" : "rgba(0, 0, 0, 0.06)");
+      mood.addColorStop(0.35, "rgba(0, 0, 0, 0.03)");
+      mood.addColorStop(0.68, "rgba(0, 0, 0, 0.1)");
+      mood.addColorStop(1, hasPhoto ? "rgba(0, 0, 0, 0.28)" : "rgba(0, 0, 0, 0.18)");
+    } else {
+      mood.addColorStop(0, hasPhoto ? "rgba(0, 0, 0, 0.28)" : "rgba(0, 0, 0, 0.12)");
+      mood.addColorStop(0.35, "rgba(0, 0, 0, 0.08)");
+      mood.addColorStop(0.68, "rgba(0, 0, 0, 0.24)");
+      mood.addColorStop(1, "rgba(0, 0, 0, 0.64)");
+    }
   
     ctx.fillStyle = mood;
     ctx.fillRect(0, 0, width, height);
@@ -874,10 +885,18 @@ export default function ProfilePage({ scrollTarget }) {
     accentGlow.addColorStop(0, theme.accentSoft);
     accentGlow.addColorStop(0.38, "rgba(0, 0, 0, 0)");
     accentGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
-  
-    ctx.fillStyle = accentGlow;
-    ctx.fillRect(0, 0, width, height);
-  
+
+    if (!natural) {
+      ctx.fillStyle = accentGlow;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = accentGlow;
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+
     const vignette = ctx.createRadialGradient(
       width * 0.5,
       height * 0.45,
@@ -886,10 +905,10 @@ export default function ProfilePage({ scrollTarget }) {
       height * 0.45,
       width * 0.9
     );
-  
+
     vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
-    vignette.addColorStop(0.72, "rgba(0, 0, 0, 0.08)");
-    vignette.addColorStop(1, "rgba(0, 0, 0, 0.42)");
+    vignette.addColorStop(0.72, natural ? "rgba(0, 0, 0, 0.04)" : "rgba(0, 0, 0, 0.08)");
+    vignette.addColorStop(1, natural ? "rgba(0, 0, 0, 0.14)" : "rgba(0, 0, 0, 0.42)");
   
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);
@@ -987,193 +1006,33 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
   
-    function boostPosterSavedPhotoPixels(
-      targetCtx,
-      x,
-      y,
-      targetWidth,
-      targetHeight,
-      filterId,
-      intensity
-    ) {
-      const strength = Math.max(0, Math.min(1, intensity / 100));
-  
-      if (!strength) return;
-  
-      let imageData;
-  
-      try {
-        imageData = targetCtx.getImageData(x, y, targetWidth, targetHeight);
-      } catch (error) {
-        console.warn("포스터 모바일 필터 보정 실패:", error);
-        return;
-      }
-  
-      const data = imageData.data;
-      const clamp = (value) => Math.max(0, Math.min(255, Math.round(value)));
-  
-      function getProfile() {
-        if (filterId === "mono") {
-          return {
-            contrast: 1.55 + 0.35 * strength,
-            saturation: 0,
-            brightness: 0.96 - 0.06 * strength,
-            sepia: 0,
-          };
-        }
-  
-        if (filterId === "red") {
-          return {
-            contrast: 1.42 + 0.34 * strength,
-            saturation: 1.14 + 0.24 * strength,
-            brightness: 0.96 - 0.04 * strength,
-            sepia: 0.16 + 0.16 * strength,
-          };
-        }
-  
-        if (filterId === "levelup" || filterId === "gold") {
-          return {
-            contrast: 1.4 + 0.32 * strength,
-            saturation: 1.1 + 0.2 * strength,
-            brightness: 0.96 - 0.04 * strength,
-            sepia: 0.24 + 0.22 * strength,
-          };
-        }
-  
-        if (filterId === "blue") {
-          return {
-            contrast: 1.36 + 0.3 * strength,
-            saturation: 1.14 + 0.22 * strength,
-            brightness: 0.96 - 0.04 * strength,
-            sepia: 0.04,
-          };
-        }
-  
-        if (filterId === "dark") {
-          return {
-            contrast: 1.46 + 0.36 * strength,
-            saturation: 0.92 - 0.08 * strength,
-            brightness: 0.88 - 0.08 * strength,
-            sepia: 0.02,
-          };
-        }
-  
-        if (filterId === "chrome") {
-          return {
-            contrast: 1.42 + 0.34 * strength,
-            saturation: 1.02 + 0.12 * strength,
-            brightness: 1.02 + 0.02 * strength,
-            sepia: 0.02,
-          };
-        }
-  
-        if (filterId === "future") {
-          return {
-            contrast: 1.4 + 0.34 * strength,
-            saturation: 1.24 + 0.32 * strength,
-            brightness: 0.98 - 0.03 * strength,
-            sepia: 0.02,
-          };
-        }
-  
-        if (filterId === "vintage") {
-          return {
-            contrast: 1.36 + 0.32 * strength,
-            saturation: 1.0 + 0.08 * strength,
-            brightness: 0.94 - 0.05 * strength,
-            sepia: 0.36 + 0.26 * strength,
-          };
-        }
-  
-        return {
-          contrast: 1.36 + 0.3 * strength,
-          saturation: 1.08 + 0.18 * strength,
-          brightness: 0.96 - 0.04 * strength,
-          sepia: 0.1 + 0.12 * strength,
-        };
-      }
-  
-      const profile = getProfile();
-  
-      for (let i = 0; i < data.length; i += 4) {
-        let r = data[i];
-        let g = data[i + 1];
-        let b = data[i + 2];
-  
-        r *= profile.brightness;
-        g *= profile.brightness;
-        b *= profile.brightness;
-  
-        r = (r - 128) * profile.contrast + 128;
-        g = (g - 128) * profile.contrast + 128;
-        b = (b - 128) * profile.contrast + 128;
-  
-        const gray = r * 0.299 + g * 0.587 + b * 0.114;
-  
-        r = gray + (r - gray) * profile.saturation;
-        g = gray + (g - gray) * profile.saturation;
-        b = gray + (b - gray) * profile.saturation;
-  
-        if (profile.sepia > 0) {
-          const sr = r * 0.393 + g * 0.769 + b * 0.189;
-          const sg = r * 0.349 + g * 0.686 + b * 0.168;
-          const sb = r * 0.272 + g * 0.534 + b * 0.131;
-  
-          r = r * (1 - profile.sepia) + sr * profile.sepia;
-          g = g * (1 - profile.sepia) + sg * profile.sepia;
-          b = b * (1 - profile.sepia) + sb * profile.sepia;
-        }
-  
-        if (filterId === "red") {
-          r *= 1.03;
-          b *= 0.97;
-        }
-  
-        if (filterId === "levelup" || filterId === "gold") {
-          r *= 1.03;
-          b *= 0.94;
-        }
-  
-        if (filterId === "blue") {
-          r *= 0.95;
-          b *= 1.08;
-        }
-  
-        data[i] = clamp(r);
-        data[i + 1] = clamp(g);
-        data[i + 2] = clamp(b);
-      }
-  
-      targetCtx.putImageData(imageData, x, y);
-    }
-  
     drawPosterBackground(ctx, width, height, theme);
-  
+
     let hasPosterPhoto = false;
-  
+
     const candidateImageSources = [];
-  
+
     if (exportCardMediaType === "image" && exportCardMedia) {
       candidateImageSources.push(exportCardMedia);
     }
-  
+
     const previewImage = trainingCardRef.current?.querySelector('img[alt="훈련 카드"]');
-  
+
     if (previewImage?.src && !candidateImageSources.includes(previewImage.src)) {
       candidateImageSources.push(previewImage.src);
     }
-  
+
     for (const imageSrc of candidateImageSources) {
       try {
         const image = await loadCanvasImage(imageSrc);
-        const posterFilterIntensity = Math.min(100, exportFilterIntensity + 35);
-  
+        const canUseCanvasFilter = "filter" in ctx;
+
         ctx.save();
-  
-        if ("filter" in ctx) {
-          ctx.filter = getImageFilter(exportFilterId, posterFilterIntensity);
+
+        if (canUseCanvasFilter) {
+          ctx.filter = getImageFilter(exportFilterId, exportFilterIntensity);
         }
-  
+
         drawCoverImage(
           ctx,
           image,
@@ -1183,21 +1042,21 @@ export default function ProfilePage({ scrollTarget }) {
           height,
           Math.max(exportPhotoScale, 100)
         );
-  
+
         ctx.filter = "none";
-  
-        if (isMobileCardExportDevice()) {
-          boostPosterSavedPhotoPixels(
+
+        if (!canUseCanvasFilter) {
+          applyPixelImageFilter(
             ctx,
             0,
             0,
             width,
             height,
             exportFilterId,
-            posterFilterIntensity
+            exportFilterIntensity
           );
         }
-  
+
         ctx.restore();
         hasPosterPhoto = true;
         break;
@@ -1466,158 +1325,6 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
   }
 
-  function isMobileCardExportDevice() {
-    if (typeof window === "undefined") return false;
-  
-    return (
-      isIOSLikeDevice() ||
-      window.innerWidth <= 820 ||
-      navigator.maxTouchPoints > 1
-    );
-  }
-  
-  function clampPixel(value) {
-    return Math.max(0, Math.min(255, Math.round(value)));
-  }
-  
-  function applyMobilePixelFilter(ctx, x, y, width, height, filterId, intensity = 75) {
-  if (!isMobileCardExportDevice()) return;
-
-  const strength = Math.max(0, Math.min(1, intensity / 100));
-
-  if (!strength) return;
-
-  let imageData;
-
-  try {
-    imageData = ctx.getImageData(x, y, width, height);
-  } catch (error) {
-    console.warn("모바일 픽셀 필터 적용 실패:", error);
-    return;
-  }
-
-  const data = imageData.data;
-
-  function getFilterProfile() {
-    if (filterId === "mono") {
-      return {
-        contrast: 1.45 + 0.28 * strength,
-        saturation: 0,
-        brightness: 0.97 - 0.04 * strength,
-        sepia: 0,
-      };
-    }
-
-    if (filterId === "red") {
-      return {
-        contrast: 1.28 + 0.26 * strength,
-        saturation: 1.08 + 0.18 * strength,
-        brightness: 0.97 - 0.03 * strength,
-        sepia: 0.12 + 0.12 * strength,
-      };
-    }
-
-    if (filterId === "levelup" || filterId === "gold") {
-      return {
-        contrast: 1.26 + 0.24 * strength,
-        saturation: 1.06 + 0.16 * strength,
-        brightness: 0.97 - 0.03 * strength,
-        sepia: 0.18 + 0.16 * strength,
-      };
-    }
-
-    if (filterId === "blue") {
-      return {
-        contrast: 1.24 + 0.24 * strength,
-        saturation: 1.08 + 0.18 * strength,
-        brightness: 0.97 - 0.03 * strength,
-        sepia: 0.04 + 0.04 * strength,
-      };
-    }
-
-    if (filterId === "dark") {
-      return {
-        contrast: 1.3 + 0.26 * strength,
-        saturation: 0.94 - 0.08 * strength,
-        brightness: 0.9 - 0.06 * strength,
-        sepia: 0.02,
-      };
-    }
-
-    if (filterId === "chrome") {
-      return {
-        contrast: 1.28 + 0.24 * strength,
-        saturation: 1.02 + 0.1 * strength,
-        brightness: 1.01 + 0.02 * strength,
-        sepia: 0.02,
-      };
-    }
-
-    if (filterId === "future") {
-      return {
-        contrast: 1.26 + 0.24 * strength,
-        saturation: 1.18 + 0.22 * strength,
-        brightness: 0.98 - 0.02 * strength,
-        sepia: 0.02,
-      };
-    }
-
-    if (filterId === "vintage") {
-      return {
-        contrast: 1.24 + 0.24 * strength,
-        saturation: 1.0 + 0.08 * strength,
-        brightness: 0.95 - 0.04 * strength,
-        sepia: 0.28 + 0.18 * strength,
-      };
-    }
-
-    return {
-      contrast: 1.24 + 0.22 * strength,
-      saturation: 1.06 + 0.14 * strength,
-      brightness: 0.97 - 0.03 * strength,
-      sepia: 0.08 + 0.1 * strength,
-    };
-  }
-
-  const profile = getFilterProfile();
-
-  for (let i = 0; i < data.length; i += 4) {
-    let r = data[i];
-    let g = data[i + 1];
-    let b = data[i + 2];
-
-    r *= profile.brightness;
-    g *= profile.brightness;
-    b *= profile.brightness;
-
-    r = (r - 128) * profile.contrast + 128;
-    g = (g - 128) * profile.contrast + 128;
-    b = (b - 128) * profile.contrast + 128;
-
-    const gray = r * 0.299 + g * 0.587 + b * 0.114;
-
-    r = gray + (r - gray) * profile.saturation;
-    g = gray + (g - gray) * profile.saturation;
-    b = gray + (b - gray) * profile.saturation;
-
-    if (profile.sepia > 0) {
-      const sr = r * 0.393 + g * 0.769 + b * 0.189;
-      const sg = r * 0.349 + g * 0.686 + b * 0.168;
-      const sb = r * 0.272 + g * 0.534 + b * 0.131;
-
-      r = r * (1 - profile.sepia) + sr * profile.sepia;
-      g = g * (1 - profile.sepia) + sg * profile.sepia;
-      b = b * (1 - profile.sepia) + sb * profile.sepia;
-    }
-
-    data[i] = clampPixel(r);
-    data[i + 1] = clampPixel(g);
-    data[i + 2] = clampPixel(b);
-  }
-
-  ctx.putImageData(imageData, x, y);
-}
-
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",
@@ -1627,7 +1334,7 @@ export default function ProfilePage({ scrollTarget }) {
       topInset = 0,
       bottomInset = 0,
     } = options;
-    
+
     const availableHeight = height - topInset - bottomInset;
     const exportSnapshot = posterExportRef.current || {};
     const exportCardMedia = exportSnapshot.cardMedia || cardMedia;
@@ -1646,9 +1353,11 @@ export default function ProfilePage({ scrollTarget }) {
     for (const imageSrc of candidateImageSources) {
       try {
         const image = await loadCanvasImage(imageSrc);
+        const canUseCanvasFilter = "filter" in ctx;
+
         ctx.save();
-        
-        if ("filter" in ctx) {
+
+        if (canUseCanvasFilter) {
           ctx.filter = getImageFilter(filterId, filterIntensityValue);
         }
 
@@ -1657,11 +1366,11 @@ export default function ProfilePage({ scrollTarget }) {
         } else {
           drawCoverImage(ctx, image, 0, topInset, width, availableHeight, Math.max(scalePercent, 100));
         }
-        
+
         ctx.filter = "none";
 
-        if (isMobileCardExportDevice()) {
-          applyMobilePixelFilter(
+        if (!canUseCanvasFilter) {
+          applyPixelImageFilter(
             ctx,
             0,
             topInset,
@@ -1670,12 +1379,10 @@ export default function ProfilePage({ scrollTarget }) {
             filterId,
             filterIntensityValue
           );
-        } 
-
+        }
 
         ctx.restore();
         return true;
-
       } catch (error) {
         console.warn("카드 사진 캔버스 로드 실패:", error);
       }
@@ -1733,9 +1440,13 @@ export default function ProfilePage({ scrollTarget }) {
         if (!isSocialExport) {
           drawPosterOverlay(ctx, width, height, theme);
         }
-        
+
         if (isSocialExport) {
-          drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto);
+          ctx.save();
+          ctx.globalAlpha = 0.74;
+          drawPosterOverlay(ctx, width, height, theme);
+          ctx.restore();
+          drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto, true);
         }
         
     if (!isSocialExport) {
@@ -1805,8 +1516,8 @@ export default function ProfilePage({ scrollTarget }) {
       const metricGap = 34;
       const metricX = 70;
       const metrics = [
-        ["TIME", `${cardTotalMinutes || 0}min`],
-        ["LOGS", `${selectedLogs.length}`],
+        ["WEEK", `${profileStats.weeklyRounds}R`],
+        ["TOTAL", `${profileStats.totalRounds}R`],
         ["FIGHTER", profile.nickname || "나"],
       ];
 
@@ -1941,8 +1652,8 @@ export default function ProfilePage({ scrollTarget }) {
       const statH = 178;
       const statGap = 34;
       const statItems = [
-        ["🥊", `${profileStats.totalRounds}`, "ROUNDS", "COMPLETED"],
-        ["⚡", `+${levelUpXpToday}`, "XP", "TODAY"],
+        ["🥊", `${profileStats.weeklyRounds}`, "ROUNDS", "THIS WEEK"],
+        ["🏆", `${profileStats.totalRounds}`, "ROUNDS", "TOTAL"],
         ["🔥", `${levelUpStreakDays || 1}`, "STREAK", "DAYS"],
       ];
 
@@ -2066,16 +1777,17 @@ export default function ProfilePage({ scrollTarget }) {
     return new File([blob], filename, { type: "image/png" });
   }
 
-  async function buildCardExportDataUrl() {
+  async function buildCardExportDataUrl(styleOverride = null) {
+    const exportStyle = styleOverride || cardStyle;
     const filterIdForExport =
       posterExportRef.current.selectedFilter ||
       selectedFilterRef.current ||
       selectedFilter ||
       "levelup";
-  
-      return cardStyle === "poster"
+
+    return exportStyle === "poster"
       ? await createPosterCanvasDataUrl(filterIdForExport)
-      : await createTrainingCardCanvasDataUrl(cardStyle);
+      : await createTrainingCardCanvasDataUrl(exportStyle);
   }
 
   async function prepareCardExport({ force = false } = {}) {
@@ -2179,6 +1891,27 @@ export default function ProfilePage({ scrollTarget }) {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  }
+
+  async function handleSaveStoryImage() {
+    if (cardMediaType === "video") {
+      alert("영상 카드는 스토리 저장을 지원하지 않습니다. 사진을 사용해 주세요.");
+      return;
+    }
+
+    setIsSavingImage(true);
+
+    try {
+      const dataUrl = await buildCardExportDataUrl("social");
+      const filename = `boxing-story-${Date.now()}.png`;
+      const file = await dataUrlToPngFile(dataUrl, filename);
+      shareOrDownloadPreparedExport({ dataUrl, file, filename });
+    } catch (error) {
+      console.error(error);
+      alert("스토리 이미지를 만들지 못했습니다. 사진과 운동 선택을 확인해 주세요.");
+    } finally {
+      setIsSavingImage(false);
+    }
   }
 
   function handleSaveCardImage() {
@@ -2289,11 +2022,11 @@ ${logLines}${commentText}${mediaText}`;
   }, [currentExportKey, cardMediaReady, cardMediaType, cardMedia]);
 
   const cardPreviewHeight =
-  cardStyle === "poster"
-    ? "620px"
-    : cardStyle === "social"
-    ? "520px"
-    : "560px";
+    cardStyle === "poster"
+      ? "620px"
+      : cardStyle === "social"
+        ? undefined
+        : "560px";
 
   const posterPreviewTheme = getPosterCanvasTheme(selectedFilter);
   const posterPreviewAccent = posterPreviewTheme.accent;
@@ -2468,7 +2201,12 @@ ${logLines}${commentText}${mediaText}`;
           </div>
         ) : (
           <>
-            <div style={styles.selectorSection}>
+              <p style={styles.cardMakerHelp}>
+                카드 하단에 이번 주 {profileStats.weeklyRounds}R · 누적{" "}
+                {profileStats.totalRounds}R가 표시됩니다.
+              </p>
+
+              <div style={styles.selectorSection}>
               <p style={styles.cardMakerLabel}>1. 운동 여러 개 선택</p>
               <p style={styles.cardMakerHelp}>
                 카드에 넣고 싶은 운동을 여러 개 선택해. 마지막 1개는 해제되지
@@ -2497,7 +2235,7 @@ ${logLines}${commentText}${mediaText}`;
                         <strong style={styles.logSelectTitle}>{log.type}</strong>
                         <p style={styles.logSelectMeta}>
                           {getRounds(log)}R · {log.minutes || log.duration}min ·{" "}
-                          {log.date}
+                          {log.conditionLabel || "보통"} · {log.date}
                         </p>
                       </div>
                     </button>
@@ -2884,7 +2622,9 @@ ${logLines}${commentText}${mediaText}`;
               <div
                 style={{
                   ...styles.trainingCardPhotoArea,
-                  minHeight: cardPreviewHeight,
+                  ...(cardStyle === "social"
+                    ? { minHeight: 0, aspectRatio: "9 / 16" }
+                    : { minHeight: cardPreviewHeight }),
                 }}
               >
                 {cardMediaType === "image" && cardMedia && (
@@ -2941,15 +2681,14 @@ ${logLines}${commentText}${mediaText}`;
                 <div
                   style={{
                     ...styles.trainingCardOverlay,
-                    background:
-                      cardStyle === "social"
-                        ? "linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.01) 38%, rgba(0, 0, 0, 0.24))"
-                        : "linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.03) 40%, rgba(0, 0, 0, 0.36))",
+                    background: getCardPreviewOverlay(
+                      cardStyle,
+                      selectedFilter,
+                      filterIntensity
+                    ),
                     mixBlendMode: "normal",
                   }}
                 />
-
-                {cardStyle === "poster" && <div style={styles.posterVignette} />}
 
                 {cardStyle === "basic" ? (
                     <div
@@ -3001,16 +2740,16 @@ ${logLines}${commentText}${mediaText}`;
                       <div style={styles.levelUpStatsRow}>
                         <div style={styles.levelUpStatBox}>
                         <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>🥊</span>
-                          <strong>{profileStats.totalRounds}</strong>
+                          <strong>{profileStats.weeklyRounds}</strong>
                           <span>ROUNDS</span>
-                          <small>COMPLETED</small>
+                          <small>THIS WEEK</small>
                         </div>
 
                         <div style={styles.levelUpStatBox}>
-                        <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>⚡</span>
-                          <strong>+{levelUpXpToday}</strong>
-                          <span>XP</span>
-                          <small>TODAY</small>
+                        <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>🏆</span>
+                          <strong>{profileStats.totalRounds}</strong>
+                          <span>ROUNDS</span>
+                          <small>TOTAL</small>
                         </div>
 
                         <div style={styles.levelUpStatBox}>
@@ -3171,31 +2910,24 @@ ${logLines}${commentText}${mediaText}`;
                   <div
                     style={{
                       ...styles.socialCardTextLayer,
-                      minHeight: cardPreviewHeight,
+                      ...(cardStyle === "social"
+                        ? { position: "absolute", inset: 0, minHeight: 0 }
+                        : { minHeight: cardPreviewHeight }),
                     }}
                   >
-                    <div
-                      style={{
-                        ...styles.socialCardTop,
-                        margin: "-24px -24px 0",
-                        padding: "24px 24px 22px",
-                        background: getCardBackground(selectedFilter),
-                      }}
-                    >
-                      <span style={styles.socialCardKicker}>
+                    <div style={styles.socialCardTop}>
+                      <span
+                        style={{
+                          ...styles.socialCardKicker,
+                          color: posterPreviewAccent,
+                        }}
+                      >
                         BOXING TRAINING
                       </span>
                       <strong>{profileStats.levelLabel}</strong>
                     </div>
 
-                    <div
-                      style={{
-                        ...styles.socialCardBottom,
-                        margin: "0 -24px -24px",
-                        padding: "18px 24px 22px",
-                        background: "rgba(0, 0, 0, 0.96)",
-                      }}
-                    >
+                    <div style={styles.socialCardBottom}>
                       <div>
                         <p style={styles.socialTitle}>{primaryCardTitle}</p>
 
@@ -3206,23 +2938,23 @@ ${logLines}${commentText}${mediaText}`;
 
                       <div style={styles.socialMetricRow}>
                         <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>TIME</span>
+                          <span style={styles.socialMetricLabel}>WEEK</span>
                           <strong style={styles.socialMetricValue}>
-                            {cardTotalMinutes || 0}min
+                            {profileStats.weeklyRounds}R
                           </strong>
                         </div>
 
                         <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>LOGS</span>
+                          <span style={styles.socialMetricLabel}>TOTAL</span>
                           <strong style={styles.socialMetricValue}>
-                            {selectedLogs.length}
+                            {profileStats.totalRounds}R
                           </strong>
                         </div>
 
                         <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>FIGHTER</span>
+                          <span style={styles.socialMetricLabel}>STREAK</span>
                           <strong style={styles.socialMetricValue}>
-                            {profile.nickname || "나"}
+                            {levelUpStreakDays || 1}d
                           </strong>
                         </div>
                       </div>
@@ -3231,6 +2963,20 @@ ${logLines}${commentText}${mediaText}`;
                 )}
               </div>
             </div>
+
+            <button
+              type="button"
+              style={{
+                ...styles.saveImageButton,
+                ...(isSaveCardDisabled ? styles.disabledSaveButton : {}),
+              }}
+              onClick={isSaveCardDisabled ? undefined : handleSaveStoryImage}
+              disabled={isSaveCardDisabled || isSavingImage}
+            >
+              {isSavingImage
+                ? "스토리 저장 중..."
+                : "인스타 스토리로 저장 (9:16)"}
+            </button>
 
             <button
               type="button"
@@ -3261,8 +3007,8 @@ ${logLines}${commentText}${mediaText}`;
             </button>
 
             <p style={styles.shareHint}>
-              사진 카드는 저장해서 인스타그램이나 카카오톡에 공유할 수 있어.
-              영상 카드는 지금은 미리보기만 가능해.
+              STORY 스타일은 1080×1920 인스타 스토리 비율입니다. 위 버튼으로
+              바로 저장하거나, 스타일에서 STORY를 선택해 미리볼 수 있어요.
             </p>
 
             {exportPreview && (
@@ -3356,7 +3102,8 @@ ${logLines}${commentText}${mediaText}`;
 
                       <p style={styles.featuredLogMeta}>
                         {log.minutes || log.duration}분 · {rounds}R ·{" "}
-                        {log.difficultyLabel || "보통"} · {log.date}
+                        {log.difficultyLabel || "보통"} ·{" "}
+                        {log.conditionLabel || "보통"} · {log.date}
                       </p>
                     </div>
 

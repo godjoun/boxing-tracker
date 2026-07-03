@@ -3,7 +3,7 @@ import { useTraining } from "../store/TrainingContext";
 import { buildTrainingBreakdown } from "../utils/trainingBreakdown";
 
 const HOME_FEATURES_KEY = "fitness-league-home-features";
-const DEFAULT_FEATURES = ["fighter-card", "growth", "training-log"];
+const DEFAULT_FEATURES = ["fighter-card", "growth", "weekly", "training-log"];
 
 const FEATURES = [
   {
@@ -15,20 +15,20 @@ const FEATURES = [
     route: "fighter-card",
   },
   {
-    id: "achievements",
-    icon: "★",
-    eyebrow: "TITLES",
-    title: "칭호 / 업적",
-    description: "훈련으로 새로운 파이터 칭호를 해금합니다.",
-    pending: true,
-  },
-  {
     id: "growth",
     icon: "↗",
     eyebrow: "ANALYSIS",
     title: "성장 분석",
-    description: "누적 훈련과 라운드의 흐름을 확인하세요.",
+    description: "라운드와 훈련 볼륨을 확인하세요.",
     route: "stats",
+  },
+  {
+    id: "weekly",
+    icon: "W",
+    eyebrow: "WEEKLY",
+    title: "주간 리포트",
+    description: "이번 주 훈련 요약과 하이라이트.",
+    route: "weekly",
   },
   {
     id: "training-log",
@@ -37,22 +37,6 @@ const FEATURES = [
     title: "훈련 로그",
     description: "지금까지 쌓아온 모든 훈련을 돌아보세요.",
     route: "log",
-  },
-  {
-    id: "dojo-breaker",
-    icon: "🥊",
-    eyebrow: "DOJO BREAKER",
-    title: "도장깨기",
-    description: "내 주변 복싱장을 찾아 지도로 연결합니다.",
-    route: "gym",
-  },
-  {
-    id: "settings",
-    icon: "⚙",
-    eyebrow: "SETTINGS",
-    title: "설정",
-    description: "나에게 맞는 훈련 환경을 설정합니다.",
-    pending: true,
   },
 ];
 

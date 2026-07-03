@@ -297,7 +297,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
     const totalExpBefore = logs.reduce((sum, log) => sum + getLogExp(log), 0);
     const savedLog = addLog({
-      type: routineTitle,
+      type: `${totalRounds}R 라운드 훈련`,
       minutes: totalWorkMinutes,
       duration: totalWorkMinutes,
       rounds: totalRounds,
@@ -305,12 +305,12 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       completedRounds: totalRounds,
       difficulty: "normal",
       source: "timer",
-      memo: `${totalRounds}라운드 완료 / 운동 ${formatDurationLabel(
+      memo: `${routineTitle} · ${totalRounds}라운드 완료 / 운동 ${formatDurationLabel(
         workSecondsSetting
       )} / 휴식 ${formatDurationLabel(
         restSecondsSetting
       )} / 준비 ${PREP_SECONDS}초`,
-      publicComment: `${totalRounds}라운드 완료. 오늘도 끝까지 버텼다.`,
+      publicComment: `${totalRounds}R 완료. 오늘도 끝까지 버텼다.`,
     });
 
     const gainedExp = getLogExp(savedLog);

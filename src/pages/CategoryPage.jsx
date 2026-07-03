@@ -22,14 +22,6 @@ const MENU_GROUPS = [
         route: "log",
         accent: "orange",
       },
-      {
-        id: "routine",
-        icon: "↻",
-        title: "직접 루틴",
-        description: "루틴 설계",
-        pending: true,
-        accent: "slate",
-      },
     ],
   },
   {
@@ -41,25 +33,17 @@ const MENU_GROUPS = [
         id: "stats",
         icon: "↗",
         title: "성장 분석",
-        description: "훈련 데이터",
+        description: "라운드 · 볼륨",
         route: "stats",
         accent: "red",
-      },
-      {
-        id: "achievements",
-        icon: "★",
-        title: "칭호 / 업적",
-        description: "해금 기록",
-        pending: true,
-        accent: "gold",
       },
       {
         id: "weekly",
         icon: "W",
         title: "주간 리포트",
         description: "이번 주 요약",
-        pending: true,
-        accent: "slate",
+        route: "weekly",
+        accent: "orange",
       },
     ],
   },
@@ -84,44 +68,20 @@ const MENU_GROUPS = [
         route: "profile",
         accent: "red",
       },
-      {
-        id: "profile-edit",
-        icon: "✎",
-        title: "프로필 편집",
-        description: "정보 변경",
-        route: "profile",
-        accent: "slate",
-      },
     ],
   },
   {
     id: "explore",
-    eyebrow: "EXPLORE & SETTINGS",
-    title: "탐색 / 설정",
+    eyebrow: "EXPLORE",
+    title: "탐색",
     items: [
       {
         id: "dojo-breaker",
         icon: "🥊",
         title: "도장깨기",
-        description: "근처 복싱장",
+        description: "스파링 · 체육관",
         route: "gym",
         accent: "red",
-      },
-      {
-        id: "sound",
-        icon: "♪",
-        title: "알림음 선택",
-        description: "타이머 사운드",
-        pending: true,
-        accent: "orange",
-      },
-      {
-        id: "settings",
-        icon: "⚙",
-        title: "설정",
-        description: "앱 환경",
-        pending: true,
-        accent: "slate",
       },
     ],
   },
@@ -132,15 +92,7 @@ export default function CategoryPage({
   onNavigate,
   onOpenCardMaker,
 }) {
-  const [notice, setNotice] = useState("");
-
   function selectItem(item) {
-    if (item.pending) {
-      setNotice(`${item.title} 기능은 준비 중입니다.`);
-      window.setTimeout(() => setNotice(""), 1800);
-      return;
-    }
-
     if (item.action === "card-maker") {
       onOpenCardMaker?.();
       return;
@@ -188,23 +140,13 @@ export default function CategoryPage({
                   </span>
                   <strong>{item.title}</strong>
                   <small>{item.description}</small>
-                  {item.pending ? (
-                    <em>준비 중</em>
-                  ) : (
-                    <i aria-hidden="true">→</i>
-                  )}
+                  <i aria-hidden="true">→</i>
                 </button>
               ))}
             </div>
           </section>
         ))}
       </div>
-
-      {notice && (
-        <div className="category-notice" role="status">
-          {notice}
-        </div>
-      )}
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
+import { calculateLogScore, CONDITION_OPTIONS } from "../utils/trainingStats";
 
 const CUSTOM_EXERCISE_VALUE = "직접 입력";
 
@@ -33,16 +34,13 @@ function getTodayString() {
   return `${year}-${month}-${date}`;
 }
 
-function calculatePreviewScore(minutes, difficulty) {
-  const multipliers = {
-    easy: 0.8,
-    normal: 1,
-    hard: 1.2,
-    crazy: 1.5,
-  };
-
-  const multiplier = multipliers[difficulty] || 1;
-  return Math.round(Number(minutes || 0) * multiplier);
+function calculatePreviewScore(minutes, difficulty, rounds = 0, type = "") {
+  return calculateLogScore({
+    minutes,
+    difficulty,
+    rounds,
+    type,
+  });
 }
 
 function getRounds(log) {
@@ -91,6 +89,7 @@ function createEmptyForm() {
     rounds: "",
     date: getTodayString(),
     difficulty: "normal",
+    condition: "normal",
     memo: "",
     publicComment: "",
   };
@@ -180,7 +179,12 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
   const safeWeeklyLogs = Array.isArray(weeklyLogs) ? weeklyLogs : logs;
 
-  const previewScore = calculatePreviewScore(form.minutes, form.difficulty);
+  const previewScore = calculatePreviewScore(
+    form.minutes,
+    form.difficulty,
+    form.rounds,
+    form.type === CUSTOM_EXERCISE_VALUE ? form.customType : form.type
+  );
   const progressPercent = getProgressPercent(weeklyScore, currentTier);
   const progressText = getProgressText({
     weeklyScore,
@@ -251,7 +255,12 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       return;
     }
 
-    const addedScore = calculatePreviewScore(form.minutes, form.difficulty);
+    const addedScore = calculatePreviewScore(
+      form.minutes,
+      form.difficulty,
+      form.rounds,
+      finalExerciseName
+    );
 
     addLog({
       type: finalExerciseName,
@@ -262,6 +271,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       completedRounds: Number(form.rounds || 0),
       date: form.date || getTodayString(),
       difficulty: form.difficulty,
+      condition: form.condition,
       memo: form.memo,
       publicComment: form.publicComment,
       source: "manual",
@@ -289,6 +299,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       rounds: String(getRounds(log) || ""),
       date: log.date || getTodayString(),
       difficulty: log.difficulty || "normal",
+      condition: log.condition || "normal",
       memo: log.memo || "",
       publicComment: log.publicComment || "",
     });
@@ -321,6 +332,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       completedRounds: Number(editForm.rounds || 0),
       date: editForm.date || getTodayString(),
       difficulty: editForm.difficulty,
+      condition: editForm.condition,
       memo: editForm.memo,
       publicComment: editForm.publicComment,
     });
@@ -520,7 +532,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
               </div>
 
               <div style={styles.formGroup}>
-                <label style={styles.label}>라운드 수</label>
+                <label style={styles.label}>라운드 수 (R)</label>
 
                 <input
                   type="number"
@@ -565,6 +577,22 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
             </div>
 
             <div style={styles.formGroup}>
+              <label style={styles.label}>오늘 컨디션</label>
+
+              <div style={styles.grid2}>
+                {CONDITION_OPTIONS.map((option) => (
+                  <OptionButton
+                    key={option.id}
+                    isActive={form.condition === option.id}
+                    title={`${option.emoji} ${option.label}`}
+                    description="훈련 당시 몸 상태"
+                    onClick={() => updateFormField("condition", option.id)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
               <label style={styles.label}>내 메모</label>
 
               <input
@@ -596,7 +624,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
               <p style={styles.previewScore}>+{previewScore}점</p>
 
               <p style={styles.smallMuted}>
-                분 단위로 계산 · 하루 최대 {dailyScoreLimit}점까지 반영
+                라운드·분·난이도 기준 · 하루 최대 {dailyScoreLimit}점까지 반영
               </p>
             </div>
 
@@ -657,7 +685,8 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
                             <p style={styles.logMeta}>
                               {log.minutes || log.duration}분 · {rounds}R ·{" "}
-                              {log.difficultyLabel || "보통"} · {log.date}
+                              {log.difficultyLabel || "보통"} ·{" "}
+                              {log.conditionLabel || "보통"} · {log.date}
                             </p>
                           </div>
 
@@ -770,7 +799,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                           </div>
 
                           <div style={styles.formGroup}>
-                            <label style={styles.label}>라운드 수</label>
+                            <label style={styles.label}>라운드 수 (R)</label>
 
                             <input
                               type="number"
@@ -809,6 +838,24 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                                 description={option.description}
                                 onClick={() =>
                                   updateEditField("difficulty", option.id)
+                                }
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div style={styles.formGroup}>
+                          <label style={styles.label}>오늘 컨디션</label>
+
+                          <div style={styles.grid2}>
+                            {CONDITION_OPTIONS.map((option) => (
+                              <OptionButton
+                                key={option.id}
+                                isActive={editForm.condition === option.id}
+                                title={`${option.emoji} ${option.label}`}
+                                description="훈련 당시 몸 상태"
+                                onClick={() =>
+                                  updateEditField("condition", option.id)
                                 }
                               />
                             ))}

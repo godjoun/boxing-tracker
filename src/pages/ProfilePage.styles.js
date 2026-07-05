@@ -38,6 +38,13 @@ export const styles = {
     letterSpacing: "-0.05em",
   },
 
+  profileSetupHint: {
+    margin: "10px 0 0",
+    color: "rgba(255, 255, 255, 0.52)",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
+
   tierBadge: {
     flexShrink: 0,
     width: "92px",
@@ -169,45 +176,194 @@ export const styles = {
     lineHeight: 1.5,
   },
 
-  profileEditInsideBox: {
-    marginTop: "18px",
-    paddingTop: "18px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+  profileSpecSummary: {
+    margin: "10px 0 0",
+    color: "rgba(255, 255, 255, 0.55)",
+    fontSize: "13px",
+    lineHeight: 1.5,
   },
 
-  label: {
+  profileSpecChips: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "12px",
+  },
+
+  profileSpecChip: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "7px 11px",
+    borderRadius: "999px",
+    background: "rgba(255, 255, 255, 0.06)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    color: "rgba(255, 255, 255, 0.78)",
+    fontSize: "12px",
+    fontWeight: 700,
+  },
+
+  profileSpecChipLabel: {
+    color: "rgba(255, 255, 255, 0.45)",
+    fontSize: "11px",
+    fontWeight: 800,
+  },
+
+  profileEditPanel: {
+    marginTop: "16px",
+    borderRadius: "22px",
+    background: "rgba(255, 255, 255, 0.04)",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    overflow: "hidden",
+  },
+
+  profileEditToggle: {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    padding: "16px 18px",
+    border: "none",
+    background: "transparent",
+    color: "#ffffff",
+    cursor: "pointer",
+    textAlign: "left",
+  },
+
+  profileEditToggleCopy: {
+    minWidth: 0,
+    flex: 1,
+  },
+
+  profileEditToggleTitle: {
+    margin: 0,
+    fontSize: "14px",
+    fontWeight: 900,
+  },
+
+  profileEditToggleHint: {
     display: "block",
-    marginBottom: "14px",
+    marginTop: "5px",
+    color: "rgba(255, 255, 255, 0.48)",
+    fontSize: "12px",
+    lineHeight: 1.45,
+  },
+
+  profileEditToggleAction: {
+    flexShrink: 0,
+    color: "#ff7b72",
+    fontSize: "12px",
+    fontWeight: 800,
+    whiteSpace: "nowrap",
+  },
+
+  profileEditContent: {
+    padding: "0 18px 18px",
+    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+  },
+
+  profileEditSection: {
+    paddingTop: "18px",
+  },
+
+  profileEditSectionTitle: {
+    margin: "0 0 14px",
+    color: "#ff5555",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: "0.14em",
+  },
+
+  bodySpecsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "12px",
+  },
+
+  fieldLabel: {
+    display: "block",
+    marginBottom: "12px",
+    color: "rgba(255, 255, 255, 0.92)",
+    fontSize: "13px",
+    fontWeight: 800,
+  },
+
+  fieldHint: {
+    display: "block",
+    marginTop: "6px",
+    color: "rgba(255, 255, 255, 0.42)",
+    fontSize: "11px",
+    fontWeight: 600,
+  },
+
+  profileSaveFooter: {
+    marginTop: "18px",
+    paddingTop: "16px",
+    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+  },
+
+  profileSaveButton: {
+    width: "100%",
+    minHeight: "48px",
+    border: "none",
+    borderRadius: "14px",
+    background: "#ef3f36",
     color: "#ffffff",
     fontSize: "14px",
     fontWeight: 900,
+    cursor: "pointer",
+    boxShadow: "0 10px 24px rgba(239, 63, 54, 0.24)",
+  },
+
+  profileSaveError: {
+    margin: "0 0 12px",
+    color: "#ff8a80",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
+
+  sectionDividerLabel: {
+    margin: "18px 0 0",
+    color: "#ff5555",
+    fontSize: "12px",
+    fontWeight: 900,
+    letterSpacing: "0.16em",
   },
 
   input: {
     width: "100%",
     boxSizing: "border-box",
     marginTop: "8px",
-    backgroundColor: "#050505",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
     color: "#ffffff",
-    border: "1px solid #44444a",
-    borderRadius: "14px",
-    padding: "13px",
-    fontSize: "15px",
-    fontWeight: 800,
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: "12px",
+    padding: "12px 13px",
+    fontSize: "14px",
+    fontWeight: 700,
     outline: "none",
+  },
+
+  label: {
+    display: "block",
+    marginBottom: "12px",
+    color: "rgba(255, 255, 255, 0.92)",
+    fontSize: "13px",
+    fontWeight: 800,
   },
 
   textarea: {
     width: "100%",
-    minHeight: "88px",
+    minHeight: "84px",
     boxSizing: "border-box",
     marginTop: "8px",
-    backgroundColor: "#050505",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
     color: "#ffffff",
-    border: "1px solid #44444a",
-    borderRadius: "14px",
-    padding: "13px",
-    fontSize: "15px",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: "12px",
+    padding: "12px 13px",
+    fontSize: "14px",
     fontWeight: 700,
     outline: "none",
     resize: "vertical",
@@ -359,6 +515,17 @@ export const styles = {
   cardMakerHelp: {
     margin: "0 0 14px",
     color: "rgba(255, 255, 255, 0.56)",
+    fontSize: "13px",
+    lineHeight: 1.5,
+  },
+
+  cardMakerNameplateNote: {
+    margin: "0 0 16px",
+    padding: "12px 14px",
+    borderRadius: "14px",
+    border: "1px solid rgba(239, 63, 54, 0.22)",
+    background: "rgba(239, 63, 54, 0.08)",
+    color: "rgba(255, 255, 255, 0.72)",
     fontSize: "13px",
     lineHeight: 1.5,
   },

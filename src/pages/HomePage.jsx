@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { buildTrainingBreakdown } from "../utils/trainingBreakdown";
+import { getFighterProgress, getLogExp } from "../utils/fighterProgress";
+import { getTrainingStreak } from "./profilePage/profileCardUtils";
+import {
+  buildWeeklyRoundTrend,
+  getWeeklyTrendSummary,
+} from "../utils/trainingStats";
 
 const HOME_FEATURES_KEY = "fitness-league-home-features";
 const DEFAULT_FEATURES = ["fighter-card", "growth", "weekly", "training-log"];
@@ -74,18 +80,22 @@ function getRounds(log) {
   ) || 0;
 }
 
-function getExp(log) {
-  const savedScore = Number(log.score);
-  if (Number.isFinite(savedScore) && savedScore > 0) return savedScore;
-  return Math.max(0, Number(log.minutes || log.duration || 0));
+function getTierProgressText(weeklyScore, currentTier, nextTier) {
+  if (!currentTier) return "";
+
+  if (!nextTier) {
+    return "현재 최고 시즌 티어";
+  }
+
+  if (weeklyScore >= currentTier.promoteScore) {
+    return `${nextTier.name} 승급 조건 달성`;
+  }
+
+  return `${nextTier.name} 승급까지 ${currentTier.promoteScore - weeklyScore}점`;
 }
 
-function getFighterTitle(level) {
-  if (level >= 20) return "CHAMPION FIGHTER";
-  if (level >= 12) return "ELITE FIGHTER";
-  if (level >= 7) return "CONTENDER";
-  if (level >= 3) return "AMATEUR FIGHTER";
-  return "ROOKIE FIGHTER";
+function getTodayKey() {
+  return getDateKey(new Date());
 }
 
 function loadSelectedFeatures() {
@@ -123,16 +133,20 @@ export default function HomePage({
   onNavigate,
   onOpenCardMaker,
 }) {
-  const { logs = [], profile } = useTraining();
+  const { logs = [], profile, weeklyScore, currentTier, nextTier } =
+    useTraining();
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedFeatures, setSelectedFeatures] = useState(loadSelectedFeatures);
   const [isEditingDashboard, setIsEditingDashboard] = useState(false);
 
   const dashboard = useMemo(() => {
-    const totalRounds = logs.reduce((sum, log) => sum + getRounds(log), 0);
-    const totalExp = logs.reduce((sum, log) => sum + getExp(log), 0);
-    const level = Math.floor(totalExp / 100) + 1;
-    const currentExp = totalExp % 100;
+    const fighter = getFighterProgress(logs);
+    const weeklyTrend = buildWeeklyRoundTrend(logs, 4);
+    const trendSummary = getWeeklyTrendSummary(weeklyTrend);
+    const streakDays = getTrainingStreak(logs);
+    const todayKey = getTodayKey();
+    const lastLog = logs[0] || null;
+
     const trainingByDate = logs.reduce((dates, log) => {
       const key = getDateKey(log.date || log.createdAt);
       if (!key) return dates;
@@ -153,16 +167,30 @@ export default function HomePage({
     }, {});
 
     return {
-      totalRounds,
-      totalExp,
-      level,
-      currentExp,
-      expToNext: 100 - currentExp,
-      fighterTitle: getFighterTitle(level),
+      totalRounds: fighter.totalRounds,
+      totalExp: fighter.totalExp,
+      weeklyExp: fighter.weeklyExp,
+      level: fighter.level,
+      currentExp: fighter.currentLevelExp,
+      progressPercent: fighter.progressPercent,
+      expToNext: fighter.xpToNextLevel,
+      weeklyRounds: fighter.weeklyRounds,
+      fighterTitle: fighter.fighterTitle,
+      weeklyTrend,
+      trendSummary,
+      streakDays,
+      trainedToday: Boolean(trainingByDate[todayKey]),
+      lastLog,
+      lastLogExp: lastLog ? getLogExp(lastLog) : 0,
+      tierProgressText: getTierProgressText(
+        weeklyScore,
+        currentTier,
+        nextTier
+      ),
       trainingByDate,
       monthDays: buildMonthDays(),
     };
-  }, [logs]);
+  }, [logs, weeklyScore, currentTier, nextTier]);
 
   const selectedDayTraining = selectedDate
     ? dashboard.trainingByDate[selectedDate]
@@ -212,62 +240,128 @@ export default function HomePage({
 
   return (
     <main className="home-page">
-      <header className="fighter-header">
-        <div>
-          <p className="home-kicker">MY FIGHTER</p>
-          <h1>{profile?.nickname || "나의 파이터"}</h1>
-        </div>
-        <div className="fighter-level">
-          <span>TOTAL LV.</span>
-          <strong>{dashboard.level}</strong>
-          <small>{dashboard.fighterTitle}</small>
-        </div>
-      </header>
-
-      <section className="home-exp-card">
-        <div className="home-exp-top">
+      <section className="home-growth-hero">
+        <div className="home-growth-head">
           <div>
-            <p className="home-section-label">FIGHTER EXP</p>
-            <h2>오늘도 훈련하면<br />파이터가 성장합니다.</h2>
+            <p className="home-kicker">GROWTH STATUS</p>
+            <h1>{profile?.nickname || "나의 파이터"}</h1>
+            <p className="home-growth-title">{dashboard.fighterTitle}</p>
           </div>
-          <div className="home-round-total">
-            <strong>{dashboard.totalRounds}</strong>
-            <span>TOTAL ROUNDS</span>
+          <div className="home-growth-lv">
+            <span>LV</span>
+            <strong>{dashboard.level}</strong>
+            <small>{currentTier?.name || "시즌"}</small>
+          </div>
+        </div>
+
+        <div className="home-growth-highlight">
+          <div className="home-growth-main-stat">
+            <span>이번 주 라운드</span>
+            <strong>{dashboard.weeklyRounds}R</strong>
+            <em className={`home-growth-trend tone-${dashboard.trendSummary.tone}`}>
+              {dashboard.trendSummary.label}
+            </em>
+          </div>
+
+          <div className="home-growth-side-stats">
+            <div>
+              <span>이번 주 EXP</span>
+              <strong>{dashboard.weeklyExp}</strong>
+            </div>
+            <div>
+              <span>연속 훈련</span>
+              <strong>{dashboard.streakDays}일</strong>
+            </div>
           </div>
         </div>
 
         <div className="home-exp-meta">
           <span>LV. {dashboard.level}</span>
-          <b>{dashboard.currentExp} / 100 EXP</b>
+          <b>
+            {dashboard.currentExp} / 100 EXP · 누적 {dashboard.totalRounds}R
+          </b>
         </div>
         <div className="home-exp-bar" aria-label="현재 레벨 경험치">
-          <div style={{ width: `${dashboard.currentExp}%` }} />
+          <div style={{ width: `${dashboard.progressPercent}%` }} />
         </div>
         <p className="home-exp-copy">
           다음 레벨까지 <strong>{dashboard.expToNext} EXP</strong>
+          {dashboard.tierProgressText ? (
+            <> · {dashboard.tierProgressText}</>
+          ) : null}
         </p>
+
+        {dashboard.lastLog ? (
+          <div className="home-last-growth">
+            <div>
+              <span className="home-last-growth-label">최근 훈련</span>
+              <strong>{dashboard.lastLog.type}</strong>
+              <p>
+                {getRounds(dashboard.lastLog)}R ·{" "}
+                {dashboard.lastLog.minutes || dashboard.lastLog.duration}분 ·{" "}
+                {dashboard.lastLog.date}
+              </p>
+            </div>
+            <div className="home-last-growth-exp">
+              +{dashboard.lastLogExp} EXP
+            </div>
+          </div>
+        ) : (
+          <p className="home-growth-empty">
+            첫 훈련을 완료하면 여기에 성장 기록이 쌓입니다.
+          </p>
+        )}
       </section>
 
       <button className="home-main-button" onClick={onStartTraining}>
-        <span>오늘 훈련 시작</span>
+        <span>
+          {dashboard.trainedToday ? "오늘 훈련 이어가기" : "오늘 훈련 시작"}
+        </span>
         <b>→</b>
       </button>
 
+      {dashboard.weeklyTrend.length > 0 ? (
+        <section className="home-weekly-trend" aria-label="주간 라운드 추이">
+          <div className="home-section-heading">
+            <div>
+              <p className="home-section-label">WEEKLY GROWTH</p>
+              <h2>주간 라운드 추이</h2>
+            </div>
+            <span className="home-weekly-score">{weeklyScore}점</span>
+          </div>
+
+          <div className="home-weekly-bars">
+            {dashboard.weeklyTrend.map((week) => (
+              <div
+                className={`home-weekly-bar${week.isCurrentWeek ? " is-current" : ""}`}
+                key={week.weekKey}
+              >
+                <div className="home-weekly-bar-track">
+                  <div style={{ height: `${week.barHeightPercent}%` }} />
+                </div>
+                <strong>{week.rounds}R</strong>
+                <span>{week.shortLabel}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="fighter-overview">
         <div>
-          <span>TRAININGS</span>
-          <strong>{logs.length}</strong>
-          <small>누적 훈련</small>
+          <span>THIS WEEK</span>
+          <strong>{dashboard.weeklyRounds}R</strong>
+          <small>이번 주 라운드</small>
         </div>
         <div>
-          <span>ROUNDS</span>
-          <strong>{dashboard.totalRounds}</strong>
-          <small>완료 라운드</small>
+          <span>WEEK EXP</span>
+          <strong>{dashboard.weeklyExp}</strong>
+          <small>이번 주 경험치</small>
         </div>
         <div>
           <span>TOTAL EXP</span>
           <strong>{dashboard.totalExp}</strong>
-          <small>성장 경험치</small>
+          <small>누적 성장</small>
         </div>
       </section>
 
@@ -329,7 +423,7 @@ export default function HomePage({
             className="dashboard-empty"
             onClick={() => setIsEditingDashboard(true)}
           >
-            홈에 표시할 기능을 선택하세요 <span>＋</span>
+            홈에 표시할 기능을 선택하세요 <span>+</span>
           </button>
         ) : (
           <div className="dashboard-quick-grid">
@@ -365,7 +459,7 @@ export default function HomePage({
                   >
                     <span>{feature.icon}</span>
                     <strong>{feature.title}</strong>
-                    <i>{selected ? "✓" : "＋"}</i>
+                    <i>{selected ? "" : "+"}</i>
                   </button>
                 );
               })}

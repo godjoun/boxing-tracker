@@ -1,4 +1,5 @@
 import { LOCAL_GYMS, LOCAL_SPARRING_PARTNERS } from "../data/localDojoData";
+import { normalizeWeightClass } from "../data/proBoxingWeightClasses";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "";
 
@@ -62,8 +63,8 @@ function searchLocalPartners(lat, lon, filter = {}, radiusKm = 15) {
   if (filter.weightClass && filter.weightClass !== "전체") {
     partners = partners.filter(
       (partner) =>
-        partner.weightClass === filter.weightClass ||
-        partner.weightClass === "상관없음"
+        normalizeWeightClass(partner.weightClass) === filter.weightClass ||
+        partner.weightClass === "상관없음",
     );
   }
 

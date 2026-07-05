@@ -1,11 +1,21 @@
 import { useMemo } from "react";
 import { useTraining } from "../store/TrainingContext";
-import { buildAllTimeStats, getLogRounds } from "../utils/trainingStats";
+import {
+  buildAllTimeStats,
+  buildWeeklyRoundTrend,
+  getLogRounds,
+  getWeeklyTrendSummary,
+} from "../utils/trainingStats";
 
 export default function StatsPage({ onGoWeekly }) {
   const { logs, weeklyScore } = useTraining();
   const stats = useMemo(() => buildAllTimeStats(logs), [logs]);
   const weekly = stats.weeklyReport;
+  const weeklyTrend = useMemo(() => buildWeeklyRoundTrend(logs, 8), [logs]);
+  const trendSummary = useMemo(
+    () => getWeeklyTrendSummary(weeklyTrend),
+    [weeklyTrend]
+  );
 
   return (
     <main className="stats-page">
@@ -43,6 +53,54 @@ export default function StatsPage({ onGoWeekly }) {
           <strong>{weeklyScore}</strong>
           <small>라운드 가중 점수</small>
         </article>
+      </section>
+
+      <section className="stats-panel">
+        <div className="home-section-heading">
+          <div>
+            <p className="home-section-label">WEEKLY TREND</p>
+            <h2>주간 라운드 추이</h2>
+          </div>
+        </div>
+
+        <p
+          className={`stats-trend-summary stats-trend-summary-${trendSummary.tone}`}
+        >
+          {trendSummary.label}
+        </p>
+
+        <div
+          className="weekly-round-chart"
+          role="img"
+          aria-label="최근 8주 라운드 추이"
+        >
+          {weeklyTrend.map((week) => (
+            <div
+              className={`weekly-round-chart-column${
+                week.isCurrentWeek ? " is-current" : ""
+              }`}
+              key={week.weekKey}
+            >
+              <strong className="weekly-round-chart-value">
+                {week.rounds > 0 ? `${week.rounds}R` : "–"}
+              </strong>
+              <div className="weekly-round-chart-bar-track">
+                <div
+                  className="weekly-round-chart-bar-fill"
+                  style={{ height: `${Math.max(week.barHeightPercent, week.rounds > 0 ? 8 : 0)}%` }}
+                />
+              </div>
+              <span className="weekly-round-chart-label">{week.shortLabel}</span>
+              {week.isCurrentWeek && (
+                <span className="weekly-round-chart-badge">NOW</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <p className="stats-note">
+          최근 8주 · 주 시작일(월) 기준 · 막대 높이 = 해당 주 완료 라운드
+        </p>
       </section>
 
       <section className="stats-panel">

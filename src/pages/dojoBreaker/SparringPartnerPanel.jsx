@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTraining } from "../../store/TrainingContext";
 import { resolveSearchLocation } from "../../utils/gymSearch";
 import {
+  buildListingFromProfile,
   clearMyListing,
   EXPERIENCE_LEVELS,
   getAvailablePartners,
@@ -23,17 +24,19 @@ const DEFAULT_FORM = {
 };
 
 export default function SparringPartnerPanel({ onGoBack }) {
-  const { profile } = useTraining();
-  const existingListing = getMyListing();
+  const { profile, userId } = useTraining();
+  const profileDefaults = buildListingFromProfile(profile, { active: false });
+  const existingListing = getMyListing(userId);
   const apiInfo = getDojoApiInfo();
 
   const [saved, setSaved] = useState(existingListing);
   const [form, setForm] = useState({
     ...DEFAULT_FORM,
+    ...profileDefaults,
     ...existingListing,
-    area: existingListing?.area || "",
-    note: existingListing?.note || "",
-    contact: existingListing?.contact || "",
+    area: existingListing?.area || profileDefaults.area || "",
+    note: existingListing?.note || profileDefaults.note || "",
+    contact: existingListing?.contact || profileDefaults.contact || "",
   });
   const [weightFilter, setWeightFilter] = useState("전체");
   const [partners, setPartners] = useState([]);
@@ -57,7 +60,8 @@ export default function SparringPartnerPanel({ onGoBack }) {
       const results = await getAvailablePartners(
         currentPosition.lat,
         currentPosition.lon,
-        { weightClass: weightFilter }
+        { weightClass: weightFilter },
+        userId,
       );
       setPartners(results);
       setStatus(results.length > 0 ? "ready" : "empty");
@@ -91,17 +95,23 @@ export default function SparringPartnerPanel({ onGoBack }) {
   }
 
   function handleSave() {
-    const listing = saveMyListing({
-      nickname: profile.nickname || "나",
-      weightClass: form.weightClass,
-      experience: form.experience,
-      style: form.style,
-      area: form.area.trim(),
-      note: form.note.trim(),
-      contact: form.contact.trim(),
-      active: true,
-      distanceKm: 0,
-    });
+    const listing = saveMyListing(
+      {
+        nickname: profile.nickname || "나",
+        weightClass: form.weightClass,
+        experience: form.experience,
+        style: form.style,
+        area: form.area.trim(),
+        note: form.note.trim(),
+        contact: form.contact.trim(),
+        heightCm: profile.heightCm || null,
+        weightKg: profile.weightKg || null,
+        reachCm: profile.reachCm || null,
+        active: true,
+        distanceKm: 0,
+      },
+      userId,
+    );
     setSaved(listing);
     if (position) {
       loadPartners({ preferGps: position.source === "gps", allowFallback: true });
@@ -113,7 +123,7 @@ export default function SparringPartnerPanel({ onGoBack }) {
     const isActive = form.active || saved?.active;
 
     if (isActive) {
-      clearMyListing();
+      clearMyListing(userId);
       setSaved(null);
       setForm((current) => ({ ...current, active: false }));
       if (position) {
@@ -123,17 +133,23 @@ export default function SparringPartnerPanel({ onGoBack }) {
       return;
     }
 
-    const listing = saveMyListing({
-      nickname: profile.nickname || "나",
-      weightClass: form.weightClass,
-      experience: form.experience,
-      style: form.style,
-      area: form.area.trim(),
-      note: form.note.trim(),
-      contact: form.contact.trim(),
-      active: true,
-      distanceKm: 0,
-    });
+    const listing = saveMyListing(
+      {
+        nickname: profile.nickname || "나",
+        weightClass: form.weightClass,
+        experience: form.experience,
+        style: form.style,
+        area: form.area.trim(),
+        note: form.note.trim(),
+        contact: form.contact.trim(),
+        heightCm: profile.heightCm || null,
+        weightKg: profile.weightKg || null,
+        reachCm: profile.reachCm || null,
+        active: true,
+        distanceKm: 0,
+      },
+      userId,
+    );
     setSaved(listing);
     setForm((current) => ({ ...current, active: true }));
     if (position) {
@@ -164,7 +180,12 @@ export default function SparringPartnerPanel({ onGoBack }) {
         </div>
 
         <p className="gym-location-note">
-          파이터명: {profile.nickname || "나"} · 데이터: {apiInfo.baseUrl}
+          파이터명: {profile.nickname || "나"}
+          {profile.heightCm && profile.weightKg
+            ? ` · ${profile.heightCm}cm / ${profile.weightKg}kg`
+            : ""}
+          {profile.reachCm ? ` · 리치 ${profile.reachCm}cm` : ""}
+          {" · "}데이터: {apiInfo.baseUrl}
         </p>
 
         <div className="sparring-form-grid">

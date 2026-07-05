@@ -14,14 +14,81 @@ import {
   isThisWeek,
   normalizeLogScores,
 } from "../utils/trainingStats";
+import { sanitizeProfileForStorage } from "../utils/privacy";
+import {
+  createBackupPayload,
+  mergeFeed,
+  mergeLogs,
+  parseBackupFileText,
+  validateBackupPayload,
+} from "../utils/dataBackup";
+import { validateBodySpecs } from "../utils/bodySpecs";
+import { syncListingFromProfile } from "../utils/sparringPartners";
+import { registerNickname } from "../api/nicknameApi";
 
 const TrainingContext = createContext(null);
 
-const STORAGE_KEY = "fitness-league-logs";
-const FEED_STORAGE_KEY = "fitness-league-feed";
-const TIER_STORAGE_KEY = "fitness-league-tier";
-const MODE_STORAGE_KEY = "fitness-league-mode";
-const PROFILE_STORAGE_KEY = "fitness-league-profile";
+export const GUEST_USER_ID = "local-user";
+
+const LEGACY_STORAGE_KEYS = {
+  logs: "fitness-league-logs",
+  feed: "fitness-league-feed",
+  tier: "fitness-league-tier",
+  mode: "fitness-league-mode",
+  profile: "fitness-league-profile",
+};
+
+function getStorageKeys(userId) {
+  if (!userId || userId === GUEST_USER_ID) {
+    return LEGACY_STORAGE_KEYS;
+  }
+
+  return {
+    logs: `fitness-league-logs-${userId}`,
+    feed: `fitness-league-feed-${userId}`,
+    tier: `fitness-league-tier-${userId}`,
+    mode: `fitness-league-mode-${userId}`,
+    profile: `fitness-league-profile-${userId}`,
+  };
+}
+
+function migrateLegacyStorage(userId) {
+  const keys = getStorageKeys(userId);
+
+  if (localStorage.getItem(keys.logs)) {
+    return;
+  }
+
+  if (!localStorage.getItem(LEGACY_STORAGE_KEYS.logs)) {
+    return;
+  }
+
+  Object.entries(LEGACY_STORAGE_KEYS).forEach(([field, legacyKey]) => {
+    const value = localStorage.getItem(legacyKey);
+
+    if (value !== null) {
+      localStorage.setItem(keys[field], value);
+    }
+  });
+}
+
+function loadUserState(userId) {
+  migrateLegacyStorage(userId);
+
+  const keys = getStorageKeys(userId);
+  const savedProfile = loadStorage(keys.profile, DEFAULT_PROFILE);
+
+  return {
+    logs: normalizeLogScores(loadStorage(keys.logs, [])),
+    feed: loadStorage(keys.feed, []),
+    profile: {
+      ...DEFAULT_PROFILE,
+      ...savedProfile,
+    },
+    tierId: localStorage.getItem(keys.tier) || "bronze",
+    mode: localStorage.getItem(keys.mode) || "solo",
+  };
+}
 
 const DAILY_SCORE_LIMIT = 120;
 
@@ -29,6 +96,15 @@ const DEFAULT_PROFILE = {
   nickname: "나",
   bio: "아직 초보지만 링에 계속 올라가는 중",
   photo: "",
+  heightCm: null,
+  weightKg: null,
+  reachCm: null,
+  weightClass: "라이트급",
+  experience: "1년차",
+  sparringStyle: "미디엄",
+  area: "",
+  contact: "",
+  onboardingComplete: false,
 };
 
 const DIFFICULTY_LABEL = {
@@ -190,51 +266,43 @@ function getRecordSourceLabel(source) {
   return "기록";
 }
 
-export function TrainingProvider({ children }) {
-  const [logs, setLogs] = useState(() => {
-    return normalizeLogScores(loadStorage(STORAGE_KEY, []));
-  });
+export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
+  const storageKeys = useMemo(() => getStorageKeys(userId), [userId]);
 
-  const [feed, setFeed] = useState(() => {
-    return loadStorage(FEED_STORAGE_KEY, []);
-  });
-
-  const [profile, setProfile] = useState(() => {
-    const savedProfile = loadStorage(PROFILE_STORAGE_KEY, DEFAULT_PROFILE);
-
-    return {
-      ...DEFAULT_PROFILE,
-      ...savedProfile,
-    };
-  });
-
-  const [tierId, setTierId] = useState(() => {
-    return localStorage.getItem(TIER_STORAGE_KEY) || "bronze";
-  });
-
-  const [mode, setMode] = useState(() => {
-    return localStorage.getItem(MODE_STORAGE_KEY) || "solo";
-  });
+  const [logs, setLogs] = useState(() => loadUserState(userId).logs);
+  const [feed, setFeed] = useState(() => loadUserState(userId).feed);
+  const [profile, setProfile] = useState(() => loadUserState(userId).profile);
+  const [tierId, setTierId] = useState(() => loadUserState(userId).tierId);
+  const [mode, setMode] = useState(() => loadUserState(userId).mode);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-  }, [logs]);
+    const nextState = loadUserState(userId);
+    setLogs(nextState.logs);
+    setFeed(nextState.feed);
+    setProfile(nextState.profile);
+    setTierId(nextState.tierId);
+    setMode(nextState.mode);
+  }, [userId]);
 
   useEffect(() => {
-    localStorage.setItem(FEED_STORAGE_KEY, JSON.stringify(feed));
-  }, [feed]);
+    localStorage.setItem(storageKeys.logs, JSON.stringify(logs));
+  }, [logs, storageKeys.logs]);
 
   useEffect(() => {
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-  }, [profile]);
+    localStorage.setItem(storageKeys.feed, JSON.stringify(feed));
+  }, [feed, storageKeys.feed]);
 
   useEffect(() => {
-    localStorage.setItem(TIER_STORAGE_KEY, tierId);
-  }, [tierId]);
+    localStorage.setItem(storageKeys.profile, JSON.stringify(profile));
+  }, [profile, storageKeys.profile]);
 
   useEffect(() => {
-    localStorage.setItem(MODE_STORAGE_KEY, mode);
-  }, [mode]);
+    localStorage.setItem(storageKeys.tier, tierId);
+  }, [tierId, storageKeys.tier]);
+
+  useEffect(() => {
+    localStorage.setItem(storageKeys.mode, mode);
+  }, [mode, storageKeys.mode]);
 
   const weeklyLogs = useMemo(() => {
     return logs.filter((log) => isThisWeek(log.date));
@@ -265,11 +333,13 @@ export function TrainingProvider({ children }) {
   }, [weeklyScore, profile.nickname]);
 
   function updateProfile(nextProfile) {
-    setProfile((prevProfile) => ({
-      ...prevProfile,
-      ...nextProfile,
-      updatedAt: new Date().toISOString(),
-    }));
+    setProfile((prevProfile) =>
+      sanitizeProfileForStorage({
+        ...prevProfile,
+        ...nextProfile,
+        updatedAt: new Date().toISOString(),
+      })
+    );
   }
 
   function updateNickname(nickname) {
@@ -294,6 +364,21 @@ export function TrainingProvider({ children }) {
     updateProfile({
       photo: "",
     });
+  }
+
+  async function completeOnboarding(form) {
+    const specs = validateBodySpecs(form);
+    await registerNickname(specs.nickname, userId);
+
+    const nextProfile = sanitizeProfileForStorage({
+      ...profile,
+      ...specs,
+    });
+
+    setProfile(nextProfile);
+    syncListingFromProfile(nextProfile, userId);
+
+    return nextProfile;
   }
 
   function addLog({
@@ -432,7 +517,61 @@ export function TrainingProvider({ children }) {
     setFeed((prevFeed) => [newFeedItem, ...prevFeed]);
   }
 
+  function buildBackupPayload() {
+    return createBackupPayload({
+      logs,
+      feed,
+      profile,
+      tierId,
+      mode,
+    });
+  }
+
+  function applyBackupData(data, { merge = false } = {}) {
+    if (!data || typeof data !== "object") {
+      throw new Error("백업 데이터가 비어 있습니다.");
+    }
+
+    if (!Array.isArray(data.logs)) {
+      throw new Error("훈련 기록 데이터가 없습니다.");
+    }
+
+    const nextLogs = merge
+      ? normalizeLogScores(mergeLogs(logs, data.logs))
+      : normalizeLogScores(data.logs);
+
+    const nextFeed = merge ? mergeFeed(feed, data.feed || []) : data.feed || [];
+    const nextProfile = merge
+      ? { ...profile, ...data.profile }
+      : { ...DEFAULT_PROFILE, ...data.profile };
+
+    setLogs(nextLogs);
+    setFeed(nextFeed);
+    setProfile(nextProfile);
+
+    if (!merge) {
+      setTierId(data.tierId || "bronze");
+      setMode(data.mode || "solo");
+    }
+
+    return {
+      logCount: nextLogs.length,
+      merged: merge,
+    };
+  }
+
+  function restoreBackupFromPayload(payload, options = {}) {
+    const validated = validateBackupPayload(payload);
+    return applyBackupData(validated.data, options);
+  }
+
+  function restoreBackupFromText(text, options = {}) {
+    const payload = parseBackupFileText(text);
+    return restoreBackupFromPayload(payload, options);
+  }
+
   const value = {
+    userId,
     logs,
     feed,
 
@@ -442,12 +581,16 @@ export function TrainingProvider({ children }) {
     updateBio,
     updateProfilePhoto,
     removeProfilePhoto,
+    completeOnboarding,
 
     addLog,
     updateLog,
     deleteLog,
     resetAllLogs,
     shareToFeed,
+    buildBackupPayload,
+    restoreBackupFromPayload,
+    restoreBackupFromText,
 
     weeklyLogs,
     weeklyScore,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrainingProvider } from "./store/TrainingContext";
+import { TrainingProvider, useTraining } from "./store/TrainingContext";
 import HomePage from "./pages/HomePage";
 import LogPage from "./pages/LogPage";
 import TimerPage from "./pages/TimerPage";
@@ -8,13 +8,34 @@ import ProfilePage from "./pages/ProfilePage";
 import CategoryPage from "./pages/CategoryPage";
 import GymFinderPage from "./pages/GymFinderPage";
 import WeeklyReportPage from "./pages/WeeklyReportPage";
+import DataBackupPage from "./pages/DataBackupPage";
+import OnboardingSetupPage from "./pages/OnboardingSetupPage";
+import { needsOnboarding } from "./utils/bodySpecs";
 import "./App.css";
 
 export default function App() {
+  return (
+    <TrainingProvider>
+      <AppFlow />
+    </TrainingProvider>
+  );
+}
+
+function AppFlow() {
+  const { profile } = useTraining();
+
+  if (needsOnboarding(profile)) {
+    return <OnboardingSetupPage />;
+  }
+
+  return <MainAppShell />;
+}
+
+function MainAppShell() {
   const [currentPage, setCurrentPage] = useState("home");
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("fitness-league-theme") || "light";
+    return localStorage.getItem("fitness-league-theme") || "dark";
   });
   const isDark = theme === "dark";
 
@@ -45,148 +66,152 @@ export default function App() {
   };
 
   return (
-    <TrainingProvider>
-      <div
-        className={`app-shell theme-${theme}`}
+    <div
+      className={`app-shell theme-${theme}`}
+      style={{
+        ...styles.app,
+        background: isDark ? "#0d0d0e" : "#f6f5f2",
+        color: isDark ? "#ffffff" : "#171717",
+      }}
+    >
+      <main style={styles.main}>
+        {currentPage === "home" && (
+          <HomePage
+            onStartTraining={() => goPage("timer")}
+            onNavigate={goPage}
+            onOpenCardMaker={goProfileCardMaker}
+          />
+        )}
+
+        {currentPage === "category" && (
+          <CategoryPage
+            onGoHome={() => goPage("home")}
+            onNavigate={goPage}
+            onOpenCardMaker={goProfileCardMaker}
+          />
+        )}
+
+        {currentPage === "gym" && (
+          <GymFinderPage onGoBack={() => goPage("category")} />
+        )}
+
+        {currentPage === "timer" && (
+          <TimerPage
+            onGoLog={() => goPage("log")}
+            onGoHome={() => goPage("home")}
+            onGoProfile={goProfileCardMaker}
+          />
+        )}
+
+        {currentPage === "log" && (
+          <LogPage
+            onGoProfile={goProfile}
+            onGoProfileCardMaker={goProfileCardMaker}
+          />
+        )}
+
+        {currentPage === "stats" && (
+          <StatsPage onGoWeekly={() => goPage("weekly")} />
+        )}
+
+        {currentPage === "weekly" && (
+          <WeeklyReportPage onGoBack={() => goPage("category")} />
+        )}
+
+        {currentPage === "backup" && (
+          <DataBackupPage onGoBack={() => goPage("category")} />
+        )}
+
+        {currentPage === "profile" && (
+          <ProfilePage scrollTarget={profileScrollTarget} />
+        )}
+      </main>
+
+      <button
+        type="button"
+        className="theme-toggle"
+        onClick={toggleTheme}
+        aria-label={isDark ? "밝은 화면으로 변경" : "다크 화면으로 변경"}
+      >
+        <span aria-hidden="true">{isDark ? "L" : "D"}</span>
+      </button>
+
+      <nav
         style={{
-          ...styles.app,
-          background: isDark ? "#0d0d0e" : "#f6f5f2",
-          color: isDark ? "#ffffff" : "#171717",
+          ...styles.nav,
+          background: isDark
+            ? "rgba(25, 25, 27, 0.94)"
+            : "rgba(255, 255, 255, 0.94)",
+          borderColor: isDark
+            ? "rgba(255, 255, 255, 0.1)"
+            : "rgba(22, 22, 22, 0.08)",
+          boxShadow: isDark
+            ? "0 12px 34px rgba(0, 0, 0, 0.35)"
+            : "0 12px 34px rgba(25, 20, 16, 0.12)",
         }}
       >
-        <main style={styles.main}>
-          {currentPage === "home" && (
-            <HomePage
-              onStartTraining={() => goPage("timer")}
-              onNavigate={goPage}
-              onOpenCardMaker={goProfileCardMaker}
-            />
-          )}
-
-          {currentPage === "category" && (
-            <CategoryPage
-              onGoHome={() => goPage("home")}
-              onNavigate={goPage}
-              onOpenCardMaker={goProfileCardMaker}
-            />
-          )}
-
-          {currentPage === "gym" && (
-            <GymFinderPage onGoBack={() => goPage("category")} />
-          )}
-
-          {currentPage === "timer" && (
-            <TimerPage
-              onGoLog={() => goPage("log")}
-              onGoHome={() => goPage("home")}
-              onGoProfile={goProfileCardMaker}
-            />
-          )}
-
-          {currentPage === "log" && <LogPage onGoProfileCardMaker={goProfileCardMaker} />}
-          
-
-          {currentPage === "stats" && (
-            <StatsPage onGoWeekly={() => goPage("weekly")} />
-          )}
-
-          {currentPage === "weekly" && (
-            <WeeklyReportPage onGoBack={() => goPage("category")} />
-          )}
-
-          {currentPage === "profile" && (
-            <ProfilePage scrollTarget={profileScrollTarget} />
-          )}
-        </main>
-
         <button
-          type="button"
-          className="theme-toggle"
-          onClick={toggleTheme}
-          aria-label={
-            isDark ? "밝은 화면으로 변경" : "다크 화면으로 변경"
-          }
+          style={{
+            ...styles.navButton,
+            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
+            ...(currentPage === "home" ? styles.activeButton : {}),
+          }}
+          onClick={() => goPage("home")}
         >
-          <span aria-hidden="true">{isDark ? "☀" : "☾"}</span>
+          홈
         </button>
 
-        <nav
+        <button
           style={{
-            ...styles.nav,
-            background: isDark
-              ? "rgba(25, 25, 27, 0.94)"
-              : "rgba(255, 255, 255, 0.94)",
-            borderColor: isDark
-              ? "rgba(255, 255, 255, 0.1)"
-              : "rgba(22, 22, 22, 0.08)",
-            boxShadow: isDark
-              ? "0 12px 34px rgba(0, 0, 0, 0.35)"
-              : "0 12px 34px rgba(25, 20, 16, 0.12)",
+            ...styles.navButton,
+            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
+            ...(currentPage === "timer" ? styles.activeButton : {}),
           }}
+          onClick={() => goPage("timer")}
         >
-          <button
-            style={{
-              ...styles.navButton,
-              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-              ...(currentPage === "home" ? styles.activeButton : {}),
-            }}
-            onClick={() => goPage("home")}
-          >
-            홈
-          </button>
+          훈련
+        </button>
 
-          <button
-            style={{
-              ...styles.navButton,
-              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-              ...(currentPage === "timer" ? styles.activeButton : {}),
-            }}
-            onClick={() => goPage("timer")}
-          >
-            훈련
-          </button>
+        <button
+          style={{
+            ...styles.navButton,
+            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
+            ...(currentPage === "log" ? styles.activeButton : {}),
+          }}
+          onClick={() => goPage("log")}
+        >
+          기록
+        </button>
 
-          <button
-            style={{
-              ...styles.navButton,
-              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-              ...(currentPage === "log" ? styles.activeButton : {}),
-            }}
-            onClick={() => goPage("log")}
-          >
-            기록
-          </button>
+        <button
+          style={{
+            ...styles.navButton,
+            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
+            ...(currentPage === "profile" ? styles.activeButton : {}),
+          }}
+          onClick={goProfile}
+        >
+          파이터
+        </button>
 
-          <button
-            style={{
-              ...styles.navButton,
-              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-              ...(currentPage === "profile" ? styles.activeButton : {}),
-            }}
-            onClick={goProfile}
-          >
-            파이터
-          </button>
-
-          <button
-            style={{
-              ...styles.navButton,
-              color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-              ...(currentPage === "category" ? styles.activeButton : {}),
-            }}
-            onClick={() => goPage("category")}
-          >
-            <span className="nav-category-icon" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-              <i />
-            </span>
-            <span>더보기</span>
-          </button>
-        </nav>
-      </div>
-    </TrainingProvider>
+        <button
+          style={{
+            ...styles.navButton,
+            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
+            ...(currentPage === "category" ? styles.activeButton : {}),
+          }}
+          onClick={() => goPage("category")}
+        >
+          <span className="nav-category-icon" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>더보기</span>
+        </button>
+      </nav>
+    </div>
   );
 }
 

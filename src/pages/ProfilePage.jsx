@@ -1,12 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
+import FighterSpecCard from "../components/FighterSpecCard";
+import { getFighterProgress } from "../utils/fighterProgress";
 import { buildWeeklyReport } from "../utils/trainingStats";
+import { validateBodySpecFields } from "../utils/bodySpecs";
+import {
+  EXPERIENCE_LEVELS,
+  formatWeightClassOption,
+  syncListingFromProfile,
+  WEIGHT_CLASSES,
+} from "../utils/sparringPartners";
+import { suggestWeightClass } from "../data/proBoxingWeightClasses";
 import { styles } from "./ProfilePage.styles";
 import {
   getDisplayComment,
   getRounds,
   getTodayString,
-  getFighterProgress,
   getTotalMinutes,
   getTrainingStreak,
   isIOSLikeDevice,
@@ -25,8 +34,10 @@ export default function ProfilePage({ scrollTarget }) {
   const {
     logs,
     profile,
-    updateNickname,
-    updateBio,
+    userId,
+    weeklyScore,
+    currentTier,
+    updateProfile,
     updateProfilePhoto,
     removeProfilePhoto,
   } = useTraining();
@@ -41,7 +52,16 @@ export default function ProfilePage({ scrollTarget }) {
   const [bio, setBio] = useState(
     profile.bio || "아직 초보지만 링에 계속 올라가는 중"
   );
+  const [heightCm, setHeightCm] = useState(profile.heightCm || "");
+  const [weightKg, setWeightKg] = useState(profile.weightKg || "");
+  const [reachCm, setReachCm] = useState(profile.reachCm || "");
+  const [weightClass, setWeightClass] = useState(profile.weightClass || "라이트급");
+  const [experience, setExperience] = useState(profile.experience || "1년차");
+  const [area, setArea] = useState(profile.area || "");
+  const [weightClassTouched, setWeightClassTouched] = useState(false);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const [selectedLogIds, setSelectedLogIds] = useState([]);
   const [cardMedia, setCardMedia] = useState("");
@@ -115,6 +135,35 @@ export default function ProfilePage({ scrollTarget }) {
   const [preparedExportKey, setPreparedExportKey] = useState("");
   const [exportPreview, setExportPreview] = useState(null);
 
+  useEffect(() => {
+    setNickname(profile.nickname || "나");
+    setBio(profile.bio || "아직 초보지만 링에 계속 올라가는 중");
+    setHeightCm(profile.heightCm || "");
+    setWeightKg(profile.weightKg || "");
+    setReachCm(profile.reachCm || "");
+    setWeightClass(profile.weightClass || "라이트급");
+    setExperience(profile.experience || "1년차");
+    setArea(profile.area || "");
+  }, [profile]);
+
+  useEffect(() => {
+    if (weightClassTouched || !weightKg) return;
+
+    setWeightClass(suggestWeightClass(weightKg));
+  }, [weightKg, weightClassTouched]);
+
+  const profileSpecSummary = useMemo(() => {
+    const parts = [];
+
+    if (profile.heightCm) parts.push(`${profile.heightCm}cm`);
+    if (profile.weightKg) parts.push(`${profile.weightKg}kg`);
+    if (profile.reachCm) parts.push(`리치 ${profile.reachCm}cm`);
+    if (profile.weightClass) parts.push(profile.weightClass);
+    if (profile.experience) parts.push(profile.experience);
+    if (profile.area) parts.push(profile.area);
+
+    return parts.join(" · ");
+  }, [profile]);
 
   const profileStats = useMemo(() => {
     const totalLogs = logs.length;
@@ -134,11 +183,7 @@ export default function ProfilePage({ scrollTarget }) {
     const manualLogs = logs.filter((log) => log.source === "manual");
     const weeklyRounds = buildWeeklyReport(logs).totalRounds;
 
-    const fighterProgress = getFighterProgress(
-      totalRounds,
-      totalMinutes,
-      totalLogs
-    );
+    const fighterProgress = getFighterProgress(logs);
 
     const featuredLogs = logs
       .filter((log) => log.publicComment || log.memo)
@@ -183,9 +228,10 @@ export default function ProfilePage({ scrollTarget }) {
       fighterProgress,
       levelLabel: fighterProgress.levelLabel,
       level: fighterProgress.level,
-      totalXp: fighterProgress.totalXp,
-      currentLevelXp: fighterProgress.currentLevelXp,
-      nextLevelXp: fighterProgress.nextLevelXp,
+      totalXp: fighterProgress.totalExp,
+      currentLevelXp: fighterProgress.currentLevelExp,
+      nextLevelXp: fighterProgress.nextLevelExp,
+      fighterTitle: fighterProgress.fighterTitle,
       xpToNextLevel: fighterProgress.xpToNextLevel,
       progressPercent: fighterProgress.progressPercent,
       achievements,
@@ -313,6 +359,28 @@ export default function ProfilePage({ scrollTarget }) {
     levelUpSlogan || "ONE ROUND AT A TIME"
   ).trim().toUpperCase();
   const levelUpStreakDays = getTrainingStreak(logs);
+
+  useEffect(() => {
+    setLevelUpLevel(String(profileStats.level));
+  }, [profileStats.level]);
+
+  useEffect(() => {
+    setPosterSubtitle(profileStats.fighterTitle || "ROOKIE FIGHTER");
+  }, [profileStats.fighterTitle]);
+
+  useEffect(() => {
+    setPosterMainName((current) => {
+      if (current.trim()) return current;
+      return (profile.nickname || "나").trim();
+    });
+  }, [profile.nickname]);
+
+  function scrollToCardMaker() {
+    cardMakerRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
   const levelUpNextTierXp = Math.max(0, 100 - (profileStats.totalRounds % 100));
   const levelUpProgressPercent = Math.min(
     100,
@@ -432,13 +500,38 @@ export default function ProfilePage({ scrollTarget }) {
   }
 
   function handleSaveProfile() {
-    updateNickname(nickname.trim() || "나");
-    updateBio(bio.trim());
-    setIsSaving(true);
+    setSaveError("");
 
-    setTimeout(() => {
-      setIsSaving(false);
-    }, 900);
+    try {
+      const validated = validateBodySpecFields({
+        nickname,
+        heightCm,
+        weightKg,
+        reachCm,
+        weightClass,
+        experience,
+        area,
+        sparringStyle: profile.sparringStyle,
+      });
+
+      const nextProfile = {
+        ...profile,
+        ...validated,
+        bio: bio.trim(),
+        onboardingComplete: profile.onboardingComplete ?? true,
+      };
+
+      updateProfile(nextProfile);
+      syncListingFromProfile(nextProfile, userId);
+      setIsSaving(true);
+      setIsProfileEditOpen(false);
+
+      setTimeout(() => {
+        setIsSaving(false);
+      }, 900);
+    } catch (error) {
+      setSaveError(error.message || "프로필 저장에 실패했습니다.");
+    }
   }
 
   async function handlePhotoChange(event) {
@@ -920,14 +1013,6 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
     ctx.fillRect(190, y, 270, 3);
     ctx.fillRect(width - 460, y, 270, 3);
-    drawTextFit(ctx, "★", centerX, y - 16, 90, {
-      size: 38,
-      minSize: 30,
-      weight: 900,
-      color: theme.accent,
-      baseline: "top",
-      shadow: false,
-    });
     ctx.restore();
   }
 
@@ -1577,7 +1662,7 @@ export default function ProfilePage({ scrollTarget }) {
       ctx.strokeStyle = "rgba(214, 162, 52, 0.78)";
       ctx.lineWidth = 4;
       ctx.stroke();
-      drawTextFit(ctx, "♛", 134, 94, 78, {
+      drawTextFit(ctx, "ID", 134, 94, 78, {
         size: 56,
         minSize: 42,
         weight: 950,
@@ -1652,9 +1737,9 @@ export default function ProfilePage({ scrollTarget }) {
       const statH = 178;
       const statGap = 34;
       const statItems = [
-        ["🥊", `${profileStats.weeklyRounds}`, "ROUNDS", "THIS WEEK"],
-        ["🏆", `${profileStats.totalRounds}`, "ROUNDS", "TOTAL"],
-        ["🔥", `${levelUpStreakDays || 1}`, "STREAK", "DAYS"],
+        ["W", `${profileStats.weeklyRounds}`, "ROUNDS", "THIS WEEK"],
+        ["T", `${profileStats.totalRounds}`, "ROUNDS", "TOTAL"],
+        ["S", `${levelUpStreakDays || 1}`, "STREAK", "DAYS"],
       ];
 
       statItems.forEach(([icon, value, labelA, labelB], index) => {
@@ -2049,16 +2134,23 @@ ${logLines}${commentText}${mediaText}`;
 
   return (
     <main style={styles.page}>
+      <FighterSpecCard
+        profile={profile}
+        logs={logs}
+        weeklyScore={weeklyScore}
+        tierName={currentTier?.name}
+        streakDays={levelUpStreakDays}
+        onOpenCardMaker={scrollToCardMaker}
+      />
+
       <section style={styles.profileCard}>
         <div style={styles.cardTop}>
           <div>
-            <p style={styles.kicker}>BOXING PROFILE</p>
-            <h1 style={styles.title}>나의 파이터 카드</h1>
-          </div>
-
-          <div style={styles.tierBadge}>
-            <span style={styles.tierLabel}>등급</span>
-            <strong style={styles.tierName}>{profileStats.levelLabel}</strong>
+            <p style={styles.kicker}>PROFILE SETUP</p>
+            <h1 style={styles.title}>프로필 · 사진</h1>
+            <p style={styles.profileSetupHint}>
+              명패에 표시될 사진과 신체 스펙을 설정하세요.
+            </p>
           </div>
         </div>
 
@@ -2104,50 +2196,165 @@ ${logLines}${commentText}${mediaText}`;
                 사진 삭제
               </button>
             )}
-
-            <button
-              type="button"
-              style={{
-                ...styles.profileSaveInlineButton,
-                ...styles.profileActionButton,
-              }}
-              onClick={handleSaveProfile}
-            >
-              {isSaving ? "저장 완료!" : "프로필 저장"}
-            </button>
           </div>
         </div>
 
-        <div style={styles.profileNameBox}>
-          <span style={styles.profileNameLabel}>FIGHTER NAME</span>
-          <strong style={styles.profileName}>{profile.nickname || "나"}</strong>
-          <p style={styles.profileBio}>
-            {profile.bio || "아직 초보지만 링에 계속 올라가는 중"}
-          </p>
-        </div>
+        <div style={styles.profileEditPanel}>
+          <button
+            type="button"
+            style={styles.profileEditToggle}
+            onClick={() => setIsProfileEditOpen((open) => !open)}
+            aria-expanded={isProfileEditOpen}
+          >
+            <div style={styles.profileEditToggleCopy}>
+              <p style={styles.profileEditToggleTitle}>프로필 · 신체 스펙 수정</p>
+              <span style={styles.profileEditToggleHint}>
+                {isProfileEditOpen
+                  ? "닉네임, 소개, 키·체중·체급 등을 수정할 수 있어요."
+                  : profileSpecSummary || "탭해서 프로필과 신체 스펙을 수정하세요."}
+              </span>
+            </div>
+            <span style={styles.profileEditToggleAction}>
+              {isProfileEditOpen ? "접기 ▲" : "펼치기 ▼"}
+            </span>
+          </button>
 
-        <div style={styles.profileEditInsideBox}>
-          <p style={styles.kicker}>EDIT PROFILE</p>
+          {isProfileEditOpen ? (
+            <div style={styles.profileEditContent}>
+              <div style={styles.profileEditSection}>
+                <p style={styles.profileEditSectionTitle}>PROFILE</p>
 
-          <label style={styles.label}>
-            닉네임
-            <input
-              value={nickname}
-              onChange={(event) => setNickname(event.target.value)}
-              placeholder="예: 조운 파이터"
-              style={styles.input}
-            />
-          </label>
+                <label style={styles.fieldLabel}>
+                  닉네임
+                  <input
+                    value={nickname}
+                    onChange={(event) => setNickname(event.target.value)}
+                    placeholder="예: 조운 파이터"
+                    style={styles.input}
+                  />
+                </label>
 
-          <label style={styles.label}>
-            한 줄 소개
-            <textarea
-              value={bio}
-              onChange={(event) => setBio(event.target.value)}
-              placeholder="예: 아직 초보지만 매주 링에 올라가는 중"
-              style={styles.textarea}
-            />
-          </label>
+                <label style={styles.fieldLabel}>
+                  한 줄 소개
+                  <textarea
+                    value={bio}
+                    onChange={(event) => setBio(event.target.value)}
+                    placeholder="예: 아직 초보지만 매주 링에 올라가는 중"
+                    style={styles.textarea}
+                  />
+                </label>
+              </div>
+
+              <div style={styles.profileEditSection}>
+                <p style={styles.profileEditSectionTitle}>BODY SPECS</p>
+
+                <div className="profile-body-specs-grid" style={styles.bodySpecsGrid}>
+                  <label style={styles.fieldLabel}>
+                    키 (cm)
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="120"
+                      max="230"
+                      value={heightCm}
+                      onChange={(event) => setHeightCm(event.target.value)}
+                      placeholder="175"
+                      style={styles.input}
+                    />
+                  </label>
+
+                  <label style={styles.fieldLabel}>
+                    몸무게 (kg)
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="35"
+                      max="200"
+                      step="0.1"
+                      value={weightKg}
+                      onChange={(event) => setWeightKg(event.target.value)}
+                      placeholder="70"
+                      style={styles.input}
+                    />
+                  </label>
+                </div>
+
+                <label style={styles.fieldLabel}>
+                  리치 (cm)
+                  <span style={styles.fieldHint}>선택 입력</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="100"
+                    max="250"
+                    value={reachCm}
+                    onChange={(event) => setReachCm(event.target.value)}
+                    placeholder="178"
+                    style={styles.input}
+                  />
+                </label>
+
+                <label style={styles.fieldLabel}>
+                  체급
+                  <select
+                    value={weightClass}
+                    onChange={(event) => {
+                      setWeightClassTouched(true);
+                      setWeightClass(event.target.value);
+                    }}
+                    style={styles.input}
+                  >
+                    {WEIGHT_CLASSES.filter((item) => item !== "상관없음").map(
+                      (item) => (
+                        <option key={item} value={item}>
+                          {formatWeightClassOption(item)}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+
+                <label style={styles.fieldLabel}>
+                  경력
+                  <select
+                    value={experience}
+                    onChange={(event) => setExperience(event.target.value)}
+                    style={styles.input}
+                  >
+                    {EXPERIENCE_LEVELS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={styles.fieldLabel}>
+                  활동 지역
+                  <span style={styles.fieldHint}>선택 입력 · 예: 강남, 홍대</span>
+                  <input
+                    value={area}
+                    onChange={(event) => setArea(event.target.value)}
+                    placeholder="강남, 홍대"
+                    style={styles.input}
+                  />
+                </label>
+              </div>
+
+              <div style={styles.profileSaveFooter}>
+                {saveError ? (
+                  <p style={styles.profileSaveError}>{saveError}</p>
+                ) : null}
+                <button
+                  type="button"
+                  style={styles.profileSaveButton}
+                  onClick={handleSaveProfile}
+                >
+                  {isSaving ? "저장 완료!" : "변경사항 저장"}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -2174,8 +2381,12 @@ ${logLines}${commentText}${mediaText}`;
       </section>
 
       <section ref={cardMakerRef} style={styles.cardMakerSection}>
-        <p style={styles.kicker}>TRAINING CARD MAKER</p>
+        <p style={styles.kicker}>NAMEPLATE · CARD MAKER</p>
         <h2 style={styles.sectionTitle}>훈련 인증 카드 만들기</h2>
+        <p style={styles.cardMakerNameplateNote}>
+          명패 스펙 {profileStats.levelLabel} · 이번 주 {profileStats.weeklyRounds}R ·
+          누적 {profileStats.totalRounds}R가 카드에 반영됩니다.
+        </p>
 
         {latestLog && isLatestLogSelected && (
           <div style={styles.recentTrainingNotice}>
@@ -2228,7 +2439,7 @@ ${logLines}${commentText}${mediaText}`;
                       }}
                     >
                       <div style={styles.logSelectCheck}>
-                        {isSelected ? "✓" : ""}
+                        {isSelected ? "·" : ""}
                       </div>
 
                       <div style={{ flex: 1 }}>
@@ -2707,7 +2918,7 @@ ${logLines}${commentText}${mediaText}`;
                             boxShadow: `0 0 24px ${levelUpAccentSoft}`,
                           }}
                         >
-                          ♛
+                          ID
                         </div>
                       <span>PERSONAL TRAINING ID</span>
                     </div>
@@ -2739,21 +2950,18 @@ ${logLines}${commentText}${mediaText}`;
                     <div style={styles.levelUpBottomBlock}>
                       <div style={styles.levelUpStatsRow}>
                         <div style={styles.levelUpStatBox}>
-                        <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>🥊</span>
                           <strong>{profileStats.weeklyRounds}</strong>
                           <span>ROUNDS</span>
                           <small>THIS WEEK</small>
                         </div>
 
                         <div style={styles.levelUpStatBox}>
-                        <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>🏆</span>
                           <strong>{profileStats.totalRounds}</strong>
                           <span>ROUNDS</span>
                           <small>TOTAL</small>
                         </div>
 
                         <div style={styles.levelUpStatBox}>
-                        <span style={{ ...styles.levelUpStatIcon, color: levelUpAccent }}>🔥</span>
                           <strong>{levelUpStreakDays || 1}</strong>
                           <span>STREAK</span>
                           <small>DAYS</small>
@@ -2845,7 +3053,6 @@ ${logLines}${commentText}${mediaText}`;
                               background: posterPreviewLine,
                             }}
                           />
-                          <strong>★</strong>
                           <span
                             style={{
                               ...styles.posterStarRule,
@@ -3134,7 +3341,7 @@ ${logLines}${commentText}${mediaText}`;
               }}
             >
               <span style={styles.achievementIcon}>
-                {achievement.unlocked ? "✓" : "잠김"}
+                {achievement.unlocked ? "완료" : "잠김"}
               </span>
 
               <div>

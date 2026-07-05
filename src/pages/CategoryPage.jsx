@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 const MENU_GROUPS = [
   {
     id: "training",
@@ -49,8 +47,8 @@ const MENU_GROUPS = [
   },
   {
     id: "fighter",
-    eyebrow: "CARD & PROFILE",
-    title: "카드 / 프로필",
+    eyebrow: "FIGHTER",
+    title: "파이터",
     items: [
       {
         id: "card",
@@ -64,20 +62,28 @@ const MENU_GROUPS = [
         id: "profile",
         icon: "F",
         title: "MY FIGHTER",
-        description: "내 파이터",
+        description: "프로필 · 신체 스펙",
         route: "profile",
         accent: "red",
       },
     ],
   },
   {
-    id: "explore",
-    eyebrow: "EXPLORE",
-    title: "탐색",
+    id: "more",
+    eyebrow: "MORE",
+    title: "더보기",
     items: [
       {
+        id: "backup",
+        icon: "↓",
+        title: "데이터 백업",
+        description: "JSON 저장 · 복원",
+        route: "backup",
+        accent: "orange",
+      },
+      {
         id: "dojo-breaker",
-        icon: "🥊",
+        icon: "D",
         title: "도장깨기",
         description: "스파링 · 체육관",
         route: "gym",
@@ -103,17 +109,15 @@ export default function CategoryPage({
 
   return (
     <main className="category-page">
-      <header className="category-hero">
-        <button className="category-back" onClick={onGoHome}>
-          <span>←</span> 홈
+      <header className="category-hero category-hero-compact">
+        <button className="category-back" type="button" onClick={onGoHome}>
+          <span aria-hidden="true">←</span>
+          홈
         </button>
         <div className="category-hero-copy">
-          <p>FIGHTER MENU</p>
-          <h1>파이터 메뉴</h1>
-          <span>훈련, 성장, 카드, 프로필 기능을 선택하세요.</span>
-        </div>
-        <div className="category-mark" aria-hidden="true">
-          FM
+          <p>MENU</p>
+          <h1>더보기</h1>
+          <span>훈련, 성장, 파이터, 데이터 메뉴</span>
         </div>
       </header>
 
@@ -121,26 +125,28 @@ export default function CategoryPage({
         {MENU_GROUPS.map((group) => (
           <section className="category-group" key={group.id}>
             <div className="category-group-heading">
-              <div>
-                <p>{group.eyebrow}</p>
-                <h2>{group.title}</h2>
-              </div>
-              <span>{String(group.items.length).padStart(2, "0")}</span>
+              <p>{group.eyebrow}</p>
+              <h2>{group.title}</h2>
             </div>
 
-            <div className="category-grid">
+            <div className="category-list">
               {group.items.map((item) => (
                 <button
-                  className={`category-item accent-${item.accent}`}
+                  type="button"
+                  className={`category-row accent-${item.accent}`}
                   key={item.id}
                   onClick={() => selectItem(item)}
                 >
-                  <span className="category-icon" aria-hidden="true">
+                  <span className="category-row-icon" aria-hidden="true">
                     {item.icon}
                   </span>
-                  <strong>{item.title}</strong>
-                  <small>{item.description}</small>
-                  <i aria-hidden="true">→</i>
+                  <span className="category-row-copy">
+                    <strong>{item.title}</strong>
+                    <small>{item.description}</small>
+                  </span>
+                  <span className="category-row-arrow" aria-hidden="true">
+                    →
+                  </span>
                 </button>
               ))}
             </div>

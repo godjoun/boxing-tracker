@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
+import { getCompletionDelta } from "../utils/fighterProgress";
 
 const MATCH_PRESETS = [
   {
@@ -87,14 +88,6 @@ const clampSeconds = (value, min, max) => {
 
   return Math.max(min, Math.min(max, number));
 };
-
-const getLogExp = (log) => {
-  const score = Number(log.score);
-  if (Number.isFinite(score) && score > 0) return score;
-  return Math.max(0, Number(log.minutes || log.duration || 0));
-};
-
-const getLevelFromExp = (exp) => Math.floor(exp / 100) + 1;
 
 export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   const { addLog, logs } = useTraining();
@@ -295,7 +288,6 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
     savedLogRef.current = true;
 
-    const totalExpBefore = logs.reduce((sum, log) => sum + getLogExp(log), 0);
     const savedLog = addLog({
       type: `${totalRounds}R 라운드 훈련`,
       minutes: totalWorkMinutes,
@@ -313,20 +305,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       publicComment: `${totalRounds}R 완료. 오늘도 끝까지 버텼다.`,
     });
 
-    const gainedExp = getLogExp(savedLog);
-    const totalExpAfter = totalExpBefore + gainedExp;
-    const previousLevel = getLevelFromExp(totalExpBefore);
-    const currentLevel = getLevelFromExp(totalExpAfter);
-
-    setCompletionResult({
-      gainedExp,
-      totalExp: totalExpAfter,
-      previousLevel,
-      currentLevel,
-      currentLevelExp: totalExpAfter % 100,
-      expToNextLevel: 100 - (totalExpAfter % 100),
-      didLevelUp: currentLevel > previousLevel,
-    });
+    setCompletionResult(getCompletionDelta(logs, savedLog));
     setHasSavedLog(true);
   }, [
     phase,
@@ -579,6 +558,17 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
                     <strong style={styles.growthResultValue}>{totalRounds}R</strong>
                   </div>
                   <div style={styles.growthResultItem}>
+                    <span style={styles.growthResultLabel}>이번 주</span>
+                    <strong style={styles.growthResultValue}>
+                      {completionResult.weeklyRounds}R
+                    </strong>
+                    {completionResult.weeklyRoundsAdded > 0 ? (
+                      <span style={styles.growthResultSub}>
+                        +{completionResult.weeklyRoundsAdded}R
+                      </span>
+                    ) : null}
+                  </div>
+                  <div style={styles.growthResultItem}>
                     <span style={styles.growthResultLabel}>훈련 시간</span>
                     <strong style={styles.growthResultValue}>
                       {totalWorkMinutes}분
@@ -594,7 +584,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
                 <div style={styles.levelProgressHeader}>
                   <strong style={styles.levelText}>
-                    LV. {completionResult.currentLevel}
+                    {completionResult.levelLabel}
                   </strong>
                   <span style={styles.levelProgressText}>
                     {completionResult.currentLevelExp} / 100 EXP
@@ -1102,7 +1092,7 @@ const styles = {
 
   growthResultGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateColumns: "repeat(2, 1fr)",
     gap: "6px",
   },
 
@@ -1125,6 +1115,14 @@ const styles = {
     display: "block",
     color: "#ffffff",
     fontSize: "14px",
+  },
+
+  growthResultSub: {
+    display: "block",
+    marginTop: "3px",
+    color: "rgba(124, 255, 124, 0.82)",
+    fontSize: "10px",
+    fontWeight: 800,
   },
 
   growthExpValue: {

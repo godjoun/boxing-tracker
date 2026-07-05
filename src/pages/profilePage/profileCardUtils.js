@@ -14,30 +14,6 @@ export function getTotalMinutes(log) {
   return Number(log?.minutes || log?.duration || 0);
 }
 
-export function getFighterProgress(totalRounds, totalMinutes, totalLogs) {
-  const roundXp = totalRounds * 10;
-  const minuteXp = totalMinutes * 2;
-  const logXp = totalLogs * 5;
-
-  const totalXp = roundXp + minuteXp + logXp;
-  const level = Math.floor(totalXp / 100) + 1;
-  const currentLevelXp = totalXp % 100;
-  const nextLevelXp = 100;
-  const xpToNextLevel = nextLevelXp - currentLevelXp;
-  const progressPercent = Math.min(100, Math.round((currentLevelXp / nextLevelXp) * 100));
-
-  return {
-    level,
-    totalXp,
-    currentLevelXp,
-    nextLevelXp,
-    xpToNextLevel,
-    progressPercent,
-    levelLabel: `LEVEL ${level}`,
-  };
-}
-
-
 export function getTodayString() {
   const today = new Date();
   const year = today.getFullYear();

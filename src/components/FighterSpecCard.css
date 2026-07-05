@@ -1,0 +1,282 @@
+.fighter-nameplate {
+  margin-bottom: 16px;
+}
+
+.fighter-nameplate-frame {
+  position: relative;
+  overflow: hidden;
+  padding: 18px 16px 16px;
+  border: 1px solid rgba(239, 63, 54, 0.28);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(239, 63, 54, 0.18), transparent 42%),
+    linear-gradient(160deg, #1a1a1d 0%, #0a0a0c 100%);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
+}
+
+.fighter-nameplate-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ef3f36, #ff8a65, #ef3f36);
+}
+
+.fighter-nameplate-top {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.fighter-nameplate-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.fighter-nameplate-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fighter-nameplate-photo-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.fighter-nameplate-kicker {
+  margin: 0 0 4px;
+  color: #ef3f36;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.fighter-nameplate-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.fighter-nameplate-title {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fighter-nameplate-bio {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.fighter-nameplate-badge {
+  flex-shrink: 0;
+  min-width: 58px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(239, 63, 54, 0.42);
+  background: rgba(239, 63, 54, 0.12);
+  text-align: center;
+}
+
+.fighter-nameplate-badge-label {
+  display: block;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.fighter-nameplate-badge strong {
+  display: block;
+  margin-top: 2px;
+  color: #ef3f36;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.fighter-nameplate-badge small {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.fighter-nameplate-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.fighter-nameplate-spec {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.24);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fighter-nameplate-spec em {
+  color: rgba(255, 255, 255, 0.38);
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.fighter-nameplate-spec-empty {
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.36);
+  font-size: 11px;
+}
+
+.fighter-nameplate-progress {
+  margin-top: 14px;
+}
+
+.fighter-nameplate-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fighter-nameplate-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.fighter-nameplate-bar div {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ef3f36, #ff7043);
+}
+
+.fighter-nameplate-exp-note {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 10px;
+}
+
+.fighter-nameplate-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.fighter-nameplate-stat {
+  padding: 10px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  text-align: center;
+}
+
+.fighter-nameplate-stat span {
+  display: block;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.fighter-nameplate-stat strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.fighter-nameplate-stat small {
+  display: block;
+  margin-top: 2px;
+  color: rgba(124, 255, 124, 0.72);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.fighter-nameplate-cta {
+  width: 100%;
+  margin-top: 14px;
+  padding: 13px 16px;
+  border: 1px solid rgba(239, 63, 54, 0.5);
+  border-radius: 14px;
+  background: rgba(239, 63, 54, 0.14);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.fighter-nameplate-cta:active {
+  transform: scale(0.99);
+}
+
+@media (max-width: 520px) {
+  .fighter-nameplate-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.theme-light .fighter-nameplate-frame {
+  background:
+    radial-gradient(circle at 100% 0%, rgba(239, 63, 54, 0.1), transparent 42%),
+    linear-gradient(160deg, #f5f5f7 0%, #ececef 100%);
+  border-color: rgba(239, 63, 54, 0.22);
+}
+
+.theme-light .fighter-nameplate-title,
+.theme-light .fighter-nameplate-bio,
+.theme-light .fighter-nameplate-spec-empty,
+.theme-light .fighter-nameplate-exp-note,
+.theme-light .fighter-nameplate-progress-head,
+.theme-light .fighter-nameplate-stat span,
+.theme-light .fighter-nameplate-badge small,
+.theme-light .fighter-nameplate-badge-label {
+  color: rgba(22, 22, 22, 0.52);
+}
+
+.theme-light .fighter-nameplate-spec em {
+  color: rgba(22, 22, 22, 0.42);
+}
+
+.theme-light .fighter-nameplate-spec,
+.theme-light .fighter-nameplate-stat {
+  background: rgba(22, 22, 22, 0.04);
+}
+
+.theme-light .fighter-nameplate-cta {
+  color: #161616;
+}

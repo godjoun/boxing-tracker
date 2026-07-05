@@ -5,7 +5,7 @@ import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 const FEATURES = [
   {
     id: "gyms",
-    icon: "📍",
+    icon: "M",
     eyebrow: "NEARBY GYMS",
     title: "주변 체육관 찾기",
     description: "자체 데이터 기반 체육관 · 스파링",
@@ -13,7 +13,7 @@ const FEATURES = [
   },
   {
     id: "sparring",
-    icon: "🤼",
+    icon: "S",
     eyebrow: "SPARRING MATCH",
     title: "스파링 상대 찾기",
     description: "체급·경력 기반 매칭",
@@ -50,9 +50,6 @@ export default function GymFinderPage({ onGoBack }) {
           <p>DOJO BREAKER</p>
           <h1>도장깨기</h1>
           <span>자체 데이터로 체육관과 스파링 상대를 찾습니다.</span>
-        </div>
-        <div className="gym-mark" aria-hidden="true">
-          🥊
         </div>
       </header>
 

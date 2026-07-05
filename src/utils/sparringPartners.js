@@ -1,18 +1,20 @@
 import { fetchSparringPartners } from "../api/dojoApi";
+import {
+  normalizeWeightClass,
+  suggestWeightClass,
+} from "../data/proBoxingWeightClasses";
 
-const STORAGE_KEY = "fitness-league-sparring-listing";
+export {
+  formatWeightClassOption,
+  getWeightClassDisplayKg,
+  isValidWeightClass,
+  normalizeWeightClass,
+  suggestWeightClass,
+  WEIGHT_CLASS_ANY,
+  WEIGHT_CLASSES,
+} from "../data/proBoxingWeightClasses";
 
-export const WEIGHT_CLASSES = [
-  "플라이급",
-  "벤텀급",
-  "페더급",
-  "라이트급",
-  "웰터급",
-  "미들급",
-  "라이트헤비",
-  "헤비급",
-  "상관없음",
-];
+const STORAGE_KEY_PREFIX = "fitness-league-sparring-listing";
 
 export const EXPERIENCE_LEVELS = [
   "초보 (6개월 미만)",
@@ -24,9 +26,31 @@ export const EXPERIENCE_LEVELS = [
 
 export const SPARRING_STYLES = ["라이트", "미디엄", "하드", "기술 위주"];
 
-export function getMyListing() {
+function getStorageKey(userId) {
+  return userId ? `${STORAGE_KEY_PREFIX}-${userId}` : STORAGE_KEY_PREFIX;
+}
+
+export function migrateLegacyListing(userId) {
+  if (!userId) return;
+
+  const nextKey = getStorageKey(userId);
+
+  if (localStorage.getItem(nextKey)) {
+    return;
+  }
+
+  const legacy = localStorage.getItem(STORAGE_KEY_PREFIX);
+
+  if (legacy) {
+    localStorage.setItem(nextKey, legacy);
+  }
+}
+
+export function getMyListing(userId) {
+  migrateLegacyListing(userId);
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(userId));
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {
@@ -34,22 +58,55 @@ export function getMyListing() {
   }
 }
 
-export function saveMyListing(listing) {
+export function saveMyListing(listing, userId) {
   const payload = {
     ...listing,
     id: "my-listing",
     updatedAt: new Date().toISOString(),
   };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  localStorage.setItem(getStorageKey(userId), JSON.stringify(payload));
   return payload;
 }
 
-export function clearMyListing() {
-  localStorage.removeItem(STORAGE_KEY);
+export function clearMyListing(userId) {
+  localStorage.removeItem(getStorageKey(userId));
 }
 
-export async function getAvailablePartners(lat, lon, filter = {}) {
-  const myListing = getMyListing();
+export function buildListingFromProfile(profile, { active = false } = {}) {
+  return {
+    nickname: profile.nickname || "나",
+    weightClass: normalizeWeightClass(
+      profile.weightClass || suggestWeightClass(profile.weightKg),
+    ),
+    experience: profile.experience || "1년차",
+    style: profile.sparringStyle || "미디엄",
+    area: profile.area || "",
+    note: profile.bio || "",
+    contact: profile.contact || "",
+    heightCm: profile.heightCm || null,
+    weightKg: profile.weightKg || null,
+    reachCm: profile.reachCm || null,
+    active,
+    distanceKm: 0,
+  };
+}
+
+export function syncListingFromProfile(profile, userId, options = {}) {
+  const existing = getMyListing(userId);
+  const nextListing = {
+    ...buildListingFromProfile(profile, {
+      active: existing?.active ?? options.active ?? false,
+    }),
+    note: existing?.note || profile.bio || "",
+    contact: existing?.contact || profile.contact || "",
+    area: existing?.area || profile.area || "",
+  };
+
+  return saveMyListing(nextListing, userId);
+}
+
+export async function getAvailablePartners(lat, lon, filter = {}, userId) {
+  const myListing = getMyListing(userId);
   let results = await fetchSparringPartners(lat, lon, filter);
 
   if (myListing?.active) {

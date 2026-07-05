@@ -10,11 +10,11 @@ const ROUND_SCORE = 10;
 const MINUTE_SCORE = 0.5;
 
 export const CONDITION_OPTIONS = [
-  { id: "fresh", label: "컨디션 좋음", emoji: "💪" },
-  { id: "normal", label: "보통", emoji: "🙂" },
-  { id: "tired", label: "피곤함", emoji: "😮‍💨" },
-  { id: "heavy", label: "몸 무거움", emoji: "🧱" },
-  { id: "sore", label: "근육통", emoji: "🔥" },
+  { id: "fresh", label: "컨디션 좋음" },
+  { id: "normal", label: "보통" },
+  { id: "tired", label: "피곤함" },
+  { id: "heavy", label: "몸 무거움" },
+  { id: "sore", label: "근육통" },
 ];
 
 const CONDITION_LABEL = Object.fromEntries(
@@ -288,6 +288,100 @@ export function buildAllTimeStats(logs) {
     topRoundDay,
     averageRoundsPerSession:
       totalSessions > 0 ? Math.round((totalRounds / totalSessions) * 10) / 10 : 0,
+  };
+}
+
+function formatWeekKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isLogInWeek(log, weekStart, weekEnd) {
+  if (!log?.date) return false;
+
+  const logDate = new Date(`${log.date}T12:00:00`);
+
+  if (Number.isNaN(logDate.getTime())) return false;
+
+  return logDate >= weekStart && logDate <= weekEnd;
+}
+
+export function buildWeeklyRoundTrend(logs, weekCount = 8, referenceDate = new Date()) {
+  const safeWeekCount = Math.max(4, Math.min(8, Number(weekCount) || 8));
+  const weeks = [];
+
+  for (let index = 0; index < safeWeekCount; index += 1) {
+    const weeksAgo = safeWeekCount - 1 - index;
+    const ref = new Date(referenceDate);
+    ref.setDate(ref.getDate() - weeksAgo * 7);
+
+    const weekStart = getWeekStart(ref);
+    const weekEnd = getWeekEnd(ref);
+    const weekLogs = logs.filter((log) => isLogInWeek(log, weekStart, weekEnd));
+    const rounds = weekLogs.reduce((sum, log) => sum + getLogRounds(log), 0);
+    const minutes = weekLogs.reduce((sum, log) => sum + getLogMinutes(log), 0);
+
+    weeks.push({
+      weekKey: formatWeekKey(weekStart),
+      shortLabel: formatShortDate(weekStart),
+      weekLabel: `${formatShortDate(weekStart)} – ${formatShortDate(weekEnd)}`,
+      rounds,
+      sessions: weekLogs.length,
+      minutes,
+      isCurrentWeek: weeksAgo === 0,
+      changeFromPrevious: null,
+    });
+  }
+
+  weeks.forEach((week, index) => {
+    if (index === 0) return;
+    week.changeFromPrevious = week.rounds - weeks[index - 1].rounds;
+  });
+
+  const maxRounds = Math.max(...weeks.map((week) => week.rounds), 1);
+
+  return weeks.map((week) => ({
+    ...week,
+    barHeightPercent: Math.round((week.rounds / maxRounds) * 100),
+  }));
+}
+
+export function getWeeklyTrendSummary(weeks) {
+  if (!weeks.length) {
+    return { label: "아직 비교할 주간 데이터가 없습니다.", tone: "neutral" };
+  }
+
+  const currentWeek = weeks[weeks.length - 1];
+  const previousWeek = weeks.length > 1 ? weeks[weeks.length - 2] : null;
+
+  if (!previousWeek) {
+    return {
+      label: `이번 주 ${currentWeek.rounds}R`,
+      tone: "neutral",
+    };
+  }
+
+  const change = currentWeek.changeFromPrevious ?? 0;
+
+  if (change > 0) {
+    return {
+      label: `전주 대비 +${change}R · 이번 주 ${currentWeek.rounds}R`,
+      tone: "up",
+    };
+  }
+
+  if (change < 0) {
+    return {
+      label: `전주 대비 ${change}R · 이번 주 ${currentWeek.rounds}R`,
+      tone: "down",
+    };
+  }
+
+  return {
+    label: `전주와 동일 · 이번 주 ${currentWeek.rounds}R`,
+    tone: "neutral",
   };
 }
 

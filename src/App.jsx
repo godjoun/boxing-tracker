@@ -11,11 +11,14 @@ import WeeklyReportPage from "./pages/WeeklyReportPage";
 import DataBackupPage from "./pages/DataBackupPage";
 import JourneyPage from "./pages/JourneyPage";
 import CurriculumPage from "./pages/CurriculumPage";
+import ComboCreatorPage from "./pages/ComboCreatorPage";
+import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
 import { useBackgroundTimerSession } from "./hooks/useBackgroundTimerSession";
 import { needsOnboarding } from "./utils/bodySpecs";
 import { getFighterProgress } from "./utils/fighterProgress";
 import { buildCurriculumTimerLaunch } from "./utils/homeCurriculum";
+import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
 import "./App.css";
 
 export default function App() {
@@ -181,10 +184,28 @@ function MainAppShell() {
 
         {currentPage === "curriculum" && (
           <CurriculumPage
+            fighterLevel={fighterLevel}
             onGoBack={() => goPage("category")}
             onStartSession={goTimerWithSession}
+            onOpenComboCreator={() => goPage("combo-creator")}
+            onStartTraining={() => goPage("timer")}
           />
         )}
+
+        {currentPage === "combo-creator" &&
+          (isComboCreatorUnlocked(fighterLevel) ? (
+            <ComboCreatorPage
+              onGoBack={() => goPage("curriculum")}
+              onStartSession={goTimerWithSession}
+            />
+          ) : (
+            <FeatureLockScreen
+              featureId="combo-creator"
+              currentLevel={fighterLevel}
+              onBack={() => goPage("curriculum")}
+              onStartTraining={() => goPage("timer")}
+            />
+          ))}
       </main>
 
       <button

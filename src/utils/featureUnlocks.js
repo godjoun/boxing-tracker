@@ -4,6 +4,9 @@
  */
 export const SPARRING_UNLOCK_LEVEL = 7;
 
+/** LV.10 일반인 정점 — 기본 커리큘럼을 마친 뒤 콤보 크리에이터 해금 */
+export const COMBO_CREATOR_UNLOCK_LEVEL = 10;
+
 export const FEATURE_UNLOCKS = [
   {
     id: "sparring",
@@ -12,6 +15,21 @@ export const FEATURE_UNLOCKS = [
     description: "체급·경력 기반 스파링 매칭",
     route: "gym",
     gymView: "sparring",
+    kicker: "SPARRING READY",
+    cta: "훈련하러 가기",
+    lockedHint: (levelsToGo) =>
+      `훈련을 이어가면 ${levelsToGo}레벨 후 스파링 매칭이 열립니다.`,
+  },
+  {
+    id: "combo-creator",
+    level: COMBO_CREATOR_UNLOCK_LEVEL,
+    label: "콤보 크리에이터",
+    description: "잽·크로스·훅을 조합해 나만의 섀도우 루틴 만들기",
+    route: "combo-creator",
+    kicker: "COMBO LAB",
+    cta: "커리큘럼 훈련하기",
+    lockedHint: (levelsToGo) =>
+      `홈복싱 입문을 마치고 LV.${COMBO_CREATOR_UNLOCK_LEVEL}에 도달하면 콤보 크리에이터가 열립니다. ${levelsToGo}레벨 남음.`,
   },
 ];
 
@@ -36,11 +54,16 @@ export function isSparringUnlocked(level) {
   return isFeatureUnlocked("sparring", level);
 }
 
-export function getSparringUnlockProgress(level) {
-  const currentLevel = Number(level || 1);
-  const unlockLevel = SPARRING_UNLOCK_LEVEL;
+export function isComboCreatorUnlocked(level) {
+  return isFeatureUnlocked("combo-creator", level);
+}
 
-  if (currentLevel >= unlockLevel) {
+export function getFeatureUnlockProgress(featureId, level) {
+  const feature = getFeatureUnlock(featureId);
+  const currentLevel = Number(level || 1);
+  const unlockLevel = feature?.level ?? 1;
+
+  if (!feature || currentLevel >= unlockLevel) {
     return {
       unlocked: true,
       currentLevel,
@@ -59,12 +82,21 @@ export function getSparringUnlockProgress(level) {
   };
 }
 
+export function getSparringUnlockProgress(level) {
+  return getFeatureUnlockProgress("sparring", level);
+}
+
+export function getComboCreatorUnlockProgress(level) {
+  return getFeatureUnlockProgress("combo-creator", level);
+}
+
 export function getFeaturesUnlockedAtLevel(level) {
   return FEATURE_UNLOCKS.filter((feature) => feature.level === level);
 }
 
 export function getNextFeatureUnlock(level) {
   const current = Number(level || 1);
-  if (current >= SPARRING_UNLOCK_LEVEL) return null;
-  return FEATURE_UNLOCKS[0];
+  return (
+    FEATURE_UNLOCKS.find((feature) => current < feature.level) || null
+  );
 }

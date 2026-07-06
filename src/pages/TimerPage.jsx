@@ -9,6 +9,7 @@ import {
   getCurriculumPhaseFocus,
   markCurriculumSessionComplete,
 } from "../utils/homeCurriculum";
+import { formatTimerDurationLabel } from "../utils/curriculumTimerSync";
 import {
   shouldApplyLaunchConfig,
   useTimerSessionListener,
@@ -29,6 +30,7 @@ import {
   readInitialTimerState,
 } from "../utils/timerPagePersistence";
 import { styles } from "./TimerPage.styles";
+import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
 
 const MATCH_PRESETS = [
   {
@@ -145,10 +147,27 @@ export default function TimerPage({
   const [curriculumGoal, setCurriculumGoal] = useState(
     initialTimerState.curriculumGoal
   );
+  const [curriculumSessionCode, setCurriculumSessionCode] = useState(
+    initialTimerState.curriculumSessionCode
+  );
+  const [curriculumWeekLabel, setCurriculumWeekLabel] = useState(
+    initialTimerState.curriculumWeekLabel
+  );
+  const [curriculumWeekTheme, setCurriculumWeekTheme] = useState(
+    initialTimerState.curriculumWeekTheme
+  );
   const [curriculumDrills, setCurriculumDrills] = useState(
     initialTimerState.curriculumDrills
   );
-  const [showCurriculumDrills, setShowCurriculumDrills] = useState(false);
+  const [prepSecondsSetting, setPrepSecondsSetting] = useState(
+    initialTimerState.prepSecondsSetting
+  );
+  const [cooldownSecondsSetting, setCooldownSecondsSetting] = useState(
+    initialTimerState.cooldownSecondsSetting
+  );
+
+  const isCurriculumSession = curriculumDrills.length > 0;
+  const activePrepSeconds = isCurriculumSession ? prepSecondsSetting : PREP_SECONDS;
 
   const selectedPreset = MATCH_PRESETS.find((preset) => {
     return preset.id === selectedPresetId;
@@ -194,11 +213,15 @@ export default function TimerPage({
       : "직접 설정 루틴";
 
   const curriculumFocus = useMemo(
-    () => getCurriculumPhaseFocus(curriculumDrills, phase, currentRound),
-    [curriculumDrills, phase, currentRound]
+    () =>
+      getCurriculumPhaseFocus(
+        curriculumDrills,
+        phase,
+        currentRound,
+        totalRounds
+      ),
+    [curriculumDrills, phase, currentRound, totalRounds]
   );
-
-  const activeCurriculumDrillName = curriculumFocus?.name || null;
 
   const applyPersistedState = useCallback((saved) => {
     if (!saved) return;
@@ -209,9 +232,14 @@ export default function TimerPage({
     setCurriculumLogType(saved.curriculumLogType ?? "");
     setCurriculumSessionTitle(saved.curriculumSessionTitle ?? "");
     setCurriculumGoal(saved.curriculumGoal ?? "");
+    setCurriculumSessionCode(saved.curriculumSessionCode ?? "");
+    setCurriculumWeekLabel(saved.curriculumWeekLabel ?? "");
+    setCurriculumWeekTheme(saved.curriculumWeekTheme ?? "");
     setCurriculumDrills(
       Array.isArray(saved.curriculumDrills) ? saved.curriculumDrills : []
     );
+    setPrepSecondsSetting(saved.prepSecondsSetting ?? 10);
+    setCooldownSecondsSetting(saved.cooldownSecondsSetting ?? 0);
     setTotalRounds(saved.totalRounds ?? 3);
     setWorkSecondsSetting(saved.workSecondsSetting ?? 180);
     setRestSecondsSetting(saved.restSecondsSetting ?? 30);
@@ -234,8 +262,12 @@ export default function TimerPage({
     setCurriculumLogType("");
     setCurriculumSessionTitle("");
     setCurriculumGoal("");
+    setCurriculumSessionCode("");
+    setCurriculumWeekLabel("");
+    setCurriculumWeekTheme("");
     setCurriculumDrills([]);
-    setShowCurriculumDrills(false);
+    setPrepSecondsSetting(10);
+    setCooldownSecondsSetting(0);
   }
 
   useEffect(() => {
@@ -246,7 +278,12 @@ export default function TimerPage({
       curriculumLogType,
       curriculumSessionTitle,
       curriculumGoal,
+      curriculumSessionCode,
+      curriculumWeekLabel,
+      curriculumWeekTheme,
       curriculumDrills,
+      prepSecondsSetting,
+      cooldownSecondsSetting,
       totalRounds,
       workSecondsSetting,
       restSecondsSetting,
@@ -269,7 +306,12 @@ export default function TimerPage({
     curriculumLogType,
     curriculumSessionTitle,
     curriculumGoal,
+    curriculumSessionCode,
+    curriculumWeekLabel,
+    curriculumWeekTheme,
     curriculumDrills,
+    prepSecondsSetting,
+    cooldownSecondsSetting,
     totalRounds,
     workSecondsSetting,
     restSecondsSetting,
@@ -302,6 +344,9 @@ export default function TimerPage({
           curriculumLogType,
           curriculumSessionTitle,
           curriculumGoal,
+          curriculumSessionCode,
+          curriculumWeekLabel,
+          curriculumWeekTheme,
           curriculumDrills,
           totalRounds,
           workSecondsSetting,
@@ -330,7 +375,12 @@ export default function TimerPage({
     curriculumLogType,
     curriculumSessionTitle,
     curriculumGoal,
+    curriculumSessionCode,
+    curriculumWeekLabel,
+    curriculumWeekTheme,
     curriculumDrills,
+    prepSecondsSetting,
+    cooldownSecondsSetting,
     totalRounds,
     workSecondsSetting,
     restSecondsSetting,
@@ -450,6 +500,11 @@ export default function TimerPage({
 
         if (phase === "work") {
           if (currentRound === totalRounds) {
+            if (isCurriculumSession && cooldownSecondsSetting > 0) {
+              setPhase("cooldown");
+              return cooldownSecondsSetting;
+            }
+
             setPhase("done");
             setIsRunning(false);
             return 0;
@@ -457,6 +512,12 @@ export default function TimerPage({
 
           setPhase("rest");
           return restSeconds;
+        }
+
+        if (phase === "cooldown") {
+          setPhase("done");
+          setIsRunning(false);
+          return 0;
         }
 
         if (phase === "rest") {
@@ -470,7 +531,7 @@ export default function TimerPage({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRunning, phase, currentRound, totalRounds, workSeconds, restSeconds]);
+  }, [isRunning, phase, currentRound, totalRounds, workSeconds, restSeconds, isCurriculumSession, cooldownSecondsSetting]);
 
   useEffect(() => {
     if (previousPhaseRef.current === phase) return;
@@ -518,7 +579,7 @@ export default function TimerPage({
         workSecondsSetting
       )} / 휴식 ${formatDurationLabel(
         restSecondsSetting
-      )} / 준비 ${PREP_SECONDS}초`,
+      )} / 준비 ${isCurriculumSession ? formatTimerDurationLabel(activePrepSeconds) : `${PREP_SECONDS}초`}`,
       publicComment: curriculumSessionId
         ? `${routineTitle} 완료. 홈 커리큘럼 한 세션 더 버텼다.`
         : `${totalRounds}R 완료. 오늘도 끝까지 버텼다.`,
@@ -568,7 +629,12 @@ export default function TimerPage({
     setCurriculumLogType(config.logType || "");
     setCurriculumSessionTitle(config.curriculumTitle || "");
     setCurriculumGoal(config.curriculumGoal || "");
+    setCurriculumSessionCode(config.curriculumSessionCode || "");
+    setCurriculumWeekLabel(config.curriculumWeekLabel || "");
+    setCurriculumWeekTheme(config.curriculumWeekTheme || "");
     setCurriculumDrills(config.curriculumDrills || []);
+    setPrepSecondsSetting(config.prepSeconds ?? 10);
+    setCooldownSecondsSetting(config.cooldownSeconds ?? 0);
     resetTimerState(config.workSeconds);
   };
 
@@ -600,7 +666,7 @@ export default function TimerPage({
         setHasStartedSession(true);
         setCurrentRound(1);
         setPhase("prep");
-        setRemainingTime(PREP_SECONDS);
+        setRemainingTime(activePrepSeconds);
         setIsRunning(true);
         playBeep("prep");
       }, 0);
@@ -612,7 +678,7 @@ export default function TimerPage({
       setHasStartedSession(true);
       setCurrentRound(1);
       setPhase("prep");
-      setRemainingTime(PREP_SECONDS);
+      setRemainingTime(activePrepSeconds);
       setIsRunning(true);
       playBeep("prep");
       return;
@@ -701,6 +767,7 @@ export default function TimerPage({
     if (phase === "prep") return "준비 시간";
     if (phase === "work") return "훈련 시간";
     if (phase === "rest") return "휴식 시간";
+    if (phase === "cooldown") return "마무리 시간";
     return "운동 완료";
   };
 
@@ -708,11 +775,15 @@ export default function TimerPage({
     if (phase === "prep") return styles.prepBadge;
     if (phase === "work") return styles.workBadge;
     if (phase === "rest") return styles.restBadge;
+    if (phase === "cooldown") return styles.prepBadge;
     return styles.doneBadge;
   };
 
   const getCurrentRoundName = () => {
-    if (phase === "prep") return "10초 후 1라운드 자동 시작";
+    if (phase === "prep") {
+      return `${formatTimerDurationLabel(activePrepSeconds)} 준비 후 1라운드 시작`;
+    }
+    if (phase === "cooldown") return "쿨다운 · 스트레칭";
     if (phase === "done") return "훈련 완료";
 
     if (curriculumRoutineTitle) {
@@ -798,75 +869,19 @@ export default function TimerPage({
         <div style={styles.timeText}>{formatTime(remainingTime)}</div>
 
         {curriculumDrills.length > 0 && phase !== "done" ? (
-          <div style={styles.curriculumGuide}>
-            <div style={styles.curriculumGuideCompactHead}>
-              <span style={styles.curriculumGuideKicker}>홈 커리큘럼</span>
-              <strong style={styles.curriculumGuideTitle}>
-                {curriculumSessionTitle}
-              </strong>
-              {curriculumGoal ? (
-                <p style={styles.curriculumGoalCompact}>{curriculumGoal}</p>
-              ) : null}
-            </div>
-
-            {curriculumFocus ? (
-              <div style={styles.curriculumFocus}>
-                <span style={styles.curriculumFocusLabel}>
-                  {curriculumFocus.label}
-                </span>
-                <strong style={styles.curriculumFocusName}>
-                  {curriculumFocus.name}
-                </strong>
-                <p style={styles.curriculumFocusDescription}>
-                  {curriculumFocus.description}
-                </p>
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              style={styles.curriculumToggleButton}
-              onClick={() => setShowCurriculumDrills((open) => !open)}
-            >
-              {showCurriculumDrills ? "드릴 목록 접기" : "드릴 목록 보기"}
-            </button>
-
-            {showCurriculumDrills ? (
-              <ul style={styles.curriculumDrillList}>
-                {curriculumDrills.map((drill) => {
-                  const isActive = drill.name === activeCurriculumDrillName;
-
-                  return (
-                    <li
-                      key={drill.name}
-                      style={{
-                        ...styles.curriculumDrillItem,
-                        ...(isActive ? styles.curriculumDrillItemActive : {}),
-                      }}
-                    >
-                      <strong style={styles.curriculumDrillName}>
-                        {drill.name}
-                      </strong>
-                      <span style={styles.curriculumDrillDuration}>
-                        {drill.duration}
-                      </span>
-                      <p style={styles.curriculumDrillDescription}>
-                        {drill.description}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
-
-            <button
-              type="button"
-              style={styles.curriculumEndButton}
-              onClick={handleEndCurriculum}
-            >
-              커리큘럼 종료
-            </button>
-          </div>
+          <CurriculumTimerPanel
+            sessionTitle={curriculumSessionTitle}
+            sessionGoal={curriculumGoal}
+            sessionCode={curriculumSessionCode}
+            weekLabel={curriculumWeekLabel}
+            weekTheme={curriculumWeekTheme}
+            phase={phase}
+            currentRound={currentRound}
+            totalRounds={totalRounds}
+            focus={curriculumFocus}
+            drills={curriculumDrills}
+            onEndCurriculum={handleEndCurriculum}
+          />
         ) : null}
 
         <div style={styles.sessionInfoGrid}>
@@ -1081,7 +1096,11 @@ export default function TimerPage({
 
             <div>
               <span>준비</span>
-              <strong>{PREP_SECONDS}초</strong>
+              <strong>
+                {isCurriculumSession
+                  ? formatTimerDurationLabel(activePrepSeconds)
+                  : `${PREP_SECONDS}초`}
+              </strong>
             </div>
           </div>
         </div>

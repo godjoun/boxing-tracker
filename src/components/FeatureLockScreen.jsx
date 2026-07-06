@@ -1,6 +1,6 @@
 import {
   getFeatureUnlock,
-  getSparringUnlockProgress,
+  getFeatureUnlockProgress,
 } from "../utils/featureUnlocks";
 import { getLevelTitle } from "../utils/fighterTitles";
 import "./FeatureLockScreen.css";
@@ -12,7 +12,7 @@ export default function FeatureLockScreen({
   onStartTraining,
 }) {
   const feature = getFeatureUnlock(featureId);
-  const progress = getSparringUnlockProgress(currentLevel);
+  const progress = getFeatureUnlockProgress(featureId, currentLevel);
   const milestone = getLevelTitle(feature?.level || progress.unlockLevel);
 
   if (!feature) {
@@ -22,7 +22,7 @@ export default function FeatureLockScreen({
   return (
     <main className="feature-lock-page">
       <div className="feature-lock-card">
-        <p className="feature-lock-kicker">SPARRING READY</p>
+        <p className="feature-lock-kicker">{feature.kicker || "FEATURE LOCK"}</p>
         <h1>{feature.label}</h1>
         <p className="feature-lock-description">{feature.description}</p>
 
@@ -46,8 +46,9 @@ export default function FeatureLockScreen({
 
         <p className="feature-lock-hint">
           {progress.levelsToGo > 0
-            ? `훈련을 이어가면 ${progress.levelsToGo}레벨 후 스파링 매칭이 열립니다.`
-            : "곧 스파링 상대를 찾을 수 있습니다."}
+            ? feature.lockedHint?.(progress.levelsToGo) ||
+              `훈련을 이어가면 ${progress.levelsToGo}레벨 후 열립니다.`
+            : "곧 사용할 수 있습니다."}
         </p>
 
         <button
@@ -55,7 +56,7 @@ export default function FeatureLockScreen({
           className="feature-lock-primary"
           onClick={onStartTraining}
         >
-          훈련하러 가기
+          {feature.cta || "훈련하러 가기"}
         </button>
 
         {onBack ? (

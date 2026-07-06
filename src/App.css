@@ -2785,8 +2785,8 @@
 }
 
 /* Bright social fighter theme */
-.home-page,
-.category-page {
+.theme-light .home-page,
+.theme-light .category-page {
   color: #181716;
 }
 

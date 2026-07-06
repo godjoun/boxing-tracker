@@ -1,0 +1,244 @@
+.combo-creator-page {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 18px 18px 132px;
+  color: #fff;
+}
+
+.combo-creator-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.combo-creator-kicker,
+.combo-creator-section-label {
+  margin: 0 0 8px;
+  color: #e8c66a;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.combo-creator-hero h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: -0.04em;
+}
+
+.combo-creator-intro {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.combo-creator-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.combo-creator-preview strong {
+  display: block;
+  font-size: 24px;
+  letter-spacing: 0.04em;
+}
+
+.combo-creator-preview span {
+  display: block;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.combo-creator-preview-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.combo-creator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.combo-creator-move {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.22);
+  color: #fff;
+  cursor: pointer;
+}
+
+.combo-creator-move strong {
+  font-size: 13px;
+}
+
+.combo-creator-move span {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.combo-creator-form {
+  display: grid;
+  gap: 12px;
+}
+
+.combo-creator-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.combo-creator-form label span {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.combo-creator-form input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  color: #fff;
+  font-size: 14px;
+}
+
+.combo-creator-actions,
+.combo-creator-saved-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.combo-creator-primary,
+.combo-creator-secondary,
+.combo-creator-ghost {
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.combo-creator-primary {
+  border: none;
+  background: linear-gradient(135deg, #e8c66a, #c49a2e);
+  color: #1f1a12;
+}
+
+.combo-creator-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.combo-creator-secondary {
+  border: 1px solid rgba(212, 168, 50, 0.34);
+  background: rgba(212, 168, 50, 0.12);
+  color: #f5d98b;
+}
+
+.combo-creator-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.combo-creator-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.combo-creator-ghost:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.combo-creator-saved-list {
+  display: grid;
+  gap: 10px;
+}
+
+.combo-creator-saved-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.combo-creator-saved-item strong {
+  display: block;
+  font-size: 14px;
+}
+
+.combo-creator-saved-item span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 12px;
+}
+
+.combo-creator-saved-item em {
+  display: inline-block;
+  margin-top: 6px;
+  color: #e8c66a;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.theme-light .combo-creator-page {
+  color: #1f1a12;
+}
+
+.theme-light .combo-creator-back,
+.theme-light .combo-creator-intro,
+.theme-light .combo-creator-preview span,
+.theme-light .combo-creator-saved-item span,
+.theme-light .combo-creator-ghost {
+  color: #6b6254;
+}
+
+.theme-light .combo-creator-card,
+.theme-light .combo-creator-move,
+.theme-light .combo-creator-saved-item {
+  background: #fff;
+  border-color: rgba(196, 154, 46, 0.18);
+}
+
+.theme-light .combo-creator-move {
+  background: #faf6ee;
+}
+
+.theme-light .combo-creator-form input {
+  background: #fff;
+  color: #1f1a12;
+  border-color: rgba(196, 154, 46, 0.18);
+}

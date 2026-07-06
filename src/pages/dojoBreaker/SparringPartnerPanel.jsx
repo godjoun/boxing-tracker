@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTraining } from "../../store/TrainingContext";
 import { resolveSearchLocation } from "../../utils/gymSearch";
+import { getFighterProgress } from "../../utils/fighterProgress";
+import {
+  hasSparringPriority,
+  SPARRING_PRIORITY_LEVEL,
+} from "../../utils/veteranPerks";
 import {
   buildListingFromProfile,
   clearMyListing,
@@ -24,8 +29,12 @@ const DEFAULT_FORM = {
 };
 
 export default function SparringPartnerPanel({ onGoBack }) {
-  const { profile, userId } = useTraining();
-  const profileDefaults = buildListingFromProfile(profile, { active: false });
+  const { profile, userId, logs } = useTraining();
+  const fighterLevel = useMemo(() => getFighterProgress(logs).level, [logs]);
+  const profileDefaults = buildListingFromProfile(profile, {
+    active: false,
+    fighterLevel,
+  });
   const existingListing = getMyListing(userId);
   const apiInfo = getDojoApiInfo();
 
@@ -62,6 +71,7 @@ export default function SparringPartnerPanel({ onGoBack }) {
         currentPosition.lon,
         { weightClass: weightFilter },
         userId,
+        { fighterLevel },
       );
       setPartners(results);
       setStatus(results.length > 0 ? "ready" : "empty");
@@ -94,24 +104,27 @@ export default function SparringPartnerPanel({ onGoBack }) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function buildListingPayload(overrides = {}) {
+    return {
+      nickname: profile.nickname || "나",
+      weightClass: form.weightClass,
+      experience: form.experience,
+      style: form.style,
+      area: form.area.trim(),
+      note: form.note.trim(),
+      contact: form.contact.trim(),
+      heightCm: profile.heightCm || null,
+      weightKg: profile.weightKg || null,
+      reachCm: profile.reachCm || null,
+      fighterLevel,
+      active: true,
+      distanceKm: 0,
+      ...overrides,
+    };
+  }
+
   function handleSave() {
-    const listing = saveMyListing(
-      {
-        nickname: profile.nickname || "나",
-        weightClass: form.weightClass,
-        experience: form.experience,
-        style: form.style,
-        area: form.area.trim(),
-        note: form.note.trim(),
-        contact: form.contact.trim(),
-        heightCm: profile.heightCm || null,
-        weightKg: profile.weightKg || null,
-        reachCm: profile.reachCm || null,
-        active: true,
-        distanceKm: 0,
-      },
-      userId,
-    );
+    const listing = saveMyListing(buildListingPayload(), userId);
     setSaved(listing);
     if (position) {
       loadPartners({ preferGps: position.source === "gps", allowFallback: true });
@@ -133,23 +146,7 @@ export default function SparringPartnerPanel({ onGoBack }) {
       return;
     }
 
-    const listing = saveMyListing(
-      {
-        nickname: profile.nickname || "나",
-        weightClass: form.weightClass,
-        experience: form.experience,
-        style: form.style,
-        area: form.area.trim(),
-        note: form.note.trim(),
-        contact: form.contact.trim(),
-        heightCm: profile.heightCm || null,
-        weightKg: profile.weightKg || null,
-        reachCm: profile.reachCm || null,
-        active: true,
-        distanceKm: 0,
-      },
-      userId,
-    );
+    const listing = saveMyListing(buildListingPayload(), userId);
     setSaved(listing);
     setForm((current) => ({ ...current, active: true }));
     if (position) {
@@ -185,8 +182,19 @@ export default function SparringPartnerPanel({ onGoBack }) {
             ? ` · ${profile.heightCm}cm / ${profile.weightKg}kg`
             : ""}
           {profile.reachCm ? ` · 리치 ${profile.reachCm}cm` : ""}
+          {" · "}LV. {fighterLevel}
           {" · "}데이터: {apiInfo.baseUrl}
         </p>
+
+        {hasSparringPriority(fighterLevel) ? (
+          <p className="sparring-priority-note">
+            프로 베테랑 혜택 적용 중 · 상대 찾기 목록에서 거리 가산으로 우선 노출됩니다
+          </p>
+        ) : (
+          <p className="sparring-priority-note is-locked">
+            LV.{SPARRING_PRIORITY_LEVEL} 프로 인증부터 스파링 우선 노출이 해금됩니다
+          </p>
+        )}
 
         <div className="sparring-form-grid">
           <label className="sparring-field">
@@ -292,6 +300,10 @@ export default function SparringPartnerPanel({ onGoBack }) {
           <p className="gym-location-note">검색 위치: {position.label}</p>
         )}
 
+        <p className="sparring-priority-note subtle">
+          베테랑 파이터는 실제 거리보다 가깝게 계산되어 목록 상위에 표시됩니다
+        </p>
+
         <div className="sparring-filter-row">
           <label className="sparring-field sparring-filter">
             <span>체급 필터</span>
@@ -331,13 +343,20 @@ export default function SparringPartnerPanel({ onGoBack }) {
           <div className="sparring-partner-list">
             {partners.map((partner) => (
               <article
-                className={`sparring-partner-card${partner.isMine ? " mine" : ""}`}
+                className={`sparring-partner-card${partner.isMine ? " mine" : ""}${partner.hasSparringPriority ? " is-veteran" : ""}`}
                 key={partner.id}
               >
                 <div className="sparring-partner-head">
                   <div>
                     <strong>{partner.nickname}</strong>
                     {partner.isMine && <em>내 글</em>}
+                    {partner.veteranBadges?.length > 0 ? (
+                      <div className="sparring-partner-veteran-badges">
+                        {partner.veteranBadges.map((badge) => (
+                          <span key={badge}>{badge}</span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                   <span>{partner.distanceLabel}</span>
                 </div>
@@ -350,6 +369,12 @@ export default function SparringPartnerPanel({ onGoBack }) {
                 </div>
 
                 {partner.note && <p className="sparring-partner-note">{partner.note}</p>}
+
+                {partner.hasSparringPriority ? (
+                  <p className="sparring-partner-priority">
+                    베테랑 우선 노출 · LV. {partner.fighterLevel}
+                  </p>
+                ) : null}
 
                 {partner.contact && (
                   <p className="sparring-partner-contact">연락: {partner.contact}</p>

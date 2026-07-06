@@ -44,6 +44,24 @@ export const CARD_FILTERS = [
     name: "VINTAGE RINGSIDE",
     description: "올드 복싱 포스터 느낌",
   },
+  {
+    id: "semipro",
+    name: "SEMI-PRO GOLD",
+    description: "베테랑 전용 · 세미프로 링 골드",
+    veteranLevel: 36,
+  },
+  {
+    id: "champion",
+    name: "CHAMPION BELT",
+    description: "베테랑 전용 · 챔피언 벨트 골드",
+    veteranLevel: 76,
+  },
+  {
+    id: "goat",
+    name: "BOXING GOAT",
+    description: "베테랑 전용 · 백 단계 전설 필터",
+    veteranLevel: 100,
+  },
 ];
 
 export const CARD_STYLES = [
@@ -141,6 +159,33 @@ const IMAGE_FILTER_PROFILES = {
     brightness: [1, 0.9],
     hueRotate: [0, 0],
     grayscale: [0, 0],
+  },
+  semipro: {
+    contrast: [1.05, 1.24],
+    saturate: [1.06, 1.3],
+    sepia: [0.06, 0.48],
+    brightness: [1, 0.94],
+    hueRotate: [0, 8],
+    grayscale: [0, 0],
+    tint: { r: 1.08, g: 0.94, b: 0.78 },
+  },
+  champion: {
+    contrast: [1.06, 1.28],
+    saturate: [1.08, 1.36],
+    sepia: [0.08, 0.62],
+    brightness: [1, 0.9],
+    hueRotate: [0, 0],
+    grayscale: [0, 0],
+    tint: { r: 1.12, g: 0.92, b: 0.62 },
+  },
+  goat: {
+    contrast: [1.08, 1.32],
+    saturate: [1.1, 1.42],
+    sepia: [0.1, 0.72],
+    brightness: [1, 0.88],
+    hueRotate: [0, -6],
+    grayscale: [0, 0],
+    tint: { r: 1.14, g: 0.98, b: 0.72 },
   },
 };
 
@@ -289,6 +334,18 @@ export function getCardBackground(filterId) {
     return "radial-gradient(circle at 20% 18%, rgba(255, 220, 140, 0.22), transparent 28%), linear-gradient(145deg, #2a1b10, #070504)";
   }
 
+  if (filterId === "semipro") {
+    return "radial-gradient(circle at 78% 14%, rgba(232, 180, 72, 0.44), transparent 34%), radial-gradient(circle at 16% 82%, rgba(255, 255, 255, 0.1), transparent 30%), linear-gradient(145deg, #241808, #060402)";
+  }
+
+  if (filterId === "champion") {
+    return "radial-gradient(circle at 82% 10%, rgba(255, 214, 72, 0.52), transparent 36%), radial-gradient(circle at 12% 78%, rgba(255, 120, 40, 0.18), transparent 28%), linear-gradient(145deg, #2a1800, #050301)";
+  }
+
+  if (filterId === "goat") {
+    return "radial-gradient(circle at 80% 12%, rgba(255, 228, 140, 0.58), transparent 34%), radial-gradient(circle at 18% 84%, rgba(239, 63, 54, 0.22), transparent 30%), linear-gradient(145deg, #1f1408, #020101)";
+  }
+
   if (filterId === "gold") {
     return "radial-gradient(circle at 80% 12%, rgba(255, 198, 41, 0.42), transparent 34%), linear-gradient(145deg, #241800, #050505)";
   }
@@ -325,6 +382,18 @@ export function getOverlayStyle(filterId, intensity) {
 
   if (filterId === "vintage") {
     return `linear-gradient(180deg, rgba(255, 214, 150, ${0.05 + 0.1 * strength}), rgba(0, 0, 0, ${0.42 + 0.18 * strength})), radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, ${0.16 + 0.14 * strength}))`;
+  }
+
+  if (filterId === "semipro") {
+    return `linear-gradient(180deg, rgba(232, 180, 72, ${0.06 + 0.14 * strength}), rgba(0, 0, 0, ${0.4 + 0.18 * strength})), radial-gradient(circle at 78% 18%, rgba(255, 220, 140, ${0.08 + 0.14 * strength}), transparent 42%)`;
+  }
+
+  if (filterId === "champion") {
+    return `linear-gradient(180deg, rgba(255, 198, 64, ${0.08 + 0.16 * strength}), rgba(0, 0, 0, ${0.42 + 0.2 * strength})), radial-gradient(circle at 80% 16%, rgba(255, 214, 72, ${0.12 + 0.18 * strength}), transparent 40%)`;
+  }
+
+  if (filterId === "goat") {
+    return `linear-gradient(180deg, rgba(255, 228, 140, ${0.1 + 0.18 * strength}), rgba(0, 0, 0, ${0.44 + 0.22 * strength})), radial-gradient(circle at 78% 14%, rgba(239, 63, 54, ${0.08 + 0.12 * strength}), transparent 38%), radial-gradient(circle at 18% 82%, rgba(255, 214, 72, ${0.06 + 0.12 * strength}), transparent 34%)`;
   }
 
   if (filterId === "gold") {

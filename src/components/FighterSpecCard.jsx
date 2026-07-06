@@ -1,15 +1,19 @@
 import { getFighterProgress } from "../utils/fighterProgress";
+import { getNameplateTier, getVeteranBadges } from "../utils/veteranPerks";
 import "./FighterSpecCard.css";
 
 export default function FighterSpecCard({
   profile,
   logs,
   weeklyScore,
-  tierName,
+  titleBadge,
+  careerStageKo,
   streakDays = 0,
   onOpenCardMaker,
 }) {
   const fighter = getFighterProgress(logs);
+  const nameplateTier = getNameplateTier(fighter.level);
+  const veteranBadges = getVeteranBadges(fighter.level);
 
   const specItems = [
     profile?.weightClass && { label: "체급", value: profile.weightClass },
@@ -21,8 +25,18 @@ export default function FighterSpecCard({
 
   return (
     <section className="fighter-nameplate" aria-label="파이터 명패">
-      <div className="fighter-nameplate-frame">
+      <div className={`fighter-nameplate-frame tier-${nameplateTier}`}>
         <div className="fighter-nameplate-accent" aria-hidden="true" />
+
+        {veteranBadges.length > 0 ? (
+          <div className="fighter-nameplate-veteran-badges" aria-label="베테랑 인증">
+            {veteranBadges.map((badge) => (
+              <span key={badge} className="fighter-nameplate-veteran-badge">
+                {badge}
+              </span>
+            ))}
+          </div>
+        ) : null}
 
         <div className="fighter-nameplate-top">
           <div className="fighter-nameplate-photo">
@@ -37,6 +51,9 @@ export default function FighterSpecCard({
             <p className="fighter-nameplate-kicker">MY FIGHTER</p>
             <h2 className="fighter-nameplate-name">{profile?.nickname || "나"}</h2>
             <p className="fighter-nameplate-title">{fighter.fighterTitle}</p>
+            {fighter.fighterTitleEn ? (
+              <p className="fighter-nameplate-title-en">{fighter.fighterTitleEn}</p>
+            ) : null}
             {profile?.bio ? (
               <p className="fighter-nameplate-bio">{profile.bio}</p>
             ) : null}
@@ -45,7 +62,7 @@ export default function FighterSpecCard({
           <div className="fighter-nameplate-badge">
             <span className="fighter-nameplate-badge-label">LV</span>
             <strong>{fighter.level}</strong>
-            <small>{tierName || "시즌 —"}</small>
+            <small>{careerStageKo || fighter.careerStageKo || "일반인"}</small>
           </div>
         </div>
 
@@ -68,14 +85,18 @@ export default function FighterSpecCard({
           <div className="fighter-nameplate-progress-head">
             <span>{fighter.levelLabel}</span>
             <span>
-              {fighter.currentLevelExp} / {fighter.nextLevelExp} EXP
+              {fighter.isMaxLevel
+                ? "MAX LEVEL"
+                : `${fighter.currentLevelExp} / ${fighter.nextLevelExp} EXP`}
             </span>
           </div>
           <div className="fighter-nameplate-bar" aria-hidden="true">
             <div style={{ width: `${fighter.progressPercent}%` }} />
           </div>
           <p className="fighter-nameplate-exp-note">
-            다음 레벨까지 {fighter.xpToNextLevel} EXP
+            {fighter.isMaxLevel
+              ? "최대 레벨 달성"
+              : `다음 레벨까지 ${fighter.xpToNextLevel} EXP`}
           </p>
         </div>
 
@@ -93,7 +114,7 @@ export default function FighterSpecCard({
             <strong>{fighter.totalExp}</strong>
           </div>
           <div className="fighter-nameplate-stat">
-            <span>시즌</span>
+            <span>주간 점수</span>
             <strong>{weeklyScore ?? 0}점</strong>
             {streakDays > 0 ? <small>{streakDays}일 연속</small> : null}
           </div>

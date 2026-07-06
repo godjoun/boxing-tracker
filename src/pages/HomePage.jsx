@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { buildTrainingBreakdown } from "../utils/trainingBreakdown";
 import { getFighterProgress, getLogExp } from "../utils/fighterProgress";
+import { getSparringUnlockProgress, SPARRING_UNLOCK_LEVEL } from "../utils/featureUnlocks";
+import { getLevelTitle } from "../utils/fighterTitles";
+import { getNextVeteranPerk } from "../utils/veteranPerks";
 import { getTrainingStreak } from "./profilePage/profileCardUtils";
 import {
   buildWeeklyRoundTrend,
@@ -80,20 +83,6 @@ function getRounds(log) {
   ) || 0;
 }
 
-function getTierProgressText(weeklyScore, currentTier, nextTier) {
-  if (!currentTier) return "";
-
-  if (!nextTier) {
-    return "현재 최고 시즌 티어";
-  }
-
-  if (weeklyScore >= currentTier.promoteScore) {
-    return `${nextTier.name} 승급 조건 달성`;
-  }
-
-  return `${nextTier.name} 승급까지 ${currentTier.promoteScore - weeklyScore}점`;
-}
-
 function getTodayKey() {
   return getDateKey(new Date());
 }
@@ -129,12 +118,14 @@ function buildMonthDays(now = new Date()) {
 }
 
 export default function HomePage({
+  fighterLevel = 1,
+  timerSummary = null,
   onStartTraining,
+  onOpenTimer,
   onNavigate,
   onOpenCardMaker,
 }) {
-  const { logs = [], profile, weeklyScore, currentTier, nextTier } =
-    useTraining();
+  const { logs = [], profile, weeklyScore } = useTraining();
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedFeatures, setSelectedFeatures] = useState(loadSelectedFeatures);
   const [isEditingDashboard, setIsEditingDashboard] = useState(false);
@@ -174,23 +165,22 @@ export default function HomePage({
       currentExp: fighter.currentLevelExp,
       progressPercent: fighter.progressPercent,
       expToNext: fighter.xpToNextLevel,
+      nextLevelExp: fighter.nextLevelExp,
+      isMaxLevel: fighter.isMaxLevel,
       weeklyRounds: fighter.weeklyRounds,
       fighterTitle: fighter.fighterTitle,
+      fighterTitleEn: fighter.fighterTitleEn,
+      careerStageKo: fighter.careerStageKo,
       weeklyTrend,
       trendSummary,
       streakDays,
       trainedToday: Boolean(trainingByDate[todayKey]),
       lastLog,
       lastLogExp: lastLog ? getLogExp(lastLog) : 0,
-      tierProgressText: getTierProgressText(
-        weeklyScore,
-        currentTier,
-        nextTier
-      ),
       trainingByDate,
       monthDays: buildMonthDays(),
     };
-  }, [logs, weeklyScore, currentTier, nextTier]);
+  }, [logs, weeklyScore]);
 
   const selectedDayTraining = selectedDate
     ? dashboard.trainingByDate[selectedDate]
@@ -237,20 +227,47 @@ export default function HomePage({
   const monthTitle = `${now.getFullYear()}. ${String(
     now.getMonth() + 1
   ).padStart(2, "0")}`;
+  const sparringProgress = getSparringUnlockProgress(fighterLevel);
+  const sparringTitle = getLevelTitle(SPARRING_UNLOCK_LEVEL);
+  const nextVeteranPerk = getNextVeteranPerk(fighterLevel);
 
   return (
     <main className="home-page">
+      {timerSummary?.isActive ? (
+        <button
+          type="button"
+          className="timer-home-banner"
+          onClick={onOpenTimer}
+        >
+          <div className="timer-home-banner-copy">
+            <span className="timer-home-banner-kicker">
+              {timerSummary.isRunning ? "훈련 진행 중" : "훈련 일시정지"}
+            </span>
+            <strong>
+              {timerSummary.phaseLabel} {timerSummary.timeLabel}
+            </strong>
+            <p>
+              {timerSummary.roundLabel} · {timerSummary.title}
+            </p>
+          </div>
+          <em>타이머 열기</em>
+        </button>
+      ) : null}
+
       <section className="home-growth-hero">
         <div className="home-growth-head">
           <div>
             <p className="home-kicker">GROWTH STATUS</p>
             <h1>{profile?.nickname || "나의 파이터"}</h1>
             <p className="home-growth-title">{dashboard.fighterTitle}</p>
+            {dashboard.fighterTitleEn ? (
+              <p className="home-growth-title-en">{dashboard.fighterTitleEn}</p>
+            ) : null}
           </div>
           <div className="home-growth-lv">
             <span>LV</span>
             <strong>{dashboard.level}</strong>
-            <small>{currentTier?.name || "시즌"}</small>
+            <small>{dashboard.careerStageKo || "일반인"}</small>
           </div>
         </div>
 
@@ -278,18 +295,36 @@ export default function HomePage({
         <div className="home-exp-meta">
           <span>LV. {dashboard.level}</span>
           <b>
-            {dashboard.currentExp} / 100 EXP · 누적 {dashboard.totalRounds}R
+            {dashboard.isMaxLevel
+              ? `MAX LV.${dashboard.level}`
+              : `${dashboard.currentExp} / ${dashboard.nextLevelExp} EXP`}{" "}
+            · 누적 {dashboard.totalRounds}R
           </b>
         </div>
         <div className="home-exp-bar" aria-label="현재 레벨 경험치">
           <div style={{ width: `${dashboard.progressPercent}%` }} />
         </div>
         <p className="home-exp-copy">
-          다음 레벨까지 <strong>{dashboard.expToNext} EXP</strong>
-          {dashboard.tierProgressText ? (
-            <> · {dashboard.tierProgressText}</>
-          ) : null}
+          {dashboard.isMaxLevel ? (
+            <strong>최대 레벨 달성</strong>
+          ) : (
+            <>
+              다음 레벨까지 <strong>{dashboard.expToNext} EXP</strong>
+            </>
+          )}
         </p>
+
+        {!sparringProgress.unlocked ? (
+          <p className="home-growth-empty">
+            LV.{sparringProgress.unlockLevel}{" "}
+            <strong>{sparringTitle.ko}</strong> 칭호 달성 시 스파링 상대찾기 해금
+          </p>
+        ) : nextVeteranPerk ? (
+          <p className="home-growth-empty">
+            LV.{nextVeteranPerk.level} 베테랑 혜택{" "}
+            <strong>{nextVeteranPerk.label}</strong> 해금 예정 · 여정 탭에서 확인
+          </p>
+        ) : null}
 
         {dashboard.lastLog ? (
           <div className="home-last-growth">
@@ -436,7 +471,7 @@ export default function HomePage({
               >
                 <span className="dashboard-quick-icon">{feature.icon}</span>
                 <strong>{feature.title}</strong>
-                {feature.pending && <em>준비 중</em>}
+                {feature.pending ? <em>준비 중</em> : null}
               </button>
             ))}
           </div>

@@ -1,6 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { buildJourneyData } from "../utils/fighterJourney";
+import { getFighterProgress } from "../utils/fighterProgress";
+import { getTitleCollection } from "../utils/fighterTitles";
+import { getVeteranPerkCollection } from "../utils/veteranPerks";
 import { getLogRounds } from "../utils/trainingStats";
 import "./JourneyPage.css";
 
@@ -11,15 +14,38 @@ function formatDateLabel(dateKey) {
 }
 
 export default function JourneyPage({ onStartTraining }) {
-  const { logs, profile, weeklyScore, currentTier } = useTraining();
+  const { logs, profile, weeklyScore } = useTraining();
 
   const journey = useMemo(
-    () => buildJourneyData({ logs, profile, weeklyScore, currentTier }),
-    [logs, profile, weeklyScore, currentTier]
+    () => buildJourneyData({ logs, profile, weeklyScore }),
+    [logs, profile, weeklyScore]
+  );
+
+  const fighter = useMemo(() => getFighterProgress(logs), [logs]);
+  const titleCollection = useMemo(
+    () => getTitleCollection(fighter.level),
+    [fighter.level]
   );
 
   const { summary, timeline, memories, achievements } = journey;
   const unlockedCount = achievements.filter((item) => item.unlocked).length;
+  const unlockedTitleCount = titleCollection.filter((item) => item.unlocked).length;
+  const nextTitle = titleCollection.find((item) => item.isNext);
+  const currentTitle = titleCollection.find((item) => item.isCurrent);
+  const [isTitleCollectionOpen, setIsTitleCollectionOpen] = useState(false);
+  const veteranPerks = useMemo(
+    () => getVeteranPerkCollection(fighter.level),
+    [fighter.level]
+  );
+  const unlockedPerkCount = veteranPerks.filter((item) => item.unlocked).length;
+  const nextPerk = veteranPerks.find((item) => item.isNext);
+  const [isVeteranPerksOpen, setIsVeteranPerksOpen] = useState(false);
+
+  const perkKindLabel = {
+    badge: "배지",
+    card_filter: "카드",
+    frame: "명패",
+  };
 
   return (
     <main className="journey-page">
@@ -36,8 +62,8 @@ export default function JourneyPage({ onStartTraining }) {
             <strong>{summary.nickname}</strong>
           </div>
           <div>
-            <span>등급</span>
-            <strong>{summary.levelLabel}</strong>
+            <span>칭호</span>
+            <strong>{summary.fighterTitle}</strong>
           </div>
           <div>
             <span>누적</span>
@@ -49,9 +75,152 @@ export default function JourneyPage({ onStartTraining }) {
           </div>
         </div>
         <p className="journey-summary-note">
-          {summary.tierName} · 이번 주 {summary.weeklyScore}점 · 총 EXP{" "}
-          {summary.totalExp}
+          {summary.careerStageKo} · {summary.levelLabel} · {summary.fighterTitle} ·
+          이번 주 {summary.weeklyScore}점 · 총 EXP {summary.totalExp}
         </p>
+      </section>
+
+      <section
+        className={`journey-card journey-title-card${isTitleCollectionOpen ? " is-open" : ""}`}
+        id="title-collection"
+      >
+        <button
+          type="button"
+          className="journey-title-toggle"
+          onClick={() => setIsTitleCollectionOpen((open) => !open)}
+          aria-expanded={isTitleCollectionOpen}
+          aria-controls="title-collection-body"
+        >
+          <div className="journey-section-head">
+            <div>
+              <p className="journey-section-label">TITLES</p>
+              <h2>칭호 도감</h2>
+            </div>
+            <div className="journey-title-toggle-meta">
+              <span className="journey-count">
+                {unlockedTitleCount}/{titleCollection.length}
+              </span>
+              <span className="journey-title-toggle-action">
+                {isTitleCollectionOpen ? "접기 ▲" : "펼치기 ▼"}
+              </span>
+            </div>
+          </div>
+          {!isTitleCollectionOpen ? (
+            <p className="journey-title-collapsed-hint">
+              {nextTitle
+                ? `장착 ${currentTitle?.ko ?? summary.fighterTitle} · 다음 ${nextTitle.ko} (LV. ${nextTitle.level})`
+                : `장착 ${currentTitle?.ko ?? summary.fighterTitle} · 모든 칭호 획득`}
+            </p>
+          ) : null}
+        </button>
+
+        {isTitleCollectionOpen ? (
+          <div className="journey-title-body-panel" id="title-collection-body">
+            {nextTitle ? (
+              <p className="journey-title-next">
+                다음 칭호 <strong>{nextTitle.ko}</strong> · LV. {nextTitle.level}
+              </p>
+            ) : (
+              <p className="journey-title-next">
+                모든 칭호를 획득했습니다. 레전드 달성!
+              </p>
+            )}
+
+            <div className="journey-title-list">
+              {titleCollection.map((title) => (
+                <article
+                  className={`journey-title-item is-${title.status}`}
+                  key={title.level}
+                >
+                  <div className="journey-title-badge" aria-hidden="true">
+                    {title.isCurrent ? "장착" : title.unlocked ? "획득" : title.isNext ? "다음" : "잠김"}
+                  </div>
+                  <div className="journey-title-copy">
+                    <div className="journey-title-top">
+                      <strong>{title.ko}</strong>
+                      <span>LV. {title.level}</span>
+                    </div>
+                    <p className="journey-title-en">{title.en}</p>
+                    <p className="journey-title-flavor">{title.flavor}</p>
+                    <p className="journey-title-stage">{title.stageKo}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <section
+        className={`journey-card journey-perk-card${isVeteranPerksOpen ? " is-open" : ""}`}
+        id="veteran-perks"
+      >
+        <button
+          type="button"
+          className="journey-title-toggle"
+          onClick={() => setIsVeteranPerksOpen((open) => !open)}
+          aria-expanded={isVeteranPerksOpen}
+          aria-controls="veteran-perks-body"
+        >
+          <div className="journey-section-head">
+            <div>
+              <p className="journey-section-label">VETERAN</p>
+              <h2>베테랑 혜택</h2>
+            </div>
+            <div className="journey-title-toggle-meta">
+              <span className="journey-count">
+                {unlockedPerkCount}/{veteranPerks.length}
+              </span>
+              <span className="journey-title-toggle-action">
+                {isVeteranPerksOpen ? "접기 ▲" : "펼치기 ▼"}
+              </span>
+            </div>
+          </div>
+          {!isVeteranPerksOpen ? (
+            <p className="journey-title-collapsed-hint">
+              {nextPerk
+                ? `다음 혜택 ${nextPerk.label} · LV. ${nextPerk.level}`
+                : "모든 베테랑 혜택을 해금했습니다"}
+            </p>
+          ) : null}
+        </button>
+
+        {isVeteranPerksOpen ? (
+          <div className="journey-title-body-panel" id="veteran-perks-body">
+            {nextPerk ? (
+              <p className="journey-title-next">
+                다음 혜택 <strong>{nextPerk.label}</strong> · LV. {nextPerk.level}
+              </p>
+            ) : (
+              <p className="journey-title-next">
+                장기 훈련의 모든 베테랑 혜택을 해금했습니다.
+              </p>
+            )}
+
+            <div className="journey-title-list">
+              {veteranPerks.map((perk) => (
+                <article
+                  className={`journey-title-item is-${perk.status}`}
+                  key={perk.id}
+                >
+                  <div className="journey-title-badge" aria-hidden="true">
+                    {perk.unlocked ? "해금" : perk.isNext ? "다음" : "잠김"}
+                  </div>
+                  <div className="journey-title-copy">
+                    <div className="journey-title-top">
+                      <strong>{perk.label}</strong>
+                      <span>LV. {perk.level}</span>
+                    </div>
+                    <p className="journey-title-en">
+                      {perkKindLabel[perk.kind] || "혜택"}
+                    </p>
+                    <p className="journey-title-flavor">{perk.description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {logs.length === 0 ? (

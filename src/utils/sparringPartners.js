@@ -3,6 +3,10 @@ import {
   normalizeWeightClass,
   suggestWeightClass,
 } from "../data/proBoxingWeightClasses";
+import {
+  enrichSparringPartner,
+  sortSparringPartners,
+} from "./veteranPerks";
 
 export {
   formatWeightClassOption,
@@ -72,23 +76,26 @@ export function clearMyListing(userId) {
   localStorage.removeItem(getStorageKey(userId));
 }
 
-export function buildListingFromProfile(profile, { active = false } = {}) {
-  return {
-    nickname: profile.nickname || "나",
-    weightClass: normalizeWeightClass(
-      profile.weightClass || suggestWeightClass(profile.weightKg),
-    ),
-    experience: profile.experience || "1년차",
-    style: profile.sparringStyle || "미디엄",
-    area: profile.area || "",
-    note: profile.bio || "",
-    contact: profile.contact || "",
-    heightCm: profile.heightCm || null,
-    weightKg: profile.weightKg || null,
-    reachCm: profile.reachCm || null,
-    active,
-    distanceKm: 0,
-  };
+export function buildListingFromProfile(profile, { active = false, fighterLevel = 1 } = {}) {
+  return enrichSparringPartner(
+    {
+      nickname: profile.nickname || "나",
+      weightClass: normalizeWeightClass(
+        profile.weightClass || suggestWeightClass(profile.weightKg),
+      ),
+      experience: profile.experience || "1년차",
+      style: profile.sparringStyle || "미디엄",
+      area: profile.area || "",
+      note: profile.bio || "",
+      contact: profile.contact || "",
+      heightCm: profile.heightCm || null,
+      weightKg: profile.weightKg || null,
+      reachCm: profile.reachCm || null,
+      active,
+      distanceKm: 0,
+    },
+    fighterLevel
+  );
 }
 
 export function syncListingFromProfile(profile, userId, options = {}) {
@@ -96,6 +103,7 @@ export function syncListingFromProfile(profile, userId, options = {}) {
   const nextListing = {
     ...buildListingFromProfile(profile, {
       active: existing?.active ?? options.active ?? false,
+      fighterLevel: options.fighterLevel ?? existing?.fighterLevel ?? 1,
     }),
     note: existing?.note || profile.bio || "",
     contact: existing?.contact || profile.contact || "",
@@ -105,25 +113,33 @@ export function syncListingFromProfile(profile, userId, options = {}) {
   return saveMyListing(nextListing, userId);
 }
 
-export async function getAvailablePartners(lat, lon, filter = {}, userId) {
+export async function getAvailablePartners(
+  lat,
+  lon,
+  filter = {},
+  userId,
+  { fighterLevel = 1 } = {}
+) {
   const myListing = getMyListing(userId);
   let results = await fetchSparringPartners(lat, lon, filter);
 
+  results = results.map((partner) =>
+    enrichSparringPartner(partner, partner.fighterLevel ?? partner.level)
+  );
+
   if (myListing?.active) {
-    results = [
+    const enrichedMine = enrichSparringPartner(
       {
         ...myListing,
         distanceLabel: "내 프로필",
         isMine: true,
         distanceKm: 0,
       },
-      ...results,
-    ];
+      fighterLevel
+    );
+
+    results = [enrichedMine, ...results.filter((partner) => !partner.isMine)];
   }
 
-  return results.sort((a, b) => {
-    if (a.isMine) return -1;
-    if (b.isMine) return 1;
-    return a.distanceKm - b.distanceKm;
-  });
+  return sortSparringPartners(results);
 }

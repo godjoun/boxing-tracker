@@ -1,6 +1,10 @@
 import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
-import { getCompletionDelta } from "../utils/fighterProgress";
+import { getCompletionDelta, getFighterProgress } from "../utils/fighterProgress";
+import {
+  SPARRING_UNLOCK_LEVEL,
+  isSparringUnlocked,
+} from "../utils/featureUnlocks";
 import { calculateLogScore, CONDITION_OPTIONS } from "../utils/trainingStats";
 import "./LogPage.css";
 
@@ -55,34 +59,6 @@ function getRounds(log) {
   );
 }
 
-function getStatusColor(type) {
-  if (type === "promote") return "#86efac";
-  if (type === "safe") return "#7dd3fc";
-  return "#fca5a5";
-}
-
-function getProgressPercent(weeklyScore, currentTier) {
-  if (!currentTier?.promoteScore) return 100;
-  const percent = (weeklyScore / currentTier.promoteScore) * 100;
-  return Math.min(Math.round(percent), 100);
-}
-
-function getProgressText({ weeklyScore, currentTier, nextTier }) {
-  if (!nextTier) return "현재 최고 티어입니다.";
-
-  if (weeklyScore >= currentTier.promoteScore) {
-    return `${nextTier.name} 승급 조건 달성!`;
-  }
-
-  if (weeklyScore < currentTier.keepScore) {
-    return `티어 유지까지 ${currentTier.keepScore - weeklyScore}점 남음`;
-  }
-
-  return `${nextTier.name} 승급까지 ${
-    currentTier.promoteScore - weeklyScore
-  }점 남음`;
-}
-
 function createEmptyForm() {
   return {
     type: "복싱",
@@ -132,7 +108,7 @@ function OptionButton({ isActive, title, description, onClick }) {
   );
 }
 
-export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
+export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLevel = 1 } = {}) {
   const {
     logs,
     weeklyLogs,
@@ -141,9 +117,6 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     deleteLog,
     resetAllLogs,
     weeklyScore,
-    currentTier,
-    nextTier,
-    tierStatus,
     dailyScoreLimit,
     seasonInfo,
   } = useTraining();
@@ -154,6 +127,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const [reward, setReward] = useState(null);
 
   const safeWeeklyLogs = Array.isArray(weeklyLogs) ? weeklyLogs : logs;
+  const fighter = useMemo(() => getFighterProgress(logs), [logs]);
 
   const previewScore = calculatePreviewScore(
     form.minutes,
@@ -161,12 +135,10 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     form.rounds,
     form.type === CUSTOM_EXERCISE_VALUE ? form.customType : form.type
   );
-  const progressPercent = getProgressPercent(weeklyScore, currentTier);
-  const progressText = getProgressText({
-    weeklyScore,
-    currentTier,
-    nextTier,
-  });
+  const progressPercent = fighter.progressPercent;
+  const progressText = fighter.isMaxLevel
+    ? "최대 레벨에 도달했습니다"
+    : `다음 레벨까지 ${fighter.xpToNextLevel} EXP`;
 
   const weeklySummary = useMemo(() => {
     const workoutCount = safeWeeklyLogs.length;
@@ -372,24 +344,23 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         <section className="log-card log-season-card">
           <div className="log-season-head">
             <div>
-              <p className="log-season-label">이번 주 시즌</p>
+              <p className="log-season-label">성장 현황</p>
               <p className="log-season-range">
-                {seasonInfo?.startText || "이번 주"} –{" "}
-                {seasonInfo?.endText || "시즌"}
+                {fighter.levelLabel} · {fighter.fighterTitle}
               </p>
             </div>
 
-            <span className="log-season-badge">
-              {seasonInfo?.daysLeft === 0
-                ? "오늘 종료"
-                : `${seasonInfo?.daysLeft ?? 0}일 남음`}
-            </span>
+            <span className="log-season-badge">{fighter.fighterTitleEn}</span>
           </div>
 
           <div className="log-score-panel">
             <div className="log-score-row">
-              <span>이번 주 점수</span>
-              <span className="log-score-value">{weeklyScore}점</span>
+              <span>레벨 경험치</span>
+              <span className="log-score-value">
+                {fighter.isMaxLevel
+                  ? "MAX LEVEL"
+                  : `${fighter.currentLevelExp} / ${fighter.nextLevelExp} EXP`}
+              </span>
             </div>
 
             <div className="log-progress-track">
@@ -400,6 +371,17 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
             </div>
 
             <p className="log-progress-text">{progressText}</p>
+          </div>
+
+          <div className="log-score-panel">
+            <div className="log-score-row">
+              <span>이번 주 점수</span>
+              <span className="log-score-value">{weeklyScore}점</span>
+            </div>
+            <p className="log-progress-text">
+              {seasonInfo?.startText || "이번 주"} – {seasonInfo?.endText || "주간"}{" "}
+              · D-{seasonInfo?.daysLeft ?? 0}
+            </p>
           </div>
 
           <div className="log-stat-grid">
@@ -419,11 +401,8 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
             </div>
           </div>
 
-          <p
-            className="log-tier-status"
-            style={{ color: getStatusColor(tierStatus.type) }}
-          >
-            {tierStatus.title} · {tierStatus.message}
+          <p className="log-tier-status">
+            누적 {fighter.totalRounds}R · 총 EXP {fighter.totalExp}
           </p>
         </section>
 
@@ -462,7 +441,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
             <div className="log-growth-level-head">
               <strong>{reward.delta.levelLabel}</strong>
               <span>
-                {reward.delta.currentLevelExp} / 100 EXP
+                {reward.delta.isMaxLevel
+                  ? "MAX LEVEL"
+                  : `${reward.delta.currentLevelExp} / ${reward.delta.nextLevelExp} EXP`}
               </span>
             </div>
             <div className="log-growth-level-track">
@@ -471,8 +452,27 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
               />
             </div>
             <p className="log-growth-level-note">
-              다음 레벨까지 {reward.delta.expToNextLevel} EXP
+              {reward.delta.isMaxLevel
+                ? "최대 레벨에 도달했습니다"
+                : `다음 레벨까지 ${reward.delta.expToNextLevel} EXP`}
             </p>
+
+            {reward.delta.didLevelUp && reward.delta.newTitle ? (
+              <div className="log-growth-unlocks">
+                <span>NEW TITLE · 새 칭호</span>
+                <p className="log-growth-title-ko">{reward.delta.newTitle.ko}</p>
+                <p className="log-growth-title-en">{reward.delta.newTitle.en}</p>
+                <small className="log-growth-title-flavor">
+                  {reward.delta.newTitle.flavor}
+                </small>
+                {reward.delta.currentLevel === SPARRING_UNLOCK_LEVEL &&
+                isSparringUnlocked(reward.delta.currentLevel) ? (
+                  <p className="log-growth-title-extra">
+                    스파링 상대찾기 이용 가능
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             {reward.message ? (
               <p className="log-growth-message">{reward.message}</p>

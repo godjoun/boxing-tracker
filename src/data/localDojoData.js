@@ -86,6 +86,7 @@ export const LOCAL_SPARRING_PARTNERS = [
     lon: 127.0276,
     contact: "",
     active: true,
+    fighterLevel: 58,
   },
   {
     id: "local-partner-2",
@@ -112,6 +113,7 @@ export const LOCAL_SPARRING_PARTNERS = [
     lon: 127.1028,
     contact: "",
     active: true,
+    fighterLevel: 79,
   },
   {
     id: "local-partner-4",

@@ -4,7 +4,7 @@ export const styles = {
     maxWidth: "720px",
     margin: "0 auto",
     padding: "18px 16px 110px",
-    color: "#ffffff",
+    color: "var(--p-text)",
     boxSizing: "border-box",
   },
 
@@ -12,9 +12,9 @@ export const styles = {
     borderRadius: "30px",
     padding: "26px",
     background:
-      "radial-gradient(circle at 90% 10%, rgba(255, 51, 51, 0.42), transparent 34%), linear-gradient(145deg, #222222, #050505)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    boxShadow: "0 22px 55px rgba(0, 0, 0, 0.45)",
+      "var(--p-hero-bg)",
+    border: "1px solid var(--p-border-strong)",
+    boxShadow: "var(--p-shadow-hero)",
   },
 
   cardTop: {
@@ -25,7 +25,7 @@ export const styles = {
 
   kicker: {
     margin: "0 0 10px",
-    color: "#ff5555",
+    color: "var(--p-accent)",
     fontSize: "12px",
     fontWeight: 900,
     letterSpacing: "0.16em",
@@ -40,7 +40,7 @@ export const styles = {
 
   profileSetupHint: {
     margin: "10px 0 0",
-    color: "rgba(255, 255, 255, 0.52)",
+    color: "var(--p-text-muted)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
@@ -50,8 +50,8 @@ export const styles = {
     width: "92px",
     height: "92px",
     borderRadius: "24px",
-    background: "rgba(255, 59, 59, 0.16)",
-    border: "1px solid rgba(255, 85, 85, 0.5)",
+    background: "var(--p-accent-bg)",
+    border: "1px solid var(--p-accent-border)",
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
@@ -59,7 +59,7 @@ export const styles = {
   },
 
   tierLabel: {
-    color: "rgba(255, 255, 255, 0.55)",
+    color: "var(--p-text-muted)",
     fontSize: "11px",
     fontWeight: 900,
   },
@@ -81,8 +81,8 @@ export const styles = {
     height: "108px",
     borderRadius: "30px",
     overflow: "hidden",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    background: "var(--p-bg-inner)",
+    border: "1px solid var(--p-border-strong)",
     flexShrink: 0,
   },
 
@@ -100,7 +100,7 @@ export const styles = {
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "var(--p-text-muted)",
   },
 
   photoButtons: {
@@ -119,19 +119,19 @@ export const styles = {
     border: "none",
     borderRadius: "16px",
     padding: "13px 14px",
-    background: "#ff3333",
-    color: "#ffffff",
+    background: "var(--p-accent-solid)",
+    color: "var(--p-on-accent)",
     fontSize: "14px",
     fontWeight: 900,
     cursor: "pointer",
   },
 
   darkButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    border: "1px solid var(--p-border-strong)",
     borderRadius: "16px",
     padding: "13px 14px",
-    background: "rgba(255, 255, 255, 0.06)",
-    color: "#ffffff",
+    background: "var(--p-bg-inner)",
+    color: "var(--p-text)",
     fontSize: "14px",
     fontWeight: 900,
     cursor: "pointer",
@@ -141,8 +141,8 @@ export const styles = {
     border: "none",
     borderRadius: "16px",
     padding: "13px 14px",
-    background: "#ffffff",
-    color: "#050505",
+    background: "var(--p-surface)",
+    color: "var(--p-on-surface)",
     fontSize: "14px",
     fontWeight: 900,
     cursor: "pointer",
@@ -152,13 +152,13 @@ export const styles = {
     marginTop: "18px",
     borderRadius: "20px",
     padding: "16px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    background: "var(--p-bg-inner)",
+    border: "1px solid var(--p-border-soft)",
   },
 
   profileNameLabel: {
     display: "block",
-    color: "rgba(255, 255, 255, 0.45)",
+    color: "var(--p-text-faint)",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.12em",
@@ -171,14 +171,14 @@ export const styles = {
 
   profileBio: {
     margin: "10px 0 0",
-    color: "rgba(255, 255, 255, 0.68)",
+    color: "var(--p-text-soft)",
     fontSize: "14px",
     lineHeight: 1.5,
   },
 
   profileSpecSummary: {
     margin: "10px 0 0",
-    color: "rgba(255, 255, 255, 0.55)",
+    color: "var(--p-text-muted)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
@@ -196,15 +196,15 @@ export const styles = {
     gap: "6px",
     padding: "7px 11px",
     borderRadius: "999px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-    color: "rgba(255, 255, 255, 0.78)",
+    background: "var(--p-bg-inner)",
+    border: "1px solid var(--p-border-soft)",
+    color: "var(--p-text-body)",
     fontSize: "12px",
     fontWeight: 700,
   },
 
   profileSpecChipLabel: {
-    color: "rgba(255, 255, 255, 0.45)",
+    color: "var(--p-text-faint)",
     fontSize: "11px",
     fontWeight: 800,
   },
@@ -212,8 +212,8 @@ export const styles = {
   profileEditPanel: {
     marginTop: "16px",
     borderRadius: "22px",
-    background: "rgba(255, 255, 255, 0.04)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    background: "var(--p-bg-subtle)",
+    border: "1px solid var(--p-border-soft)",
     overflow: "hidden",
   },
 
@@ -226,7 +226,7 @@ export const styles = {
     padding: "16px 18px",
     border: "none",
     background: "transparent",
-    color: "#ffffff",
+    color: "var(--p-text)",
     cursor: "pointer",
     textAlign: "left",
   },
@@ -245,14 +245,14 @@ export const styles = {
   profileEditToggleHint: {
     display: "block",
     marginTop: "5px",
-    color: "rgba(255, 255, 255, 0.48)",
+    color: "var(--p-text-muted)",
     fontSize: "12px",
     lineHeight: 1.45,
   },
 
   profileEditToggleAction: {
     flexShrink: 0,
-    color: "#ff7b72",
+    color: "var(--p-accent-soft)",
     fontSize: "12px",
     fontWeight: 800,
     whiteSpace: "nowrap",
@@ -260,7 +260,7 @@ export const styles = {
 
   profileEditContent: {
     padding: "0 18px 18px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+    borderTop: "1px solid var(--p-border-soft)",
   },
 
   profileEditSection: {
@@ -269,7 +269,7 @@ export const styles = {
 
   profileEditSectionTitle: {
     margin: "0 0 14px",
-    color: "#ff5555",
+    color: "var(--p-accent)",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.14em",
@@ -284,7 +284,7 @@ export const styles = {
   fieldLabel: {
     display: "block",
     marginBottom: "12px",
-    color: "rgba(255, 255, 255, 0.92)",
+    color: "var(--p-text-strong)",
     fontSize: "13px",
     fontWeight: 800,
   },
@@ -292,7 +292,7 @@ export const styles = {
   fieldHint: {
     display: "block",
     marginTop: "6px",
-    color: "rgba(255, 255, 255, 0.42)",
+    color: "var(--p-text-faint)",
     fontSize: "11px",
     fontWeight: 600,
   },
@@ -300,7 +300,7 @@ export const styles = {
   profileSaveFooter: {
     marginTop: "18px",
     paddingTop: "16px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+    borderTop: "1px solid var(--p-border-soft)",
   },
 
   profileSaveButton: {
@@ -308,24 +308,24 @@ export const styles = {
     minHeight: "48px",
     border: "none",
     borderRadius: "14px",
-    background: "#ef3f36",
-    color: "#ffffff",
+    background: "var(--p-accent-solid)",
+    color: "var(--p-on-accent)",
     fontSize: "14px",
     fontWeight: 900,
     cursor: "pointer",
-    boxShadow: "0 10px 24px rgba(239, 63, 54, 0.24)",
+    boxShadow: "var(--p-shadow-accent)",
   },
 
   profileSaveError: {
     margin: "0 0 12px",
-    color: "#ff8a80",
+    color: "var(--p-accent-soft)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
 
   sectionDividerLabel: {
     margin: "18px 0 0",
-    color: "#ff5555",
+    color: "var(--p-accent)",
     fontSize: "12px",
     fontWeight: 900,
     letterSpacing: "0.16em",
@@ -335,9 +335,9 @@ export const styles = {
     width: "100%",
     boxSizing: "border-box",
     marginTop: "8px",
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-    color: "#ffffff",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
+    backgroundColor: "var(--p-input-bg)",
+    color: "var(--p-text)",
+    border: "1px solid var(--p-border-soft)",
     borderRadius: "12px",
     padding: "12px 13px",
     fontSize: "14px",
@@ -348,7 +348,7 @@ export const styles = {
   label: {
     display: "block",
     marginBottom: "12px",
-    color: "rgba(255, 255, 255, 0.92)",
+    color: "var(--p-text-strong)",
     fontSize: "13px",
     fontWeight: 800,
   },
@@ -358,9 +358,9 @@ export const styles = {
     minHeight: "84px",
     boxSizing: "border-box",
     marginTop: "8px",
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-    color: "#ffffff",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
+    backgroundColor: "var(--p-input-bg)",
+    color: "var(--p-text)",
+    border: "1px solid var(--p-border-soft)",
     borderRadius: "12px",
     padding: "12px 13px",
     fontSize: "14px",
@@ -380,13 +380,13 @@ export const styles = {
   statBox: {
     borderRadius: "24px",
     padding: "18px",
-    background: "#171717",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
+    background: "var(--p-bg-panel)",
+    border: "1px solid var(--p-border)",
   },
 
   statLabel: {
     display: "block",
-    color: "rgba(255, 255, 255, 0.52)",
+    color: "var(--p-text-muted)",
     fontSize: "13px",
     fontWeight: 700,
     marginBottom: "10px",
@@ -403,16 +403,16 @@ export const styles = {
     scrollMarginTop: "18px",
     borderRadius: "26px",
     padding: "21px",
-    background: "#121212",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
+    background: "var(--p-bg-card)",
+    border: "1px solid var(--p-border)",
   },
 
   recentTrainingNotice: {
     marginBottom: "16px",
     padding: "15px",
     borderRadius: "18px",
-    background: "rgba(255, 51, 51, 0.1)",
-    border: "1px solid rgba(255, 85, 85, 0.28)",
+    background: "var(--p-accent-bg)",
+    border: "1px solid var(--p-accent-border)",
   },
 
   recentTrainingBadge: {
@@ -420,15 +420,15 @@ export const styles = {
     marginBottom: "9px",
     padding: "6px 9px",
     borderRadius: "999px",
-    background: "#ff3333",
-    color: "#ffffff",
+    background: "var(--p-accent-solid)",
+    color: "var(--p-on-accent)",
     fontSize: "11px",
     fontWeight: 900,
   },
 
   recentTrainingTitle: {
     display: "block",
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "15px",
     fontWeight: 900,
     marginBottom: "5px",
@@ -436,7 +436,7 @@ export const styles = {
 
   recentTrainingText: {
     margin: 0,
-    color: "rgba(255, 255, 255, 0.68)",
+    color: "var(--p-text-soft)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
@@ -456,25 +456,25 @@ export const styles = {
     alignItems: "center",
     gap: "12px",
     width: "100%",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    border: "1px solid var(--p-border-soft)",
     borderRadius: "18px",
-    background: "#050505",
+    background: "var(--p-bg-deep)",
     padding: "14px",
-    color: "#ffffff",
+    color: "var(--p-text)",
     cursor: "pointer",
     textAlign: "left",
   },
 
   logSelectItemActive: {
-    border: "1px solid #ff3333",
-    background: "rgba(255, 51, 51, 0.08)",
+    border: "1px solid var(--p-accent-solid)",
+    background: "var(--p-accent-bg)",
   },
 
   logSelectCheck: {
     width: "24px",
     height: "24px",
     borderRadius: "999px",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
+    border: "1px solid var(--p-border-strong)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -491,7 +491,7 @@ export const styles = {
 
   logSelectMeta: {
     margin: "6px 0 0",
-    color: "rgba(255, 255, 255, 0.54)",
+    color: "var(--p-text-muted)",
     fontSize: "13px",
     lineHeight: 1.4,
   },
@@ -501,20 +501,20 @@ export const styles = {
     marginBottom: "16px",
     padding: "16px",
     borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    background: "var(--p-bg-subtle)",
+    border: "1px solid var(--p-border-soft)",
   },
 
   cardMakerLabel: {
     margin: "0 0 8px",
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "14px",
     fontWeight: 900,
   },
 
   cardMakerHelp: {
     margin: "0 0 14px",
-    color: "rgba(255, 255, 255, 0.56)",
+    color: "var(--p-text-muted)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
@@ -523,9 +523,9 @@ export const styles = {
     margin: "0 0 16px",
     padding: "12px 14px",
     borderRadius: "14px",
-    border: "1px solid rgba(239, 63, 54, 0.22)",
-    background: "rgba(239, 63, 54, 0.08)",
-    color: "rgba(255, 255, 255, 0.72)",
+    border: "1px solid var(--p-accent-border)",
+    background: "var(--p-accent-bg)",
+    color: "var(--p-text-body)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
@@ -538,7 +538,7 @@ export const styles = {
 
   videoNotice: {
     margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.55)",
+    color: "var(--p-text-muted)",
     fontSize: "12px",
     lineHeight: 1.5,
   },
@@ -554,11 +554,11 @@ export const styles = {
   },
 
   cardStyleButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    border: "1px solid var(--p-border-strong)",
     borderRadius: "16px",
     padding: "14px",
-    background: "#050505",
-    color: "#ffffff",
+    background: "var(--p-bg-deep)",
+    color: "var(--p-text)",
     textAlign: "left",
     cursor: "pointer",
     display: "flex",
@@ -567,9 +567,9 @@ export const styles = {
   },
 
   activeCardStyleButton: {
-    background: "#ffffff",
-    color: "#050505",
-    border: "1px solid #ffffff",
+    background: "var(--p-accent-bg)",
+    color: "var(--p-accent)",
+    border: "1px solid var(--p-accent-border)",
   },
 
   filterGrid: {
@@ -579,11 +579,11 @@ export const styles = {
   },
 
   filterButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    border: "1px solid var(--p-border-strong)",
     borderRadius: "16px",
     padding: "13px",
-    background: "#050505",
-    color: "#ffffff",
+    background: "var(--p-bg-deep)",
+    color: "var(--p-text)",
     textAlign: "left",
     cursor: "pointer",
     display: "flex",
@@ -594,15 +594,20 @@ export const styles = {
   activeFilterButton: {
     background: "#d6a234",
     border: "1px solid #d6a234",
-    color: "#050505",
+    color: "var(--p-on-surface)",
+  },
+
+  lockedFilterButton: {
+    opacity: 0.52,
+    cursor: "not-allowed",
   },
 
   adjustSection: {
     marginBottom: "16px",
     padding: "16px",
     borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    background: "var(--p-bg-subtle)",
+    border: "1px solid var(--p-border-soft)",
   },
 
   rangeLabel: {
@@ -610,7 +615,7 @@ export const styles = {
     marginBottom: "8px",
     display: "flex",
     justifyContent: "space-between",
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "13px",
     fontWeight: 900,
   },
@@ -625,7 +630,7 @@ export const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "14px",
     fontWeight: 900,
   },
@@ -638,7 +643,7 @@ export const styles = {
 
   commentToggleHelp: {
     margin: "8px 0 0",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "var(--p-text-muted)",
     fontSize: "12px",
     lineHeight: 1.5,
   },
@@ -648,8 +653,8 @@ export const styles = {
     width: "min(100%, 390px)",
     borderRadius: "30px",
     overflow: "hidden",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-    boxShadow: "0 22px 55px rgba(0, 0, 0, 0.45)",
+    border: "1px solid var(--p-border-soft)",
+    boxShadow: "var(--p-shadow-hero)",
   },
 
   trainingCardPhotoArea: {
@@ -699,7 +704,7 @@ export const styles = {
   },
 
   trainingCardKicker: {
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "12px",
     fontWeight: 900,
     letterSpacing: "0.16em",
@@ -739,7 +744,7 @@ export const styles = {
   },
   
   basicPosterLabel: {
-    color: "rgba(255, 255, 255, 0.56)",
+    color: "var(--p-text-muted)",
     fontSize: "10px",
     fontWeight: 950,
     letterSpacing: "0.16em",
@@ -755,7 +760,7 @@ export const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "2px",
-    color: "#ffffff",
+    color: "var(--p-text)",
     lineHeight: 1.18,
   },
   
@@ -779,7 +784,7 @@ export const styles = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    color: "rgba(255, 255, 255, 0.72)",
+    color: "var(--p-text-body)",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.04em",
@@ -804,7 +809,7 @@ export const styles = {
     justifyContent: "space-between",
     padding: "20px",
     boxSizing: "border-box",
-    color: "#ffffff",
+    color: "var(--p-text)",
     textShadow: "0 5px 20px rgba(0, 0, 0, 0.98)",
     border: "1px solid rgba(214, 162, 52, 0.5)",
     borderRadius: "30px",
@@ -845,7 +850,7 @@ export const styles = {
 
   levelUpName: {
     margin: 0,
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "54px",
     lineHeight: 0.9,
     fontWeight: 950,
@@ -855,7 +860,7 @@ export const styles = {
   levelUpLabel: {
     display: "block",
     marginTop: "22px",
-    color: "rgba(255, 255, 255, 0.92)",
+    color: "var(--p-text-strong)",
     fontSize: "15px",
     fontWeight: 950,
     letterSpacing: "0.14em",
@@ -875,7 +880,7 @@ export const styles = {
 
   levelUpSlogan: {
     margin: "16px 0 0",
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "23px",
     lineHeight: 1.06,
     fontWeight: 950,
@@ -938,7 +943,7 @@ export const styles = {
 
   levelUpTierLabel: {
     display: "block",
-    color: "rgba(255, 255, 255, 0.68)",
+    color: "var(--p-text-soft)",
     fontSize: "10px",
     fontWeight: 950,
     letterSpacing: "0.12em",
@@ -985,7 +990,7 @@ export const styles = {
     justifyContent: "space-between",
     padding: "24px",
     boxSizing: "border-box",
-    color: "#ffffff",
+    color: "var(--p-text)",
     textShadow: "0 2px 12px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9)",
   },
 
@@ -1011,7 +1016,7 @@ export const styles = {
 
   socialTitle: {
     margin: 0,
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "24px",
     fontWeight: 950,
     lineHeight: 1.12,
@@ -1044,7 +1049,7 @@ export const styles = {
   
   socialMetricLabel: {
     display: "block",
-    color: "rgba(255, 255, 255, 0.52)",
+    color: "var(--p-text-muted)",
     fontSize: "9px",
     fontWeight: 900,
     letterSpacing: "0.12em",
@@ -1053,7 +1058,7 @@ export const styles = {
 
   socialMetricValue: {
     display: "block",
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "13px",
     fontWeight: 950,
     lineHeight: 1.15,
@@ -1062,7 +1067,7 @@ export const styles = {
   posterInputBox: {
     marginTop: "18px",
     paddingTop: "16px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+    borderTop: "1px solid var(--p-border-soft)",
   },
 
   posterInputGrid: {
@@ -1083,13 +1088,13 @@ export const styles = {
     gridTemplateColumns: "82px minmax(0, 1fr)",
     alignItems: "center",
     gap: "8px",
-    color: "rgba(255, 255, 255, 0.82)",
+    color: "var(--p-text-body)",
     fontSize: "12px",
     fontWeight: 900,
   },
 
   posterInputLabelText: {
-    color: "rgba(255, 255, 255, 0.72)",
+    color: "var(--p-text-body)",
     fontSize: "11px",
     fontWeight: 950,
     lineHeight: 1.2,
@@ -1101,7 +1106,7 @@ export const styles = {
     boxSizing: "border-box",
     marginTop: 0,
     backgroundColor: "#050505",
-    color: "#ffffff",
+    color: "var(--p-text)",
     border: "1px solid rgba(255, 255, 255, 0.14)",
     borderRadius: "13px",
     padding: "11px",
@@ -1114,9 +1119,9 @@ export const styles = {
     height: "100%",
     minHeight: "42px",
     borderRadius: "13px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    color: "rgba(255, 255, 255, 0.78)",
+    background: "var(--p-bg-inner)",
+    border: "1px solid var(--p-border-soft)",
+    color: "var(--p-text-body)",
     fontSize: "11px",
     fontWeight: 950,
     display: "flex",
@@ -1143,7 +1148,7 @@ export const styles = {
     justifyContent: "space-between",
     padding: "18px 16px 20px",
     boxSizing: "border-box",
-    color: "#ffffff",
+    color: "var(--p-text)",
     textAlign: "center",
     textShadow: "0 7px 24px rgba(0, 0, 0, 0.98)",
   },
@@ -1244,7 +1249,7 @@ export const styles = {
 
   posterDateText: {
     margin: "8px 0 0",
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "clamp(22px, 6.4vw, 38px)",
     lineHeight: 1,
     fontWeight: 950,
@@ -1274,7 +1279,7 @@ export const styles = {
   posterComment: {
     margin: 0,
     width: "min(360px, 92%)",
-    color: "rgba(255, 255, 255, 0.78)",
+    color: "var(--p-text-body)",
     fontSize: "12px",
     lineHeight: 1.45,
     fontWeight: 850,
@@ -1298,8 +1303,8 @@ export const styles = {
     border: "none",
     borderRadius: "16px",
     padding: "15px",
-    background: "#ffffff",
-    color: "#050505",
+    background: "var(--p-surface)",
+    color: "var(--p-on-surface)",
     fontSize: "15px",
     fontWeight: 900,
     cursor: "pointer",
@@ -1318,8 +1323,8 @@ export const styles = {
     border: "none",
     borderRadius: "16px",
     padding: "15px",
-    background: "#ff3333",
-    color: "#ffffff",
+    background: "var(--p-accent-solid)",
+    color: "var(--p-text)",
     fontSize: "15px",
     fontWeight: 900,
     cursor: "pointer",
@@ -1327,7 +1332,7 @@ export const styles = {
 
   shareHint: {
     margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.5)",
+    color: "var(--p-text-muted)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
@@ -1336,13 +1341,13 @@ export const styles = {
     marginTop: "14px",
     padding: "14px",
     borderRadius: "18px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    background: "var(--p-bg-inner)",
+    border: "1px solid var(--p-border-strong)",
   },
 
   exportPreviewTitle: {
     display: "block",
-    color: "#ffffff",
+    color: "var(--p-text)",
     fontSize: "14px",
     fontWeight: 950,
     marginBottom: "6px",
@@ -1360,8 +1365,8 @@ export const styles = {
     maxHeight: "520px",
     objectFit: "contain",
     borderRadius: "16px",
-    background: "#050505",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
+    background: "var(--p-bg-deep)",
+    border: "1px solid var(--p-border-soft)",
     display: "block",
   },
 
@@ -1376,19 +1381,19 @@ export const styles = {
     border: "none",
     borderRadius: "14px",
     padding: "12px",
-    background: "#ffffff",
-    color: "#050505",
+    background: "var(--p-surface)",
+    color: "var(--p-on-surface)",
     fontSize: "13px",
     fontWeight: 950,
     cursor: "pointer",
   },
 
   exportPreviewSecondaryButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
+    border: "1px solid var(--p-border-strong)",
     borderRadius: "14px",
     padding: "12px",
-    background: "rgba(255, 255, 255, 0.06)",
-    color: "#ffffff",
+    background: "var(--p-bg-inner)",
+    color: "var(--p-text)",
     fontSize: "13px",
     fontWeight: 950,
     cursor: "pointer",
@@ -1398,8 +1403,8 @@ export const styles = {
     marginTop: "16px",
     borderRadius: "26px",
     padding: "21px",
-    background: "#121212",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
+    background: "var(--p-bg-card)",
+    border: "1px solid var(--p-border)",
   },
 
   sectionTitle: {
@@ -1411,32 +1416,32 @@ export const styles = {
   proofBox: {
     padding: "18px",
     borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
+    background: "var(--p-bg-subtle)",
   },
 
   proofText: {
     margin: 0,
-    color: "rgba(255, 255, 255, 0.75)",
+    color: "var(--p-text-body)",
     fontSize: "15px",
     lineHeight: 1.6,
   },
 
   proofSmallText: {
     margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.46)",
+    color: "var(--p-text-faint)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
 
   redText: {
-    color: "#ff5555",
+    color: "var(--p-accent)",
   },
 
   emptyFeaturedLog: {
     padding: "18px",
     borderRadius: "18px",
-    background: "rgba(255, 255, 255, 0.05)",
-    color: "rgba(255, 255, 255, 0.55)",
+    background: "var(--p-bg-subtle)",
+    color: "var(--p-text-muted)",
     fontSize: "14px",
     lineHeight: 1.5,
   },
@@ -1450,8 +1455,8 @@ export const styles = {
   featuredLogItem: {
     padding: "16px",
     borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
+    background: "var(--p-bg-subtle)",
+    border: "1px solid var(--p-border-soft)",
   },
 
   featuredLogTop: {
@@ -1470,8 +1475,8 @@ export const styles = {
     display: "inline-block",
     padding: "5px 8px",
     borderRadius: "999px",
-    background: "rgba(255, 51, 51, 0.14)",
-    color: "#ff7777",
+    background: "var(--p-accent-bg)",
+    color: "var(--p-accent-soft)",
     fontSize: "11px",
     fontWeight: 900,
   },
@@ -1481,7 +1486,7 @@ export const styles = {
     padding: "5px 8px",
     borderRadius: "999px",
     background: "rgba(255, 255, 255, 0.08)",
-    color: "rgba(255, 255, 255, 0.65)",
+    color: "var(--p-text-soft)",
     fontSize: "11px",
     fontWeight: 900,
   },
@@ -1494,13 +1499,13 @@ export const styles = {
 
   featuredLogMeta: {
     margin: 0,
-    color: "rgba(255, 255, 255, 0.52)",
+    color: "var(--p-text-muted)",
     fontSize: "13px",
     lineHeight: 1.5,
   },
 
   featuredScore: {
-    color: "#ff5555",
+    color: "var(--p-accent)",
     fontSize: "16px",
     whiteSpace: "nowrap",
   },
@@ -1509,8 +1514,8 @@ export const styles = {
     margin: "14px 0 0",
     padding: "13px",
     borderRadius: "16px",
-    background: "rgba(0, 0, 0, 0.28)",
-    color: "rgba(255, 255, 255, 0.82)",
+    background: "var(--p-bg-inset)",
+    color: "var(--p-text-body)",
     fontSize: "14px",
     lineHeight: 1.55,
     fontWeight: 800,
@@ -1532,15 +1537,15 @@ export const styles = {
   },
 
   unlocked: {
-    background: "rgba(255, 51, 51, 0.12)",
-    color: "#ffffff",
-    border: "1px solid rgba(255, 85, 85, 0.26)",
+    background: "var(--p-accent-bg)",
+    color: "var(--p-text)",
+    border: "1px solid var(--p-accent-border)",
   },
 
   locked: {
-    background: "rgba(255, 255, 255, 0.04)",
-    color: "rgba(255, 255, 255, 0.45)",
-    border: "1px solid rgba(255, 255, 255, 0.06)",
+    background: "var(--p-bg-subtle)",
+    color: "var(--p-text-faint)",
+    border: "1px solid var(--p-border-soft)",
   },
 
   achievementIcon: {
@@ -1558,7 +1563,7 @@ export const styles = {
 
   achievementDescription: {
     margin: "5px 0 0",
-    color: "rgba(255, 255, 255, 0.55)",
+    color: "var(--p-text-muted)",
     fontSize: "12px",
     lineHeight: 1.4,
   },

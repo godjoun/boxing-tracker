@@ -1,15 +1,15 @@
 import { useMemo } from "react";
 import { useTraining } from "../store/TrainingContext";
+import { getFighterProgress } from "../utils/fighterProgress";
+import { getLevelTitle, getNextTitleMilestone } from "../utils/fighterTitles";
 import { buildWeeklyReport } from "../utils/trainingStats";
 
 export default function WeeklyReportPage({ onGoBack }) {
-  const { logs, weeklyScore, currentTier, nextTier, seasonInfo } = useTraining();
+  const { logs, weeklyScore, seasonInfo } = useTraining();
 
   const report = useMemo(() => buildWeeklyReport(logs), [logs]);
-
-  const promoteGap = nextTier
-    ? Math.max(0, currentTier.promoteScore - weeklyScore)
-    : 0;
+  const fighter = useMemo(() => getFighterProgress(logs), [logs]);
+  const nextTitle = getNextTitleMilestone(fighter.level);
 
   return (
     <main className="report-page">
@@ -20,7 +20,7 @@ export default function WeeklyReportPage({ onGoBack }) {
         <div className="report-hero-copy">
           <p>WEEKLY REPORT</p>
           <h1>주간 리포트</h1>
-          <span>{report.weekLabel} · 시즌 종료 D-{seasonInfo.daysLeft}</span>
+          <span>{report.weekLabel} · 이번 주 D-{seasonInfo.daysLeft}</span>
         </div>
       </header>
 
@@ -38,7 +38,7 @@ export default function WeeklyReportPage({ onGoBack }) {
         <article className="report-stat-card">
           <span>주간 점수</span>
           <strong>{weeklyScore}</strong>
-          <small>{currentTier.name} 티어</small>
+          <small>이번 주 활동</small>
         </article>
         <article className="report-stat-card">
           <span>훈련 시간</span>
@@ -47,17 +47,20 @@ export default function WeeklyReportPage({ onGoBack }) {
         </article>
       </section>
 
-      {nextTier && (
-        <section className="report-panel">
-          <p className="home-section-label">TIER PROGRESS</p>
-          <h2>승급까지 {promoteGap}점</h2>
-          <p className="report-note">
-            {weeklyScore >= currentTier.promoteScore
-              ? `${nextTier.name} 승급 조건을 달성했습니다.`
-              : `${nextTier.name}까지 ${promoteGap}점 남았습니다.`}
-          </p>
-        </section>
-      )}
+      <section className="report-panel">
+        <p className="home-section-label">GROWTH</p>
+        <h2>
+          {fighter.isMaxLevel
+            ? "최대 레벨 달성"
+            : `다음 레벨까지 ${fighter.xpToNextLevel} EXP`}
+        </h2>
+        <p className="report-note">
+          {fighter.levelLabel} · {fighter.fighterTitle} ({fighter.fighterTitleEn})
+          {nextTitle
+            ? ` · 다음 칭호: LV.${nextTitle.level} ${nextTitle.ko}`
+            : " · 백 단계 정점에 도달했습니다."}
+        </p>
+      </section>
 
       <section className="report-panel">
         <p className="home-section-label">HIGHLIGHTS</p>

@@ -93,7 +93,7 @@ export default function DataBackupPage({ onGoBack }) {
         <p className="home-section-label">EXPORT</p>
         <h2>백업 내보내기</h2>
         <p className="backup-text">
-          훈련 기록, 프로필, 티어 정보를 JSON 파일로 저장합니다. 클라우드
+          훈련 기록, 프로필, 성장 데이터를 JSON 파일로 저장합니다. 클라우드
           동기화 전까지 이 파일이 안전망입니다.
         </p>
         <button type="button" className="backup-primary-button" onClick={handleExport}>

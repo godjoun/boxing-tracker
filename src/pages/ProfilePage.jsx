@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import FighterSpecCard from "../components/FighterSpecCard";
-import { getFighterProgress } from "../utils/fighterProgress";
+import { getFighterProgress, MAX_FIGHTER_LEVEL } from "../utils/fighterProgress";
+import { getLevelTitle, getNextTitleMilestone } from "../utils/fighterTitles";
+import { isVeteranFilterUnlocked } from "../utils/veteranPerks";
 import { buildWeeklyReport } from "../utils/trainingStats";
 import { validateBodySpecFields } from "../utils/bodySpecs";
 import {
@@ -30,13 +32,16 @@ import {
   getImageFilter,
 } from "./profilePage/cardConfig";
 
-export default function ProfilePage({ scrollTarget }) {
+export default function ProfilePage({
+  scrollTarget,
+  fighterLevel = 1,
+  onStartTraining,
+}) {
   const {
     logs,
     profile,
     userId,
     weeklyScore,
-    currentTier,
     updateProfile,
     updateProfilePhoto,
     removeProfilePhoto,
@@ -200,8 +205,12 @@ export default function ProfilePage({ scrollTarget }) {
       currentLevelXp: fighterProgress.currentLevelExp,
       nextLevelXp: fighterProgress.nextLevelExp,
       fighterTitle: fighterProgress.fighterTitle,
+      fighterTitleEn: fighterProgress.fighterTitleEn,
+      careerStageKo: fighterProgress.careerStageKo,
       xpToNextLevel: fighterProgress.xpToNextLevel,
       progressPercent: fighterProgress.progressPercent,
+      isMaxLevel: fighterProgress.isMaxLevel,
+      nextLevelExp: fighterProgress.nextLevelExp,
     };
   }, [logs]);
 
@@ -258,6 +267,10 @@ export default function ProfilePage({ scrollTarget }) {
   }, [selectedFilter]);
 
   function handleSelectFilter(filterId) {
+    if (!isVeteranFilterUnlocked(filterId, profileStats.level)) {
+      return;
+    }
+
     // 모바일에서 테마 버튼을 누른 직후 바로 저장해도
     // canvas export가 이전 테마 값을 쓰지 않도록 ref에도 즉시 저장한다.
     selectedFilterRef.current = filterId;
@@ -331,8 +344,12 @@ export default function ProfilePage({ scrollTarget }) {
   }, [profileStats.level]);
 
   useEffect(() => {
-    setPosterSubtitle(profileStats.fighterTitle || "ROOKIE FIGHTER");
-  }, [profileStats.fighterTitle]);
+    setPosterSubtitle(
+      profileStats.fighterTitleEn ||
+        profileStats.fighterTitle ||
+        "RING ENTRANT"
+    );
+  }, [profileStats.fighterTitle, profileStats.fighterTitleEn]);
 
   useEffect(() => {
     setPosterMainName((current) => {
@@ -347,11 +364,22 @@ export default function ProfilePage({ scrollTarget }) {
       block: "start",
     });
   }
-  const levelUpNextTierXp = Math.max(0, 100 - (profileStats.totalRounds % 100));
-  const levelUpProgressPercent = Math.min(
-    100,
-    Math.max(8, profileStats.totalRounds % 100)
-  );
+  const growthPreview = useMemo(() => {
+    const isMax = profileStats.isMaxLevel;
+    const nextTitle = !isMax ? getNextTitleMilestone(profileStats.level) : null;
+
+    return {
+      isMax,
+      nextTitle,
+      xpToNext: profileStats.xpToNextLevel,
+      progressPercent: profileStats.progressPercent,
+      currentTitleEn:
+        profileStats.fighterTitleEn || profileStats.fighterTitle || "FIGHTER",
+    };
+  }, [profileStats]);
+
+  const levelUpProgressPercent = growthPreview.progressPercent;
+  const levelUpNextExp = growthPreview.xpToNext;
 
   const levelUpTheme = getPosterCanvasTheme(selectedFilter);
   const levelUpAccent = levelUpTheme.accent;
@@ -488,7 +516,9 @@ export default function ProfilePage({ scrollTarget }) {
       };
 
       updateProfile(nextProfile);
-      syncListingFromProfile(nextProfile, userId);
+      syncListingFromProfile(nextProfile, userId, {
+        fighterLevel: profileStats.level,
+      });
       setIsSaving(true);
       setIsProfileEditOpen(false);
 
@@ -853,6 +883,45 @@ export default function ProfilePage({ scrollTarget }) {
         overlayTop: "rgba(0, 0, 0, 0.3)",
         overlayMid: "rgba(0, 0, 0, 0.12)",
         overlayBottom: "rgba(0, 0, 0, 0.86)",
+      };
+    }
+
+    if (filterId === "semipro") {
+      return {
+        bgA: "#2b1c08",
+        bgB: "#070402",
+        bgC: "#1a1206",
+        accent: "#e8b448",
+        accentSoft: "rgba(232, 180, 72, 0.28)",
+        overlayTop: "rgba(0, 0, 0, 0.32)",
+        overlayMid: "rgba(0, 0, 0, 0.14)",
+        overlayBottom: "rgba(0, 0, 0, 0.88)",
+      };
+    }
+
+    if (filterId === "champion") {
+      return {
+        bgA: "#2a1800",
+        bgB: "#050301",
+        bgC: "#1a1000",
+        accent: "#ffd648",
+        accentSoft: "rgba(255, 214, 72, 0.3)",
+        overlayTop: "rgba(0, 0, 0, 0.3)",
+        overlayMid: "rgba(0, 0, 0, 0.12)",
+        overlayBottom: "rgba(0, 0, 0, 0.9)",
+      };
+    }
+
+    if (filterId === "goat") {
+      return {
+        bgA: "#1f1408",
+        bgB: "#020101",
+        bgC: "#120a04",
+        accent: "#ffe48c",
+        accentSoft: "rgba(255, 228, 140, 0.32)",
+        overlayTop: "rgba(0, 0, 0, 0.34)",
+        overlayMid: "rgba(0, 0, 0, 0.14)",
+        overlayBottom: "rgba(0, 0, 0, 0.92)",
       };
     }
 
@@ -1772,7 +1841,7 @@ export default function ProfilePage({ scrollTarget }) {
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      drawTextFit(ctx, "NEXT TIER:", tierX + 36, tierY + 34, 280, {
+      drawTextFit(ctx, "NEXT LEVEL:", tierX + 36, tierY + 34, 280, {
         size: 36,
         minSize: 24,
         weight: 950,
@@ -1783,7 +1852,15 @@ export default function ProfilePage({ scrollTarget }) {
         shadow: false,
       });
 
-      drawTextFit(ctx, "ELITE", tierX + 330, tierY + 26, 330, {
+      drawTextFit(
+        ctx,
+        growthPreview.isMax
+          ? "MAX"
+          : growthPreview.nextTitle?.en || growthPreview.currentTitleEn,
+        tierX + 330,
+        tierY + 26,
+        330,
+        {
         size: 76,
         minSize: 44,
         weight: 950,
@@ -1794,7 +1871,13 @@ export default function ProfilePage({ scrollTarget }) {
         baseline: "top",
       });
 
-      drawTextFit(ctx, `${levelUpNextTierXp || 100} XP`, tierX + tierW - 42, tierY + 36, 220, {
+      drawTextFit(
+        ctx,
+        growthPreview.isMax ? "LV.100" : `${levelUpNextExp || 0} EXP`,
+        tierX + tierW - 42,
+        tierY + 36,
+        220,
+        {
         size: 56,
         minSize: 34,
         weight: 950,
@@ -2104,7 +2187,8 @@ ${logLines}${commentText}${mediaText}`;
         profile={profile}
         logs={logs}
         weeklyScore={weeklyScore}
-        tierName={currentTier?.name}
+        titleBadge={profileStats.fighterTitleEn}
+        careerStageKo={profileStats.careerStageKo}
         streakDays={levelUpStreakDays}
         onOpenCardMaker={scrollToCardMaker}
       />
@@ -2349,6 +2433,7 @@ ${logLines}${commentText}${mediaText}`;
       <section ref={cardMakerRef} style={styles.cardMakerSection}>
         <p style={styles.kicker}>NAMEPLATE · CARD MAKER</p>
         <h2 style={styles.sectionTitle}>훈련 인증 카드 만들기</h2>
+
         <p style={styles.cardMakerNameplateNote}>
           명패 스펙 {profileStats.levelLabel} · 이번 주 {profileStats.weeklyRounds}R ·
           누적 {profileStats.totalRounds}R가 카드에 반영됩니다.
@@ -2493,7 +2578,13 @@ ${logLines}${commentText}${mediaText}`;
               <p style={styles.cardMakerLabel}>4. 카드 테마 선택</p>
 
               <div style={styles.filterGrid}>
-                {CARD_FILTERS.map((filter) => (
+                {CARD_FILTERS.map((filter) => {
+                  const isLocked = !isVeteranFilterUnlocked(
+                    filter.id,
+                    profileStats.level
+                  );
+
+                  return (
                   <button
                     key={filter.id}
                     type="button"
@@ -2502,13 +2593,20 @@ ${logLines}${commentText}${mediaText}`;
                       ...(selectedFilter === filter.id
                         ? styles.activeFilterButton
                         : {}),
+                      ...(isLocked ? styles.lockedFilterButton : {}),
                     }}
                     onClick={() => handleSelectFilter(filter.id)}
+                    disabled={isLocked}
                   >
                     <strong>{filter.name}</strong>
-                    <span>{filter.description}</span>
+                    <span>
+                      {isLocked
+                        ? `LV. ${filter.veteranLevel} 베테랑 혜택`
+                        : filter.description}
+                    </span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -2943,13 +3041,18 @@ ${logLines}${commentText}${mediaText}`;
                       >
                         <div>
                         <strong style={{ ...styles.levelUpTierName, color: levelUpAccent }}>
-                          ELITE
+                          {growthPreview.isMax
+                            ? "MAX LEVEL"
+                            : growthPreview.nextTitle?.en ||
+                              growthPreview.currentTitleEn}
                         </strong>
                           
                         </div>
 
                         <strong style={{ ...styles.levelUpXpText, color: levelUpAccent }}>
-                          {levelUpNextTierXp || 100} XP
+                          {growthPreview.isMax
+                            ? "LV.100"
+                            : `${levelUpNextExp || 0} EXP`}
                         </strong>
 
                         <div style={styles.levelUpProgressTrack}>
@@ -3246,7 +3349,7 @@ ${logLines}${commentText}${mediaText}`;
         <p style={styles.kicker}>MY JOURNEY</p>
         <h2 style={styles.sectionTitle}>훈련 여정</h2>
         <p style={styles.proofSmallText}>
-          업적과 대표 훈련 기록은 하단 탭 <strong>여정</strong>에서 볼 수
+          칭호 도감, 베테랑 혜택, 업적, 대표 훈련 기록은 하단 탭 <strong>여정</strong>에서 볼 수
           있습니다.
         </p>
       </section>

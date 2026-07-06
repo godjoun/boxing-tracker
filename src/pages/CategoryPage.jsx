@@ -1,4 +1,10 @@
-import { useState } from "react";
+import {
+  getSparringUnlockProgress,
+  getUnlockLevel,
+  isFeatureUnlocked,
+  SPARRING_UNLOCK_LEVEL,
+} from "../utils/featureUnlocks";
+import { getLevelTitle } from "../utils/fighterTitles";
 
 const MENU_GROUPS = [
   {
@@ -21,6 +27,14 @@ const MENU_GROUPS = [
         description: "기록 확인",
         route: "log",
         accent: "orange",
+      },
+      {
+        id: "curriculum",
+        icon: "C",
+        title: "홈 커리큘럼",
+        description: "복싱장 없이 4주 프로그램",
+        route: "curriculum",
+        accent: "gold",
       },
     ],
   },
@@ -71,6 +85,32 @@ const MENU_GROUPS = [
     ],
   },
   {
+    id: "match",
+    eyebrow: "MATCH",
+    title: "매칭",
+    items: [
+      {
+        id: "gyms",
+        icon: "M",
+        title: "주변 체육관",
+        description: "체육관 찾기",
+        route: "gym",
+        gymView: "gyms",
+        accent: "red",
+      },
+      {
+        id: "sparring",
+        icon: "S",
+        title: "스파링 상대찾기",
+        description: "체급·경력 기반 매칭",
+        route: "gym",
+        gymView: "sparring",
+        accent: "orange",
+        featureId: "sparring",
+      },
+    ],
+  },
+  {
     id: "more",
     eyebrow: "MORE",
     title: "더보기",
@@ -87,29 +127,15 @@ const MENU_GROUPS = [
   },
 ];
 
-const PREP_MENU_GROUP = {
-  id: "prep",
-  eyebrow: "PREP",
-  title: "준비 중",
-  hint: "주인공 성장 흐름 이후에 열릴 기능입니다.",
-  items: [
-    {
-      id: "dojo-breaker",
-      icon: "D",
-      title: "도장깨기",
-      description: "스파링 · 체육관 찾기",
-      route: "gym",
-      accent: "slate",
-    },
-  ],
-};
-
 export default function CategoryPage({
+  fighterLevel = 1,
   onGoHome,
   onNavigate,
+  onNavigateGym,
   onOpenCardMaker,
 }) {
-  const [isPrepOpen, setIsPrepOpen] = useState(false);
+  const sparringProgress = getSparringUnlockProgress(fighterLevel);
+  const sparringTitle = getLevelTitle(SPARRING_UNLOCK_LEVEL);
 
   function selectItem(item) {
     if (item.action === "card-maker") {
@@ -117,7 +143,44 @@ export default function CategoryPage({
       return;
     }
 
+    if (item.route === "gym") {
+      onNavigateGym?.(item.gymView || "hub");
+      return;
+    }
+
     onNavigate?.(item.route);
+  }
+
+  function renderMenuItem(item) {
+    const locked =
+      item.featureId && !isFeatureUnlocked(item.featureId, fighterLevel);
+    const unlockLevel = item.featureId ? getUnlockLevel(item.featureId) : null;
+
+    return (
+      <button
+        type="button"
+        className={`category-row accent-${item.accent}${
+          locked ? " category-row-locked" : ""
+        }`}
+        key={item.id}
+        onClick={() => selectItem(item)}
+      >
+        <span className="category-row-icon" aria-hidden="true">
+          {item.icon}
+        </span>
+        <span className="category-row-copy">
+          <strong>{item.title}</strong>
+          <small>
+            {locked
+              ? `LV.${unlockLevel} ${getLevelTitle(unlockLevel).ko} 칭호 · ${item.description}`
+              : item.description}
+          </small>
+        </span>
+        <span className="category-row-arrow" aria-hidden="true">
+          {locked ? "🔒" : "→"}
+        </span>
+      </button>
+    );
   }
 
   return (
@@ -130,7 +193,7 @@ export default function CategoryPage({
         <div className="category-hero-copy">
           <p>MENU</p>
           <h1>더보기</h1>
-          <span>훈련 · 성장 · 명패 · 데이터</span>
+          <span>훈련 · 성장 · 명패 · 매칭 · LV.{fighterLevel}</span>
         </div>
       </header>
 
@@ -143,71 +206,36 @@ export default function CategoryPage({
             </div>
 
             <div className="category-list">
-              {group.items.map((item) => (
-                <button
-                  type="button"
-                  className={`category-row accent-${item.accent}`}
-                  key={item.id}
-                  onClick={() => selectItem(item)}
-                >
-                  <span className="category-row-icon" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  <span className="category-row-copy">
-                    <strong>{item.title}</strong>
-                    <small>{item.description}</small>
-                  </span>
-                  <span className="category-row-arrow" aria-hidden="true">
-                    →
-                  </span>
-                </button>
-              ))}
+              {group.items.map((item) => renderMenuItem(item))}
             </div>
           </section>
         ))}
       </div>
 
-      <section className="category-prep">
-        <button
-          type="button"
-          className="category-prep-toggle"
-          onClick={() => setIsPrepOpen((open) => !open)}
-          aria-expanded={isPrepOpen}
-        >
-          <span className="category-prep-toggle-copy">
-            <strong>{PREP_MENU_GROUP.title}</strong>
-            <small>{PREP_MENU_GROUP.hint}</small>
-          </span>
-          <span className="category-prep-toggle-action">
-            {isPrepOpen ? "접기" : "펼치기"}
-          </span>
-        </button>
-
-        {isPrepOpen ? (
-          <div className="category-prep-panel">
-            <p className="category-prep-label">{PREP_MENU_GROUP.eyebrow}</p>
-            {PREP_MENU_GROUP.items.map((item) => (
-              <button
-                type="button"
-                className={`category-row accent-${item.accent} category-row-muted`}
-                key={item.id}
-                onClick={() => selectItem(item)}
-              >
-                <span className="category-row-icon" aria-hidden="true">
-                  {item.icon}
-                </span>
-                <span className="category-row-copy">
-                  <strong>{item.title}</strong>
-                  <small>{item.description}</small>
-                </span>
-                <span className="category-row-arrow" aria-hidden="true">
-                  →
-                </span>
-              </button>
-            ))}
+      {!sparringProgress.unlocked ? (
+        <section className="category-unlock-roadmap">
+          <div className="category-group-heading">
+            <p>SPARRING</p>
+            <h2>스파링 준비</h2>
           </div>
-        ) : null}
-      </section>
+          <div className="category-sparring-teaser">
+            <p>
+              LV.{sparringProgress.unlockLevel}{" "}
+              <strong>{sparringTitle.ko}</strong> 칭호를 얻으면 스파링 상대찾기가
+              열립니다.
+            </p>
+            <div className="category-sparring-progress" aria-hidden="true">
+              <div
+                style={{ width: `${sparringProgress.progressPercent}%` }}
+              />
+            </div>
+            <small>
+              현재 LV.{sparringProgress.currentLevel} ·{" "}
+              {sparringProgress.levelsToGo}레벨 남음
+            </small>
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }

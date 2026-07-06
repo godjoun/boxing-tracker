@@ -23,6 +23,7 @@ import {
   validateBackupPayload,
 } from "../utils/dataBackup";
 import { validateBodySpecs } from "../utils/bodySpecs";
+import { getFighterProgress } from "../utils/fighterProgress";
 import { syncListingFromProfile } from "../utils/sparringPartners";
 import { registerNickname } from "../api/nicknameApi";
 
@@ -33,7 +34,6 @@ export const GUEST_USER_ID = "local-user";
 const LEGACY_STORAGE_KEYS = {
   logs: "fitness-league-logs",
   feed: "fitness-league-feed",
-  tier: "fitness-league-tier",
   mode: "fitness-league-mode",
   profile: "fitness-league-profile",
 };
@@ -46,7 +46,6 @@ function getStorageKeys(userId) {
   return {
     logs: `fitness-league-logs-${userId}`,
     feed: `fitness-league-feed-${userId}`,
-    tier: `fitness-league-tier-${userId}`,
     mode: `fitness-league-mode-${userId}`,
     profile: `fitness-league-profile-${userId}`,
   };
@@ -85,7 +84,6 @@ function loadUserState(userId) {
       ...DEFAULT_PROFILE,
       ...savedProfile,
     },
-    tierId: localStorage.getItem(keys.tier) || "bronze",
     mode: localStorage.getItem(keys.mode) || "solo",
   };
 }
@@ -113,39 +111,6 @@ const DIFFICULTY_LABEL = {
   hard: "빡셈",
   crazy: "죽음",
 };
-
-const TIERS = [
-  {
-    id: "bronze",
-    name: "브론즈",
-    keepScore: 0,
-    promoteScore: 150,
-  },
-  {
-    id: "silver",
-    name: "실버",
-    keepScore: 80,
-    promoteScore: 220,
-  },
-  {
-    id: "gold",
-    name: "골드",
-    keepScore: 150,
-    promoteScore: 320,
-  },
-  {
-    id: "platinum",
-    name: "플래티넘",
-    keepScore: 220,
-    promoteScore: 450,
-  },
-  {
-    id: "diamond",
-    name: "다이아",
-    keepScore: 300,
-    promoteScore: 600,
-  },
-];
 
 const SAMPLE_PLAYERS = [];
 
@@ -205,44 +170,6 @@ function calculateWeeklyScore(logs) {
   }, 0);
 }
 
-function getTierById(tierId) {
-  return TIERS.find((tier) => tier.id === tierId) || TIERS[0];
-}
-
-function getNextTier(currentTierId) {
-  const currentIndex = TIERS.findIndex((tier) => tier.id === currentTierId);
-
-  if (currentIndex === -1 || currentIndex === TIERS.length - 1) {
-    return null;
-  }
-
-  return TIERS[currentIndex + 1];
-}
-
-function getTierStatus(currentTier, weeklyScore) {
-  if (weeklyScore >= currentTier.promoteScore) {
-    return {
-      type: "promote",
-      title: "승급 가능",
-      message: "이번 주 기준을 넘겼어요. 시즌 종료 시 승급 후보입니다.",
-    };
-  }
-
-  if (weeklyScore >= currentTier.keepScore) {
-    return {
-      type: "safe",
-      title: "티어 안전",
-      message: "이번 주 티어 유지 기준을 넘겼어요.",
-    };
-  }
-
-  return {
-    type: "danger",
-    title: "강등 위험",
-    message: "이번 주 유지 점수가 부족해요. 조금만 더 움직이면 됩니다.",
-  };
-}
-
 function loadStorage(key, defaultValue) {
   try {
     const saved = localStorage.getItem(key);
@@ -272,7 +199,6 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
   const [logs, setLogs] = useState(() => loadUserState(userId).logs);
   const [feed, setFeed] = useState(() => loadUserState(userId).feed);
   const [profile, setProfile] = useState(() => loadUserState(userId).profile);
-  const [tierId, setTierId] = useState(() => loadUserState(userId).tierId);
   const [mode, setMode] = useState(() => loadUserState(userId).mode);
 
   useEffect(() => {
@@ -280,7 +206,6 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
     setLogs(nextState.logs);
     setFeed(nextState.feed);
     setProfile(nextState.profile);
-    setTierId(nextState.tierId);
     setMode(nextState.mode);
   }, [userId]);
 
@@ -297,10 +222,6 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
   }, [profile, storageKeys.profile]);
 
   useEffect(() => {
-    localStorage.setItem(storageKeys.tier, tierId);
-  }, [tierId, storageKeys.tier]);
-
-  useEffect(() => {
     localStorage.setItem(storageKeys.mode, mode);
   }, [mode, storageKeys.mode]);
 
@@ -312,9 +233,6 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
     return calculateWeeklyScore(logs);
   }, [logs]);
 
-  const currentTier = getTierById(tierId);
-  const nextTier = getNextTier(tierId);
-  const tierStatus = getTierStatus(currentTier, weeklyScore);
   const isLeagueMode = mode === "league";
 
   const seasonInfo = useMemo(() => {
@@ -376,7 +294,9 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
     });
 
     setProfile(nextProfile);
-    syncListingFromProfile(nextProfile, userId);
+    syncListingFromProfile(nextProfile, userId, {
+      fighterLevel: getFighterProgress(logs).level,
+    });
 
     return nextProfile;
   }
@@ -522,7 +442,6 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
       logs,
       feed,
       profile,
-      tierId,
       mode,
     });
   }
@@ -550,7 +469,6 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
     setProfile(nextProfile);
 
     if (!merge) {
-      setTierId(data.tierId || "bronze");
       setMode(data.mode || "solo");
     }
 
@@ -596,12 +514,6 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
     weeklyScore,
     rankings,
     seasonInfo,
-
-    currentTier,
-    nextTier,
-    tierStatus,
-    tiers: TIERS,
-    setTierId,
 
     mode,
     setMode,

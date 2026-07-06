@@ -3,7 +3,7 @@ import { sanitizeProfileForBackup } from "./privacy";
 export const BACKUP_VERSION = 1;
 export const BACKUP_APP_ID = "boxing-tracker";
 
-export function createBackupPayload({ logs, feed, profile, tierId, mode }) {
+export function createBackupPayload({ logs, feed, profile, mode }) {
   return {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
@@ -14,7 +14,6 @@ export function createBackupPayload({ logs, feed, profile, tierId, mode }) {
       profile: sanitizeProfileForBackup(
         profile && typeof profile === "object" ? profile : {}
       ),
-      tierId: tierId || "bronze",
       mode: mode || "solo",
     },
   };

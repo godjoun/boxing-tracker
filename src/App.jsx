@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { TrainingProvider, useTraining } from "./store/TrainingContext";
 import HomePage from "./pages/HomePage";
 import LogPage from "./pages/LogPage";
@@ -10,8 +10,12 @@ import GymFinderPage from "./pages/GymFinderPage";
 import WeeklyReportPage from "./pages/WeeklyReportPage";
 import DataBackupPage from "./pages/DataBackupPage";
 import JourneyPage from "./pages/JourneyPage";
+import CurriculumPage from "./pages/CurriculumPage";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
+import { useBackgroundTimerSession } from "./hooks/useBackgroundTimerSession";
 import { needsOnboarding } from "./utils/bodySpecs";
+import { getFighterProgress } from "./utils/fighterProgress";
+import { buildCurriculumTimerLaunch } from "./utils/homeCurriculum";
 import "./App.css";
 
 export default function App() {
@@ -33,12 +37,20 @@ function AppFlow() {
 }
 
 function MainAppShell() {
+  const { logs } = useTraining();
   const [currentPage, setCurrentPage] = useState("home");
+  const [gymView, setGymView] = useState("hub");
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
+  const [timerLaunch, setTimerLaunch] = useState(null);
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("fitness-league-theme") || "dark";
   });
   const isDark = theme === "dark";
+  const fighterLevel = useMemo(
+    () => getFighterProgress(logs).level,
+    [logs]
+  );
+  const timerSummary = useBackgroundTimerSession(currentPage);
 
   const toggleTheme = () => {
     setTheme((currentTheme) => {
@@ -66,19 +78,38 @@ function MainAppShell() {
     setCurrentPage("profile");
   };
 
+  const goGym = (view = "hub") => {
+    setGymView(view);
+    setCurrentPage("gym");
+  };
+
+  const goTimerWithSession = (session) => {
+    setTimerLaunch(buildCurriculumTimerLaunch(session));
+    setCurrentPage("timer");
+  };
+
+  const clearTimerLaunch = () => {
+    setTimerLaunch(null);
+  };
+
+  const navActiveStyle = isDark ? styles.activeButton : styles.activeButtonLight;
+
   return (
     <div
       className={`app-shell theme-${theme}`}
       style={{
         ...styles.app,
-        background: isDark ? "#0d0d0e" : "#f6f5f2",
+        background: isDark ? "#0d0d0e" : "#faf8f4",
         color: isDark ? "#ffffff" : "#171717",
       }}
     >
       <main style={styles.main}>
         {currentPage === "home" && (
           <HomePage
+            fighterLevel={fighterLevel}
+            timerSummary={timerSummary}
             onStartTraining={() => goPage("timer")}
+            onOpenTimer={() => goPage("timer")}
             onNavigate={goPage}
             onOpenCardMaker={goProfileCardMaker}
           />
@@ -86,18 +117,30 @@ function MainAppShell() {
 
         {currentPage === "category" && (
           <CategoryPage
+            fighterLevel={fighterLevel}
             onGoHome={() => goPage("home")}
             onNavigate={goPage}
+            onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
           />
         )}
 
         {currentPage === "gym" && (
-          <GymFinderPage onGoBack={() => goPage("category")} />
+          <GymFinderPage
+            initialView={gymView}
+            fighterLevel={fighterLevel}
+            onGoBack={() => {
+              setGymView("hub");
+              goPage("category");
+            }}
+            onStartTraining={() => goPage("timer")}
+          />
         )}
 
         {currentPage === "timer" && (
           <TimerPage
+            launchConfig={timerLaunch}
+            onLaunchConsumed={clearTimerLaunch}
             onGoLog={() => goPage("log")}
             onGoHome={() => goPage("home")}
             onGoProfile={goProfileCardMaker}
@@ -106,6 +149,7 @@ function MainAppShell() {
 
         {currentPage === "log" && (
           <LogPage
+            fighterLevel={fighterLevel}
             onGoProfile={goProfile}
             onGoProfileCardMaker={goProfileCardMaker}
           />
@@ -124,11 +168,22 @@ function MainAppShell() {
         )}
 
         {currentPage === "profile" && (
-          <ProfilePage scrollTarget={profileScrollTarget} />
+          <ProfilePage
+            scrollTarget={profileScrollTarget}
+            fighterLevel={fighterLevel}
+            onStartTraining={() => goPage("timer")}
+          />
         )}
 
         {currentPage === "journey" && (
           <JourneyPage onStartTraining={() => goPage("timer")} />
+        )}
+
+        {currentPage === "curriculum" && (
+          <CurriculumPage
+            onGoBack={() => goPage("category")}
+            onStartSession={goTimerWithSession}
+          />
         )}
       </main>
 
@@ -142,6 +197,7 @@ function MainAppShell() {
       </button>
 
       <nav
+        className="app-bottom-nav"
         style={{
           ...styles.nav,
           background: isDark
@@ -159,7 +215,7 @@ function MainAppShell() {
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "home" ? styles.activeButton : {}),
+            ...(currentPage === "home" ? navActiveStyle : {}),
           }}
           onClick={() => goPage("home")}
         >
@@ -170,7 +226,7 @@ function MainAppShell() {
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "timer" ? styles.activeButton : {}),
+            ...(currentPage === "timer" ? navActiveStyle : {}),
           }}
           onClick={() => goPage("timer")}
         >
@@ -181,7 +237,7 @@ function MainAppShell() {
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "log" ? styles.activeButton : {}),
+            ...(currentPage === "log" ? navActiveStyle : {}),
           }}
           onClick={() => goPage("log")}
         >
@@ -192,7 +248,7 @@ function MainAppShell() {
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "profile" ? styles.activeButton : {}),
+            ...(currentPage === "profile" ? navActiveStyle : {}),
           }}
           onClick={goProfile}
         >
@@ -203,7 +259,7 @@ function MainAppShell() {
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "journey" ? styles.activeButton : {}),
+            ...(currentPage === "journey" ? navActiveStyle : {}),
           }}
           onClick={() => goPage("journey")}
         >
@@ -214,7 +270,7 @@ function MainAppShell() {
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "category" ? styles.activeButton : {}),
+            ...(currentPage === "category" ? navActiveStyle : {}),
           }}
           onClick={() => goPage("category")}
         >
@@ -264,6 +320,7 @@ const styles = {
   },
 
   navButton: {
+    position: "relative",
     border: "none",
     borderRadius: "16px",
     minHeight: "48px",
@@ -285,4 +342,11 @@ const styles = {
     color: "#ffffff",
     boxShadow: "0 7px 16px rgba(239, 63, 54, 0.2)",
   },
+
+  activeButtonLight: {
+    background: "linear-gradient(135deg, #e8c66a, #c49a2e)",
+    color: "#1f1a12",
+    boxShadow: "0 7px 16px rgba(196, 154, 46, 0.28)",
+  },
+
 };

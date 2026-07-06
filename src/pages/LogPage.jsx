@@ -429,7 +429,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
         {reward?.type === "growth" && reward.delta ? (
           <section className="log-growth-reward" aria-live="polite">
-            <p className="log-growth-kicker">기록 저장됨</p>
+            <p className="log-growth-kicker">주인공 스펙 상승</p>
 
             {reward.delta.didLevelUp ? (
               <span className="log-growth-levelup">LEVEL UP</span>

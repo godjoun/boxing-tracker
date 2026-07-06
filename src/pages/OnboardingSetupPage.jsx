@@ -104,10 +104,11 @@ export default function OnboardingSetupPage() {
     <div className="onboarding-page">
       <div className="onboarding-card">
         <header className="onboarding-hero">
-          <p>FIGHTER SETUP</p>
-          <h1>신체 스펙 입력</h1>
+          <p>MY FIGHTER</p>
+          <h1>주인공 만들기</h1>
           <span>
-            한 번만 입력하면 프로필과 스파링 상대 찾기에 자동 반영됩니다.
+            훈련할수록 주인공이 성장합니다. 이름과 스펙을 정하면 명패에
+            표시됩니다.
           </span>
         </header>
 
@@ -243,7 +244,7 @@ export default function OnboardingSetupPage() {
             className="login-submit onboarding-submit"
             disabled={submitting}
           >
-            {submitting ? "저장 중..." : "시작하기"}
+            {submitting ? "저장 중..." : "주인공으로 시작"}
           </button>
         </form>
       </div>

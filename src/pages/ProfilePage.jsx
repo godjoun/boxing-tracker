@@ -185,38 +185,6 @@ export default function ProfilePage({ scrollTarget }) {
 
     const fighterProgress = getFighterProgress(logs);
 
-    const featuredLogs = logs
-      .filter((log) => log.publicComment || log.memo)
-      .slice(0, 3);
-
-    const achievements = [
-      {
-        title: "첫 훈련 완료",
-        description: "첫 번째 운동 기록을 남겼다.",
-        unlocked: totalLogs >= 1,
-      },
-      {
-        title: "10라운드 돌파",
-        description: "누적 10라운드를 버텼다.",
-        unlocked: totalRounds >= 10,
-      },
-      {
-        title: "30라운드 돌파",
-        description: "복싱 체력이 쌓이기 시작했다.",
-        unlocked: totalRounds >= 30,
-      },
-      {
-        title: "훈련 10회 기록",
-        description: "꾸준함이 기록으로 남았다.",
-        unlocked: totalLogs >= 10,
-      },
-      {
-        title: "100라운드 파이터",
-        description: "누적 100라운드를 완주했다.",
-        unlocked: totalRounds >= 100,
-      },
-    ];
-
     return {
       totalLogs,
       totalRounds,
@@ -234,8 +202,6 @@ export default function ProfilePage({ scrollTarget }) {
       fighterTitle: fighterProgress.fighterTitle,
       xpToNextLevel: fighterProgress.xpToNextLevel,
       progressPercent: fighterProgress.progressPercent,
-      achievements,
-      featuredLogs,
     };
   }, [logs]);
 
@@ -3277,82 +3243,12 @@ ${logLines}${commentText}${mediaText}`;
       </section>
 
       <section style={styles.sectionCard}>
-        <p style={styles.kicker}>FEATURED LOG</p>
-        <h2 style={styles.sectionTitle}>대표 성장 로그</h2>
-
-        {profileStats.featuredLogs.length === 0 ? (
-          <div style={styles.emptyFeaturedLog}>
-            아직 대표로 보여줄 기록이 없어. 기록 화면에서 공개용 자랑 코멘트를
-            작성하면 여기에 표시돼.
-          </div>
-        ) : (
-          <div style={styles.featuredLogList}>
-            {profileStats.featuredLogs.map((log) => {
-              const rounds = getRounds(log);
-
-              return (
-                <div key={log.id} style={styles.featuredLogItem}>
-                  <div style={styles.featuredLogTop}>
-                    <div>
-                      <div style={styles.featuredBadgeRow}>
-                        <span style={styles.featuredBadge}>
-                          {log.sourceLabel ||
-                            (log.source === "timer" ? "자동 기록" : "수동 기록")}
-                        </span>
-
-                        {log.isEdited && (
-                          <span style={styles.featuredEditedBadge}>수정됨</span>
-                        )}
-                      </div>
-
-                      <h3 style={styles.featuredLogTitle}>{log.type}</h3>
-
-                      <p style={styles.featuredLogMeta}>
-                        {log.minutes || log.duration}분 · {rounds}R ·{" "}
-                        {log.difficultyLabel || "보통"} ·{" "}
-                        {log.conditionLabel || "보통"} · {log.date}
-                      </p>
-                    </div>
-
-                    <strong style={styles.featuredScore}>+{log.score}점</strong>
-                  </div>
-
-                  <p style={styles.featuredComment}>
-                    {log.publicComment || log.memo}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section style={styles.sectionCard}>
-        <p style={styles.kicker}>ACHIEVEMENTS</p>
-        <h2 style={styles.sectionTitle}>업적</h2>
-
-        <div style={styles.achievementList}>
-          {profileStats.achievements.map((achievement) => (
-            <div
-              key={achievement.title}
-              style={{
-                ...styles.achievementItem,
-                ...(achievement.unlocked ? styles.unlocked : styles.locked),
-              }}
-            >
-              <span style={styles.achievementIcon}>
-                {achievement.unlocked ? "완료" : "잠김"}
-              </span>
-
-              <div>
-                <strong>{achievement.title}</strong>
-                <p style={styles.achievementDescription}>
-                  {achievement.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <p style={styles.kicker}>MY JOURNEY</p>
+        <h2 style={styles.sectionTitle}>훈련 여정</h2>
+        <p style={styles.proofSmallText}>
+          업적과 대표 훈련 기록은 하단 탭 <strong>여정</strong>에서 볼 수
+          있습니다.
+        </p>
       </section>
     </main>
   );

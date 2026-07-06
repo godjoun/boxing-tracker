@@ -64,7 +64,7 @@ const MENU_GROUPS = [
         id: "profile",
         icon: "F",
         title: "MY FIGHTER",
-        description: "프로필 · 신체 스펙",
+        description: "명패 · 신체 스펙",
         route: "profile",
         accent: "red",
       },

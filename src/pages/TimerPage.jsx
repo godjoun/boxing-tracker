@@ -540,7 +540,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
         {phase === "done" && (
           <div style={styles.doneBox}>
-            <div style={styles.completeTitle}>SESSION COMPLETE</div>
+            <div style={styles.completeTitle}>훈련 완료</div>
 
             <p style={styles.savedText}>
               운동 기록에 자동 저장됐습니다.

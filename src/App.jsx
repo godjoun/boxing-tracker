@@ -9,6 +9,7 @@ import CategoryPage from "./pages/CategoryPage";
 import GymFinderPage from "./pages/GymFinderPage";
 import WeeklyReportPage from "./pages/WeeklyReportPage";
 import DataBackupPage from "./pages/DataBackupPage";
+import JourneyPage from "./pages/JourneyPage";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
 import { needsOnboarding } from "./utils/bodySpecs";
 import "./App.css";
@@ -125,6 +126,10 @@ function MainAppShell() {
         {currentPage === "profile" && (
           <ProfilePage scrollTarget={profileScrollTarget} />
         )}
+
+        {currentPage === "journey" && (
+          <JourneyPage onStartTraining={() => goPage("timer")} />
+        )}
       </main>
 
       <button
@@ -191,7 +196,18 @@ function MainAppShell() {
           }}
           onClick={goProfile}
         >
-          파이터
+          명패
+        </button>
+
+        <button
+          style={{
+            ...styles.navButton,
+            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
+            ...(currentPage === "journey" ? styles.activeButton : {}),
+          }}
+          onClick={() => goPage("journey")}
+        >
+          여정
         </button>
 
         <button
@@ -236,7 +252,7 @@ const styles = {
     width: "calc(100% - 28px)",
     maxWidth: "720px",
     display: "grid",
-    gridTemplateColumns: "repeat(5, 1fr)",
+    gridTemplateColumns: "repeat(6, 1fr)",
     gap: "8px",
     padding: "10px",
     borderRadius: "24px",
@@ -254,7 +270,7 @@ const styles = {
     padding: "8px 6px",
     background: "transparent",
     color: "#74706b",
-    fontSize: "13px",
+    fontSize: "12px",
     fontWeight: 800,
     cursor: "pointer",
     display: "flex",

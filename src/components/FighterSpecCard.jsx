@@ -34,7 +34,7 @@ export default function FighterSpecCard({
           </div>
 
           <div className="fighter-nameplate-identity">
-            <p className="fighter-nameplate-kicker">FIGHTER NAMEPLATE</p>
+            <p className="fighter-nameplate-kicker">MY FIGHTER</p>
             <h2 className="fighter-nameplate-name">{profile?.nickname || "나"}</h2>
             <p className="fighter-nameplate-title">{fighter.fighterTitle}</p>
             {profile?.bio ? (

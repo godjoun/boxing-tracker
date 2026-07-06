@@ -12,6 +12,7 @@ import DataBackupPage from "./pages/DataBackupPage";
 import JourneyPage from "./pages/JourneyPage";
 import CurriculumPage from "./pages/CurriculumPage";
 import ComboCreatorPage from "./pages/ComboCreatorPage";
+import StrengthProgramPage from "./pages/StrengthProgramPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
 import { useBackgroundTimerSession } from "./hooks/useBackgroundTimerSession";
@@ -91,6 +92,11 @@ function MainAppShell() {
     setCurrentPage("timer");
   };
 
+  const goTimerWithLaunch = (launch) => {
+    setTimerLaunch(launch);
+    setCurrentPage("timer");
+  };
+
   const clearTimerLaunch = () => {
     setTimerLaunch(null);
   };
@@ -114,6 +120,7 @@ function MainAppShell() {
             onStartTraining={() => goPage("timer")}
             onOpenTimer={() => goPage("timer")}
             onNavigate={goPage}
+            onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
           />
         )}
@@ -189,6 +196,13 @@ function MainAppShell() {
             onStartSession={goTimerWithSession}
             onOpenComboCreator={() => goPage("combo-creator")}
             onStartTraining={() => goPage("timer")}
+          />
+        )}
+
+        {currentPage === "strength" && (
+          <StrengthProgramPage
+            onGoBack={() => goPage("category")}
+            onStartWarmup={goTimerWithLaunch}
           />
         )}
 

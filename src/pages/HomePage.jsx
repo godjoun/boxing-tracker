@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { buildTrainingBreakdown } from "../utils/trainingBreakdown";
+import {
+  DASHBOARD_SHORTCUT_POOL,
+  DEFAULT_HOME_SHORTCUTS,
+  getDashboardShortcut,
+} from "../utils/appMenu";
+import { isFeatureUnlocked } from "../utils/featureUnlocks";
 import { getFighterProgress, getLogExp } from "../utils/fighterProgress";
 import { getSparringUnlockProgress, SPARRING_UNLOCK_LEVEL } from "../utils/featureUnlocks";
 import { getLevelTitle } from "../utils/fighterTitles";
@@ -12,42 +18,15 @@ import {
 } from "../utils/trainingStats";
 
 const HOME_FEATURES_KEY = "fitness-league-home-features";
-const DEFAULT_FEATURES = ["fighter-card", "growth", "weekly", "training-log"];
 
-const FEATURES = [
-  {
-    id: "fighter-card",
-    icon: "◆",
-    eyebrow: "FIGHTER CARD",
-    title: "파이터 카드 만들기",
-    description: "오늘의 성장을 한 장의 카드로 남기세요.",
-    route: "fighter-card",
-  },
-  {
-    id: "growth",
-    icon: "↗",
-    eyebrow: "ANALYSIS",
-    title: "성장 분석",
-    description: "라운드와 훈련 볼륨을 확인하세요.",
-    route: "stats",
-  },
-  {
-    id: "weekly",
-    icon: "W",
-    eyebrow: "WEEKLY",
-    title: "주간 리포트",
-    description: "이번 주 훈련 요약과 하이라이트.",
-    route: "weekly",
-  },
-  {
-    id: "training-log",
-    icon: "R",
-    eyebrow: "TRAINING LOG",
-    title: "훈련 로그",
-    description: "지금까지 쌓아온 모든 훈련을 돌아보세요.",
-    route: "log",
-  },
-];
+function loadSelectedFeatures() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(HOME_FEATURES_KEY) || "null");
+    return Array.isArray(saved) ? saved : DEFAULT_HOME_SHORTCUTS;
+  } catch {
+    return DEFAULT_HOME_SHORTCUTS;
+  }
+}
 
 function getDateKey(value) {
   if (!value) return "";
@@ -87,15 +66,6 @@ function getTodayKey() {
   return getDateKey(new Date());
 }
 
-function loadSelectedFeatures() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(HOME_FEATURES_KEY) || "null");
-    return Array.isArray(saved) ? saved : DEFAULT_FEATURES;
-  } catch {
-    return DEFAULT_FEATURES;
-  }
-}
-
 function buildMonthDays(now = new Date()) {
   const year = now.getFullYear();
   const month = now.getMonth();
@@ -123,6 +93,7 @@ export default function HomePage({
   onStartTraining,
   onOpenTimer,
   onNavigate,
+  onNavigateGym,
   onOpenCardMaker,
 }) {
   const { logs = [], profile, weeklyScore } = useTraining();
@@ -186,9 +157,9 @@ export default function HomePage({
     ? dashboard.trainingByDate[selectedDate]
     : null;
 
-  const visibleFeatures = FEATURES.filter((feature) =>
-    selectedFeatures.includes(feature.id)
-  );
+  const visibleFeatures = selectedFeatures
+    .map((id) => getDashboardShortcut(id))
+    .filter(Boolean);
 
   const trainingBreakdown = useMemo(
     () => buildTrainingBreakdown(logs),
@@ -202,10 +173,20 @@ export default function HomePage({
   }
 
   function openFeature(feature) {
-    if (feature.pending) return;
+    if (
+      feature.featureId &&
+      !isFeatureUnlocked(feature.featureId, fighterLevel)
+    ) {
+      return;
+    }
 
-    if (feature.route === "fighter-card") {
+    if (feature.action === "card-maker") {
       onOpenCardMaker?.();
+      return;
+    }
+
+    if (feature.route === "gym") {
+      onNavigateGym?.(feature.gymView || "hub");
       return;
     }
 
@@ -462,33 +443,45 @@ export default function HomePage({
           </button>
         ) : (
           <div className="dashboard-quick-grid">
-            {visibleFeatures.map((feature) => (
-              <button
-                className="dashboard-quick-item"
-                key={feature.id}
-                onClick={() => openFeature(feature)}
-                disabled={feature.pending}
-              >
-                <span className="dashboard-quick-icon">{feature.icon}</span>
-                <strong>{feature.title}</strong>
-                {feature.pending ? <em>준비 중</em> : null}
-              </button>
-            ))}
+            {visibleFeatures.map((feature) => {
+              const locked =
+                feature.featureId &&
+                !isFeatureUnlocked(feature.featureId, fighterLevel);
+
+              return (
+                <button
+                  className="dashboard-quick-item"
+                  key={feature.id}
+                  onClick={() => openFeature(feature)}
+                  disabled={locked}
+                >
+                  <span className="dashboard-quick-icon">{feature.icon}</span>
+                  <strong>{feature.title}</strong>
+                  {locked ? <em>잠김</em> : null}
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {isEditingDashboard && (
+        {isEditingDashboard ? (
           <div className="dashboard-editor">
             <div className="dashboard-editor-copy">
               <strong>홈 기능 선택</strong>
               <span>자주 쓰는 기능만 대시보드에 표시됩니다.</span>
             </div>
             <div className="dashboard-editor-grid">
-              {FEATURES.map((feature) => {
+              {DASHBOARD_SHORTCUT_POOL.map((feature) => {
                 const selected = selectedFeatures.includes(feature.id);
+                const locked =
+                  feature.featureId &&
+                  !isFeatureUnlocked(feature.featureId, fighterLevel);
+
                 return (
                   <button
-                    className={selected ? "selected" : ""}
+                    className={`${selected ? "selected" : ""}${
+                      locked ? " is-locked" : ""
+                    }`}
                     key={feature.id}
                     onClick={() => toggleDashboardFeature(feature.id)}
                   >
@@ -500,7 +493,7 @@ export default function HomePage({
               })}
             </div>
           </div>
-        )}
+        ) : null}
       </section>
 
       <section className="training-calendar">

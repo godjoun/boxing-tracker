@@ -26,6 +26,14 @@ import {
   updateTimerMediaSession,
 } from "../utils/timerMediaSession";
 import {
+  playTimerBeep,
+  previewTimerBeep,
+  resumeTimerAudio,
+  startTimerAudioSession,
+  stopTimerAudioSession,
+  supportsHeadphoneTimerAudio,
+} from "../utils/timerAudio";
+import {
   buildTimerSnapshot,
   readInitialTimerState,
 } from "../utils/timerPagePersistence";
@@ -196,7 +204,6 @@ export default function TimerPage({
 
   const savedLogRef = useRef(initialTimerState.hasSavedLog);
   const previousPhaseRef = useRef(initialTimerState.phase);
-  const audioContextRef = useRef(null);
 
   const workSeconds = workSecondsSetting;
   const restSeconds = restSecondsSetting;
@@ -327,13 +334,35 @@ export default function TimerPage({
 
   useEffect(() => {
     return bindTimerMediaSessionHandlers({
-      onPlay: () => setIsRunning(true),
+      onPlay: () => {
+        resumeTimerAudio();
+        setIsRunning(true);
+      },
       onPause: () => setIsRunning(false),
     });
   }, []);
 
   useEffect(() => {
+    if (soundMode === "mute" || !hasStartedSession) {
+      stopTimerAudioSession();
+      return undefined;
+    }
+
+    if (phase === "done") {
+      const timeoutId = setTimeout(() => stopTimerAudioSession(), 2500);
+      return () => clearTimeout(timeoutId);
+    }
+
+    startTimerAudioSession();
+    return undefined;
+  }, [hasStartedSession, phase, soundMode]);
+
+  useEffect(() => {
     function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        resumeTimerAudio();
+      }
+
       if (document.visibilityState !== "visible") return;
 
       const saved = reconcileTimerSession(
@@ -394,96 +423,6 @@ export default function TimerPage({
     routineTitle,
   ]);
 
-  const playBeep = async (type = "work") => {
-    if (soundMode === "mute") return;
-
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-    if (!AudioContext) return;
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
-    }
-
-    const audioContext = audioContextRef.current;
-
-    if (audioContext.state === "suspended") {
-      await audioContext.resume();
-    }
-
-    const now = audioContext.currentTime;
-
-    // 기본음: 띵~ 하는 복싱 종 울림 느낌
-    if (soundMode === "basic") {
-      const isRest = type === "rest";
-      const isDone = type === "done";
-
-      const baseFrequencies = isRest
-        ? [520, 1040, 1560]
-        : [740, 1480, 2220];
-
-      const duration = isDone ? 0.95 : 0.72;
-      const volume = isDone ? 0.34 : 0.28;
-
-      baseFrequencies.forEach((frequency, index) => {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(frequency, now);
-
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(
-          volume / (index + 1),
-          now + 0.015
-        );
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-
-        oscillator.start(now);
-        oscillator.stop(now + duration);
-      });
-
-      return;
-    }
-
-    // 강한 알림음: 운동 중 잘 들리는 짧고 강한 소리
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    const frequencyMap = {
-      prep: 920,
-      work: 1120,
-      rest: 620,
-      done: 1280,
-    };
-
-    const durationMap = {
-      prep: 0.26,
-      work: 0.3,
-      rest: 0.34,
-      done: 0.46,
-    };
-
-    const frequency = frequencyMap[type] || 1120;
-    const duration = durationMap[type] || 0.3;
-
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(frequency, now);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.42, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-
-    oscillator.start(now);
-    oscillator.stop(now + duration);
-  };
-
   useEffect(() => {
     if (!isRunning) return;
 
@@ -537,27 +476,31 @@ export default function TimerPage({
     if (previousPhaseRef.current === phase) return;
 
     if (phase === "prep") {
-      playBeep("prep");
+      playTimerBeep(soundMode, "prep");
     }
 
     if (phase === "work") {
-      playBeep("work");
+      playTimerBeep(soundMode, "work");
     }
 
     if (phase === "rest") {
-      playBeep("rest");
+      playTimerBeep(soundMode, "rest");
+    }
+
+    if (phase === "cooldown") {
+      playTimerBeep(soundMode, "cooldown");
     }
 
     if (phase === "done") {
-      playBeep("done");
+      playTimerBeep(soundMode, "done");
 
       setTimeout(() => {
-        playBeep("done");
+        playTimerBeep(soundMode, "done");
       }, 180);
     }
 
     previousPhaseRef.current = phase;
-  }, [phase]);
+  }, [phase, soundMode]);
 
   useEffect(() => {
     if (phase !== "done") return;
@@ -658,7 +601,11 @@ export default function TimerPage({
     onLaunchConsumed?.();
   }, [launchConfig]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
+    if (soundMode !== "mute") {
+      await startTimerAudioSession();
+    }
+
     if (phase === "done") {
       resetTimerState();
 
@@ -668,7 +615,7 @@ export default function TimerPage({
         setPhase("prep");
         setRemainingTime(activePrepSeconds);
         setIsRunning(true);
-        playBeep("prep");
+        playTimerBeep(soundMode, "prep");
       }, 0);
 
       return;
@@ -680,7 +627,7 @@ export default function TimerPage({
       setPhase("prep");
       setRemainingTime(activePrepSeconds);
       setIsRunning(true);
-      playBeep("prep");
+      playTimerBeep(soundMode, "prep");
       return;
     }
 
@@ -696,6 +643,7 @@ export default function TimerPage({
     clearCurriculumContext();
     clearTimerSession();
     clearTimerMediaSession();
+    stopTimerAudioSession();
   };
 
   const handleEndCurriculum = () => {
@@ -711,6 +659,7 @@ export default function TimerPage({
     clearCurriculumContext();
     clearTimerSession();
     clearTimerMediaSession();
+    stopTimerAudioSession();
     resetTimerState();
   };
 
@@ -839,7 +788,14 @@ export default function TimerPage({
                     ? styles.activeSoundOptionButton
                     : {}),
                 }}
-                onClick={() => setSoundMode(option.id)}
+                onClick={() => {
+                  setSoundMode(option.id);
+                  if (option.id === "mute") {
+                    stopTimerAudioSession();
+                    return;
+                  }
+                  previewTimerBeep(option.id);
+                }}
               >
                 <strong style={styles.soundOptionLabel}>{option.label}</strong>
                 <span style={styles.soundOptionDescription}>
@@ -848,6 +804,19 @@ export default function TimerPage({
               </button>
             ))}
           </div>
+
+          {supportsHeadphoneTimerAudio() ? (
+            <div style={styles.headsetTip}>
+              <strong style={styles.headsetTipTitle}>
+                에어팟 · 블루투스 이어폰
+              </strong>
+              <span style={styles.headsetTipCopy}>
+                타이머 시작 후 연결된 이어폰으로 라운드 알림음이 재생됩니다.
+                화면을 끄거나 다른 앱으로 이동해도 들으려면 무음 모드를 해제하고
+                시작 버튼을 눌러 주세요.
+              </span>
+            </div>
+          ) : null}
         </div>
       </section>
 

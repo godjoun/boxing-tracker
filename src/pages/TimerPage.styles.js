@@ -106,6 +106,28 @@ export const styles = {
     whiteSpace: "nowrap",
   },
 
+  headsetTip: {
+    marginTop: "10px",
+    padding: "12px",
+    borderRadius: "14px",
+    border: "1px solid var(--p-border-soft)",
+    backgroundColor: "var(--p-bg-panel)",
+    display: "grid",
+    gap: "6px",
+  },
+
+  headsetTipTitle: {
+    fontSize: "12px",
+    fontWeight: 900,
+    color: "var(--p-text)",
+  },
+
+  headsetTipCopy: {
+    fontSize: "11px",
+    lineHeight: 1.45,
+    color: "var(--p-text-muted)",
+  },
+
   timerCard: {
     backgroundColor: "var(--p-bg-card)",
     border: "1px solid var(--p-border)",

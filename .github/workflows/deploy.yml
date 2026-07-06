@@ -34,6 +34,17 @@ jobs:
         env:
           GITHUB_PAGES: "true"
 
+      - name: Skip Vercel auto-deploy on gh-pages
+        run: |
+          cat > dist/vercel.json << 'EOF'
+          {
+            "$schema": "https://openapi.vercel.sh/vercel.json",
+            "git": {
+              "deploymentEnabled": false
+            }
+          }
+          EOF
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:

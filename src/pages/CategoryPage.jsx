@@ -6,6 +6,7 @@ export default function CategoryPage({
   onNavigate,
   onNavigateGym,
   onOpenCardMaker,
+  onReplayTutorial,
 }) {
   return (
     <main className="category-page">
@@ -17,6 +18,7 @@ export default function CategoryPage({
         onNavigate={onNavigate}
         onNavigateGym={onNavigateGym}
         onOpenCardMaker={onOpenCardMaker}
+        onReplayTutorial={onReplayTutorial}
       />
     </main>
   );

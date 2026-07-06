@@ -15,6 +15,7 @@ export default function AppMenuBoard({
   onNavigate,
   onNavigateGym,
   onOpenCardMaker,
+  onReplayTutorial,
 }) {
   const sparringProgress = getSparringUnlockProgress(fighterLevel);
   const sparringTitle = getLevelTitle(SPARRING_UNLOCK_LEVEL);
@@ -100,6 +101,19 @@ export default function AppMenuBoard({
             <h2>{group.title}</h2>
             <div className="app-menu-grid">
               {group.items.map((item) => renderTile(item))}
+              {group.id === "more" && onReplayTutorial ? (
+                <button
+                  type="button"
+                  className="app-menu-tile accent-slate"
+                  onClick={onReplayTutorial}
+                >
+                  <span className="app-menu-tile-icon" aria-hidden="true">
+                    ?
+                  </span>
+                  <strong>튜토리얼</strong>
+                  <small>앱 사용법 다시 보기</small>
+                </button>
+              ) : null}
             </div>
           </section>
         ))}

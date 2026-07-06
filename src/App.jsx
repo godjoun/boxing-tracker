@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TrainingProvider, useTraining } from "./store/TrainingContext";
 import HomePage from "./pages/HomePage";
 import LogPage from "./pages/LogPage";
@@ -15,8 +15,10 @@ import ComboCreatorPage from "./pages/ComboCreatorPage";
 import StrengthProgramPage from "./pages/StrengthProgramPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
+import FirstVisitTutorial from "./components/FirstVisitTutorial";
 import { useBackgroundTimerSession } from "./hooks/useBackgroundTimerSession";
 import { needsOnboarding } from "./utils/bodySpecs";
+import { isTutorialComplete } from "./utils/tutorial";
 import { getFighterProgress } from "./utils/fighterProgress";
 import { buildCurriculumTimerLaunch } from "./utils/homeCurriculum";
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
@@ -41,8 +43,10 @@ function AppFlow() {
 }
 
 function MainAppShell() {
-  const { logs } = useTraining();
+  const { logs, profile } = useTraining();
   const [currentPage, setCurrentPage] = useState("home");
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialSession, setTutorialSession] = useState(0);
   const [gymView, setGymView] = useState("hub");
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
@@ -55,6 +59,12 @@ function MainAppShell() {
     [logs]
   );
   const timerSummary = useBackgroundTimerSession(currentPage);
+
+  useEffect(() => {
+    if (!isTutorialComplete()) {
+      setShowTutorial(true);
+    }
+  }, []);
 
   const toggleTheme = () => {
     setTheme((currentTheme) => {
@@ -101,6 +111,16 @@ function MainAppShell() {
     setTimerLaunch(null);
   };
 
+  const openTutorial = () => {
+    goPage("home");
+    setTutorialSession((current) => current + 1);
+    setShowTutorial(true);
+  };
+
+  const closeTutorial = () => {
+    setShowTutorial(false);
+  };
+
   const navActiveStyle = isDark ? styles.activeButton : styles.activeButtonLight;
 
   return (
@@ -132,6 +152,7 @@ function MainAppShell() {
             onNavigate={goPage}
             onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
+            onReplayTutorial={openTutorial}
           />
         )}
 
@@ -231,6 +252,17 @@ function MainAppShell() {
         <span aria-hidden="true">{isDark ? "L" : "D"}</span>
       </button>
 
+      {showTutorial ? (
+        <FirstVisitTutorial
+          key={tutorialSession}
+          nickname={profile?.nickname}
+          onClose={closeTutorial}
+          onEnsurePage={goPage}
+          onStartTimer={() => goPage("timer")}
+          onOpenCurriculum={() => goPage("curriculum")}
+        />
+      ) : null}
+
       <nav
         className="app-bottom-nav"
         style={{
@@ -258,6 +290,7 @@ function MainAppShell() {
         </button>
 
         <button
+          data-tutorial-target="nav-timer"
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
@@ -269,6 +302,7 @@ function MainAppShell() {
         </button>
 
         <button
+          data-tutorial-target="nav-log"
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
@@ -291,6 +325,7 @@ function MainAppShell() {
         </button>
 
         <button
+          data-tutorial-target="nav-journey"
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
@@ -302,6 +337,7 @@ function MainAppShell() {
         </button>
 
         <button
+          data-tutorial-target="nav-category"
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",

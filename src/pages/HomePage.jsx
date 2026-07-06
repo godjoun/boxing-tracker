@@ -329,7 +329,11 @@ export default function HomePage({
         )}
       </section>
 
-      <button className="home-main-button" onClick={onStartTraining}>
+      <button
+        className="home-main-button"
+        data-tutorial-target="home-start"
+        onClick={onStartTraining}
+      >
         <span>
           {dashboard.trainedToday ? "오늘 훈련 이어가기" : "오늘 훈련 시작"}
         </span>

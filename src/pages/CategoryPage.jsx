@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const MENU_GROUPS = [
   {
     id: "training",
@@ -81,23 +83,34 @@ const MENU_GROUPS = [
         route: "backup",
         accent: "orange",
       },
-      {
-        id: "dojo-breaker",
-        icon: "D",
-        title: "도장깨기",
-        description: "스파링 · 체육관",
-        route: "gym",
-        accent: "red",
-      },
     ],
   },
 ];
+
+const PREP_MENU_GROUP = {
+  id: "prep",
+  eyebrow: "PREP",
+  title: "준비 중",
+  hint: "주인공 성장 흐름 이후에 열릴 기능입니다.",
+  items: [
+    {
+      id: "dojo-breaker",
+      icon: "D",
+      title: "도장깨기",
+      description: "스파링 · 체육관 찾기",
+      route: "gym",
+      accent: "slate",
+    },
+  ],
+};
 
 export default function CategoryPage({
   onGoHome,
   onNavigate,
   onOpenCardMaker,
 }) {
+  const [isPrepOpen, setIsPrepOpen] = useState(false);
+
   function selectItem(item) {
     if (item.action === "card-maker") {
       onOpenCardMaker?.();
@@ -117,7 +130,7 @@ export default function CategoryPage({
         <div className="category-hero-copy">
           <p>MENU</p>
           <h1>더보기</h1>
-          <span>훈련, 성장, 파이터, 데이터 메뉴</span>
+          <span>훈련 · 성장 · 명패 · 데이터</span>
         </div>
       </header>
 
@@ -153,6 +166,48 @@ export default function CategoryPage({
           </section>
         ))}
       </div>
+
+      <section className="category-prep">
+        <button
+          type="button"
+          className="category-prep-toggle"
+          onClick={() => setIsPrepOpen((open) => !open)}
+          aria-expanded={isPrepOpen}
+        >
+          <span className="category-prep-toggle-copy">
+            <strong>{PREP_MENU_GROUP.title}</strong>
+            <small>{PREP_MENU_GROUP.hint}</small>
+          </span>
+          <span className="category-prep-toggle-action">
+            {isPrepOpen ? "접기" : "펼치기"}
+          </span>
+        </button>
+
+        {isPrepOpen ? (
+          <div className="category-prep-panel">
+            <p className="category-prep-label">{PREP_MENU_GROUP.eyebrow}</p>
+            {PREP_MENU_GROUP.items.map((item) => (
+              <button
+                type="button"
+                className={`category-row accent-${item.accent} category-row-muted`}
+                key={item.id}
+                onClick={() => selectItem(item)}
+              >
+                <span className="category-row-icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+                <span className="category-row-copy">
+                  <strong>{item.title}</strong>
+                  <small>{item.description}</small>
+                </span>
+                <span className="category-row-arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </section>
     </main>
   );
 }

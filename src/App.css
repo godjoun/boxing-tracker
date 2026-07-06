@@ -1955,6 +1955,65 @@
   --item-color: #b7bfce;
 }
 
+.category-prep {
+  margin-top: 18px;
+}
+
+.category-prep-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.category-prep-toggle-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.category-prep-toggle-copy strong {
+  font-size: 13px;
+}
+
+.category-prep-toggle-copy small {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.category-prep-toggle-action {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.category-prep-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.category-prep-label {
+  margin: 0 0 2px 2px;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.category-row-muted {
+  opacity: 0.82;
+}
+
 /* legacy grid items kept for other pages if referenced */
 .category-grid {
   display: grid;

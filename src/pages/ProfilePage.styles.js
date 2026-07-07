@@ -572,6 +572,18 @@ export const styles = {
     border: "1px solid var(--p-accent-border)",
   },
 
+  filterGroup: {
+    marginBottom: "14px",
+  },
+
+  filterGroupLabel: {
+    margin: "0 0 8px",
+    color: "var(--p-text-muted)",
+    fontSize: "12px",
+    fontWeight: 800,
+    letterSpacing: "0.02em",
+  },
+
   filterGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(2, 1fr)",

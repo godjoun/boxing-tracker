@@ -9,36 +9,6 @@ export const TIMER_MENU_CARD = {
 
 export const MENU_GROUPS = [
   {
-    id: "training",
-    title: "훈련",
-    items: [
-      {
-        id: "log",
-        icon: "R",
-        title: "훈련 로그",
-        description: "기록 확인",
-        route: "log",
-        accent: "orange",
-      },
-      {
-        id: "curriculum",
-        icon: "C",
-        title: "홈 커리큘럼",
-        description: "4주 프로그램",
-        route: "curriculum",
-        accent: "gold",
-      },
-      {
-        id: "strength",
-        icon: "B",
-        title: "훈련법 추천",
-        description: "몸강화 · 요일별",
-        route: "strength",
-        accent: "orange",
-      },
-    ],
-  },
-  {
     id: "growth",
     title: "성장",
     items: [

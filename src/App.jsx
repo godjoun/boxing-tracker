@@ -13,6 +13,7 @@ import JourneyPage from "./pages/JourneyPage";
 import CurriculumPage from "./pages/CurriculumPage";
 import ComboCreatorPage from "./pages/ComboCreatorPage";
 import StrengthProgramPage from "./pages/StrengthProgramPage";
+import TrainingHubPage from "./pages/TrainingHubPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
 import FirstVisitTutorial from "./components/FirstVisitTutorial";
@@ -168,6 +169,17 @@ function MainAppShell() {
           />
         )}
 
+        {currentPage === "train" && (
+          <TrainingHubPage
+            fighterLevel={fighterLevel}
+            onStartSession={goTimerWithSession}
+            onOpenTimer={() => goPage("timer")}
+            onOpenCurriculum={() => goPage("curriculum")}
+            onOpenComboCreator={() => goPage("combo-creator")}
+            onOpenStrength={() => goPage("strength")}
+          />
+        )}
+
         {currentPage === "timer" && (
           <TimerPage
             launchConfig={timerLaunch}
@@ -294,9 +306,11 @@ function MainAppShell() {
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "timer" ? navActiveStyle : {}),
+            ...(currentPage === "train" || currentPage === "timer"
+              ? navActiveStyle
+              : {}),
           }}
-          onClick={() => goPage("timer")}
+          onClick={() => goPage("train")}
         >
           훈련
         </button>

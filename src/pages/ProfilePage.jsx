@@ -25,6 +25,7 @@ import {
 } from "./profilePage/profileCardUtils";
 import {
   CARD_FILTERS,
+  CARD_FILTER_GROUPS,
   CARD_STYLES,
   applyPixelImageFilter,
   getCardBackground,
@@ -2577,37 +2578,50 @@ ${logLines}${commentText}${mediaText}`;
             <div style={styles.filterSection}>
               <p style={styles.cardMakerLabel}>4. 카드 테마 선택</p>
 
-              <div style={styles.filterGrid}>
-                {CARD_FILTERS.map((filter) => {
-                  const isLocked = !isVeteranFilterUnlocked(
-                    filter.id,
-                    profileStats.level
-                  );
+              {CARD_FILTER_GROUPS.map((groupName) => {
+                const groupFilters = CARD_FILTERS.filter(
+                  (filter) => (filter.group || "기본") === groupName
+                );
 
-                  return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    style={{
-                      ...styles.filterButton,
-                      ...(selectedFilter === filter.id
-                        ? styles.activeFilterButton
-                        : {}),
-                      ...(isLocked ? styles.lockedFilterButton : {}),
-                    }}
-                    onClick={() => handleSelectFilter(filter.id)}
-                    disabled={isLocked}
-                  >
-                    <strong>{filter.name}</strong>
-                    <span>
-                      {isLocked
-                        ? `LV. ${filter.veteranLevel} 베테랑 혜택`
-                        : filter.description}
-                    </span>
-                  </button>
-                  );
-                })}
-              </div>
+                if (groupFilters.length === 0) return null;
+
+                return (
+                  <div key={groupName} style={styles.filterGroup}>
+                    <p style={styles.filterGroupLabel}>{groupName}</p>
+                    <div style={styles.filterGrid}>
+                      {groupFilters.map((filter) => {
+                        const isLocked = !isVeteranFilterUnlocked(
+                          filter.id,
+                          profileStats.level
+                        );
+
+                        return (
+                          <button
+                            key={filter.id}
+                            type="button"
+                            style={{
+                              ...styles.filterButton,
+                              ...(selectedFilter === filter.id
+                                ? styles.activeFilterButton
+                                : {}),
+                              ...(isLocked ? styles.lockedFilterButton : {}),
+                            }}
+                            onClick={() => handleSelectFilter(filter.id)}
+                            disabled={isLocked}
+                          >
+                            <strong>{filter.name}</strong>
+                            <span>
+                              {isLocked
+                                ? `LV. ${filter.veteranLevel} 베테랑 혜택`
+                                : filter.description}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div style={styles.adjustSection}>

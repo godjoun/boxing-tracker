@@ -7,7 +7,7 @@ import {
   getWeeklyTrendSummary,
 } from "../utils/trainingStats";
 
-export default function StatsPage({ onGoWeekly }) {
+export default function StatsPage({ onGoWeekly, onGoBack }) {
   const { logs, weeklyScore } = useTraining();
   const stats = useMemo(() => buildAllTimeStats(logs), [logs]);
   const weekly = stats.weeklyReport;
@@ -19,6 +19,11 @@ export default function StatsPage({ onGoWeekly }) {
 
   return (
     <main className="stats-page">
+      {onGoBack && (
+        <button className="category-back" type="button" onClick={onGoBack}>
+          <span>←</span> 성장
+        </button>
+      )}
       <header className="stats-hero">
         <div>
           <p className="home-section-label">GROWTH</p>

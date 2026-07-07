@@ -9,28 +9,6 @@ export const TIMER_MENU_CARD = {
 
 export const MENU_GROUPS = [
   {
-    id: "growth",
-    title: "성장",
-    items: [
-      {
-        id: "stats",
-        icon: "↗",
-        title: "성장 분석",
-        description: "라운드 · 볼륨",
-        route: "stats",
-        accent: "red",
-      },
-      {
-        id: "weekly",
-        icon: "W",
-        title: "주간 리포트",
-        description: "이번 주 요약",
-        route: "weekly",
-        accent: "orange",
-      },
-    ],
-  },
-  {
     id: "fighter",
     title: "파이터",
     items: [

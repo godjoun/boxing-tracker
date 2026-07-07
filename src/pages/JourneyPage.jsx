@@ -13,7 +13,7 @@ function formatDateLabel(dateKey) {
   return String(dateKey).replaceAll("-", ".");
 }
 
-export default function JourneyPage({ onStartTraining }) {
+export default function JourneyPage({ onStartTraining, onGoBack }) {
   const { logs, profile, weeklyScore } = useTraining();
 
   const journey = useMemo(
@@ -49,6 +49,11 @@ export default function JourneyPage({ onStartTraining }) {
 
   return (
     <main className="journey-page">
+      {onGoBack && (
+        <button className="category-back" type="button" onClick={onGoBack}>
+          <span>←</span> 성장
+        </button>
+      )}
       <header className="journey-hero">
         <p className="journey-kicker">MY JOURNEY</p>
         <h1>추억 보기</h1>

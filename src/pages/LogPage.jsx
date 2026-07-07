@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import { getCompletionDelta, getFighterProgress } from "../utils/fighterProgress";
 import {
@@ -125,6 +126,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(createEmptyForm);
   const [reward, setReward] = useState(null);
+  const [logView, setLogView] = useState("write");
 
   const safeWeeklyLogs = Array.isArray(weeklyLogs) ? weeklyLogs : logs;
   const fighter = useMemo(() => getFighterProgress(logs), [logs]);
@@ -216,6 +218,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
       memo: form.memo,
       publicComment: form.publicComment,
       source: "manual",
+    });
+
+    track("log_save", {
+      source: "manual",
+      rounds: Number(form.rounds || 0),
     });
 
     setReward({
@@ -341,6 +348,29 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
           </p>
         </header>
 
+        <div className="log-view-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={logView === "write"}
+            className={`log-view-tab${logView === "write" ? " is-active" : ""}`}
+            onClick={() => setLogView("write")}
+          >
+            오늘 기록하기
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={logView === "history"}
+            className={`log-view-tab${logView === "history" ? " is-active" : ""}`}
+            onClick={() => setLogView("history")}
+          >
+            지난 기록{logs.length > 0 ? ` (${logs.length})` : ""}
+          </button>
+        </div>
+
+        {logView === "write" && (
+          <>
         <section className="log-card log-season-card">
           <div className="log-season-head">
             <div>
@@ -665,7 +695,10 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
             </button>
           </form>
         </section>
+          </>
+        )}
 
+        {logView === "history" && (
         <section className="log-card log-recent-card">
           <div className="log-recent-head">
             <h2>최근 기록</h2>
@@ -931,6 +964,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
             </div>
           )}
         </section>
+        )}
       </div>
     </main>
   );

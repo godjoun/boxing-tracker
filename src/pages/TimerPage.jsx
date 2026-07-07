@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import { getCompletionDelta } from "../utils/fighterProgress";
 import {
@@ -602,6 +603,12 @@ export default function TimerPage({
   }, [launchConfig]);
 
   const handleStart = async () => {
+    if (phase === "done" || !hasStartedSession) {
+      track("training_start", {
+        mode: launchConfig?.curriculumSessionId ? "curriculum" : "timer",
+      });
+    }
+
     if (soundMode !== "mute") {
       await startTimerAudioSession();
     }

@@ -31,6 +31,50 @@
   font-weight: 500;
 }
 
+.log-view-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 5px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.log-view-tab {
+  border: none;
+  border-radius: 12px;
+  padding: 11px 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.log-view-tab.is-active {
+  background: #ef3f36;
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(239, 63, 54, 0.24);
+}
+
+.theme-light .log-view-tabs {
+  background: rgba(22, 22, 22, 0.04);
+  border-color: rgba(22, 22, 22, 0.08);
+}
+
+.theme-light .log-view-tab {
+  color: #74706b;
+}
+
+.theme-light .log-view-tab.is-active {
+  background: linear-gradient(135deg, #e8c66a, #c49a2e);
+  color: #1f1a12;
+  box-shadow: 0 6px 16px rgba(196, 154, 46, 0.28);
+}
+
 .log-card {
   margin-bottom: 16px;
   padding: 16px;

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import FighterSpecCard from "../components/FighterSpecCard";
 import { getFighterProgress, MAX_FIGHTER_LEVEL } from "../utils/fighterProgress";
@@ -2034,6 +2035,8 @@ export default function ProfilePage({
       return;
     }
 
+    track("card_save", { style: "social" });
+
     setIsSavingImage(true);
 
     try {
@@ -2056,6 +2059,8 @@ export default function ProfilePage({
       );
       return;
     }
+
+    track("card_save", { style: cardStyle });
 
     if (!trainingCardRef.current) {
       alert("저장할 카드가 아직 준비되지 않았어.");

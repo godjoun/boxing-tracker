@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
+import { track } from "@vercel/analytics";
 import { TrainingProvider, useTraining } from "./store/TrainingContext";
 import HomePage from "./pages/HomePage";
 import LogPage from "./pages/LogPage";
@@ -14,6 +16,7 @@ import CurriculumPage from "./pages/CurriculumPage";
 import ComboCreatorPage from "./pages/ComboCreatorPage";
 import StrengthProgramPage from "./pages/StrengthProgramPage";
 import TrainingHubPage from "./pages/TrainingHubPage";
+import GrowthHubPage from "./pages/GrowthHubPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
 import FirstVisitTutorial from "./components/FirstVisitTutorial";
@@ -99,6 +102,9 @@ function MainAppShell() {
   };
 
   const goTimerWithSession = (session) => {
+    track("curriculum_session_start", {
+      sessionId: session?.id || "unknown",
+    });
     setTimerLaunch(buildCurriculumTimerLaunch(session));
     setCurrentPage("timer");
   };
@@ -198,12 +204,23 @@ function MainAppShell() {
           />
         )}
 
+        {currentPage === "growth" && (
+          <GrowthHubPage
+            onOpenStats={() => goPage("stats")}
+            onOpenWeekly={() => goPage("weekly")}
+            onOpenJourney={() => goPage("journey")}
+          />
+        )}
+
         {currentPage === "stats" && (
-          <StatsPage onGoWeekly={() => goPage("weekly")} />
+          <StatsPage
+            onGoBack={() => goPage("growth")}
+            onGoWeekly={() => goPage("weekly")}
+          />
         )}
 
         {currentPage === "weekly" && (
-          <WeeklyReportPage onGoBack={() => goPage("category")} />
+          <WeeklyReportPage onGoBack={() => goPage("growth")} />
         )}
 
         {currentPage === "backup" && (
@@ -219,7 +236,10 @@ function MainAppShell() {
         )}
 
         {currentPage === "journey" && (
-          <JourneyPage onStartTraining={() => goPage("timer")} />
+          <JourneyPage
+            onGoBack={() => goPage("growth")}
+            onStartTraining={() => goPage("timer")}
+          />
         )}
 
         {currentPage === "curriculum" && (
@@ -343,11 +363,16 @@ function MainAppShell() {
           style={{
             ...styles.navButton,
             color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "journey" ? navActiveStyle : {}),
+            ...(currentPage === "growth" ||
+            currentPage === "journey" ||
+            currentPage === "stats" ||
+            currentPage === "weekly"
+              ? navActiveStyle
+              : {}),
           }}
-          onClick={() => goPage("journey")}
+          onClick={() => goPage("growth")}
         >
-          여정
+          성장
         </button>
 
         <button
@@ -368,6 +393,8 @@ function MainAppShell() {
           <span>더보기</span>
         </button>
       </nav>
+
+      <Analytics />
     </div>
   );
 }

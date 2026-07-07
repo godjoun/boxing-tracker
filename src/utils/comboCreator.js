@@ -41,7 +41,7 @@ export function buildComboDrill(name, moves, rounds = 4) {
       {
         name: "워밍업",
         duration: "3분",
-        description: "가벼운 섀도우로 어깨와 손목을 풀어주세요.",
+        description: "가벼운 섀도우로 어깨와 손목을 푸십시오.",
       },
       {
         name: name || notation,
@@ -52,7 +52,7 @@ export function buildComboDrill(name, moves, rounds = 4) {
       {
         name: "쿨다운",
         duration: "3분",
-        description: "호흡을 고르고 어깨 스트레칭",
+        description: "호흡을 고르고 어깨를 스트레칭하십시오",
       },
     ],
   };

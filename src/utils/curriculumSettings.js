@@ -194,14 +194,14 @@ export function createCustomSessionFromForm(form) {
       duration: drill.duration?.trim() || "라운드당",
       description:
         drill.description?.trim() ||
-        `${index + 1}번째 드릴 — 설정한 라운드마다 따라 하세요.`,
+        `${index + 1}번째 드릴 — 설정한 라운드마다 따라 하십시오.`,
     }));
 
   if (drills.length === 0) {
     drills.push({
       name: "섀도우 복싱",
       duration: "라운드당",
-      description: "가드 유지하며 펀치와 풋워크를 자유롭게 연습합니다.",
+      description: "가드를 유지하며 펀치와 풋워크를 자유롭게 연습하십시오.",
     });
   }
 

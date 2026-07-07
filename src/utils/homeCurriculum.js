@@ -49,17 +49,17 @@ export const HOME_CURRICULUM = {
             {
               name: "워밍업",
               duration: "5분",
-              description: "목·어깨·손목 돌리기, 가벼운 제자리 뛰기",
+              description: "목·어깨·손목 돌리기, 가벼운 제자리 뛰기를 하십시오",
             },
             {
               name: "스탠스 체크",
               duration: "3분",
-              description: "발 너비 어깨보다 살짝 넓게, 무게 중심 50:50",
+              description: "발 너비는 어깨보다 살짝 넓게, 무게 중심은 50:50으로 두십시오",
             },
             {
               name: "가드 유지 섀도우",
               duration: "라운드당",
-              description: "턱 보호, 팔꿈치 몸에 붙인 채 앞뒤 이동만",
+              description: "턱을 보호하고 팔꿈치를 몸에 붙인 채 앞뒤로만 이동하십시오",
             },
           ],
         },
@@ -75,17 +75,17 @@ export const HOME_CURRICULUM = {
             {
               name: "워밍업",
               duration: "5분",
-              description: "점프잭 30초 · 푸시업 10회 · 스탠스 점검",
+              description: "점프잭 30초 · 푸시업 10회 · 스탠스 점검을 하십시오",
             },
             {
               name: "싱글 잽",
               duration: "라운드당",
-              description: "1발 뻗고 바로 가드 복귀. 힘 70%만",
+              description: "한 발 뻗고 바로 가드로 복귀하되, 힘은 70%만 쓰십시오",
             },
             {
               name: "더블 잽",
               duration: "30초 × 3세트",
-              description: "1-1 템포, 발끝으로 앞으로 살짝 밀기",
+              description: "1-1 템포로, 발끝으로 앞으로 살짝 밀며 치십시오",
             },
           ],
         },
@@ -101,17 +101,17 @@ export const HOME_CURRICULUM = {
             {
               name: "스텝 드릴",
               duration: "5분",
-              description: "앞 2보 · 뒤 2보 · 좌우 1보씩 반복",
+              description: "앞 2보, 뒤 2보, 좌우 1보씩 반복하십시오",
             },
             {
               name: "잽 + 스텝",
               duration: "라운드당",
-              description: "잽 후 한 걸음 뒤로 빠지기",
+              description: "잽 후 한 걸음 뒤로 빠지십시오",
             },
             {
               name: "쿨다운",
               duration: "3분",
-              description: "어깨·허리 스트레칭",
+              description: "어깨와 허리를 스트레칭하십시오",
             },
           ],
         },
@@ -135,18 +135,18 @@ export const HOME_CURRICULUM = {
             {
               name: "워밍업",
               duration: "5분",
-              description: "로프 없이 제자리 뛰기 3분 · 몸통 회전 스트레칭",
+              description: "로프 없이 제자리 뛰기 3분 · 몸통 회전 스트레칭을 하십시오",
             },
             {
               name: "1-2 콤보",
               duration: "라운드당",
-              description: "잽 후 어깨 회전하며 크로스. 숨은 라운드 끝에",
+              description: "잽 후 어깨를 회전하며 크로스를 치고, 호흡은 라운드 끝에 고르십시오",
               combos: ["J-C", "1-2"],
             },
             {
               name: "미트 대신 섀도우",
               duration: "2분",
-              description: "상상의 타겟 높이에 맞춰 1-2만 반복",
+              description: "상상의 타겟 높이에 맞춰 1-2만 반복하십시오",
             },
           ],
         },
@@ -162,17 +162,17 @@ export const HOME_CURRICULUM = {
             {
               name: "바디 로테이션",
               duration: "3분",
-              description: "무릎·골반만 돌리기, 팔은 아직 안 씀",
+              description: "무릎과 골반만 돌리고, 팔은 아직 쓰지 마십시오",
             },
             {
               name: "리드 훅",
               duration: "라운드당",
-              description: "짧게, 팔꿈치는 수평 유지",
+              description: "짧게 치고, 팔꿈치는 수평으로 유지하십시오",
             },
             {
               name: "1-2-훅",
               duration: "1분 × 3세트",
-              description: "템포 느리게, 동작 크기 작게",
+              description: "템포는 느리게, 동작은 작게 하십시오",
               combos: ["J-C-LH", "1-2-훅"],
             },
           ],
@@ -189,17 +189,17 @@ export const HOME_CURRICULUM = {
             {
               name: "라운드 1",
               duration: "3분",
-              description: "50% 강도 · 잽·크로스만",
+              description: "50% 강도로 잽과 크로스만 치십시오",
             },
             {
               name: "라운드 2-3",
               duration: "3분",
-              description: "70% 강도 · 훅 추가",
+              description: "70% 강도로 훅을 추가하십시오",
             },
             {
               name: "라운드 4-5",
               duration: "3분",
-              description: "마지막 30초만 90% · 나머지는 페이스 유지",
+              description: "마지막 30초만 90%로 올리고, 나머지는 페이스를 유지하십시오",
             },
           ],
         },
@@ -223,17 +223,17 @@ export const HOME_CURRICULUM = {
             {
               name: "넥 모빌리티",
               duration: "3분",
-              description: "천천히 슬립 좌우 · 과도한 움직임 금지",
+              description: "천천히 좌우로 슬립하고, 과도한 움직임은 삼가십시오",
             },
             {
               name: "슬립 + 카운터 잽",
               duration: "라운드당",
-              description: "피한 뒤 한 발만 반격",
+              description: "피한 뒤 한 발만 반격하십시오",
             },
             {
               name: "숄더 롤",
               duration: "2분",
-              description: "가드 유지한 채 어깨만 굴리기",
+              description: "가드를 유지한 채 어깨만 굴리십시오",
             },
           ],
         },
@@ -249,17 +249,17 @@ export const HOME_CURRICULUM = {
             {
               name: "서킷 A",
               duration: "40초 × 5",
-              description: "스쿼트 · 플랭크 · 마운틴클라이머 순환",
+              description: "스쿼트, 플랭크, 마운틴클라이머를 순환하며 하십시오",
             },
             {
               name: "섀도우 피니시",
               duration: "라운드 마지막 1분",
-              description: "빠른 잽 연속, 가드 유지",
+              description: "빠른 잽을 연속으로 치고 가드를 유지하십시오",
             },
             {
               name: "쿨다운",
               duration: "5분",
-              description: "햄스트링·고관절 스트레칭",
+              description: "햄스트링과 고관절을 스트레칭하십시오",
             },
           ],
         },
@@ -275,18 +275,18 @@ export const HOME_CURRICULUM = {
             {
               name: "하이 가드",
               duration: "3분",
-              description: "손으로 가상의 스트레이트 막기",
+              description: "손으로 가상의 스트레이트를 막으십시오",
             },
             {
               name: "패리 후 1-2",
               duration: "라운드당",
-              description: "살짝 밀어내고 바로 반격",
+              description: "살짝 밀어내고 바로 반격하십시오",
               combos: ["J-C", "1-2"],
             },
             {
               name: "풋워크 탈출",
               duration: "1분",
-              description: "콤보 후 옆·뒤로 한 걸음",
+              description: "콤보 후 옆이나 뒤로 한 걸음 움직이십시오",
             },
           ],
         },
@@ -310,12 +310,12 @@ export const HOME_CURRICULUM = {
             {
               name: "워밍업",
               duration: "5분",
-              description: "가벼운 섀도우 + 스텝",
+              description: "가벼운 섀도우와 스텝을 하십시오",
             },
             {
               name: "프레셔 3라운드",
               duration: "3분",
-              description: "앞으로 밀고 들어가며 1-2-훅",
+              description: "앞으로 밀고 들어가며 1-2-훅을 치십시오",
               combos: ["J-C-LH", "1-2-훅"],
               roundFrom: 1,
               roundTo: 3,
@@ -323,7 +323,7 @@ export const HOME_CURRICULUM = {
             {
               name: "카운터 3라운드",
               duration: "3분",
-              description: "뒤로 빠지며 잽·크로스",
+              description: "뒤로 빠지며 잽과 크로스를 치십시오",
               roundFrom: 4,
               roundTo: 6,
             },
@@ -341,17 +341,17 @@ export const HOME_CURRICULUM = {
             {
               name: "라운드 1-2",
               duration: "3분",
-              description: "기술 위주 60%",
+              description: "기술 위주로 60% 강도로 하십시오",
             },
             {
               name: "라운드 3-4",
               duration: "3분",
-              description: "콤보 위주 75%",
+              description: "콤보 위주로 75% 강도로 하십시오",
             },
             {
               name: "라운드 5-6",
               duration: "3분",
-              description: "마지막 라운드 풀 스피드 30초",
+              description: "마지막 라운드는 풀 스피드로 30초간 하십시오",
             },
           ],
         },
@@ -367,19 +367,19 @@ export const HOME_CURRICULUM = {
             {
               name: "프리 라운드 1-2",
               duration: "3분",
-              description: "자유 섀도우, 배운 콤보 섞기",
+              description: "자유 섀도우로 배운 콤보를 섞어 치십시오",
             },
             {
               name: "시나리오 라운드",
               duration: "3분 × 2",
-              description: "앞 압박 / 뒤 빠지기 번갈아",
+              description: "앞으로 압박하고 뒤로 빠지기를 번갈아 하십시오",
               roundFrom: 3,
               roundTo: 6,
             },
             {
               name: "마무리",
               duration: "5분",
-              description: "스트레칭 + 다음 주 목표 정하기",
+              description: "스트레칭을 하고 다음 주 목표를 정하십시오",
             },
           ],
         },
@@ -686,7 +686,7 @@ export function getCurriculumPhaseFocus(
         label: "마무리",
         name: "쿨다운",
         duration: "스트레칭",
-        description: "호흡을 고르고 몸을 풀어 주세요.",
+        description: "호흡을 고르고 몸을 푸십시오.",
       };
     }
 

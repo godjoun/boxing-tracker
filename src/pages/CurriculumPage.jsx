@@ -37,7 +37,7 @@ const EMPTY_CUSTOM_FORM = {
   workMinutes: 2,
   restSeconds: 30,
   drills: [
-    { name: "워밍업", duration: "5분", description: "가벼운 스트레칭과 제자리 뛰기" },
+    { name: "워밍업", duration: "5분", description: "가벼운 스트레칭과 제자리 뛰기를 하십시오" },
     { name: "섀도우", duration: "라운드당", description: "" },
     { name: "", duration: "라운드당", description: "" },
   ],

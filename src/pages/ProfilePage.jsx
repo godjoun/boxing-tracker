@@ -137,8 +137,6 @@ export default function ProfilePage({
     filename: "",
   });
   const preparingExportKeyRef = useRef("");
-  const [isPreparingExport, setIsPreparingExport] = useState(false);
-  const [preparedExportKey, setPreparedExportKey] = useState("");
   const [exportPreview, setExportPreview] = useState(null);
 
   useEffect(() => {
@@ -1937,7 +1935,6 @@ export default function ProfilePage({
     }
 
     preparingExportKeyRef.current = key;
-    setIsPreparingExport(true);
 
     const promise = (async () => {
       const filename =
@@ -1952,7 +1949,6 @@ export default function ProfilePage({
 
       const cache = { key, dataUrl, file, filename };
       exportCacheRef.current = cache;
-      setPreparedExportKey(key);
 
       return cache;
     })();
@@ -1969,7 +1965,6 @@ export default function ProfilePage({
       if (preparingExportKeyRef.current === key) {
         preparingExportKeyRef.current = "";
       }
-      setIsPreparingExport(false);
     }
   }
 
@@ -2049,7 +2044,7 @@ export default function ProfilePage({
     }
   }
 
-  function handleSaveCardImage() {
+  async function handleSaveCardImage() {
     if (cardMediaType === "video") {
       alert(
         "영상 카드는 다음 단계에서 저장 기능을 붙일게. 지금은 사진 카드만 이미지 저장이 가능해."
@@ -2062,19 +2057,41 @@ export default function ProfilePage({
       return;
     }
 
-    const key = getCardExportKey();
-    const cache = exportCacheRef.current;
-
-    if (cache.key !== key || !cache.file || !cache.dataUrl) {
-      alert("이미지를 준비 중이야. 버튼이 다시 활성화될 때 저장해줘.");
+    if (isCardImagePreparing) {
+      alert("사진을 불러오는 중이야. 잠시 뒤 다시 시도해줘.");
       return;
     }
 
+    const key = getCardExportKey();
+    const cache = exportCacheRef.current;
+
+    // 미리 준비된 이미지가 있으면 iOS 공유 안정성을 위해 동기적으로 즉시 저장한다.
+    if (cache.key === key && cache.file && cache.dataUrl) {
+      try {
+        shareOrDownloadPreparedExport(cache);
+      } catch (error) {
+        console.error(error);
+        showExportPreview(cache);
+      }
+      return;
+    }
+
+    // 아직 준비된 이미지가 없으면 클릭 시점에 즉석에서 만들어 저장한다.
     try {
-      shareOrDownloadPreparedExport(cache);
+      setIsSavingImage(true);
+      const freshCache = await prepareCardExport({ force: true });
+      shareOrDownloadPreparedExport(freshCache);
     } catch (error) {
       console.error(error);
-      showExportPreview(cache);
+      const fallback = exportCacheRef.current;
+
+      if (fallback?.dataUrl) {
+        showExportPreview(fallback);
+      } else {
+        alert("이미지를 만들지 못했어. 사진과 설정을 확인한 뒤 다시 시도해줘.");
+      }
+    } finally {
+      setIsSavingImage(false);
     }
   }
 
@@ -2127,7 +2144,6 @@ ${logLines}${commentText}${mediaText}`;
   }
 
   useEffect(() => {
-    setPreparedExportKey("");
     setExportPreview(null);
 
     if (cardMediaType === "video") return;
@@ -2136,22 +2152,14 @@ ${logLines}${commentText}${mediaText}`;
       return;
     }
 
-    let cancelled = false;
-
-    const timer = setTimeout(async () => {
-      try {
-        const cache = await prepareCardExport({ force: true });
-
-        if (!cancelled) {
-          setPreparedExportKey(cache.key);
-        }
-      } catch (error) {
+    const timer = setTimeout(() => {
+      // 저장 버튼을 빠르게 누를 때를 대비해 이미지를 미리 만들어 캐시에 채워둔다.
+      prepareCardExport({ force: true }).catch((error) => {
         console.warn("저장 이미지 미리 준비 실패:", error);
-      }
+      });
     }, 650);
 
     return () => {
-      cancelled = true;
       clearTimeout(timer);
     };
   }, [currentExportKey, cardMediaReady, cardMediaType, cardMedia]);
@@ -2170,17 +2178,8 @@ ${logLines}${commentText}${mediaText}`;
   const isCardImagePreparing =
     cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
 
-  const isExportReady =
-    preparedExportKey === currentExportKey &&
-    exportCacheRef.current.key === currentExportKey &&
-    Boolean(exportCacheRef.current.file);
-
   const isSaveCardDisabled =
-    cardMediaType === "video" ||
-    isSavingImage ||
-    isCardImagePreparing ||
-    isPreparingExport ||
-    !isExportReady;
+    cardMediaType === "video" || isSavingImage || isCardImagePreparing;
 
   return (
     <main style={styles.page}>
@@ -3283,8 +3282,6 @@ ${logLines}${commentText}${mediaText}`;
                 ? "이미지 저장 중..."
                 : isCardImagePreparing
                 ? "사진 준비 중..."
-                : isPreparingExport || !isExportReady
-                ? "저장 이미지 준비 중..."
                 : "카드 이미지 저장하기"}
             </button>
 

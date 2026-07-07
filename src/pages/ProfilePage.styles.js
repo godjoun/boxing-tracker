@@ -407,6 +407,60 @@ export const styles = {
     border: "1px solid var(--p-border)",
   },
 
+  cardStudioEntry: {
+    width: "100%",
+    marginTop: "16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+    textAlign: "left",
+    cursor: "pointer",
+    borderRadius: "24px",
+    padding: "22px",
+    color: "#fff",
+    border: "1px solid rgba(214, 162, 52, 0.32)",
+    background:
+      "radial-gradient(circle at 84% 10%, rgba(214, 162, 52, 0.3), transparent 44%), linear-gradient(150deg, #1b1509, #0b0b0c)",
+  },
+
+  cardStudioEntryKicker: {
+    fontSize: "12px",
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    color: "rgba(232, 198, 106, 0.95)",
+  },
+
+  cardStudioEntryTitle: {
+    fontSize: "19px",
+    fontWeight: 900,
+  },
+
+  cardStudioEntryDesc: {
+    fontSize: "13px",
+    lineHeight: 1.5,
+    color: "rgba(255, 255, 255, 0.72)",
+  },
+
+  cardStudioEntryCta: {
+    marginTop: "6px",
+    fontSize: "14px",
+    fontWeight: 900,
+    color: "#e8c66a",
+  },
+
+  studioBackButton: {
+    marginBottom: "4px",
+    alignSelf: "flex-start",
+    border: "1px solid var(--p-border-strong)",
+    borderRadius: "14px",
+    padding: "10px 14px",
+    fontSize: "13px",
+    fontWeight: 800,
+    cursor: "pointer",
+    background: "var(--p-bg-deep)",
+    color: "var(--p-text)",
+  },
+
   recentTrainingNotice: {
     marginBottom: "16px",
     padding: "15px",

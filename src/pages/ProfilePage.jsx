@@ -54,6 +54,9 @@ export default function ProfilePage({
   const cardMakerRef = useRef(null);
   const videoObjectUrlRef = useRef(null);
 
+  const [profileView, setProfileView] = useState(
+    scrollTarget === "cardMaker" ? "studio" : "nameplate"
+  );
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
     profile.bio || "아직 초보지만 링에 계속 올라가는 중"
@@ -243,14 +246,7 @@ export default function ProfilePage({
   useEffect(() => {
     if (scrollTarget !== "cardMaker") return;
 
-    const timer = setTimeout(() => {
-      cardMakerRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 150);
-
-    return () => clearTimeout(timer);
+    setProfileView("studio");
   }, [scrollTarget]);
 
   useEffect(() => {
@@ -358,10 +354,19 @@ export default function ProfilePage({
   }, [profile.nickname]);
 
   function scrollToCardMaker() {
-    cardMakerRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    setProfileView("studio");
+
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  function backToNameplate() {
+    setProfileView("nameplate");
+
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }
   const growthPreview = useMemo(() => {
     const isMax = profileStats.isMaxLevel;
@@ -2183,6 +2188,8 @@ ${logLines}${commentText}${mediaText}`;
 
   return (
     <main style={styles.page}>
+      {profileView === "nameplate" && (
+        <>
       <FighterSpecCard
         profile={profile}
         logs={logs}
@@ -2429,6 +2436,62 @@ ${logLines}${commentText}${mediaText}`;
           <strong style={styles.statValue}>{profileStats.todayCount}회</strong>
         </div>
       </section>
+
+      <button
+        type="button"
+        style={styles.cardStudioEntry}
+        onClick={scrollToCardMaker}
+      >
+        <span style={styles.cardStudioEntryKicker}>NAMEPLATE · CARD MAKER</span>
+        <strong style={styles.cardStudioEntryTitle}>훈련 인증 카드 만들기</strong>
+        <span style={styles.cardStudioEntryDesc}>
+          사진과 필터로 나만의 파이터 카드·포스터를 만들어 저장하고 공유하세요.
+        </span>
+        <span style={styles.cardStudioEntryCta}>카드 만들기 열기 →</span>
+      </button>
+
+      <section style={styles.sectionCard}>
+        <p style={styles.kicker}>PROOF OF TRAINING</p>
+        <h2 style={styles.sectionTitle}>훈련 증명</h2>
+
+        <div style={styles.proofBox}>
+          <p style={styles.proofText}>
+            나는 지금까지 총{" "}
+            <strong style={styles.redText}>
+              {profileStats.totalRounds}라운드
+            </strong>
+            를 버텼고,{" "}
+            <strong style={styles.redText}>{profileStats.totalLogs}번</strong>의
+            훈련 기록을 남겼다.
+          </p>
+
+          <p style={styles.proofSmallText}>
+            자동 기록 {profileStats.timerCount}개 · 수동 기록{" "}
+            {profileStats.manualCount}개
+          </p>
+        </div>
+      </section>
+
+      <section style={styles.sectionCard}>
+        <p style={styles.kicker}>MY JOURNEY</p>
+        <h2 style={styles.sectionTitle}>훈련 여정</h2>
+        <p style={styles.proofSmallText}>
+          칭호 도감, 베테랑 혜택, 업적, 대표 훈련 기록은 하단 탭 <strong>여정</strong>에서 볼 수
+          있습니다.
+        </p>
+      </section>
+        </>
+      )}
+
+      {profileView === "studio" && (
+        <>
+      <button
+        type="button"
+        style={styles.studioBackButton}
+        onClick={backToNameplate}
+      >
+        ← 명패로 돌아가기
+      </button>
 
       <section ref={cardMakerRef} style={styles.cardMakerSection}>
         <p style={styles.kicker}>NAMEPLATE · CARD MAKER</p>
@@ -3333,37 +3396,8 @@ ${logLines}${commentText}${mediaText}`;
           </>
         )}
       </section>
-
-      <section style={styles.sectionCard}>
-        <p style={styles.kicker}>PROOF OF TRAINING</p>
-        <h2 style={styles.sectionTitle}>훈련 증명</h2>
-
-        <div style={styles.proofBox}>
-          <p style={styles.proofText}>
-            나는 지금까지 총{" "}
-            <strong style={styles.redText}>
-              {profileStats.totalRounds}라운드
-            </strong>
-            를 버텼고,{" "}
-            <strong style={styles.redText}>{profileStats.totalLogs}번</strong>의
-            훈련 기록을 남겼다.
-          </p>
-
-          <p style={styles.proofSmallText}>
-            자동 기록 {profileStats.timerCount}개 · 수동 기록{" "}
-            {profileStats.manualCount}개
-          </p>
-        </div>
-      </section>
-
-      <section style={styles.sectionCard}>
-        <p style={styles.kicker}>MY JOURNEY</p>
-        <h2 style={styles.sectionTitle}>훈련 여정</h2>
-        <p style={styles.proofSmallText}>
-          칭호 도감, 베테랑 혜택, 업적, 대표 훈련 기록은 하단 탭 <strong>여정</strong>에서 볼 수
-          있습니다.
-        </p>
-      </section>
+        </>
+      )}
     </main>
   );
 }

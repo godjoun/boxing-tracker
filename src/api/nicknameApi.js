@@ -50,24 +50,27 @@ function isMissingTableError(error) {
 
   return (
     code === "PGRST205" ||
+    code === "PGRST202" ||
     code === "42P01" ||
+    code === "42883" ||
     message.includes("fighter_nicknames") ||
-    message.includes("does not exist")
+    message.includes("check_nickname_available") ||
+    message.includes("does not exist") ||
+    message.includes("could not find the function")
   );
 }
 
-async function checkRemoteNickname(nickname, userId) {
+async function checkRemoteNickname(nickname) {
   const supabase = getSupabase();
 
   if (!supabase) {
     return null;
   }
 
-  const { data, error } = await supabase
-    .from("fighter_nicknames")
-    .select("user_id")
-    .eq("nickname", nickname)
-    .maybeSingle();
+  // 전체 테이블을 읽지 않고, 사용 가능 여부(boolean)만 반환하는 RPC 사용
+  const { data, error } = await supabase.rpc("check_nickname_available", {
+    p_nickname: nickname,
+  });
 
   if (error) {
     if (isMissingTableError(error)) {
@@ -77,7 +80,7 @@ async function checkRemoteNickname(nickname, userId) {
     throw error;
   }
 
-  if (data?.user_id && data.user_id !== userId) {
+  if (data === false) {
     return {
       available: false,
       message: "이미 사용 중인 이름입니다.",
@@ -102,7 +105,7 @@ export async function checkNicknameAvailability(nickname, userId) {
     };
   }
 
-  const remoteResult = await checkRemoteNickname(trimmed, userId);
+  const remoteResult = await checkRemoteNickname(trimmed);
 
   if (remoteResult) {
     return {

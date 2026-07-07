@@ -37,6 +37,18 @@ import {
   buildTimerSnapshot,
   readInitialTimerState,
 } from "../utils/timerPagePersistence";
+import {
+  CALLOUT_PACES,
+  cancelCallout,
+  getPaceSeconds,
+  isCalloutSupported,
+  loadCalloutPref,
+  pickRandomCombo,
+  primeCalloutVoices,
+  saveCalloutPref,
+  speakCombo,
+  warmUpCallout,
+} from "../utils/comboCallout";
 import { styles } from "./TimerPage.styles";
 import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
 
@@ -201,6 +213,8 @@ export default function TimerPage({
   const [hasSavedLog, setHasSavedLog] = useState(initialTimerState.hasSavedLog);
   const [completionResult, setCompletionResult] = useState(null);
   const [soundMode, setSoundMode] = useState(initialTimerState.soundMode);
+  const [calloutPref, setCalloutPref] = useState(() => loadCalloutPref());
+  const calloutSupported = isCalloutSupported();
 
   const savedLogRef = useRef(initialTimerState.hasSavedLog);
   const previousPhaseRef = useRef(initialTimerState.phase);
@@ -473,6 +487,39 @@ export default function TimerPage({
   }, [isRunning, phase, currentRound, totalRounds, workSeconds, restSeconds, isCurriculumSession, cooldownSecondsSetting]);
 
   useEffect(() => {
+    primeCalloutVoices();
+    return () => cancelCallout();
+  }, []);
+
+  useEffect(() => {
+    if (!calloutPref.enabled) return undefined;
+    if (!calloutSupported) return undefined;
+    if (!isRunning || phase !== "work") {
+      cancelCallout();
+      return undefined;
+    }
+
+    speakCombo(pickRandomCombo());
+
+    const intervalMs = getPaceSeconds(calloutPref.pace) * 1000;
+    const intervalId = setInterval(() => {
+      speakCombo(pickRandomCombo());
+    }, intervalMs);
+
+    return () => {
+      clearInterval(intervalId);
+      cancelCallout();
+    };
+  }, [
+    calloutPref.enabled,
+    calloutPref.pace,
+    calloutSupported,
+    isRunning,
+    phase,
+    currentRound,
+  ]);
+
+  useEffect(() => {
     if (previousPhaseRef.current === phase) return;
 
     if (phase === "prep") {
@@ -601,9 +648,31 @@ export default function TimerPage({
     onLaunchConsumed?.();
   }, [launchConfig]);
 
+  const updateCalloutPref = (patch) => {
+    setCalloutPref((current) => {
+      const next = { ...current, ...patch };
+      saveCalloutPref(next);
+      return next;
+    });
+  };
+
+  const handleToggleCallout = (enabled) => {
+    if (enabled) {
+      warmUpCallout();
+    } else {
+      cancelCallout();
+    }
+
+    updateCalloutPref({ enabled });
+  };
+
   const handleStart = async () => {
     if (soundMode !== "mute") {
       await startTimerAudioSession();
+    }
+
+    if (calloutPref.enabled && calloutSupported) {
+      warmUpCallout();
     }
 
     if (phase === "done") {
@@ -644,6 +713,7 @@ export default function TimerPage({
     clearTimerSession();
     clearTimerMediaSession();
     stopTimerAudioSession();
+    cancelCallout();
   };
 
   const handleEndCurriculum = () => {
@@ -660,6 +730,7 @@ export default function TimerPage({
     clearTimerSession();
     clearTimerMediaSession();
     stopTimerAudioSession();
+    cancelCallout();
     resetTimerState();
   };
 
@@ -818,6 +889,76 @@ export default function TimerPage({
             </div>
           ) : null}
         </div>
+
+        {calloutSupported ? (
+          <div style={styles.soundBox}>
+            <div style={styles.soundHeaderRow}>
+              <span style={styles.soundText}>콤보 음성 콜아웃</span>
+              <strong style={styles.soundStatus}>
+                {calloutPref.enabled ? "켜짐" : "꺼짐"}
+              </strong>
+            </div>
+
+            <span style={styles.headsetTipCopy}>
+              라운드 중 "잽, 크로스" 같은 콤보를 음성으로 불러줍니다. 뭘 쳐야
+              할지 모를 때 따라 치기 좋아요.
+            </span>
+
+            <div style={styles.soundOptionGrid}>
+              <button
+                type="button"
+                style={{
+                  ...styles.soundOptionButton,
+                  ...(!calloutPref.enabled
+                    ? styles.activeSoundOptionButton
+                    : {}),
+                }}
+                onClick={() => handleToggleCallout(false)}
+              >
+                <strong style={styles.soundOptionLabel}>끄기</strong>
+                <span style={styles.soundOptionDescription}>
+                  소리 안내 없음
+                </span>
+              </button>
+
+              <button
+                type="button"
+                style={{
+                  ...styles.soundOptionButton,
+                  ...(calloutPref.enabled
+                    ? styles.activeSoundOptionButton
+                    : {}),
+                }}
+                onClick={() => handleToggleCallout(true)}
+              >
+                <strong style={styles.soundOptionLabel}>켜기</strong>
+                <span style={styles.soundOptionDescription}>
+                  콤보 음성 안내
+                </span>
+              </button>
+            </div>
+
+            {calloutPref.enabled ? (
+              <div style={styles.quickButtonRow}>
+                {CALLOUT_PACES.map((pace) => (
+                  <button
+                    key={pace.id}
+                    type="button"
+                    style={{
+                      ...styles.quickSelectButton,
+                      ...(calloutPref.pace === pace.id
+                        ? styles.activeQuickSelectButton
+                        : {}),
+                    }}
+                    onClick={() => updateCalloutPref({ pace: pace.id })}
+                  >
+                    {pace.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <section style={styles.timerCard}>

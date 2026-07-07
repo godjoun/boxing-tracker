@@ -82,7 +82,7 @@ function loadUserState(userId) {
     feed: loadStorage(keys.feed, []),
     profile: {
       ...DEFAULT_PROFILE,
-      ...savedProfile,
+      ...sanitizeProfileForStorage(savedProfile),
     },
     mode: localStorage.getItem(keys.mode) || "solo",
   };
@@ -218,7 +218,10 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
   }, [feed, storageKeys.feed]);
 
   useEffect(() => {
-    localStorage.setItem(storageKeys.profile, JSON.stringify(profile));
+    localStorage.setItem(
+      storageKeys.profile,
+      JSON.stringify(sanitizeProfileForStorage(profile))
+    );
   }, [profile, storageKeys.profile]);
 
   useEffect(() => {
@@ -460,9 +463,10 @@ export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
       : normalizeLogScores(data.logs);
 
     const nextFeed = merge ? mergeFeed(feed, data.feed || []) : data.feed || [];
+    const safeImportedProfile = sanitizeProfileForStorage(data.profile);
     const nextProfile = merge
-      ? { ...profile, ...data.profile }
-      : { ...DEFAULT_PROFILE, ...data.profile };
+      ? { ...profile, ...safeImportedProfile }
+      : { ...DEFAULT_PROFILE, ...safeImportedProfile };
 
     setLogs(nextLogs);
     setFeed(nextFeed);

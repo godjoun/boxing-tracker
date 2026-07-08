@@ -2755,8 +2755,23 @@ ${logLines}${commentText}${mediaText}`;
                   필터를 누르면 아래 미리보기에 바로 반영됩니다.
                 </p>
               </div>
-              <div style={styles.livePreviewFrame}>
-                <div style={styles.livePreviewPhotoArea}>
+              <div
+                style={{
+                  ...styles.livePreviewFrame,
+                  background: getCardBackground(selectedFilter),
+                }}
+              >
+                <div
+                  style={{
+                    ...styles.livePreviewPhotoArea,
+                    aspectRatio:
+                      cardStyle === "social"
+                        ? "9 / 16"
+                        : cardStyle === "poster"
+                          ? "3 / 4"
+                          : "4 / 3",
+                  }}
+                >
                   {cardMediaType === "image" && cardMedia ? (
                     <img
                       src={cardMedia}
@@ -2784,6 +2799,35 @@ ${logLines}${commentText}${mediaText}`;
                       ),
                     }}
                   />
+
+                  {cardStyle === "basic" ? (
+                    <div style={styles.livePreviewBadge}>
+                      <span style={styles.livePreviewBadgeKicker}>LEVEL</span>
+                      <strong style={styles.livePreviewBadgeValue}>
+                        {levelUpDisplayLevel}
+                      </strong>
+                      <span style={styles.livePreviewBadgeSub}>
+                        {levelUpDisplayName}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {cardStyle === "poster" ? (
+                    <div style={styles.livePreviewPosterLabel}>
+                      <strong style={styles.livePreviewPosterName}>
+                        {posterMainNameText}
+                      </strong>
+                      <span style={styles.livePreviewPosterEvent}>
+                        {posterEventTitleText}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {cardStyle === "social" ? (
+                    <div style={styles.livePreviewSocialTag}>
+                      BOXING TRAINING
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>

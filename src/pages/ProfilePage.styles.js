@@ -753,6 +753,95 @@ export const styles = {
     pointerEvents: "none",
   },
 
+  livePreviewBadge: {
+    position: "absolute",
+    left: "10px",
+    bottom: "10px",
+    padding: "10px 12px",
+    borderRadius: "16px",
+    border: "1px solid rgba(255, 255, 255, 0.16)",
+    background: "rgba(0, 0, 0, 0.38)",
+    backdropFilter: "blur(10px)",
+    color: "#ffffff",
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    maxWidth: "70%",
+    pointerEvents: "none",
+  },
+
+  livePreviewBadgeKicker: {
+    fontSize: "10px",
+    fontWeight: 900,
+    letterSpacing: "0.06em",
+    color: "rgba(255, 255, 255, 0.7)",
+  },
+
+  livePreviewBadgeValue: {
+    fontSize: "18px",
+    fontWeight: 950,
+    letterSpacing: "-0.02em",
+  },
+
+  livePreviewBadgeSub: {
+    fontSize: "11px",
+    fontWeight: 800,
+    color: "rgba(255, 255, 255, 0.76)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+
+  livePreviewPosterLabel: {
+    position: "absolute",
+    left: "10px",
+    top: "10px",
+    padding: "10px 12px",
+    borderRadius: "16px",
+    border: "1px solid rgba(255, 255, 255, 0.16)",
+    background: "rgba(0, 0, 0, 0.34)",
+    backdropFilter: "blur(10px)",
+    color: "#ffffff",
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    maxWidth: "78%",
+    pointerEvents: "none",
+  },
+
+  livePreviewPosterName: {
+    fontSize: "14px",
+    fontWeight: 950,
+    letterSpacing: "-0.02em",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+
+  livePreviewPosterEvent: {
+    fontSize: "11px",
+    fontWeight: 800,
+    color: "rgba(255, 255, 255, 0.76)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+
+  livePreviewSocialTag: {
+    position: "absolute",
+    left: "10px",
+    top: "10px",
+    padding: "7px 10px",
+    borderRadius: "999px",
+    background: "rgba(255, 255, 255, 0.1)",
+    border: "1px solid rgba(255, 255, 255, 0.16)",
+    color: "rgba(255, 255, 255, 0.9)",
+    fontSize: "11px",
+    fontWeight: 900,
+    letterSpacing: "0.06em",
+    pointerEvents: "none",
+  },
+
   livePreviewEmpty: {
     position: "absolute",
     inset: 0,

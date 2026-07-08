@@ -679,14 +679,14 @@ export const styles = {
   filterButton: {
     border: "1px solid var(--p-border-strong)",
     borderRadius: "16px",
-    padding: "13px",
+    padding: "10px 12px",
     background: "var(--p-bg-deep)",
     color: "var(--p-text)",
     textAlign: "left",
     cursor: "pointer",
     display: "flex",
     flexDirection: "column",
-    gap: "6px",
+    gap: "4px",
   },
 
   activeFilterButton: {
@@ -695,9 +695,75 @@ export const styles = {
     color: "var(--p-on-surface)",
   },
 
+  filterChipTitle: {
+    fontSize: "13px",
+    fontWeight: 900,
+    letterSpacing: "-0.01em",
+  },
+
+  filterChipLock: {
+    fontSize: "11px",
+    fontWeight: 800,
+    opacity: 0.72,
+  },
+
   lockedFilterButton: {
     opacity: 0.52,
     cursor: "not-allowed",
+  },
+
+  livePreviewSection: {
+    marginBottom: "16px",
+    padding: "16px",
+    borderRadius: "20px",
+    background: "var(--p-bg-subtle)",
+    border: "1px solid var(--p-border-soft)",
+  },
+
+  livePreviewHeader: {
+    marginBottom: "10px",
+  },
+
+  livePreviewFrame: {
+    borderRadius: "18px",
+    overflow: "hidden",
+    border: "1px solid var(--p-border-soft)",
+    background: "var(--p-bg-deep)",
+  },
+
+  livePreviewPhotoArea: {
+    position: "relative",
+    width: "100%",
+    aspectRatio: "16 / 9",
+    overflow: "hidden",
+    background: "#121317",
+  },
+
+  livePreviewImage: {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+
+  livePreviewOverlay: {
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+  },
+
+  livePreviewEmpty: {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "var(--p-text-muted)",
+    fontSize: "12px",
+    fontWeight: 800,
+    padding: "12px",
+    textAlign: "center",
   },
 
   adjustSection: {

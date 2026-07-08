@@ -2745,12 +2745,12 @@ ${logLines}${commentText}${mediaText}`;
                             onClick={() => handleSelectFilter(filter.id)}
                             disabled={isLocked}
                           >
-                            <strong>{filter.name}</strong>
-                            <span>
-                              {isLocked
-                                ? `LV. ${filter.veteranLevel} 베테랑 혜택`
-                                : filter.description}
-                            </span>
+                            <strong style={styles.filterChipTitle}>{filter.name}</strong>
+                            {isLocked ? (
+                              <span style={styles.filterChipLock}>
+                                LV. {filter.veteranLevel} 해금
+                              </span>
+                            ) : null}
                           </button>
                         );
                       })}
@@ -2758,6 +2758,46 @@ ${logLines}${commentText}${mediaText}`;
                   </div>
                 );
               })}
+            </div>
+
+            <div style={styles.livePreviewSection}>
+              <div style={styles.livePreviewHeader}>
+                <p style={styles.cardMakerLabel}>필터 미리보기</p>
+                <p style={styles.cardMakerHelp}>
+                  필터를 누르면 아래 미리보기에 바로 반영됩니다.
+                </p>
+              </div>
+              <div style={styles.livePreviewFrame}>
+                <div style={styles.livePreviewPhotoArea}>
+                  {cardMediaType === "image" && cardMedia ? (
+                    <img
+                      src={cardMedia}
+                      alt="필터 미리보기"
+                      style={{
+                        ...styles.livePreviewImage,
+                        filter: getImageFilter(selectedFilter, filterIntensity),
+                        transform: `scale(${Math.max(photoScale, 100) / 100})`,
+                      }}
+                    />
+                  ) : null}
+                  {!cardMedia ? (
+                    <div style={styles.livePreviewEmpty}>
+                      사진을 넣으면 미리보기가 표시됩니다.
+                    </div>
+                  ) : null}
+
+                  <div
+                    style={{
+                      ...styles.livePreviewOverlay,
+                      background: getCardPreviewOverlay(
+                        cardStyle,
+                        selectedFilter,
+                        filterIntensity
+                      ),
+                    }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div style={styles.adjustSection}>

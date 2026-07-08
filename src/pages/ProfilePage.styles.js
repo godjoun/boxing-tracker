@@ -463,7 +463,7 @@ export const styles = {
 
   studioTabs: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateColumns: "repeat(2, 1fr)",
     gap: "6px",
     padding: "6px",
     borderRadius: "18px",

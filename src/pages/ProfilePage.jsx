@@ -59,7 +59,7 @@ export default function ProfilePage({
     scrollTarget === "cardMaker" ? "studio" : "nameplate"
   );
   const [studioTab, setStudioTab] = useState(
-    scrollTarget === "cardMaker" ? "save" : "select"
+    scrollTarget === "cardMaker" ? "design" : "select"
   );
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
@@ -2556,19 +2556,7 @@ ${logLines}${commentText}${mediaText}`;
               ...(studioTab === "design" ? styles.studioTabActive : {}),
             }}
           >
-            2) 사진·필터
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={studioTab === "save"}
-            onClick={() => setStudioTab("save")}
-            style={{
-              ...styles.studioTab,
-              ...(studioTab === "save" ? styles.studioTabActive : {}),
-            }}
-          >
-            3) 저장
+            2) 사진·필터·저장
           </button>
         </div>
 
@@ -3079,7 +3067,7 @@ ${logLines}${commentText}${mediaText}`;
               </>
             ) : null}
 
-            {studioTab === "save" ? (
+            {studioTab === "design" ? (
               <>
             <div
               ref={trainingCardRef}

@@ -60,6 +60,48 @@
   box-shadow: 0 6px 16px rgba(239, 63, 54, 0.24);
 }
 
+.log-advanced-toggle {
+  width: 100%;
+  margin: 8px 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.theme-light .log-advanced-toggle {
+  border-color: rgba(22, 22, 22, 0.12);
+  background: rgba(22, 22, 22, 0.03);
+  color: #74706b;
+}
+
+.log-load-more {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 13px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.theme-light .log-load-more {
+  border-color: rgba(22, 22, 22, 0.12);
+  background: rgba(22, 22, 22, 0.03);
+  color: #1f1a12;
+}
+
 .theme-light .log-view-tabs {
   background: rgba(22, 22, 22, 0.04);
   border-color: rgba(22, 22, 22, 0.08);

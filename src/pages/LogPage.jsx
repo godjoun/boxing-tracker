@@ -127,6 +127,8 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
   const [editForm, setEditForm] = useState(createEmptyForm);
   const [reward, setReward] = useState(null);
   const [logView, setLogView] = useState("write");
+  const [showAdvancedWrite, setShowAdvancedWrite] = useState(false);
+  const [historyLimit, setHistoryLimit] = useState(5);
 
   const safeWeeklyLogs = Array.isArray(weeklyLogs) ? weeklyLogs : logs;
   const fighter = useMemo(() => getFighterProgress(logs), [logs]);
@@ -235,6 +237,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
     });
 
     setForm(createEmptyForm());
+    setShowAdvancedWrite(false);
   }
 
   function handleStartEdit(log) {
@@ -363,7 +366,10 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
             role="tab"
             aria-selected={logView === "history"}
             className={`log-view-tab${logView === "history" ? " is-active" : ""}`}
-            onClick={() => setLogView("history")}
+            onClick={() => {
+              setLogView("history");
+              setHistoryLimit(5);
+            }}
           >
             지난 기록{logs.length > 0 ? ` (${logs.length})` : ""}
           </button>
@@ -618,67 +624,80 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
               </div>
             </div>
 
-            <div className="log-form-block">
-              <p className="log-form-block-title">강도 · 컨디션</p>
+            <button
+              type="button"
+              className="log-advanced-toggle"
+              onClick={() => setShowAdvancedWrite((prev) => !prev)}
+            >
+              {showAdvancedWrite ? "옵션 접기" : "옵션 더보기 (강도·컨디션·메모)"}
+              <span aria-hidden="true">{showAdvancedWrite ? " ↑" : " ↓"}</span>
+            </button>
 
-              <div className="log-field">
-                <label className="log-label">운동 강도</label>
-                <div className="log-chip-grid">
-                  {DIFFICULTY_OPTIONS.map((option) => (
-                    <OptionButton
-                      key={option.id}
-                      isActive={form.difficulty === option.id}
-                      title={option.label}
-                      description={option.description}
-                      onClick={() => updateFormField("difficulty", option.id)}
-                    />
-                  ))}
+            {showAdvancedWrite ? (
+              <>
+                <div className="log-form-block">
+                  <p className="log-form-block-title">강도 · 컨디션</p>
+
+                  <div className="log-field">
+                    <label className="log-label">운동 강도</label>
+                    <div className="log-chip-grid">
+                      {DIFFICULTY_OPTIONS.map((option) => (
+                        <OptionButton
+                          key={option.id}
+                          isActive={form.difficulty === option.id}
+                          title={option.label}
+                          description={option.description}
+                          onClick={() => updateFormField("difficulty", option.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="log-field">
+                    <label className="log-label">오늘 컨디션</label>
+                    <div className="log-chip-grid">
+                      {CONDITION_OPTIONS.map((option) => (
+                        <OptionButton
+                          key={option.id}
+                          isActive={form.condition === option.id}
+                          title={option.label}
+                          description="훈련 당시 몸 상태"
+                          onClick={() => updateFormField("condition", option.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="log-field">
-                <label className="log-label">오늘 컨디션</label>
-                <div className="log-chip-grid">
-                  {CONDITION_OPTIONS.map((option) => (
-                    <OptionButton
-                      key={option.id}
-                      isActive={form.condition === option.id}
-                      title={option.label}
-                      description="훈련 당시 몸 상태"
-                      onClick={() => updateFormField("condition", option.id)}
+                <div className="log-form-block">
+                  <p className="log-form-block-title">메모</p>
+
+                  <div className="log-field">
+                    <label className="log-label">내 메모</label>
+                    <input
+                      value={form.memo}
+                      onChange={(event) =>
+                        updateFormField("memo", event.target.value)
+                      }
+                      placeholder="예: 오늘 샌드백 위주로 했다"
+                      className="log-input"
                     />
-                  ))}
+                  </div>
+
+                  <div className="log-field">
+                    <label className="log-label">공개용 코멘트</label>
+                    <textarea
+                      value={form.publicComment}
+                      onChange={(event) =>
+                        updateFormField("publicComment", event.target.value)
+                      }
+                      placeholder="예: 오늘 첫 5라운드 완주. 마지막 라운드는 진짜 힘들었지만 버텼다."
+                      className="log-textarea"
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="log-form-block">
-              <p className="log-form-block-title">메모</p>
-
-              <div className="log-field">
-                <label className="log-label">내 메모</label>
-                <input
-                  value={form.memo}
-                  onChange={(event) =>
-                    updateFormField("memo", event.target.value)
-                  }
-                  placeholder="예: 오늘 샌드백 위주로 했다"
-                  className="log-input"
-                />
-              </div>
-
-              <div className="log-field">
-                <label className="log-label">공개용 코멘트</label>
-                <textarea
-                  value={form.publicComment}
-                  onChange={(event) =>
-                    updateFormField("publicComment", event.target.value)
-                  }
-                  placeholder="예: 오늘 첫 5라운드 완주. 마지막 라운드는 진짜 힘들었지만 버텼다."
-                  className="log-textarea"
-                />
-              </div>
-            </div>
+              </>
+            ) : null}
 
             <div className="log-preview">
               <div className="log-preview-copy">
@@ -720,7 +739,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
             </p>
           ) : (
             <div className="log-list">
-              {logs.slice(0, 12).map((log) => {
+              {logs.slice(0, historyLimit).map((log) => {
                 const isEditing = editingId === log.id;
                 const rounds = getRounds(log);
 
@@ -963,6 +982,16 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
               })}
             </div>
           )}
+
+          {logs.length > historyLimit ? (
+            <button
+              type="button"
+              className="log-load-more"
+              onClick={() => setHistoryLimit((prev) => prev + 5)}
+            >
+              더 보기 ({historyLimit}/{logs.length})
+            </button>
+          ) : null}
         </section>
         )}
       </div>

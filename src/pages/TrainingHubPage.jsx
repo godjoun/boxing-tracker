@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   getCurriculumProgress,
   getRecommendedSession,
@@ -22,6 +22,7 @@ export default function TrainingHubPage({
   }, []);
 
   const comboUnlocked = isComboCreatorUnlocked(fighterLevel);
+  const [showMore, setShowMore] = useState(false);
 
   const secondaryItems = [
     {
@@ -57,13 +58,12 @@ export default function TrainingHubPage({
       <header style={styles.header}>
         <h1 style={styles.title}>훈련</h1>
         <p style={styles.subtitle}>
-          오늘 할 훈련을 고르세요. 커리큘럼을 따라가거나 바로 라운드를
-          돌릴 수 있어요.
+          운동이 익숙하지 않아도 괜찮아요. 아래 추천만 따라 하면 됩니다.
         </p>
       </header>
 
       <section style={styles.primaryCard}>
-        <span style={styles.cardKicker}>오늘의 커리큘럼</span>
+        <span style={styles.cardKicker}>초보 추천 · 오늘은 이거부터</span>
 
         {recommended ? (
           <>
@@ -120,38 +120,57 @@ export default function TrainingHubPage({
         )}
       </section>
 
-      <section style={styles.quickCard}>
-        <div style={styles.quickText}>
-          <span style={styles.cardKicker}>빠른 타이머</span>
-          <strong style={styles.quickTitle}>3R · 6R · 9R 라운드</strong>
-          <span style={styles.quickDesc}>커리큘럼 없이 바로 라운드 돌리기</span>
-        </div>
-        <button type="button" style={styles.quickButton} onClick={onOpenTimer}>
-          타이머 열기
+      <section style={styles.quickActions}>
+        <button type="button" style={styles.quickActionTile} onClick={onOpenStrength}>
+          <span style={styles.quickActionKicker}>운동 추천</span>
+          <strong style={styles.quickActionTitle}>훈련법 추천</strong>
+          <small style={styles.quickActionDesc}>요일별 루틴 · 워밍업 포함</small>
+        </button>
+        <button type="button" style={styles.quickActionTile} onClick={onOpenTimer}>
+          <span style={styles.quickActionKicker}>바로 훈련</span>
+          <strong style={styles.quickActionTitle}>빠른 타이머</strong>
+          <small style={styles.quickActionDesc}>3R · 6R · 9R</small>
         </button>
       </section>
 
-      <section>
-        <p style={styles.sectionLabel}>더 많은 훈련</p>
-        <div style={styles.grid}>
-          {secondaryItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              style={{
-                ...styles.tile,
-                ...(item.locked ? styles.tileLocked : {}),
-              }}
-              onClick={item.onClick}
-            >
-              <span style={styles.tileIcon} aria-hidden="true">
-                {item.icon}
-              </span>
-              <strong style={styles.tileTitle}>{item.title}</strong>
-              <small style={styles.tileDesc}>{item.description}</small>
-            </button>
-          ))}
-        </div>
+      <section style={styles.moreSection}>
+        <button
+          type="button"
+          style={styles.moreToggle}
+          onClick={() => setShowMore((prev) => !prev)}
+        >
+          <span style={styles.moreToggleLabel}>
+            {showMore ? "훈련 메뉴 접기" : "다른 훈련 메뉴 보기"}
+          </span>
+          <span aria-hidden="true" style={styles.moreToggleIcon}>
+            {showMore ? "↑" : "↓"}
+          </span>
+        </button>
+
+        {showMore ? (
+          <>
+            <p style={styles.sectionLabel}>더 많은 훈련</p>
+            <div style={styles.grid}>
+              {secondaryItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  style={{
+                    ...styles.tile,
+                    ...(item.locked ? styles.tileLocked : {}),
+                  }}
+                  onClick={item.onClick}
+                >
+                  <span style={styles.tileIcon} aria-hidden="true">
+                    {item.icon}
+                  </span>
+                  <strong style={styles.tileTitle}>{item.title}</strong>
+                  <small style={styles.tileDesc}>{item.description}</small>
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
       </section>
     </main>
   );
@@ -162,12 +181,12 @@ const styles = {
     width: "100%",
     maxWidth: "720px",
     margin: "0 auto",
-    padding: "24px 16px 40px",
+    padding: "20px 16px 32px",
     boxSizing: "border-box",
   },
 
   header: {
-    marginBottom: "18px",
+    marginBottom: "12px",
   },
 
   title: {
@@ -276,45 +295,41 @@ const styles = {
     color: "#1f1a12",
   },
 
-  quickCard: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
-    borderRadius: "20px",
-    padding: "18px",
-    marginBottom: "22px",
-    background: "var(--p-bg-subtle)",
-    border: "1px solid var(--p-border-soft)",
+  quickActions: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "10px",
+    marginBottom: "12px",
   },
 
-  quickText: {
+  quickActionTile: {
+    border: "1px solid var(--p-border-soft)",
+    borderRadius: "18px",
+    padding: "14px",
+    background: "var(--p-bg-subtle)",
+    color: "var(--p-text)",
+    cursor: "pointer",
+    textAlign: "left",
     display: "flex",
     flexDirection: "column",
     gap: "3px",
   },
 
-  quickTitle: {
-    fontSize: "16px",
-    fontWeight: 900,
-    color: "var(--p-text)",
-  },
-
-  quickDesc: {
-    fontSize: "12px",
+  quickActionKicker: {
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: "0.04em",
     color: "var(--p-text-muted)",
   },
 
-  quickButton: {
-    flexShrink: 0,
-    border: "1px solid var(--p-border-strong)",
-    borderRadius: "14px",
-    padding: "12px 16px",
-    fontSize: "13px",
-    fontWeight: 800,
-    cursor: "pointer",
-    background: "var(--p-bg-deep)",
-    color: "var(--p-text)",
+  quickActionTitle: {
+    fontSize: "15px",
+    fontWeight: 900,
+  },
+
+  quickActionDesc: {
+    fontSize: "12px",
+    color: "var(--p-text-muted)",
   },
 
   sectionLabel: {
@@ -322,6 +337,35 @@ const styles = {
     fontSize: "13px",
     fontWeight: 900,
     color: "var(--p-text)",
+  },
+
+  moreSection: {
+    marginTop: "6px",
+  },
+
+  moreToggle: {
+    width: "100%",
+    border: "1px solid var(--p-border-soft)",
+    borderRadius: "18px",
+    padding: "14px 14px",
+    background: "var(--p-bg-deep)",
+    color: "var(--p-text)",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+  },
+
+  moreToggleLabel: {
+    fontSize: "13px",
+    fontWeight: 900,
+  },
+
+  moreToggleIcon: {
+    fontSize: "16px",
+    fontWeight: 900,
+    color: "var(--p-text-muted)",
   },
 
   grid: {

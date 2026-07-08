@@ -2748,90 +2748,6 @@ ${logLines}${commentText}${mediaText}`;
               })}
             </div>
 
-            <div style={styles.livePreviewSection}>
-              <div style={styles.livePreviewHeader}>
-                <p style={styles.cardMakerLabel}>필터 미리보기</p>
-                <p style={styles.cardMakerHelp}>
-                  필터를 누르면 아래 미리보기에 바로 반영됩니다.
-                </p>
-              </div>
-              <div
-                style={{
-                  ...styles.livePreviewFrame,
-                  background: getCardBackground(selectedFilter),
-                }}
-              >
-                <div
-                  style={{
-                    ...styles.livePreviewPhotoArea,
-                    aspectRatio:
-                      cardStyle === "social"
-                        ? "9 / 16"
-                        : cardStyle === "poster"
-                          ? "3 / 4"
-                          : "4 / 3",
-                  }}
-                >
-                  {cardMediaType === "image" && cardMedia ? (
-                    <img
-                      src={cardMedia}
-                      alt="필터 미리보기"
-                      style={{
-                        ...styles.livePreviewImage,
-                        filter: getImageFilter(selectedFilter, filterIntensity),
-                        transform: `scale(${Math.max(photoScale, 100) / 100})`,
-                      }}
-                    />
-                  ) : null}
-                  {!cardMedia ? (
-                    <div style={styles.livePreviewEmpty}>
-                      사진을 넣으면 미리보기가 표시됩니다.
-                    </div>
-                  ) : null}
-
-                  <div
-                    style={{
-                      ...styles.livePreviewOverlay,
-                      background: getCardPreviewOverlay(
-                        cardStyle,
-                        selectedFilter,
-                        filterIntensity
-                      ),
-                    }}
-                  />
-
-                  {cardStyle === "basic" ? (
-                    <div style={styles.livePreviewBadge}>
-                      <span style={styles.livePreviewBadgeKicker}>LEVEL</span>
-                      <strong style={styles.livePreviewBadgeValue}>
-                        {levelUpDisplayLevel}
-                      </strong>
-                      <span style={styles.livePreviewBadgeSub}>
-                        {levelUpDisplayName}
-                      </span>
-                    </div>
-                  ) : null}
-
-                  {cardStyle === "poster" ? (
-                    <div style={styles.livePreviewPosterLabel}>
-                      <strong style={styles.livePreviewPosterName}>
-                        {posterMainNameText}
-                      </strong>
-                      <span style={styles.livePreviewPosterEvent}>
-                        {posterEventTitleText}
-                      </span>
-                    </div>
-                  ) : null}
-
-                  {cardStyle === "social" ? (
-                    <div style={styles.livePreviewSocialTag}>
-                      BOXING TRAINING
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-
             <div style={styles.adjustSection}>
               <p style={styles.cardMakerLabel}>5. 사진/영상 조절</p>
 
@@ -3108,11 +3024,13 @@ ${logLines}${commentText}${mediaText}`;
                 </div>
               )}
             </div>
-              </>
-            ) : null}
-
-            {studioTab === "design" ? (
-              <>
+            <div style={styles.livePreviewSection}>
+              <div style={styles.livePreviewHeader}>
+                <p style={styles.cardMakerLabel}>결과 미리보기</p>
+                <p style={styles.cardMakerHelp}>
+                  선택한 카드 스타일(레벨업·스토리·포스터)이 아래에 그대로 반영됩니다.
+                </p>
+              </div>
             <div
               ref={trainingCardRef}
               style={{
@@ -3464,6 +3382,8 @@ ${logLines}${commentText}${mediaText}`;
                   </div>
                 )}
               </div>
+            </div>
+
             </div>
 
             <button

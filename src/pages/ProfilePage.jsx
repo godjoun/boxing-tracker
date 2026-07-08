@@ -58,6 +58,9 @@ export default function ProfilePage({
   const [profileView, setProfileView] = useState(
     scrollTarget === "cardMaker" ? "studio" : "nameplate"
   );
+  const [studioTab, setStudioTab] = useState(
+    scrollTarget === "cardMaker" ? "save" : "select"
+  );
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
     profile.bio || "아직 초보지만 링에 계속 올라가는 중"
@@ -248,6 +251,7 @@ export default function ProfilePage({
     if (scrollTarget !== "cardMaker") return;
 
     setProfileView("studio");
+    setStudioTab("select");
   }, [scrollTarget]);
 
   useEffect(() => {
@@ -356,6 +360,7 @@ export default function ProfilePage({
 
   function scrollToCardMaker() {
     setProfileView("studio");
+    setStudioTab("select");
 
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1910,10 +1915,31 @@ export default function ProfilePage({
     return canvas.toDataURL("image/png", 1);
   }
 
+  function dataUrlToBlob(dataUrl) {
+    const match = String(dataUrl || "").match(/^data:([^;]+);base64,(.+)$/);
+    if (!match) {
+      throw new Error("DATA_URL_PARSE_FAILED");
+    }
+
+    const [, mime, base64] = match;
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: mime });
+  }
+
   async function dataUrlToPngFile(dataUrl, filename) {
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    return new File([blob], filename, { type: "image/png" });
+    try {
+      const blob = dataUrlToBlob(dataUrl);
+      return new File([blob], filename, { type: "image/png" });
+    } catch (error) {
+      // 일부 브라우저/인앱 웹뷰에서 base64 파싱이 막히는 경우가 있어 fetch로 폴백한다.
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      return new File([blob], filename, { type: "image/png" });
+    }
   }
 
   async function buildCardExportDataUrl(styleOverride = null) {
@@ -2507,6 +2533,45 @@ ${logLines}${commentText}${mediaText}`;
           누적 {profileStats.totalRounds}R가 카드에 반영됩니다.
         </p>
 
+        <div style={styles.studioTabs} role="tablist" aria-label="카드 만들기 단계">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={studioTab === "select"}
+            onClick={() => setStudioTab("select")}
+            style={{
+              ...styles.studioTab,
+              ...(studioTab === "select" ? styles.studioTabActive : {}),
+            }}
+          >
+            1) 운동
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={studioTab === "design"}
+            onClick={() => setStudioTab("design")}
+            style={{
+              ...styles.studioTab,
+              ...(studioTab === "design" ? styles.studioTabActive : {}),
+            }}
+          >
+            2) 사진·필터
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={studioTab === "save"}
+            onClick={() => setStudioTab("save")}
+            style={{
+              ...styles.studioTab,
+              ...(studioTab === "save" ? styles.studioTabActive : {}),
+            }}
+          >
+            3) 저장
+          </button>
+        </div>
+
         {latestLog && isLatestLogSelected && (
           <div style={styles.recentTrainingNotice}>
             <span style={styles.recentTrainingBadge}>최근 훈련 선택됨</span>
@@ -2536,6 +2601,7 @@ ${logLines}${commentText}${mediaText}`;
                 {profileStats.totalRounds}R가 표시됩니다.
               </p>
 
+              {studioTab === "select" ? (
               <div style={styles.selectorSection}>
               <p style={styles.cardMakerLabel}>1. 운동 여러 개 선택</p>
               <p style={styles.cardMakerHelp}>
@@ -2573,7 +2639,10 @@ ${logLines}${commentText}${mediaText}`;
                 })}
               </div>
             </div>
+              ) : null}
 
+            {studioTab === "design" ? (
+              <>
             <div style={styles.cardPhotoBox}>
               <div>
                 <p style={styles.cardMakerLabel}>2. 카드 사진/영상 선택</p>
@@ -2967,7 +3036,11 @@ ${logLines}${commentText}${mediaText}`;
                 </div>
               )}
             </div>
+              </>
+            ) : null}
 
+            {studioTab === "save" ? (
+              <>
             <div
               ref={trainingCardRef}
               style={{
@@ -3398,6 +3471,8 @@ ${logLines}${commentText}${mediaText}`;
                 </div>
               </div>
             )}
+              </>
+            ) : null}
           </>
         )}
       </section>

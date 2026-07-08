@@ -461,6 +461,38 @@ export const styles = {
     color: "var(--p-text)",
   },
 
+  studioTabs: {
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: "6px",
+    padding: "6px",
+    borderRadius: "18px",
+    background: "var(--p-bg-subtle)",
+    border: "1px solid var(--p-border-soft)",
+    margin: "12px 0 16px",
+    position: "sticky",
+    top: "10px",
+    zIndex: 5,
+    backdropFilter: "blur(10px)",
+  },
+
+  studioTab: {
+    border: "none",
+    borderRadius: "14px",
+    padding: "10px 8px",
+    background: "transparent",
+    color: "var(--p-text-muted)",
+    fontSize: "12px",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+
+  studioTabActive: {
+    background: "linear-gradient(135deg, #e8c66a, #c49a2e)",
+    color: "#1f1a12",
+    boxShadow: "0 8px 18px rgba(196, 154, 46, 0.22)",
+  },
+
   recentTrainingNotice: {
     marginBottom: "16px",
     padding: "15px",

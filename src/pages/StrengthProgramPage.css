@@ -1,0 +1,338 @@
+.strength-page {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 132px;
+  color: #fff;
+}
+
+.strength-hero {
+  margin-bottom: 14px;
+}
+
+.strength-hero-copy {
+  margin-top: 14px;
+}
+
+.strength-hero-copy p {
+  margin: 0 0 6px;
+  color: #ef3f36;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.strength-hero-copy h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.strength-hero-copy > span {
+  display: block;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 13px;
+}
+
+.strength-card,
+.strength-day-panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.strength-card {
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.strength-card-head p {
+  margin: 0 0 4px;
+  color: #ef3f36;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.strength-card-head h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.strength-warmup-desc {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.strength-warmup-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.strength-warmup-meta span {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.strength-warmup-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ef3f36, #d92f27);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.strength-today-card {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(232, 198, 106, 0.22);
+  border-radius: 16px;
+  background: rgba(232, 198, 106, 0.08);
+}
+
+.strength-today-card > span {
+  color: #e8c66a;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.strength-today-card strong {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.strength-today-card small {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 12px;
+}
+
+.strength-day-chips {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.strength-day-chip {
+  display: grid;
+  gap: 2px;
+  min-height: 58px;
+  padding: 10px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.72);
+  text-align: left;
+  cursor: pointer;
+}
+
+.strength-day-chip em {
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.strength-day-chip span {
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.strength-day-chip.is-active {
+  border-color: rgba(239, 63, 54, 0.34);
+  background: rgba(239, 63, 54, 0.12);
+  color: #fff;
+}
+
+.strength-day-chip.tone-blue.is-active {
+  border-color: rgba(96, 165, 250, 0.34);
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.strength-day-chip.is-today:not(.is-active) {
+  box-shadow: inset 0 0 0 1px rgba(232, 198, 106, 0.28);
+}
+
+.strength-day-panel {
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.strength-day-panel.tone-red {
+  border-color: rgba(239, 63, 54, 0.18);
+}
+
+.strength-day-panel.tone-blue {
+  border-color: rgba(96, 165, 250, 0.18);
+}
+
+.strength-day-head p {
+  margin: 0 0 4px;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.strength-day-head h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.strength-day-head span {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 12px;
+}
+
+.strength-block {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.strength-block:first-of-type {
+  margin-top: 14px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.strength-block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.strength-block-head h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.strength-block-head em {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  text-align: right;
+}
+
+.strength-exercise-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.strength-exercise-list li {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.strength-exercise-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.strength-exercise-top strong {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.strength-exercise-top span {
+  flex-shrink: 0;
+  color: #e8c66a;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.strength-exercise-list p {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.strength-tips-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.strength-tips-list article {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.strength-tips-list strong {
+  display: block;
+  font-size: 13px;
+}
+
+.strength-tips-list p {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.theme-light .strength-page {
+  color: #1f1a12;
+}
+
+.theme-light .strength-card,
+.theme-light .strength-day-panel,
+.theme-light .strength-exercise-list li,
+.theme-light .strength-tips-list article,
+.theme-light .strength-day-chip {
+  border-color: rgba(196, 154, 46, 0.16);
+  background: #fff;
+}
+
+.theme-light .strength-hero-copy > span,
+.theme-light .strength-warmup-desc,
+.theme-light .strength-day-head span,
+.theme-light .strength-exercise-list p,
+.theme-light .strength-tips-list p,
+.theme-light .strength-today-card small {
+  color: #6b6254;
+}
+
+.theme-light .strength-today-card {
+  background: rgba(212, 168, 50, 0.1);
+  border-color: rgba(196, 154, 46, 0.24);
+}
+
+.theme-light .strength-warmup-meta span {
+  background: #faf6ee;
+  color: #6b6254;
+}

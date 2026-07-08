@@ -1,334 +1,50 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { toPng } from "html-to-image";
+import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
+import FighterSpecCard from "../components/FighterSpecCard";
+import { getFighterProgress, MAX_FIGHTER_LEVEL } from "../utils/fighterProgress";
+import { getLevelTitle, getNextTitleMilestone } from "../utils/fighterTitles";
+import { isVeteranFilterUnlocked } from "../utils/veteranPerks";
+import { buildWeeklyReport } from "../utils/trainingStats";
+import { validateBodySpecFields } from "../utils/bodySpecs";
+import {
+  EXPERIENCE_LEVELS,
+  formatWeightClassOption,
+  syncListingFromProfile,
+  WEIGHT_CLASSES,
+} from "../utils/sparringPartners";
+import { suggestWeightClass } from "../data/proBoxingWeightClasses";
+import { styles } from "./ProfilePage.styles";
+import {
+  getDisplayComment,
+  getRounds,
+  getTodayString,
+  getTotalMinutes,
+  getTrainingStreak,
+  isIOSLikeDevice,
+  resizeImage,
+} from "./profilePage/profileCardUtils";
+import {
+  CARD_FILTERS,
+  CARD_FILTER_GROUPS,
+  CARD_STYLES,
+  applyPixelImageFilter,
+  getCardBackground,
+  getCardPreviewOverlay,
+  getImageFilter,
+} from "./profilePage/cardConfig";
 
-function getRounds(log) {
-  const value =
-    log?.rounds ||
-    log?.round ||
-    log?.totalRounds ||
-    log?.completedRounds ||
-    log?.sets ||
-    0;
-
-  return Number(value) || 0;
-}
-
-function getTotalMinutes(log) {
-  return Number(log?.minutes || log?.duration || 0);
-}
-
-function getTierName(totalRounds, totalLogs) {
-  if (totalRounds >= 100 || totalLogs >= 50) return "챔피언";
-  if (totalRounds >= 60 || totalLogs >= 30) return "파이터";
-  if (totalRounds >= 30 || totalLogs >= 15) return "컨텐더";
-  if (totalRounds >= 10 || totalLogs >= 5) return "아마추어";
-  return "루키";
-}
-
-
-function getTodayString() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const date = String(today.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${date}`;
-}
-
-function isIOSLikeDevice() {
-  if (typeof navigator === "undefined") return false;
-
-  const userAgent = navigator.userAgent || "";
-  const platform = navigator.platform || "";
-
-  return (
-    /iPad|iPhone|iPod/.test(userAgent) ||
-    (platform === "MacIntel" && navigator.maxTouchPoints > 1)
-  );
-}
-
-function getDisplayComment(log) {
-  return log?.publicComment || log?.memo || "";
-}
-
-function resizeImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const originalImageData = reader.result;
-      const image = new Image();
-
-      image.onload = () => {
-        try {
-          const maxSize = 700;
-          const scale = Math.min(
-            maxSize / image.width,
-            maxSize / image.height,
-            1
-          );
-
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.round(image.width * scale);
-          canvas.height = Math.round(image.height * scale);
-
-          const ctx = canvas.getContext("2d");
-
-          if (!ctx) {
-            resolve(originalImageData);
-            return;
-          }
-
-          ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-          const compressedImage = canvas.toDataURL("image/jpeg", 0.72);
-          resolve(compressedImage);
-        } catch {
-          resolve(originalImageData);
-        }
-      };
-
-      image.onerror = () => {
-        resolve(originalImageData);
-      };
-
-      image.src = originalImageData;
-    };
-
-    reader.onerror = () => {
-      reject(new Error("파일을 읽지 못했어요."));
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
-const CARD_FILTERS = [
-  {
-    id: "red",
-    name: "RED CORNER",
-    description: "빨간 링 코너 느낌",
-  },
-  {
-    id: "dark",
-    name: "DARK GYM",
-    description: "어두운 체육관 느낌",
-  },
-  {
-    id: "gold",
-    name: "CHAMPION GOLD",
-    description: "승리 카드 느낌",
-  },
-  {
-    id: "blue",
-    name: "BLUE CORNER",
-    description: "파란 코너 느낌",
-  },
-  {
-    id: "mono",
-    name: "CLASSIC MONO",
-    description: "흑백 복싱 다큐 느낌",
-  },
-  {
-    id: "chrome",
-    name: "CHROME CARD",
-    description: "반짝이는 트레이딩 카드 느낌",
-  },
-  {
-    id: "future",
-    name: "FUTURE STAR",
-    description: "신예 파이터 카드 느낌",
-  },
-  {
-    id: "vintage",
-    name: "VINTAGE RINGSIDE",
-    description: "올드 복싱 포스터 느낌",
-  },
-];
-
-const CARD_STYLES = [
-  {
-    id: "basic",
-    name: "BASIC",
-    description: "기존 복싱 카드",
-  },
-  {
-    id: "social",
-    name: "SOCIAL",
-    description: "사진 중심 공유 카드",
-  },
-  {
-    id: "poster",
-    name: "POSTER",
-    description: "한 사람 주인공 포스터",
-  },
-];
-
-function getCardBackground(filterId) {
-  if (filterId === "chrome") {
-    return "radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.58), transparent 18%), radial-gradient(circle at 82% 12%, rgba(255, 51, 51, 0.45), transparent 30%), linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 28%, rgba(255, 255, 255, 0.08) 42%, transparent 58%, rgba(255, 255, 255, 0.16) 76%), linear-gradient(145deg, #262626, #050505)";
-  }
-
-  if (filterId === "future") {
-    return "radial-gradient(circle at 80% 12%, rgba(139, 92, 246, 0.48), transparent 34%), radial-gradient(circle at 15% 82%, rgba(14, 165, 233, 0.36), transparent 32%), linear-gradient(145deg, #120a2f, #050505)";
-  }
-
-  if (filterId === "vintage") {
-    return "radial-gradient(circle at 20% 18%, rgba(255, 220, 140, 0.22), transparent 28%), linear-gradient(145deg, #2a1b10, #070504)";
-  }
-
-  if (filterId === "gold") {
-    return "radial-gradient(circle at 80% 12%, rgba(255, 198, 41, 0.42), transparent 34%), linear-gradient(145deg, #241800, #050505)";
-  }
-
-  if (filterId === "blue") {
-    return "radial-gradient(circle at 82% 10%, rgba(54, 124, 255, 0.42), transparent 35%), linear-gradient(145deg, #07152f, #050505)";
-  }
-
-  if (filterId === "mono") {
-    return "radial-gradient(circle at 82% 10%, rgba(255, 255, 255, 0.18), transparent 35%), linear-gradient(145deg, #202020, #050505)";
-  }
-
-  if (filterId === "dark") {
-    return "radial-gradient(circle at 82% 10%, rgba(255, 255, 255, 0.1), transparent 35%), linear-gradient(145deg, #151515, #000000)";
-  }
-
-  return "radial-gradient(circle at 82% 10%, rgba(255, 51, 51, 0.46), transparent 35%), linear-gradient(145deg, #250909, #050505)";
-}
-
-function getImageFilter(filterId, intensity) {
-  const strength = intensity / 100;
-
-  if (filterId === "gold") {
-    return `contrast(${1.08 + 0.42 * strength}) saturate(${
-      1.14 + 0.34 * strength
-    }) sepia(${0.3 + 0.44 * strength}) brightness(${
-      0.98 - 0.04 * strength
-    })`;
-  }
-
-  if (filterId === "blue") {
-    return `contrast(${1.08 + 0.42 * strength}) saturate(${
-      1.12 + 0.34 * strength
-    }) hue-rotate(${170 * strength}deg) brightness(${
-      0.98 - 0.05 * strength
-    })`;
-  }
-
-  if (filterId === "mono") {
-    return `grayscale(${0.65 + 0.35 * strength}) contrast(${
-      1.18 + 0.42 * strength
-    }) brightness(${1 - 0.04 * strength})`;
-  }
-
-  if (filterId === "dark") {
-    return `contrast(${1.12 + 0.52 * strength}) brightness(${
-      0.94 - 0.2 * strength
-    }) saturate(${0.92 - 0.18 * strength})`;
-  }
-
-  if (filterId === "chrome") {
-    return `contrast(${1.24 + 0.5 * strength}) saturate(${
-      1.02 + 0.22 * strength
-    }) brightness(${1.06 + 0.1 * strength}) sepia(${
-      0.08 * strength
-    })`;
-  }
-
-  if (filterId === "future") {
-    return `contrast(${1.18 + 0.48 * strength}) saturate(${
-      1.36 + 0.56 * strength
-    }) hue-rotate(${30 * strength}deg) brightness(${
-      1.01 - 0.02 * strength
-    })`;
-  }
-
-  if (filterId === "vintage") {
-    return `contrast(${1.16 + 0.44 * strength}) sepia(${
-      0.42 + 0.56 * strength
-    }) saturate(${0.86 - 0.08 * strength}) brightness(${
-      0.97 - 0.05 * strength
-    })`;
-  }
-
-  return `contrast(${1.16 + 0.5 * strength}) saturate(${
-    1.2 + 0.48 * strength
-  }) brightness(${0.98 - 0.05 * strength}) sepia(${
-    0.12 + 0.28 * strength
-  })`;
-}
-
-function getOverlayStyle(filterId, intensity) {
-  const strength = intensity / 100;
-
-  if (filterId === "chrome") {
-    return `linear-gradient(135deg, rgba(255, 255, 255, ${
-      0.05 + 0.16 * strength
-    }), transparent 22%, rgba(255, 51, 51, ${
-      0.04 + 0.12 * strength
-    }) 48%, transparent 68%, rgba(255, 255, 255, ${
-      0.06 + 0.14 * strength
-    })), linear-gradient(180deg, rgba(0, 0, 0, ${
-      0.18 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.46 + 0.18 * strength}))`;
-  }
-
-  if (filterId === "future") {
-    return `linear-gradient(180deg, rgba(88, 28, 135, ${
-      0.06 + 0.16 * strength
-    }), rgba(0, 0, 0, ${
-      0.42 + 0.22 * strength
-    })), linear-gradient(135deg, rgba(14, 165, 233, ${
-      0.04 + 0.12 * strength
-    }), transparent 42%, rgba(255, 51, 51, ${0.04 + 0.08 * strength}))`;
-  }
-
-  if (filterId === "vintage") {
-    return `linear-gradient(180deg, rgba(255, 214, 150, ${
-      0.04 + 0.1 * strength
-    }), rgba(0, 0, 0, ${
-      0.5 + 0.2 * strength
-    })), radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, ${
-      0.18 + 0.18 * strength
-    }))`;
-  }
-
-  if (filterId === "gold") {
-    return `linear-gradient(180deg, rgba(255, 180, 35, ${
-      0.02 + 0.1 * strength
-    }), rgba(0, 0, 0, ${0.42 + 0.24 * strength}))`;
-  }
-
-  if (filterId === "blue") {
-    return `linear-gradient(180deg, rgba(35, 105, 255, ${
-      0.03 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.42 + 0.25 * strength}))`;
-  }
-
-  if (filterId === "mono") {
-    return `linear-gradient(180deg, rgba(255, 255, 255, ${
-      0.01 + 0.04 * strength
-    }), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
-  }
-
-  if (filterId === "dark") {
-    return `linear-gradient(180deg, rgba(0, 0, 0, ${
-      0.04 + 0.12 * strength
-    }), rgba(0, 0, 0, ${0.5 + 0.25 * strength}))`;
-  }
-
-  return `linear-gradient(180deg, rgba(255, 35, 35, ${
-    0.03 + 0.14 * strength
-  }), rgba(0, 0, 0, ${0.44 + 0.24 * strength}))`;
-}
-
-export default function ProfilePage({ scrollTarget }) {
+export default function ProfilePage({
+  scrollTarget,
+  fighterLevel = 1,
+  onStartTraining,
+}) {
   const {
     logs,
     profile,
-    updateNickname,
-    updateBio,
+    userId,
+    weeklyScore,
+    updateProfile,
     updateProfilePhoto,
     removeProfilePhoto,
   } = useTraining();
@@ -339,24 +55,38 @@ export default function ProfilePage({ scrollTarget }) {
   const cardMakerRef = useRef(null);
   const videoObjectUrlRef = useRef(null);
 
+  const [profileView, setProfileView] = useState(
+    scrollTarget === "cardMaker" ? "studio" : "nameplate"
+  );
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
     profile.bio || "아직 초보지만 링에 계속 올라가는 중"
   );
+  const [heightCm, setHeightCm] = useState(profile.heightCm || "");
+  const [weightKg, setWeightKg] = useState(profile.weightKg || "");
+  const [reachCm, setReachCm] = useState(profile.reachCm || "");
+  const [weightClass, setWeightClass] = useState(profile.weightClass || "라이트급");
+  const [experience, setExperience] = useState(profile.experience || "1년차");
+  const [area, setArea] = useState(profile.area || "");
+  const [weightClassTouched, setWeightClassTouched] = useState(false);
+  const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const [selectedLogIds, setSelectedLogIds] = useState([]);
   const [cardMedia, setCardMedia] = useState("");
   const [cardMediaType, setCardMediaType] = useState("");
   const [cardMediaReady, setCardMediaReady] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState("red");
-  const selectedFilterRef = useRef("red");
+  const [selectedFilter, setSelectedFilter] = useState("levelup");
+  const selectedFilterRef = useRef("levelup");
   const [filterIntensity, setFilterIntensity] = useState(75);
   const [photoScale, setPhotoScale] = useState(100);
   const [copied, setCopied] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showComment, setShowComment] = useState(true);
   const [customTrainingTitle, setCustomTrainingTitle] = useState("");
+  const [levelUpLevel, setLevelUpLevel] = useState("56");
+  const [levelUpSlogan, setLevelUpSlogan] = useState("ONE ROUND AT A TIME");
   const [cardStyle, setCardStyle] = useState("basic");
   const [posterMainName, setPosterMainName] = useState("");
   const [posterSubtitle, setPosterSubtitle] = useState("THE ROOKIE");
@@ -378,7 +108,7 @@ export default function ProfilePage({ scrollTarget }) {
   });
 
   const posterExportRef = useRef({
-    selectedFilter: "red",
+    selectedFilter: "levelup",
     filterIntensity: 75,
     photoScale: 100,
     cardMedia: "",
@@ -411,10 +141,37 @@ export default function ProfilePage({ scrollTarget }) {
     filename: "",
   });
   const preparingExportKeyRef = useRef("");
-  const [isPreparingExport, setIsPreparingExport] = useState(false);
-  const [preparedExportKey, setPreparedExportKey] = useState("");
   const [exportPreview, setExportPreview] = useState(null);
 
+  useEffect(() => {
+    setNickname(profile.nickname || "나");
+    setBio(profile.bio || "아직 초보지만 링에 계속 올라가는 중");
+    setHeightCm(profile.heightCm || "");
+    setWeightKg(profile.weightKg || "");
+    setReachCm(profile.reachCm || "");
+    setWeightClass(profile.weightClass || "라이트급");
+    setExperience(profile.experience || "1년차");
+    setArea(profile.area || "");
+  }, [profile]);
+
+  useEffect(() => {
+    if (weightClassTouched || !weightKg) return;
+
+    setWeightClass(suggestWeightClass(weightKg));
+  }, [weightKg, weightClassTouched]);
+
+  const profileSpecSummary = useMemo(() => {
+    const parts = [];
+
+    if (profile.heightCm) parts.push(`${profile.heightCm}cm`);
+    if (profile.weightKg) parts.push(`${profile.weightKg}kg`);
+    if (profile.reachCm) parts.push(`리치 ${profile.reachCm}cm`);
+    if (profile.weightClass) parts.push(profile.weightClass);
+    if (profile.experience) parts.push(profile.experience);
+    if (profile.area) parts.push(profile.area);
+
+    return parts.join(" · ");
+  }, [profile]);
 
   const profileStats = useMemo(() => {
     const totalLogs = logs.length;
@@ -432,51 +189,31 @@ export default function ProfilePage({ scrollTarget }) {
 
     const timerLogs = logs.filter((log) => log.source === "timer");
     const manualLogs = logs.filter((log) => log.source === "manual");
+    const weeklyRounds = buildWeeklyReport(logs).totalRounds;
 
-    const tierName = getTierName(totalRounds, totalLogs);
-
-    const featuredLogs = logs
-      .filter((log) => log.publicComment || log.memo)
-      .slice(0, 3);
-
-    const achievements = [
-      {
-        title: "첫 훈련 완료",
-        description: "첫 번째 운동 기록을 남겼다.",
-        unlocked: totalLogs >= 1,
-      },
-      {
-        title: "10라운드 돌파",
-        description: "누적 10라운드를 버텼다.",
-        unlocked: totalRounds >= 10,
-      },
-      {
-        title: "30라운드 돌파",
-        description: "복싱 체력이 쌓이기 시작했다.",
-        unlocked: totalRounds >= 30,
-      },
-      {
-        title: "훈련 10회 기록",
-        description: "꾸준함이 기록으로 남았다.",
-        unlocked: totalLogs >= 10,
-      },
-      {
-        title: "100라운드 파이터",
-        description: "누적 100라운드를 완주했다.",
-        unlocked: totalRounds >= 100,
-      },
-    ];
+    const fighterProgress = getFighterProgress(logs);
 
     return {
       totalLogs,
       totalRounds,
+      weeklyRounds,
       totalMinutes,
       todayCount: todayLogs.length,
       timerCount: timerLogs.length,
       manualCount: manualLogs.length,
-      tierName,
-      achievements,
-      featuredLogs,
+      fighterProgress,
+      levelLabel: fighterProgress.levelLabel,
+      level: fighterProgress.level,
+      totalXp: fighterProgress.totalExp,
+      currentLevelXp: fighterProgress.currentLevelExp,
+      nextLevelXp: fighterProgress.nextLevelExp,
+      fighterTitle: fighterProgress.fighterTitle,
+      fighterTitleEn: fighterProgress.fighterTitleEn,
+      careerStageKo: fighterProgress.careerStageKo,
+      xpToNextLevel: fighterProgress.xpToNextLevel,
+      progressPercent: fighterProgress.progressPercent,
+      isMaxLevel: fighterProgress.isMaxLevel,
+      nextLevelExp: fighterProgress.nextLevelExp,
     };
   }, [logs]);
 
@@ -510,14 +247,7 @@ export default function ProfilePage({ scrollTarget }) {
   useEffect(() => {
     if (scrollTarget !== "cardMaker") return;
 
-    const timer = setTimeout(() => {
-      cardMakerRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 150);
-
-    return () => clearTimeout(timer);
+    setProfileView("studio");
   }, [scrollTarget]);
 
   useEffect(() => {
@@ -533,6 +263,10 @@ export default function ProfilePage({ scrollTarget }) {
   }, [selectedFilter]);
 
   function handleSelectFilter(filterId) {
+    if (!isVeteranFilterUnlocked(filterId, profileStats.level)) {
+      return;
+    }
+
     // 모바일에서 테마 버튼을 누른 직후 바로 저장해도
     // canvas export가 이전 테마 값을 쓰지 않도록 ref에도 즉시 저장한다.
     selectedFilterRef.current = filterId;
@@ -588,6 +322,73 @@ export default function ProfilePage({ scrollTarget }) {
   const cardTotalMinutes = selectedLogs.reduce((sum, log) => {
     return sum + getTotalMinutes(log);
   }, 0);
+
+  const levelUpDisplayName = String(
+    profile.nickname || nickname || "JOUN"
+  ).trim().toUpperCase();
+  const levelUpDisplayLevel =
+    String(levelUpLevel || "")
+      .replace(/[^0-9]/g, "")
+      .slice(0, 3) || "1";
+  const levelUpDisplaySlogan = String(
+    levelUpSlogan || "ONE ROUND AT A TIME"
+  ).trim().toUpperCase();
+  const levelUpStreakDays = getTrainingStreak(logs);
+
+  useEffect(() => {
+    setLevelUpLevel(String(profileStats.level));
+  }, [profileStats.level]);
+
+  useEffect(() => {
+    setPosterSubtitle(
+      profileStats.fighterTitleEn ||
+        profileStats.fighterTitle ||
+        "RING ENTRANT"
+    );
+  }, [profileStats.fighterTitle, profileStats.fighterTitleEn]);
+
+  useEffect(() => {
+    setPosterMainName((current) => {
+      if (current.trim()) return current;
+      return (profile.nickname || "나").trim();
+    });
+  }, [profile.nickname]);
+
+  function scrollToCardMaker() {
+    setProfileView("studio");
+
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  function backToNameplate() {
+    setProfileView("nameplate");
+
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+  const growthPreview = useMemo(() => {
+    const isMax = profileStats.isMaxLevel;
+    const nextTitle = !isMax ? getNextTitleMilestone(profileStats.level) : null;
+
+    return {
+      isMax,
+      nextTitle,
+      xpToNext: profileStats.xpToNextLevel,
+      progressPercent: profileStats.progressPercent,
+      currentTitleEn:
+        profileStats.fighterTitleEn || profileStats.fighterTitle || "FIGHTER",
+    };
+  }, [profileStats]);
+
+  const levelUpProgressPercent = growthPreview.progressPercent;
+  const levelUpNextExp = growthPreview.xpToNext;
+
+  const levelUpTheme = getPosterCanvasTheme(selectedFilter);
+  const levelUpAccent = levelUpTheme.accent;
+  const levelUpAccentSoft = levelUpTheme.accentSoft;
 
   const mainComment = useMemo(() => {
     const firstLogWithComment = selectedLogs.find(
@@ -649,9 +450,11 @@ export default function ProfilePage({ scrollTarget }) {
       cardMediaType,
       selectedLogIds,
       customTrainingTitle,
+      levelUpLevel,
+      levelUpSlogan,
       showComment,
       profileNickname: profile.nickname || "",
-      profileTier: profileStats.tierName,
+      profileTier: profileStats.levelLabel,
       cardTotalRounds,
       cardTotalMinutes,
       mainComment,
@@ -696,13 +499,40 @@ export default function ProfilePage({ scrollTarget }) {
   }
 
   function handleSaveProfile() {
-    updateNickname(nickname.trim() || "나");
-    updateBio(bio.trim());
-    setIsSaving(true);
+    setSaveError("");
 
-    setTimeout(() => {
-      setIsSaving(false);
-    }, 900);
+    try {
+      const validated = validateBodySpecFields({
+        nickname,
+        heightCm,
+        weightKg,
+        reachCm,
+        weightClass,
+        experience,
+        area,
+        sparringStyle: profile.sparringStyle,
+      });
+
+      const nextProfile = {
+        ...profile,
+        ...validated,
+        bio: bio.trim(),
+        onboardingComplete: profile.onboardingComplete ?? true,
+      };
+
+      updateProfile(nextProfile);
+      syncListingFromProfile(nextProfile, userId, {
+        fighterLevel: profileStats.level,
+      });
+      setIsSaving(true);
+      setIsProfileEditOpen(false);
+
+      setTimeout(() => {
+        setIsSaving(false);
+      }, 900);
+    } catch (error) {
+      setSaveError(error.message || "프로필 저장에 실패했습니다.");
+    }
   }
 
   async function handlePhotoChange(event) {
@@ -804,70 +634,7 @@ export default function ProfilePage({ scrollTarget }) {
     });
   }
 
-  function sleep(ms) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }
   
-  async function waitForCardReady() {
-    const card = trainingCardRef.current;
-
-    if (!card) return;
-
-    await sleep(120);
-
-    if (document.fonts?.ready) {
-      try {
-        await document.fonts.ready;
-      } catch {
-        // 폰트 준비 실패는 저장을 막지 않음
-      }
-    }
-
-    await new Promise((resolve) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(resolve);
-      });
-    });
-
-    const images = Array.from(card.querySelectorAll("img"));
-
-    await Promise.all(
-      images.map(async (image) => {
-        if (image.complete && image.naturalWidth > 0) {
-          if (image.decode) {
-            try {
-              await image.decode();
-            } catch {
-              // decode 실패해도 화면에 보이면 저장 시도
-            }
-          }
-
-          return;
-        }
-
-        await new Promise((resolve) => {
-          const timer = setTimeout(resolve, 3000);
-
-          image.onload = () => {
-            clearTimeout(timer);
-            resolve();
-          };
-
-          image.onerror = () => {
-            clearTimeout(timer);
-            resolve();
-          };
-        });
-      })
-    );
-
-    await new Promise((resolve) => {
-      requestAnimationFrame(resolve);
-    });
-  }
-
 
   function loadCanvasImage(src) {
     return new Promise((resolve, reject) => {
@@ -887,7 +654,7 @@ export default function ProfilePage({ scrollTarget }) {
 
     const baseScale = Math.max(width / imageWidth, height / imageHeight);
     // POSTER 저장에서는 사진이 반드시 화면을 채워야 하므로 100%보다 작게 줄이지 않는다.
-    const safeScale = Math.max(scalePercent / 100, 1);
+    const safeScale = Math.max(scalePercent / 100, 0.85);
     const finalScale = baseScale * safeScale;
     const drawWidth = imageWidth * finalScale;
     const drawHeight = imageHeight * finalScale;
@@ -1007,6 +774,19 @@ export default function ProfilePage({ scrollTarget }) {
   }
 
   function getPosterCanvasTheme(filterId) {
+    if (filterId === "levelup") {
+      return {
+        bgA: "#1d1607",
+        bgB: "#030303",
+        bgC: "#090603",
+        accent: "#d6a234",
+        accentSoft: "rgba(214, 162, 52, 0.28)",
+        overlayTop: "rgba(0, 0, 0, 0.36)",
+        overlayMid: "rgba(0, 0, 0, 0.18)",
+        overlayBottom: "rgba(0, 0, 0, 0.92)",
+      };
+    }
+
     if (filterId === "red") {
       return {
         bgA: "#330606",
@@ -1111,6 +891,45 @@ export default function ProfilePage({ scrollTarget }) {
       };
     }
 
+    if (filterId === "semipro") {
+      return {
+        bgA: "#2b1c08",
+        bgB: "#070402",
+        bgC: "#1a1206",
+        accent: "#e8b448",
+        accentSoft: "rgba(232, 180, 72, 0.28)",
+        overlayTop: "rgba(0, 0, 0, 0.32)",
+        overlayMid: "rgba(0, 0, 0, 0.14)",
+        overlayBottom: "rgba(0, 0, 0, 0.88)",
+      };
+    }
+
+    if (filterId === "champion") {
+      return {
+        bgA: "#2a1800",
+        bgB: "#050301",
+        bgC: "#1a1000",
+        accent: "#ffd648",
+        accentSoft: "rgba(255, 214, 72, 0.3)",
+        overlayTop: "rgba(0, 0, 0, 0.3)",
+        overlayMid: "rgba(0, 0, 0, 0.12)",
+        overlayBottom: "rgba(0, 0, 0, 0.9)",
+      };
+    }
+
+    if (filterId === "goat") {
+      return {
+        bgA: "#1f1408",
+        bgB: "#020101",
+        bgC: "#120a04",
+        accent: "#ffe48c",
+        accentSoft: "rgba(255, 228, 140, 0.32)",
+        overlayTop: "rgba(0, 0, 0, 0.34)",
+        overlayMid: "rgba(0, 0, 0, 0.14)",
+        overlayBottom: "rgba(0, 0, 0, 0.92)",
+      };
+    }
+
     return {
       bgA: "#2a0606",
       bgB: "#050505",
@@ -1169,19 +988,71 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.fillRect(0, 0, width, height);
   }
 
+  function drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto, natural = false) {
+    const mood = ctx.createLinearGradient(0, 0, 0, height);
+
+    if (natural) {
+      mood.addColorStop(0, hasPhoto ? "rgba(0, 0, 0, 0.1)" : "rgba(0, 0, 0, 0.06)");
+      mood.addColorStop(0.35, "rgba(0, 0, 0, 0.03)");
+      mood.addColorStop(0.68, "rgba(0, 0, 0, 0.1)");
+      mood.addColorStop(1, hasPhoto ? "rgba(0, 0, 0, 0.28)" : "rgba(0, 0, 0, 0.18)");
+    } else {
+      mood.addColorStop(0, hasPhoto ? "rgba(0, 0, 0, 0.28)" : "rgba(0, 0, 0, 0.12)");
+      mood.addColorStop(0.35, "rgba(0, 0, 0, 0.08)");
+      mood.addColorStop(0.68, "rgba(0, 0, 0, 0.24)");
+      mood.addColorStop(1, "rgba(0, 0, 0, 0.64)");
+    }
+  
+    ctx.fillStyle = mood;
+    ctx.fillRect(0, 0, width, height);
+  
+    const accentGlow = ctx.createRadialGradient(
+      width * 0.82,
+      height * 0.12,
+      10,
+      width * 0.82,
+      height * 0.12,
+      width * 0.72
+    );
+  
+    accentGlow.addColorStop(0, theme.accentSoft);
+    accentGlow.addColorStop(0.38, "rgba(0, 0, 0, 0)");
+    accentGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+    if (!natural) {
+      ctx.fillStyle = accentGlow;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = accentGlow;
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+
+    const vignette = ctx.createRadialGradient(
+      width * 0.5,
+      height * 0.45,
+      width * 0.2,
+      width * 0.5,
+      height * 0.45,
+      width * 0.9
+    );
+
+    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+    vignette.addColorStop(0.72, natural ? "rgba(0, 0, 0, 0.04)" : "rgba(0, 0, 0, 0.08)");
+    vignette.addColorStop(1, natural ? "rgba(0, 0, 0, 0.14)" : "rgba(0, 0, 0, 0.42)");
+  
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  
   function drawPosterDivider(ctx, y, width, centerX, theme) {
     ctx.save();
     ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
     ctx.fillRect(190, y, 270, 3);
     ctx.fillRect(width - 460, y, 270, 3);
-    drawTextFit(ctx, "★", centerX, y - 16, 90, {
-      size: 38,
-      minSize: 30,
-      weight: 900,
-      color: theme.accent,
-      baseline: "top",
-      shadow: false,
-    });
     ctx.restore();
   }
 
@@ -1203,56 +1074,63 @@ export default function ProfilePage({ scrollTarget }) {
       exportSnapshot.selectedFilter ||
       selectedFilterRef.current ||
       selectedFilter ||
-      "red";
+      "levelup";
+  
     const exportFilterIntensity =
       typeof exportSnapshot.filterIntensity === "number"
         ? exportSnapshot.filterIntensity
         : filterIntensity;
+  
     const exportPhotoScale =
       typeof exportSnapshot.photoScale === "number"
         ? exportSnapshot.photoScale
         : photoScale;
+  
     const exportCardMedia = exportSnapshot.cardMedia || cardMedia;
     const exportCardMediaType = exportSnapshot.cardMediaType || cardMediaType;
-
+  
     const exportMainNameText = String(
       exportFields.mainName || posterMainName || profile.nickname || "JO WOON"
     ).trim();
+  
     const exportSubtitleText = String(
       exportFields.subtitle || posterSubtitle || "THE ROOKIE"
     ).trim();
+  
     const exportEventTitleText = String(
       exportFields.eventTitle || posterEventTitle || "TRAINING DAY"
     ).trim();
+  
     const exportDateTextValue = String(
       exportFields.date || posterDateText || "JUNE 27"
     ).trim();
+  
     const exportMetaTextValue = String(
       exportFields.meta || posterMetaText || "BOXING TRAINING POSTER | RISING FIGHTER"
     ).trim();
+  
     const exportFooterTextValue = String(
       exportFields.footer || posterFooterText || "EVERY ROUND WRITES YOUR STORY"
     ).trim();
-
+  
     const canvas = document.createElement("canvas");
     const width = 1080;
     const height = 1920;
     const centerX = width / 2;
     const theme = getPosterCanvasTheme(exportFilterId);
-    const strength = Math.max(0, Math.min(1, exportFilterIntensity / 100));
-
+  
     canvas.width = width;
     canvas.height = height;
-
+  
     const ctx = canvas.getContext("2d");
-
+  
     if (!ctx) {
       throw new Error("캔버스를 만들지 못했어요.");
     }
-
+  
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-
+  
     drawPosterBackground(ctx, width, height, theme);
 
     let hasPosterPhoto = false;
@@ -1264,6 +1142,7 @@ export default function ProfilePage({ scrollTarget }) {
     }
 
     const previewImage = trainingCardRef.current?.querySelector('img[alt="훈련 카드"]');
+
     if (previewImage?.src && !candidateImageSources.includes(previewImage.src)) {
       candidateImageSources.push(previewImage.src);
     }
@@ -1271,29 +1150,38 @@ export default function ProfilePage({ scrollTarget }) {
     for (const imageSrc of candidateImageSources) {
       try {
         const image = await loadCanvasImage(imageSrc);
+        const canUseCanvasFilter = "filter" in ctx;
 
         ctx.save();
-        if ("filter" in ctx) {
-          if (exportFilterId === "mono") {
-            ctx.filter = `grayscale(${0.85 * strength}) contrast(${1 + 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
-          } else if (exportFilterId === "dark") {
-            ctx.filter = `contrast(${1 + 0.28 * strength}) brightness(${1 - 0.18 * strength}) saturate(${1 - 0.2 * strength})`;
-          } else if (exportFilterId === "gold") {
-            ctx.filter = `contrast(${1 + 0.18 * strength}) sepia(${0.38 * strength}) saturate(${1 - 0.1 * strength}) brightness(${1 + 0.03 * strength})`;
-          } else if (exportFilterId === "blue") {
-            ctx.filter = `contrast(${1 + 0.18 * strength}) saturate(${1 - 0.08 * strength}) hue-rotate(${165 * strength}deg) brightness(${1 - 0.03 * strength})`;
-          } else if (exportFilterId === "future") {
-            ctx.filter = `contrast(${1 + 0.15 * strength}) saturate(${1 + 0.18 * strength}) hue-rotate(${22 * strength}deg)`;
-          } else if (exportFilterId === "vintage") {
-            ctx.filter = `contrast(${1 + 0.16 * strength}) sepia(${0.42 * strength}) saturate(${1 - 0.22 * strength}) brightness(${1 - 0.04 * strength})`;
-          } else if (exportFilterId === "chrome") {
-            ctx.filter = `contrast(${1 + 0.22 * strength}) saturate(${1 - 0.18 * strength}) brightness(${1 + 0.05 * strength})`;
-          } else {
-            ctx.filter = `contrast(${1 + 0.2 * strength}) saturate(${1 - 0.08 * strength}) brightness(${1 + 0.02 * strength})`;
-          }
+
+        if (canUseCanvasFilter) {
+          ctx.filter = getImageFilter(exportFilterId, exportFilterIntensity);
         }
 
-        drawCoverImage(ctx, image, 0, 0, width, height, Math.max(exportPhotoScale, 100));
+        drawCoverImage(
+          ctx,
+          image,
+          0,
+          0,
+          width,
+          height,
+          Math.max(exportPhotoScale, 100)
+        );
+
+        ctx.filter = "none";
+
+        if (!canUseCanvasFilter) {
+          applyPixelImageFilter(
+            ctx,
+            0,
+            0,
+            width,
+            height,
+            exportFilterId,
+            exportFilterIntensity
+          );
+        }
+
         ctx.restore();
         hasPosterPhoto = true;
         break;
@@ -1301,45 +1189,67 @@ export default function ProfilePage({ scrollTarget }) {
         console.warn("포스터 사진 캔버스 로드 실패:", error);
       }
     }
-
-    // 사진이 있어도, 없어도 포스터 느낌이 나도록 조명과 어둠을 따로 깐다.
+  
     const globalShade = ctx.createLinearGradient(0, 0, 0, height);
-    globalShade.addColorStop(0, hasPosterPhoto ? "rgba(0, 0, 0, 0.36)" : "rgba(0, 0, 0, 0.08)");
-    globalShade.addColorStop(0.22, hasPosterPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.02)");
-    globalShade.addColorStop(0.48, hasPosterPhoto ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.14)");
+  
+    globalShade.addColorStop(
+      0,
+      hasPosterPhoto ? "rgba(0, 0, 0, 0.36)" : "rgba(0, 0, 0, 0.08)"
+    );
+    globalShade.addColorStop(
+      0.22,
+      hasPosterPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.02)"
+    );
+    globalShade.addColorStop(
+      0.48,
+      hasPosterPhoto ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.14)"
+    );
     globalShade.addColorStop(0.66, "rgba(0, 0, 0, 0.5)");
     globalShade.addColorStop(1, "rgba(0, 0, 0, 0.96)");
+  
     ctx.fillStyle = globalShade;
     ctx.fillRect(0, 0, width, height);
-
+  
     const topGlow = ctx.createRadialGradient(centerX, 165, 8, centerX, 165, 720);
+  
     topGlow.addColorStop(0, "rgba(255, 255, 255, 0.22)");
     topGlow.addColorStop(0.34, theme.accentSoft);
     topGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  
     ctx.fillStyle = topGlow;
     ctx.fillRect(0, 0, width, height);
-
-    const nameGlow = ctx.createRadialGradient(centerX, 1190, 20, centerX, 1190, 760);
+  
+    const nameGlow = ctx.createRadialGradient(
+      centerX,
+      1190,
+      20,
+      centerX,
+      1190,
+      760
+    );
+  
     nameGlow.addColorStop(0, theme.accentSoft);
     nameGlow.addColorStop(0.4, "rgba(0, 0, 0, 0)");
     nameGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  
     ctx.fillStyle = nameGlow;
     ctx.fillRect(0, 0, width, height);
-
-    // 어두운 포스터 테두리
+  
     ctx.save();
-    ctx.strokeStyle = hasPosterPhoto ? "rgba(255, 255, 255, 0.16)" : theme.accentSoft;
+    ctx.strokeStyle = hasPosterPhoto
+      ? "rgba(255, 255, 255, 0.16)"
+      : theme.accentSoft;
     ctx.lineWidth = 4;
     ctx.strokeRect(34, 34, width - 68, height - 68);
     ctx.restore();
-
-    // 상단 라벨
+  
     ctx.save();
     ctx.fillStyle = theme.accent;
     ctx.globalAlpha = 0.78;
     ctx.fillRect(120, 118, 255, 4);
     ctx.fillRect(width - 375, 118, 255, 4);
     ctx.globalAlpha = 1;
+  
     drawTextFit(ctx, "FIGHTER PROFILE", centerX, 92, 430, {
       size: 34,
       minSize: 24,
@@ -1350,12 +1260,12 @@ export default function ProfilePage({ scrollTarget }) {
       baseline: "top",
       shadow: false,
     });
+  
     ctx.restore();
-
-    // 이름 영역. 기존보다 더 아래쪽, 더 크게, 더 포스터처럼.
+  
     let mainY = 970;
     const mainBottomLimit = 1588;
-
+  
     if (exportVisible.mainName) {
       const usedHeight = drawPosterTextTop(
         ctx,
@@ -1373,9 +1283,10 @@ export default function ProfilePage({ scrollTarget }) {
           lineHeightRatio: 0.9,
         }
       );
+  
       mainY += Math.max(usedHeight, 144) + 2;
     }
-
+  
     if (exportVisible.subtitle && mainY < mainBottomLimit) {
       const usedHeight = drawPosterTextTop(
         ctx,
@@ -1393,14 +1304,15 @@ export default function ProfilePage({ scrollTarget }) {
           lineHeightRatio: 0.98,
         }
       );
+  
       mainY += Math.max(usedHeight, 56) + 28;
     }
-
+  
     if ((exportVisible.eventTitle || exportVisible.date) && mainY < mainBottomLimit) {
       drawPosterDivider(ctx, mainY + 10, width, centerX, theme);
       mainY += 58;
     }
-
+  
     if (exportVisible.eventTitle && mainY < mainBottomLimit) {
       const usedHeight = drawPosterTextTop(
         ctx,
@@ -1418,52 +1330,72 @@ export default function ProfilePage({ scrollTarget }) {
           lineHeightRatio: 0.92,
         }
       );
+  
       mainY += Math.max(usedHeight, 86) + 10;
     }
-
+  
     if (exportVisible.date && mainY < mainBottomLimit) {
-      drawPosterTextTop(ctx, exportDateTextValue.toUpperCase(), centerX, mainY, 760, {
-        size: 54,
-        minSize: 26,
-        weight: 950,
-        family: "Arial Black, Arial, sans-serif",
-        color: theme.accent,
-        strokeWidth: 5,
-        lineHeightRatio: 1.0,
-      });
+      drawPosterTextTop(
+        ctx,
+        exportDateTextValue.toUpperCase(),
+        centerX,
+        mainY,
+        760,
+        {
+          size: 54,
+          minSize: 26,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          color: theme.accent,
+          strokeWidth: 5,
+          lineHeightRatio: 1.0,
+        }
+      );
     }
-
-    // 하단 문구는 박스 없이 짧고 세련되게. 코멘트는 POSTER 저장에서 제외한다.
+  
     if (exportVisible.meta) {
       ctx.save();
       ctx.fillStyle = theme.accent;
       ctx.fillRect(150, 1642, width - 300, 5);
       ctx.restore();
-
-      drawPosterTextTop(ctx, exportMetaTextValue.toUpperCase(), centerX, 1674, 910, {
-        size: 28,
-        minSize: 17,
-        weight: 900,
-        family: "Arial Black, Arial, sans-serif",
-        color: theme.accent,
-        strokeWidth: 3,
-        lineHeightRatio: 1.05,
-      });
+  
+      drawPosterTextTop(
+        ctx,
+        exportMetaTextValue.toUpperCase(),
+        centerX,
+        1674,
+        910,
+        {
+          size: 28,
+          minSize: 17,
+          weight: 900,
+          family: "Arial Black, Arial, sans-serif",
+          color: theme.accent,
+          strokeWidth: 3,
+          lineHeightRatio: 1.05,
+        }
+      );
     }
-
+  
     if (exportVisible.footer) {
-      drawPosterTextTop(ctx, exportFooterTextValue.toUpperCase(), centerX, 1830, 900, {
-        size: 30,
-        minSize: 18,
-        weight: 900,
-        family: "Arial Black, Arial, sans-serif",
-        color: theme.accent,
-        strokeWidth: 3,
-        lineHeightRatio: 1.05,
-      });
+      drawPosterTextTop(
+        ctx,
+        exportFooterTextValue.toUpperCase(),
+        centerX,
+        1830,
+        900,
+        {
+          size: 30,
+          minSize: 18,
+          weight: 900,
+          family: "Arial Black, Arial, sans-serif",
+          color: theme.accent,
+          strokeWidth: 3,
+          lineHeightRatio: 1.05,
+        }
+      );
     }
-
-    // 마지막 비네팅. 가장자리만 눌러준다.
+  
     const vignette = ctx.createRadialGradient(
       centerX,
       height * 0.48,
@@ -1472,12 +1404,14 @@ export default function ProfilePage({ scrollTarget }) {
       height * 0.48,
       width * 0.94
     );
+  
     vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
     vignette.addColorStop(0.72, "rgba(0, 0, 0, 0.12)");
     vignette.addColorStop(1, "rgba(0, 0, 0, 0.48)");
+  
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);
-
+  
     return canvas.toDataURL("image/png", 1);
   }
 
@@ -1516,86 +1450,16 @@ export default function ProfilePage({ scrollTarget }) {
     ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
   }
 
-  function applyCanvasImageFilter(ctx, filterId, strength) {
-    if (!("filter" in ctx)) return;
-  
-    if (filterId === "mono") {
-      ctx.filter = `grayscale(${0.65 + 0.35 * strength}) contrast(${
-        1.18 + 0.34 * strength
-      }) brightness(${1 - 0.04 * strength})`;
-      return;
-    }
-  
-    if (filterId === "dark") {
-      ctx.filter = `contrast(${1.12 + 0.48 * strength}) brightness(${
-        0.94 - 0.2 * strength
-      }) saturate(${0.92 - 0.18 * strength})`;
-      return;
-    }
-  
-    if (filterId === "gold") {
-      ctx.filter = `contrast(${1.08 + 0.34 * strength}) sepia(${
-        0.28 + 0.38 * strength
-      }) saturate(${1.05 + 0.2 * strength}) brightness(${
-        0.98 - 0.04 * strength
-      })`;
-      return;
-    }
-  
-    if (filterId === "blue") {
-      ctx.filter = `contrast(${1.08 + 0.36 * strength}) saturate(${
-        1.08 + 0.28 * strength
-      }) hue-rotate(${165 * strength}deg) brightness(${
-        0.98 - 0.05 * strength
-      })`;
-      return;
-    }
-  
-    if (filterId === "future") {
-      ctx.filter = `contrast(${1.1 + 0.38 * strength}) saturate(${
-        1.22 + 0.42 * strength
-      }) hue-rotate(${24 * strength}deg) brightness(${
-        1 - 0.03 * strength
-      })`;
-      return;
-    }
-  
-    if (filterId === "vintage") {
-      ctx.filter = `contrast(${1.08 + 0.34 * strength}) sepia(${
-        0.28 + 0.48 * strength
-      }) saturate(${0.9 - 0.08 * strength}) brightness(${
-        0.98 - 0.04 * strength
-      })`;
-      return;
-    }
-  
-    if (filterId === "chrome") {
-      ctx.filter = `contrast(${1.16 + 0.42 * strength}) saturate(${
-        0.96 + 0.14 * strength
-      }) brightness(${1.04 + 0.08 * strength}) sepia(${
-        0.04 * strength
-      })`;
-      return;
-    }
-  
-    ctx.filter = `contrast(${1.16 + 0.48 * strength}) saturate(${
-      1.18 + 0.46 * strength
-    }) brightness(${0.98 - 0.05 * strength}) sepia(${
-      0.12 + 0.26 * strength
-    })`;
-  }
-
   async function drawCardPhotoToCanvas(ctx, width, height, options = {}) {
     const {
       fit = "cover",
-      filterId = "red",
+      filterId = "levelup",
       filterIntensityValue = 75,
       scalePercent = 100,
       topInset = 0,
       bottomInset = 0,
     } = options;
 
-    const strength = Math.max(0, Math.min(1, filterIntensityValue / 100));
     const availableHeight = height - topInset - bottomInset;
     const exportSnapshot = posterExportRef.current || {};
     const exportCardMedia = exportSnapshot.cardMedia || cardMedia;
@@ -1614,13 +1478,32 @@ export default function ProfilePage({ scrollTarget }) {
     for (const imageSrc of candidateImageSources) {
       try {
         const image = await loadCanvasImage(imageSrc);
+        const canUseCanvasFilter = "filter" in ctx;
+
         ctx.save();
-        applyCanvasImageFilter(ctx, filterId, strength);
+
+        if (canUseCanvasFilter) {
+          ctx.filter = getImageFilter(filterId, filterIntensityValue);
+        }
 
         if (fit === "contain") {
           drawContainImage(ctx, image, 0, topInset, width, availableHeight, scalePercent);
         } else {
           drawCoverImage(ctx, image, 0, topInset, width, availableHeight, Math.max(scalePercent, 100));
+        }
+
+        ctx.filter = "none";
+
+        if (!canUseCanvasFilter) {
+          applyPixelImageFilter(
+            ctx,
+            0,
+            topInset,
+            width,
+            availableHeight,
+            filterId,
+            filterIntensityValue
+          );
         }
 
         ctx.restore();
@@ -1639,7 +1522,7 @@ export default function ProfilePage({ scrollTarget }) {
       exportSnapshot.selectedFilter ||
       selectedFilterRef.current ||
       selectedFilter ||
-      "red";
+      "levelup";
     const exportFilterIntensity =
       typeof exportSnapshot.filterIntensity === "number"
         ? exportSnapshot.filterIntensity
@@ -1648,9 +1531,9 @@ export default function ProfilePage({ scrollTarget }) {
       typeof exportSnapshot.photoScale === "number"
         ? exportSnapshot.photoScale
         : photoScale;
+    const isSocialExport = styleIdForExport === "social";
     const width = 1080;
-    const height = 1600;
-    const centerX = width / 2;
+    const height = isSocialExport ? 1920 : 1600;
     const theme = getPosterCanvasTheme(exportFilterId);
     const canvas = document.createElement("canvas");
 
@@ -1668,45 +1551,46 @@ export default function ProfilePage({ scrollTarget }) {
 
     drawPosterBackground(ctx, width, height, theme);
 
-    const isSocialExport = styleIdForExport === "social";
-    const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
-      fit: "cover",
-      filterId: exportFilterId,
-      filterIntensityValue: exportFilterIntensity,
-      scalePercent: isSocialExport
-        ? Math.max(exportPhotoScale, 100)
-        : exportPhotoScale,
-      topInset: 0,
-      bottomInset: 0,
-    });
+        const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
+          fit: "cover",
+          filterId: exportFilterId,
+          filterIntensityValue: exportFilterIntensity,
+          scalePercent: isSocialExport
+            ? exportPhotoScale
+            : Math.max(exportPhotoScale, 100),
+          topInset: 0,
+          bottomInset: 0,
+        });
 
+        if (!isSocialExport) {
+          drawPosterOverlay(ctx, width, height, theme);
+        }
+
+        if (isSocialExport) {
+          ctx.save();
+          ctx.globalAlpha = 0.74;
+          drawPosterOverlay(ctx, width, height, theme);
+          ctx.restore();
+          drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto, true);
+        }
+        
     if (!isSocialExport) {
-      drawPosterOverlay(ctx, width, height, theme);
-    }
+      const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
     
-    const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
-    
-    if (isSocialExport) {
-      bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
-      bottomShade.addColorStop(
-        0.52,
-        hasPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.1)"
-      );
-      bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.48)");
-    } else {
       bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
       bottomShade.addColorStop(
         0.45,
         hasPhoto ? "rgba(0, 0, 0, 0.38)" : "rgba(0, 0, 0, 0.2)"
       );
       bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
-    }
     
-    ctx.fillStyle = bottomShade;
-    ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = bottomShade;
+      ctx.fillRect(0, 0, width, height);
+    }
 
     if (isSocialExport) {
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
+
         size: 34,
         minSize: 24,
         weight: 950,
@@ -1717,7 +1601,7 @@ export default function ProfilePage({ scrollTarget }) {
         baseline: "top",
       });
 
-      drawTextFit(ctx, profileStats.tierName, width - 64, 72, 240, {
+      drawTextFit(ctx, profileStats.levelLabel, width - 64, 72, 240, {
         size: 34,
         minSize: 22,
         weight: 950,
@@ -1728,15 +1612,9 @@ export default function ProfilePage({ scrollTarget }) {
         baseline: "top",
       });
 
-      const panelY = 1060;
-      const panel = ctx.createLinearGradient(0, panelY, 0, height);
-      panel.addColorStop(0, "rgba(0, 0, 0, 0.08)");
-      panel.addColorStop(0.36, "rgba(0, 0, 0, 0.72)");
-      panel.addColorStop(1, "rgba(0, 0, 0, 0.96)");
-      ctx.fillStyle = panel;
-      ctx.fillRect(0, panelY, width, height - panelY);
+      // SOCIAL 저장에서는 사진 위에 별도 그라데이션 패널을 깔지 않는다.
 
-      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1134, 940, {
+      drawPosterTextTop(ctx, primaryCardTitle.toUpperCase(), 70, 1556, 940, {
         size: 84,
         minSize: 44,
         weight: 950,
@@ -1748,7 +1626,7 @@ export default function ProfilePage({ scrollTarget }) {
       });
 
       if (showComment) {
-        drawWrappedText(ctx, mainComment, 70, 1252, 910, {
+        drawWrappedText(ctx, mainComment, 70, 1648, 910, {
           size: 34,
           weight: 850,
           lineHeight: 48,
@@ -1758,13 +1636,13 @@ export default function ProfilePage({ scrollTarget }) {
         });
       }
 
-      const metricY = 1400;
+      const metricY = 1766;
       const metricW = 290;
       const metricGap = 34;
       const metricX = 70;
       const metrics = [
-        ["TIME", `${cardTotalMinutes || 0}min`],
-        ["LOGS", `${selectedLogs.length}`],
+        ["WEEK", `${profileStats.weeklyRounds}R`],
+        ["TOTAL", `${profileStats.totalRounds}R`],
         ["FIGHTER", profile.nickname || "나"],
       ];
 
@@ -1800,115 +1678,233 @@ export default function ProfilePage({ scrollTarget }) {
         });
       });
     } else {
-      drawTextFit(ctx, "TRAINING CARD", 66, 70, 480, {
-        size: 34,
-        minSize: 24,
+      const accent = theme.accent || "#d6a234";
+      const cardPadding = 58;
+
+      const sideShade = ctx.createLinearGradient(0, 0, width * 0.75, 0);
+      sideShade.addColorStop(0, "rgba(0, 0, 0, 0.76)");
+      sideShade.addColorStop(0.58, "rgba(0, 0, 0, 0.42)");
+      sideShade.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = sideShade;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(214, 162, 52, 0.7)";
+      ctx.lineWidth = 4;
+      roundRect(ctx, 34, 34, width - 68, height - 68, 42);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.36)";
+      roundRect(ctx, 78, 74, 112, 112, 28);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(214, 162, 52, 0.78)";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      drawTextFit(ctx, "ID", 134, 94, 78, {
+        size: 56,
+        minSize: 42,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        color: accent,
+        strokeWidth: 2,
+        baseline: "top",
+      });
+      ctx.restore();
+
+      drawTextFit(ctx, "PERSONAL TRAINING ID", 210, 108, 520, {
+        size: 32,
+        minSize: 22,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "rgba(255, 255, 255, 0.92)",
+        strokeWidth: 3,
+        baseline: "top",
+      });
+
+      drawTextFit(ctx, levelUpDisplayName, cardPadding, 210, 720, {
+        size: 154,
+        minSize: 72,
+        weight: 950,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "#ffffff",
+        strokeWidth: 8,
+        baseline: "top",
+      });
+
+      drawTextFit(ctx, "LEVEL", cardPadding, 420, 240, {
+        size: 44,
+        minSize: 30,
         weight: 950,
         family: "Arial Black, Arial, sans-serif",
         align: "left",
         color: "#ffffff",
-        strokeWidth: 3,
+        strokeWidth: 4,
         baseline: "top",
       });
 
-      drawTextFit(ctx, profileStats.tierName, width - 66, 70, 260, {
-        size: 34,
-        minSize: 22,
+      drawTextFit(ctx, levelUpDisplayLevel, cardPadding, 470, 420, {
+        size: 210,
+        minSize: 110,
         weight: 950,
-        family: "Arial Black, Arial, sans-serif",
-        align: "right",
-        color: theme.accent,
-        strokeWidth: 3,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        align: "left",
+        color: accent,
+        strokeWidth: 8,
         baseline: "top",
       });
 
-      const contentX = 118;
-      const contentY = 1050;
       ctx.save();
-      const lineGradient = ctx.createLinearGradient(0, contentY, 0, contentY + 390);
-      lineGradient.addColorStop(0, "rgba(255, 255, 255, 0.96)");
-      lineGradient.addColorStop(1, theme.accent);
-      ctx.fillStyle = lineGradient;
-      roundRect(ctx, 72, contentY, 8, 390, 4);
-      ctx.fill();
+      ctx.fillStyle = accent;
+      ctx.fillRect(cardPadding, 744, 300, 6);
       ctx.restore();
 
-      drawTextFit(ctx, "TRAINING", contentX, contentY, 360, {
-        size: 26,
-        minSize: 18,
+      drawWrappedText(ctx, levelUpDisplaySlogan, cardPadding, 790, 620, {
+        size: 64,
+        weight: 950,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        lineHeight: 72,
+        maxLines: 2,
+        color: "#ffffff",
+        align: "left",
+      });
+
+      const statY = 1096;
+      const statW = 292;
+      const statH = 178;
+      const statGap = 34;
+      const statItems = [
+        ["W", `${profileStats.weeklyRounds}`, "ROUNDS", "THIS WEEK"],
+        ["T", `${profileStats.totalRounds}`, "ROUNDS", "TOTAL"],
+        ["S", `${levelUpStreakDays || 1}`, "STREAK", "DAYS"],
+      ];
+
+      statItems.forEach(([icon, value, labelA, labelB], index) => {
+        const x = 68 + index * (statW + statGap);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.48)";
+        roundRect(ctx, x, statY, statW, statH, 26);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(214, 162, 52, 0.62)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        drawTextFit(ctx, icon, x + 32, statY + 38, 58, {
+          size: 42,
+          minSize: 32,
+          weight: 950,
+          align: "left",
+          color: accent,
+          baseline: "top",
+          shadow: false,
+        });
+
+        drawTextFit(ctx, value, x + statW - 34, statY + 36, statW - 112, {
+          size: 56,
+          minSize: 32,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "right",
+          color: "#ffffff",
+          strokeWidth: 4,
+          baseline: "top",
+        });
+
+        drawTextFit(ctx, labelA, x + statW - 34, statY + 98, statW - 80, {
+          size: 27,
+          minSize: 20,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "right",
+          color: accent,
+          baseline: "top",
+          shadow: false,
+        });
+
+        drawTextFit(ctx, labelB, x + statW - 34, statY + 130, statW - 80, {
+          size: 24,
+          minSize: 18,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "right",
+          color: "#ffffff",
+          baseline: "top",
+          shadow: false,
+        });
+      });
+
+      const tierX = 68;
+      const tierY = 1350;
+      const tierW = width - 136;
+      const tierH = 176;
+      ctx.fillStyle = "rgba(0, 0, 0, 0.66)";
+      roundRect(ctx, tierX, tierY, tierW, tierH, 28);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(214, 162, 52, 0.7)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      drawTextFit(ctx, "NEXT LEVEL:", tierX + 36, tierY + 34, 280, {
+        size: 36,
+        minSize: 24,
         weight: 950,
         family: "Arial Black, Arial, sans-serif",
         align: "left",
-        color: "rgba(255, 255, 255, 0.64)",
+        color: "rgba(255, 255, 255, 0.86)",
         baseline: "top",
         shadow: false,
       });
 
-      let y = contentY + 48;
-      visibleCardLogs.forEach((log, index) => {
-        const cardTitle = getCardLogTitle(log, index) || "TRAINING";
-        const trainingInfo = `${getRounds(log)}R · ${log.minutes || log.duration}m`;
-
-        drawTextFit(ctx, cardTitle.toUpperCase(), contentX, y, 660, {
-          size: 46,
-          minSize: 28,
-          weight: 950,
-          family: "Arial Black, Arial, sans-serif",
-          align: "left",
-          color: "#ffffff",
-          strokeWidth: 3,
-          baseline: "top",
-        });
-
-        drawTextFit(ctx, trainingInfo.toUpperCase(), contentX, y + 48, 320, {
-          size: 28,
-          minSize: 20,
-          weight: 900,
-          family: "Arial Black, Arial, sans-serif",
-          align: "left",
-          color: theme.accent,
-          baseline: "top",
-          shadow: false,
-        });
-
-        y += 96;
-      });
-
-      if (hiddenCardLogCount > 0) {
-        drawTextFit(ctx, `+ ${hiddenCardLogCount} MORE`, contentX, y, 300, {
-          size: 24,
-          minSize: 18,
-          weight: 900,
-          family: "Arial Black, Arial, sans-serif",
-          align: "left",
-          color: "rgba(255, 255, 255, 0.66)",
-          baseline: "top",
-          shadow: false,
-        });
-        y += 42;
-      }
-
-      if (showComment) {
-        y = drawWrappedText(ctx, mainComment, contentX, y + 12, 720, {
-          size: 30,
-          weight: 820,
-          lineHeight: 42,
-          maxLines: 2,
-          color: "rgba(255, 255, 255, 0.78)",
-          align: "left",
-        });
-      }
-
-      drawTextFit(ctx, `${profile.nickname || "나"} · ${profileStats.tierName}`, contentX, 1488, 620, {
-        size: 28,
-        minSize: 18,
+      drawTextFit(
+        ctx,
+        growthPreview.isMax
+          ? "MAX"
+          : growthPreview.nextTitle?.en || growthPreview.currentTitleEn,
+        tierX + 330,
+        tierY + 26,
+        330,
+        {
+        size: 76,
+        minSize: 44,
         weight: 950,
-        family: "Arial Black, Arial, sans-serif",
+        family: "Impact, Arial Black, Arial, sans-serif",
         align: "left",
-        color: "rgba(255, 255, 255, 0.78)",
-        strokeWidth: 2,
+        color: accent,
+        strokeWidth: 4,
         baseline: "top",
       });
+
+      drawTextFit(
+        ctx,
+        growthPreview.isMax ? "LV.100" : `${levelUpNextExp || 0} EXP`,
+        tierX + tierW - 42,
+        tierY + 36,
+        220,
+        {
+        size: 56,
+        minSize: 34,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "right",
+        color: accent,
+        strokeWidth: 4,
+        baseline: "top",
+      });
+
+      ctx.save();
+      const barX = tierX + 36;
+      const barY = tierY + 122;
+      const barW = tierW - 72;
+      const barH = 28;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
+      roundRect(ctx, barX, barY, barW, barH, 14);
+      ctx.fill();
+      ctx.fillStyle = accent;
+      roundRect(ctx, barX, barY, barW * (levelUpProgressPercent / 100), barH, 14);
+      ctx.fill();
+      ctx.restore();
     }
 
     return canvas.toDataURL("image/png", 1);
@@ -1920,16 +1916,17 @@ export default function ProfilePage({ scrollTarget }) {
     return new File([blob], filename, { type: "image/png" });
   }
 
-  async function buildCardExportDataUrl() {
+  async function buildCardExportDataUrl(styleOverride = null) {
+    const exportStyle = styleOverride || cardStyle;
     const filterIdForExport =
       posterExportRef.current.selectedFilter ||
       selectedFilterRef.current ||
       selectedFilter ||
-      "red";
+      "levelup";
 
-    return cardStyle === "poster"
+    return exportStyle === "poster"
       ? await createPosterCanvasDataUrl(filterIdForExport)
-      : await createTrainingCardCanvasDataUrl(cardStyle);
+      : await createTrainingCardCanvasDataUrl(exportStyle);
   }
 
   async function prepareCardExport({ force = false } = {}) {
@@ -1944,12 +1941,13 @@ export default function ProfilePage({ scrollTarget }) {
     }
 
     preparingExportKeyRef.current = key;
-    setIsPreparingExport(true);
 
     const promise = (async () => {
       const filename =
         cardStyle === "poster"
           ? `boxing-fighter-poster-${Date.now()}.png`
+          : cardStyle === "basic"
+          ? `boxing-level-up-card-${Date.now()}.png`
           : `boxing-training-card-${Date.now()}.png`;
 
       const dataUrl = await buildCardExportDataUrl();
@@ -1957,7 +1955,6 @@ export default function ProfilePage({ scrollTarget }) {
 
       const cache = { key, dataUrl, file, filename };
       exportCacheRef.current = cache;
-      setPreparedExportKey(key);
 
       return cache;
     })();
@@ -1974,7 +1971,6 @@ export default function ProfilePage({ scrollTarget }) {
       if (preparingExportKeyRef.current === key) {
         preparingExportKeyRef.current = "";
       }
-      setIsPreparingExport(false);
     }
   }
 
@@ -2033,7 +2029,30 @@ export default function ProfilePage({ scrollTarget }) {
     link.remove();
   }
 
-  function handleSaveCardImage() {
+  async function handleSaveStoryImage() {
+    if (cardMediaType === "video") {
+      alert("영상 카드는 스토리 저장을 지원하지 않습니다. 사진을 사용해 주세요.");
+      return;
+    }
+
+    track("card_save", { style: "social" });
+
+    setIsSavingImage(true);
+
+    try {
+      const dataUrl = await buildCardExportDataUrl("social");
+      const filename = `boxing-story-${Date.now()}.png`;
+      const file = await dataUrlToPngFile(dataUrl, filename);
+      shareOrDownloadPreparedExport({ dataUrl, file, filename });
+    } catch (error) {
+      console.error(error);
+      alert("스토리 이미지를 만들지 못했습니다. 사진과 운동 선택을 확인해 주세요.");
+    } finally {
+      setIsSavingImage(false);
+    }
+  }
+
+  async function handleSaveCardImage() {
     if (cardMediaType === "video") {
       alert(
         "영상 카드는 다음 단계에서 저장 기능을 붙일게. 지금은 사진 카드만 이미지 저장이 가능해."
@@ -2041,24 +2060,48 @@ export default function ProfilePage({ scrollTarget }) {
       return;
     }
 
+    track("card_save", { style: cardStyle });
+
     if (!trainingCardRef.current) {
       alert("저장할 카드가 아직 준비되지 않았어.");
+      return;
+    }
+
+    if (isCardImagePreparing) {
+      alert("사진을 불러오는 중이야. 잠시 뒤 다시 시도해줘.");
       return;
     }
 
     const key = getCardExportKey();
     const cache = exportCacheRef.current;
 
-    if (cache.key !== key || !cache.file || !cache.dataUrl) {
-      alert("이미지를 준비 중이야. 버튼이 다시 활성화될 때 저장해줘.");
+    // 미리 준비된 이미지가 있으면 iOS 공유 안정성을 위해 동기적으로 즉시 저장한다.
+    if (cache.key === key && cache.file && cache.dataUrl) {
+      try {
+        shareOrDownloadPreparedExport(cache);
+      } catch (error) {
+        console.error(error);
+        showExportPreview(cache);
+      }
       return;
     }
 
+    // 아직 준비된 이미지가 없으면 클릭 시점에 즉석에서 만들어 저장한다.
     try {
-      shareOrDownloadPreparedExport(cache);
+      setIsSavingImage(true);
+      const freshCache = await prepareCardExport({ force: true });
+      shareOrDownloadPreparedExport(freshCache);
     } catch (error) {
       console.error(error);
-      showExportPreview(cache);
+      const fallback = exportCacheRef.current;
+
+      if (fallback?.dataUrl) {
+        showExportPreview(fallback);
+      } else {
+        alert("이미지를 만들지 못했어. 사진과 설정을 확인한 뒤 다시 시도해줘.");
+      }
+    } finally {
+      setIsSavingImage(false);
     }
   }
 
@@ -2094,7 +2137,7 @@ ${mainComment}`
         ? `[FIGHTER POSTER]
 ${posterTextLines.join("\n")}${commentText}${mediaText}`
         : `[TRAINING CARD]
-${profile.nickname || "나"} · ${profileStats.tierName}
+${profile.nickname || "나"} · ${profileStats.levelLabel}
 
 ${logLines}${commentText}${mediaText}`;
 
@@ -2111,7 +2154,6 @@ ${logLines}${commentText}${mediaText}`;
   }
 
   useEffect(() => {
-    setPreparedExportKey("");
     setExportPreview(null);
 
     if (cardMediaType === "video") return;
@@ -2120,28 +2162,24 @@ ${logLines}${commentText}${mediaText}`;
       return;
     }
 
-    let cancelled = false;
-
-    const timer = setTimeout(async () => {
-      try {
-        const cache = await prepareCardExport({ force: true });
-
-        if (!cancelled) {
-          setPreparedExportKey(cache.key);
-        }
-      } catch (error) {
+    const timer = setTimeout(() => {
+      // 저장 버튼을 빠르게 누를 때를 대비해 이미지를 미리 만들어 캐시에 채워둔다.
+      prepareCardExport({ force: true }).catch((error) => {
         console.warn("저장 이미지 미리 준비 실패:", error);
-      }
+      });
     }, 650);
 
     return () => {
-      cancelled = true;
       clearTimeout(timer);
     };
   }, [currentExportKey, cardMediaReady, cardMediaType, cardMedia]);
 
   const cardPreviewHeight =
-    cardStyle === "poster" ? "700px" : cardStyle === "social" && !cardMedia ? "480px" : "650px";
+    cardStyle === "poster"
+      ? "620px"
+      : cardStyle === "social"
+        ? undefined
+        : "560px";
 
   const posterPreviewTheme = getPosterCanvasTheme(selectedFilter);
   const posterPreviewAccent = posterPreviewTheme.accent;
@@ -2150,30 +2188,31 @@ ${logLines}${commentText}${mediaText}`;
   const isCardImagePreparing =
     cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
 
-  const isExportReady =
-    preparedExportKey === currentExportKey &&
-    exportCacheRef.current.key === currentExportKey &&
-    Boolean(exportCacheRef.current.file);
-
   const isSaveCardDisabled =
-    cardMediaType === "video" ||
-    isSavingImage ||
-    isCardImagePreparing ||
-    isPreparingExport ||
-    !isExportReady;
+    cardMediaType === "video" || isSavingImage || isCardImagePreparing;
 
   return (
     <main style={styles.page}>
+      {profileView === "nameplate" && (
+        <>
+      <FighterSpecCard
+        profile={profile}
+        logs={logs}
+        weeklyScore={weeklyScore}
+        titleBadge={profileStats.fighterTitleEn}
+        careerStageKo={profileStats.careerStageKo}
+        streakDays={levelUpStreakDays}
+        onOpenCardMaker={scrollToCardMaker}
+      />
+
       <section style={styles.profileCard}>
         <div style={styles.cardTop}>
           <div>
-            <p style={styles.kicker}>BOXING PROFILE</p>
-            <h1 style={styles.title}>나의 파이터 카드</h1>
-          </div>
-
-          <div style={styles.tierBadge}>
-            <span style={styles.tierLabel}>등급</span>
-            <strong style={styles.tierName}>{profileStats.tierName}</strong>
+            <p style={styles.kicker}>PROFILE SETUP</p>
+            <h1 style={styles.title}>프로필 · 사진</h1>
+            <p style={styles.profileSetupHint}>
+              명패에 표시될 사진과 신체 스펙을 설정하세요.
+            </p>
           </div>
         </div>
 
@@ -2219,50 +2258,165 @@ ${logLines}${commentText}${mediaText}`;
                 사진 삭제
               </button>
             )}
-
-            <button
-              type="button"
-              style={{
-                ...styles.profileSaveInlineButton,
-                ...styles.profileActionButton,
-              }}
-              onClick={handleSaveProfile}
-            >
-              {isSaving ? "저장 완료!" : "프로필 저장"}
-            </button>
           </div>
         </div>
 
-        <div style={styles.profileNameBox}>
-          <span style={styles.profileNameLabel}>FIGHTER NAME</span>
-          <strong style={styles.profileName}>{profile.nickname || "나"}</strong>
-          <p style={styles.profileBio}>
-            {profile.bio || "아직 초보지만 링에 계속 올라가는 중"}
-          </p>
-        </div>
+        <div style={styles.profileEditPanel}>
+          <button
+            type="button"
+            style={styles.profileEditToggle}
+            onClick={() => setIsProfileEditOpen((open) => !open)}
+            aria-expanded={isProfileEditOpen}
+          >
+            <div style={styles.profileEditToggleCopy}>
+              <p style={styles.profileEditToggleTitle}>프로필 · 신체 스펙 수정</p>
+              <span style={styles.profileEditToggleHint}>
+                {isProfileEditOpen
+                  ? "닉네임, 소개, 키·체중·체급 등을 수정할 수 있어요."
+                  : profileSpecSummary || "탭해서 프로필과 신체 스펙을 수정하세요."}
+              </span>
+            </div>
+            <span style={styles.profileEditToggleAction}>
+              {isProfileEditOpen ? "접기 ▲" : "펼치기 ▼"}
+            </span>
+          </button>
 
-        <div style={styles.profileEditInsideBox}>
-          <p style={styles.kicker}>EDIT PROFILE</p>
+          {isProfileEditOpen ? (
+            <div style={styles.profileEditContent}>
+              <div style={styles.profileEditSection}>
+                <p style={styles.profileEditSectionTitle}>PROFILE</p>
 
-          <label style={styles.label}>
-            닉네임
-            <input
-              value={nickname}
-              onChange={(event) => setNickname(event.target.value)}
-              placeholder="예: 조운 파이터"
-              style={styles.input}
-            />
-          </label>
+                <label style={styles.fieldLabel}>
+                  닉네임
+                  <input
+                    value={nickname}
+                    onChange={(event) => setNickname(event.target.value)}
+                    placeholder="예: 조운 파이터"
+                    style={styles.input}
+                  />
+                </label>
 
-          <label style={styles.label}>
-            한 줄 소개
-            <textarea
-              value={bio}
-              onChange={(event) => setBio(event.target.value)}
-              placeholder="예: 아직 초보지만 매주 링에 올라가는 중"
-              style={styles.textarea}
-            />
-          </label>
+                <label style={styles.fieldLabel}>
+                  한 줄 소개
+                  <textarea
+                    value={bio}
+                    onChange={(event) => setBio(event.target.value)}
+                    placeholder="예: 아직 초보지만 매주 링에 올라가는 중"
+                    style={styles.textarea}
+                  />
+                </label>
+              </div>
+
+              <div style={styles.profileEditSection}>
+                <p style={styles.profileEditSectionTitle}>BODY SPECS</p>
+
+                <div className="profile-body-specs-grid" style={styles.bodySpecsGrid}>
+                  <label style={styles.fieldLabel}>
+                    키 (cm)
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="120"
+                      max="230"
+                      value={heightCm}
+                      onChange={(event) => setHeightCm(event.target.value)}
+                      placeholder="175"
+                      style={styles.input}
+                    />
+                  </label>
+
+                  <label style={styles.fieldLabel}>
+                    몸무게 (kg)
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min="35"
+                      max="200"
+                      step="0.1"
+                      value={weightKg}
+                      onChange={(event) => setWeightKg(event.target.value)}
+                      placeholder="70"
+                      style={styles.input}
+                    />
+                  </label>
+                </div>
+
+                <label style={styles.fieldLabel}>
+                  리치 (cm)
+                  <span style={styles.fieldHint}>선택 입력</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="100"
+                    max="250"
+                    value={reachCm}
+                    onChange={(event) => setReachCm(event.target.value)}
+                    placeholder="178"
+                    style={styles.input}
+                  />
+                </label>
+
+                <label style={styles.fieldLabel}>
+                  체급
+                  <select
+                    value={weightClass}
+                    onChange={(event) => {
+                      setWeightClassTouched(true);
+                      setWeightClass(event.target.value);
+                    }}
+                    style={styles.input}
+                  >
+                    {WEIGHT_CLASSES.filter((item) => item !== "상관없음").map(
+                      (item) => (
+                        <option key={item} value={item}>
+                          {formatWeightClassOption(item)}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+
+                <label style={styles.fieldLabel}>
+                  경력
+                  <select
+                    value={experience}
+                    onChange={(event) => setExperience(event.target.value)}
+                    style={styles.input}
+                  >
+                    {EXPERIENCE_LEVELS.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label style={styles.fieldLabel}>
+                  활동 지역
+                  <span style={styles.fieldHint}>선택 입력 · 예: 강남, 홍대</span>
+                  <input
+                    value={area}
+                    onChange={(event) => setArea(event.target.value)}
+                    placeholder="강남, 홍대"
+                    style={styles.input}
+                  />
+                </label>
+              </div>
+
+              <div style={styles.profileSaveFooter}>
+                {saveError ? (
+                  <p style={styles.profileSaveError}>{saveError}</p>
+                ) : null}
+                <button
+                  type="button"
+                  style={styles.profileSaveButton}
+                  onClick={handleSaveProfile}
+                >
+                  {isSaving ? "저장 완료!" : "변경사항 저장"}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -2288,9 +2442,70 @@ ${logLines}${commentText}${mediaText}`;
         </div>
       </section>
 
+      <button
+        type="button"
+        style={styles.cardStudioEntry}
+        onClick={scrollToCardMaker}
+      >
+        <span style={styles.cardStudioEntryKicker}>NAMEPLATE · CARD MAKER</span>
+        <strong style={styles.cardStudioEntryTitle}>훈련 인증 카드 만들기</strong>
+        <span style={styles.cardStudioEntryDesc}>
+          사진과 필터로 나만의 파이터 카드·포스터를 만들어 저장하고 공유하세요.
+        </span>
+        <span style={styles.cardStudioEntryCta}>카드 만들기 열기 →</span>
+      </button>
+
+      <section style={styles.sectionCard}>
+        <p style={styles.kicker}>PROOF OF TRAINING</p>
+        <h2 style={styles.sectionTitle}>훈련 증명</h2>
+
+        <div style={styles.proofBox}>
+          <p style={styles.proofText}>
+            나는 지금까지 총{" "}
+            <strong style={styles.redText}>
+              {profileStats.totalRounds}라운드
+            </strong>
+            를 버텼고,{" "}
+            <strong style={styles.redText}>{profileStats.totalLogs}번</strong>의
+            훈련 기록을 남겼다.
+          </p>
+
+          <p style={styles.proofSmallText}>
+            자동 기록 {profileStats.timerCount}개 · 수동 기록{" "}
+            {profileStats.manualCount}개
+          </p>
+        </div>
+      </section>
+
+      <section style={styles.sectionCard}>
+        <p style={styles.kicker}>MY JOURNEY</p>
+        <h2 style={styles.sectionTitle}>훈련 여정</h2>
+        <p style={styles.proofSmallText}>
+          칭호 도감, 베테랑 혜택, 업적, 대표 훈련 기록은 하단 탭 <strong>여정</strong>에서 볼 수
+          있습니다.
+        </p>
+      </section>
+        </>
+      )}
+
+      {profileView === "studio" && (
+        <>
+      <button
+        type="button"
+        style={styles.studioBackButton}
+        onClick={backToNameplate}
+      >
+        ← 명패로 돌아가기
+      </button>
+
       <section ref={cardMakerRef} style={styles.cardMakerSection}>
-        <p style={styles.kicker}>TRAINING CARD MAKER</p>
+        <p style={styles.kicker}>NAMEPLATE · CARD MAKER</p>
         <h2 style={styles.sectionTitle}>훈련 인증 카드 만들기</h2>
+
+        <p style={styles.cardMakerNameplateNote}>
+          명패 스펙 {profileStats.levelLabel} · 이번 주 {profileStats.weeklyRounds}R ·
+          누적 {profileStats.totalRounds}R가 카드에 반영됩니다.
+        </p>
 
         {latestLog && isLatestLogSelected && (
           <div style={styles.recentTrainingNotice}>
@@ -2316,7 +2531,12 @@ ${logLines}${commentText}${mediaText}`;
           </div>
         ) : (
           <>
-            <div style={styles.selectorSection}>
+              <p style={styles.cardMakerHelp}>
+                카드 하단에 이번 주 {profileStats.weeklyRounds}R · 누적{" "}
+                {profileStats.totalRounds}R가 표시됩니다.
+              </p>
+
+              <div style={styles.selectorSection}>
               <p style={styles.cardMakerLabel}>1. 운동 여러 개 선택</p>
               <p style={styles.cardMakerHelp}>
                 카드에 넣고 싶은 운동을 여러 개 선택해. 마지막 1개는 해제되지
@@ -2338,14 +2558,14 @@ ${logLines}${commentText}${mediaText}`;
                       }}
                     >
                       <div style={styles.logSelectCheck}>
-                        {isSelected ? "✓" : ""}
+                        {isSelected ? "·" : ""}
                       </div>
 
                       <div style={{ flex: 1 }}>
                         <strong style={styles.logSelectTitle}>{log.type}</strong>
                         <p style={styles.logSelectMeta}>
                           {getRounds(log)}R · {log.minutes || log.duration}min ·{" "}
-                          {log.date}
+                          {log.conditionLabel || "보통"} · {log.date}
                         </p>
                       </div>
                     </button>
@@ -2425,24 +2645,50 @@ ${logLines}${commentText}${mediaText}`;
             <div style={styles.filterSection}>
               <p style={styles.cardMakerLabel}>4. 카드 테마 선택</p>
 
-              <div style={styles.filterGrid}>
-                {CARD_FILTERS.map((filter) => (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    style={{
-                      ...styles.filterButton,
-                      ...(selectedFilter === filter.id
-                        ? styles.activeFilterButton
-                        : {}),
-                    }}
-                    onClick={() => handleSelectFilter(filter.id)}
-                  >
-                    <strong>{filter.name}</strong>
-                    <span>{filter.description}</span>
-                  </button>
-                ))}
-              </div>
+              {CARD_FILTER_GROUPS.map((groupName) => {
+                const groupFilters = CARD_FILTERS.filter(
+                  (filter) => (filter.group || "기본") === groupName
+                );
+
+                if (groupFilters.length === 0) return null;
+
+                return (
+                  <div key={groupName} style={styles.filterGroup}>
+                    <p style={styles.filterGroupLabel}>{groupName}</p>
+                    <div style={styles.filterGrid}>
+                      {groupFilters.map((filter) => {
+                        const isLocked = !isVeteranFilterUnlocked(
+                          filter.id,
+                          profileStats.level
+                        );
+
+                        return (
+                          <button
+                            key={filter.id}
+                            type="button"
+                            style={{
+                              ...styles.filterButton,
+                              ...(selectedFilter === filter.id
+                                ? styles.activeFilterButton
+                                : {}),
+                              ...(isLocked ? styles.lockedFilterButton : {}),
+                            }}
+                            onClick={() => handleSelectFilter(filter.id)}
+                            disabled={isLocked}
+                          >
+                            <strong>{filter.name}</strong>
+                            <span>
+                              {isLocked
+                                ? `LV. ${filter.veteranLevel} 베테랑 혜택`
+                                : filter.description}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <div style={styles.adjustSection}>
@@ -2464,12 +2710,12 @@ ${logLines}${commentText}${mediaText}`;
               />
 
               <label style={styles.rangeLabel}>
-                <span>확대</span>
+                <span>사진 크기</span>
                 <strong>{photoScale}%</strong>
               </label>
               <input
                 type="range"
-                min="100"
+                min="85"
                 max="120"
                 value={photoScale}
                 onChange={(event) => updatePhotoScale(Number(event.target.value))}
@@ -2491,22 +2737,58 @@ ${logLines}${commentText}${mediaText}`;
                 끄면 카드 이미지와 공유 문구에서 코멘트가 빠져.
               </p>
 
-              <label style={{ ...styles.label, marginTop: "16px" }}>
-                카드에 보여줄 이름
-                <input
-                  value={customTrainingTitle}
-                  onChange={(event) =>
-                    setCustomTrainingTitle(event.target.value)
-                  }
-                  placeholder="예: 아침 샌드백"
-                  style={styles.input}
-                />
-              </label>
+              {cardStyle === "basic" ? (
+                <div style={styles.levelUpInputBox}>
+                  <p style={styles.cardMakerLabel}>LEVEL UP 입력</p>
+                  <p style={styles.cardMakerHelp}>
+                    업로드한 사진 위에 표시할 레벨과 한 줄 문구를 정해줘.
+                  </p>
 
-              <p style={styles.commentToggleHelp}>
-                비워두면 “직접 설정 루틴”은 카드에 표시되지 않아. 이름을 쓰면
-                카드와 공유 문구에 그 이름이 표시돼.
-              </p>
+                  <label style={styles.label}>
+                    레벨
+                    <input
+                      value={levelUpLevel}
+                      onChange={(event) =>
+                        setLevelUpLevel(
+                          event.target.value.replace(/[^0-9]/g, "").slice(0, 3)
+                        )
+                      }
+                      placeholder="예: 56"
+                      inputMode="numeric"
+                      style={styles.input}
+                    />
+                  </label>
+
+                  <label style={{ ...styles.label, marginTop: "12px" }}>
+                    카드 문구
+                    <input
+                      value={levelUpSlogan}
+                      onChange={(event) => setLevelUpSlogan(event.target.value)}
+                      placeholder="예: ONE ROUND AT A TIME"
+                      style={styles.input}
+                    />
+                  </label>
+                </div>
+              ) : (
+                <>
+                  <label style={{ ...styles.label, marginTop: "16px" }}>
+                    카드에 보여줄 이름
+                    <input
+                      value={customTrainingTitle}
+                      onChange={(event) =>
+                        setCustomTrainingTitle(event.target.value)
+                      }
+                      placeholder="예: 아침 샌드백"
+                      style={styles.input}
+                    />
+                  </label>
+
+                  <p style={styles.commentToggleHelp}>
+                    비워두면 “직접 설정 루틴”은 카드에 표시되지 않아. 이름을 쓰면
+                    카드와 공유 문구에 그 이름이 표시돼.
+                  </p>
+                </>
+              )}
 
               {cardStyle === "poster" && (
                 <div style={styles.posterInputBox}>
@@ -2696,7 +2978,9 @@ ${logLines}${commentText}${mediaText}`;
               <div
                 style={{
                   ...styles.trainingCardPhotoArea,
-                  minHeight: cardPreviewHeight,
+                  ...(cardStyle === "social"
+                    ? { minHeight: 0, aspectRatio: "9 / 16" }
+                    : { minHeight: cardPreviewHeight }),
                 }}
               >
                 {cardMediaType === "image" && cardMedia && (
@@ -2719,13 +3003,13 @@ ${logLines}${commentText}${mediaText}`;
                     onError={() => setCardMediaReady(true)}
                     style={{
                       ...styles.trainingCardImage,
-                          objectFit: "cover",
-                          filter: getImageFilter(selectedFilter, filterIntensity),
-                          transform:
-                            cardStyle === "social"
-                              ? `scale(${Math.max(photoScale, 100) / 100})`
-                              : `scale(${photoScale / 100})`,
-                    }}
+                      objectFit: "cover",
+                      filter: getImageFilter(selectedFilter, filterIntensity),
+                      transform:
+                        cardStyle === "social"
+                          ? `scale(${photoScale / 100})`
+                          : `scale(${Math.max(photoScale, 100) / 100})`,
+                                          }}
                   />
                 )}
 
@@ -2738,12 +3022,12 @@ ${logLines}${commentText}${mediaText}`;
                     playsInline
                     style={{
                       ...styles.trainingCardImage,
-                          objectFit: "cover",
-                          filter: getImageFilter(selectedFilter, filterIntensity),
-                          transform:
-                            cardStyle === "social"
-                              ? `scale(${Math.max(photoScale, 100) / 100})`
-                              : `scale(${photoScale / 100})`,
+                      objectFit: "cover",
+                      filter: getImageFilter(selectedFilter, filterIntensity),
+                      transform:
+                        cardStyle === "social"
+                          ? `scale(${photoScale / 100})`
+                          : `scale(${Math.max(photoScale, 100) / 100})`,
                     }}
                   />
                 )}
@@ -2751,68 +3035,116 @@ ${logLines}${commentText}${mediaText}`;
                 {!cardMedia && <div style={styles.trainingCardDefaultBg} />}
 
                 <div
-                    style={{
-                      ...styles.trainingCardOverlay,
-                      background:
-                        cardStyle === "social"
-                          ? "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.06) 58%, rgba(0,0,0,0.38) 100%)"
-                          : getOverlayStyle(selectedFilter, filterIntensity),
-                    }}
+                  style={{
+                    ...styles.trainingCardOverlay,
+                    background: getCardPreviewOverlay(
+                      cardStyle,
+                      selectedFilter,
+                      filterIntensity
+                    ),
+                    mixBlendMode: "normal",
+                  }}
                 />
 
-                {cardStyle === "poster" && <div style={styles.posterVignette} />}
-
                 {cardStyle === "basic" ? (
-                  <div style={styles.trainingCardTextLayer}>
-                    <div style={styles.trainingCardTop}>
-                      <span style={styles.trainingCardKicker}>
-                        TRAINING CARD
-                      </span>
-                      <strong>{profileStats.tierName}</strong>
+                    <div
+                      style={{
+                        ...styles.levelUpCardTextLayer,
+                        border: `1px solid ${levelUpAccentSoft}`,
+                        boxShadow: `inset 0 0 32px ${levelUpAccentSoft}`,
+                      }}
+                    >
+                    <div style={styles.levelUpHeader}>
+                    <div
+                          style={{
+                            ...styles.levelUpBadge,
+                            color: levelUpAccent,
+                            border: `1px solid ${levelUpAccent}`,
+                            boxShadow: `0 0 24px ${levelUpAccentSoft}`,
+                          }}
+                        >
+                          ID
+                        </div>
+                      <span>PERSONAL TRAINING ID</span>
                     </div>
 
-                    <div style={styles.trainingCardBottomContent}>
-                      <div style={styles.basicPosterInfo}>
-                        <div style={styles.basicPosterLine} />
+                    <div style={styles.levelUpMainBlock}>
+                      <h2 style={styles.levelUpName}>{levelUpDisplayName}</h2>
 
-                        <div style={styles.basicPosterContent}>
-                          <span style={styles.basicPosterLabel}>TRAINING</span>
+                      <span style={styles.levelUpLabel}>LEVEL</span>
+                      <strong
+                    style={{
+                      ...styles.levelUpNumber,
+                      color: levelUpAccent,
+                      textShadow: `0 5px 20px rgba(0, 0, 0, 0.98), 0 0 24px ${levelUpAccentSoft}`,
+                    }}
+                  >
+                    {levelUpDisplayLevel}
+                  </strong>
 
-                          <div style={styles.basicTrainingLineList}>
-                            {visibleCardLogs.map((log, index) => {
-                              const cardTitle = getCardLogTitle(log, index);
-                              const trainingInfo = `${getRounds(log)}R · ${
-                                log.minutes || log.duration
-                              }m`;
+                  <p
+                      style={{
+                        ...styles.levelUpSlogan,
+                        borderTop: `2px solid ${levelUpAccent}`,
+                      }}
+                    >
+                      {levelUpDisplaySlogan}
+                    </p>
+                    </div>
 
-                              return (
-                                <div
-                                  key={log.id}
-                                  style={styles.basicTrainingLine}
-                                >
-                                  <strong>{cardTitle || "TRAINING"}</strong>
-                                  <span>{trainingInfo}</span>
-                                </div>
-                              );
-                            })}
+                    <div style={styles.levelUpBottomBlock}>
+                      <div style={styles.levelUpStatsRow}>
+                        <div style={styles.levelUpStatBox}>
+                          <strong>{profileStats.weeklyRounds}</strong>
+                          <span>ROUNDS</span>
+                          <small>THIS WEEK</small>
+                        </div>
 
-                            {hiddenCardLogCount > 0 && (
-                              <div style={styles.basicTrainingMore}>
-                                + {hiddenCardLogCount} more
-                              </div>
-                            )}
-                          </div>
+                        <div style={styles.levelUpStatBox}>
+                          <strong>{profileStats.totalRounds}</strong>
+                          <span>ROUNDS</span>
+                          <small>TOTAL</small>
+                        </div>
 
-                          {showComment && (
-                            <p style={styles.basicCardComment}>
-                              {mainComment}
-                            </p>
-                          )}
+                        <div style={styles.levelUpStatBox}>
+                          <strong>{levelUpStreakDays || 1}</strong>
+                          <span>STREAK</span>
+                          <small>DAYS</small>
+                        </div>
+                      </div>
 
-                          <div style={styles.basicFighterMeta}>
-                            <span>{profile.nickname || "나"}</span>
-                            <strong>{profileStats.tierName}</strong>
-                          </div>
+                      <div
+                        style={{
+                          ...styles.levelUpTierBox,
+                          border: `1px solid ${levelUpAccent}`,
+                          boxShadow: `0 12px 26px rgba(0, 0, 0, 0.28), 0 0 18px ${levelUpAccentSoft}`,
+                        }}
+                      >
+                        <div>
+                        <strong style={{ ...styles.levelUpTierName, color: levelUpAccent }}>
+                          {growthPreview.isMax
+                            ? "MAX LEVEL"
+                            : growthPreview.nextTitle?.en ||
+                              growthPreview.currentTitleEn}
+                        </strong>
+                          
+                        </div>
+
+                        <strong style={{ ...styles.levelUpXpText, color: levelUpAccent }}>
+                          {growthPreview.isMax
+                            ? "LV.100"
+                            : `${levelUpNextExp || 0} EXP`}
+                        </strong>
+
+                        <div style={styles.levelUpProgressTrack}>
+                        <div
+                          style={{
+                            ...styles.levelUpProgressFill,
+                            width: `${levelUpProgressPercent}%`,
+                            background: `linear-gradient(90deg, ${levelUpAccent}, #ffffff)`,
+                            boxShadow: `0 0 16px ${levelUpAccentSoft}`,
+                          }}
+                        />
                         </div>
                       </div>
                     </div>
@@ -2871,7 +3203,6 @@ ${logLines}${commentText}${mediaText}`;
                               background: posterPreviewLine,
                             }}
                           />
-                          <strong>★</strong>
                           <span
                             style={{
                               ...styles.posterStarRule,
@@ -2936,14 +3267,21 @@ ${logLines}${commentText}${mediaText}`;
                   <div
                     style={{
                       ...styles.socialCardTextLayer,
-                      minHeight: cardPreviewHeight,
+                      ...(cardStyle === "social"
+                        ? { position: "absolute", inset: 0, minHeight: 0 }
+                        : { minHeight: cardPreviewHeight }),
                     }}
                   >
                     <div style={styles.socialCardTop}>
-                      <span style={styles.socialCardKicker}>
+                      <span
+                        style={{
+                          ...styles.socialCardKicker,
+                          color: posterPreviewAccent,
+                        }}
+                      >
                         BOXING TRAINING
                       </span>
-                      <strong>{profileStats.tierName}</strong>
+                      <strong>{profileStats.levelLabel}</strong>
                     </div>
 
                     <div style={styles.socialCardBottom}>
@@ -2957,23 +3295,23 @@ ${logLines}${commentText}${mediaText}`;
 
                       <div style={styles.socialMetricRow}>
                         <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>TIME</span>
+                          <span style={styles.socialMetricLabel}>WEEK</span>
                           <strong style={styles.socialMetricValue}>
-                            {cardTotalMinutes || 0}min
+                            {profileStats.weeklyRounds}R
                           </strong>
                         </div>
 
                         <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>LOGS</span>
+                          <span style={styles.socialMetricLabel}>TOTAL</span>
                           <strong style={styles.socialMetricValue}>
-                            {selectedLogs.length}
+                            {profileStats.totalRounds}R
                           </strong>
                         </div>
 
                         <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>FIGHTER</span>
+                          <span style={styles.socialMetricLabel}>STREAK</span>
                           <strong style={styles.socialMetricValue}>
-                            {profile.nickname || "나"}
+                            {levelUpStreakDays || 1}d
                           </strong>
                         </div>
                       </div>
@@ -2982,6 +3320,20 @@ ${logLines}${commentText}${mediaText}`;
                 )}
               </div>
             </div>
+
+            <button
+              type="button"
+              style={{
+                ...styles.saveImageButton,
+                ...(isSaveCardDisabled ? styles.disabledSaveButton : {}),
+              }}
+              onClick={isSaveCardDisabled ? undefined : handleSaveStoryImage}
+              disabled={isSaveCardDisabled || isSavingImage}
+            >
+              {isSavingImage
+                ? "스토리 저장 중..."
+                : "인스타 스토리로 저장 (9:16)"}
+            </button>
 
             <button
               type="button"
@@ -2998,8 +3350,6 @@ ${logLines}${commentText}${mediaText}`;
                 ? "이미지 저장 중..."
                 : isCardImagePreparing
                 ? "사진 준비 중..."
-                : isPreparingExport || !isExportReady
-                ? "저장 이미지 준비 중..."
                 : "카드 이미지 저장하기"}
             </button>
 
@@ -3012,8 +3362,8 @@ ${logLines}${commentText}${mediaText}`;
             </button>
 
             <p style={styles.shareHint}>
-              사진 카드는 저장해서 인스타그램이나 카카오톡에 공유할 수 있어.
-              영상 카드는 지금은 미리보기만 가능해.
+              STORY 스타일은 1080×1920 인스타 스토리 비율입니다. 위 버튼으로
+              바로 저장하거나, 스타일에서 STORY를 선택해 미리볼 수 있어요.
             </p>
 
             {exportPreview && (
@@ -3051,1313 +3401,8 @@ ${logLines}${commentText}${mediaText}`;
           </>
         )}
       </section>
-
-      <section style={styles.sectionCard}>
-        <p style={styles.kicker}>PROOF OF TRAINING</p>
-        <h2 style={styles.sectionTitle}>훈련 증명</h2>
-
-        <div style={styles.proofBox}>
-          <p style={styles.proofText}>
-            나는 지금까지 총{" "}
-            <strong style={styles.redText}>
-              {profileStats.totalRounds}라운드
-            </strong>
-            를 버텼고,{" "}
-            <strong style={styles.redText}>{profileStats.totalLogs}번</strong>의
-            훈련 기록을 남겼다.
-          </p>
-
-          <p style={styles.proofSmallText}>
-            자동 기록 {profileStats.timerCount}개 · 수동 기록{" "}
-            {profileStats.manualCount}개
-          </p>
-        </div>
-      </section>
-
-      <section style={styles.sectionCard}>
-        <p style={styles.kicker}>FEATURED LOG</p>
-        <h2 style={styles.sectionTitle}>대표 성장 로그</h2>
-
-        {profileStats.featuredLogs.length === 0 ? (
-          <div style={styles.emptyFeaturedLog}>
-            아직 대표로 보여줄 기록이 없어. 기록 화면에서 공개용 자랑 코멘트를
-            작성하면 여기에 표시돼.
-          </div>
-        ) : (
-          <div style={styles.featuredLogList}>
-            {profileStats.featuredLogs.map((log) => {
-              const rounds = getRounds(log);
-
-              return (
-                <div key={log.id} style={styles.featuredLogItem}>
-                  <div style={styles.featuredLogTop}>
-                    <div>
-                      <div style={styles.featuredBadgeRow}>
-                        <span style={styles.featuredBadge}>
-                          {log.sourceLabel ||
-                            (log.source === "timer" ? "자동 기록" : "수동 기록")}
-                        </span>
-
-                        {log.isEdited && (
-                          <span style={styles.featuredEditedBadge}>수정됨</span>
-                        )}
-                      </div>
-
-                      <h3 style={styles.featuredLogTitle}>{log.type}</h3>
-
-                      <p style={styles.featuredLogMeta}>
-                        {log.minutes || log.duration}분 · {rounds}R ·{" "}
-                        {log.difficultyLabel || "보통"} · {log.date}
-                      </p>
-                    </div>
-
-                    <strong style={styles.featuredScore}>+{log.score}점</strong>
-                  </div>
-
-                  <p style={styles.featuredComment}>
-                    {log.publicComment || log.memo}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section style={styles.sectionCard}>
-        <p style={styles.kicker}>ACHIEVEMENTS</p>
-        <h2 style={styles.sectionTitle}>업적</h2>
-
-        <div style={styles.achievementList}>
-          {profileStats.achievements.map((achievement) => (
-            <div
-              key={achievement.title}
-              style={{
-                ...styles.achievementItem,
-                ...(achievement.unlocked ? styles.unlocked : styles.locked),
-              }}
-            >
-              <span style={styles.achievementIcon}>
-                {achievement.unlocked ? "✓" : "잠김"}
-              </span>
-
-              <div>
-                <strong>{achievement.title}</strong>
-                <p style={styles.achievementDescription}>
-                  {achievement.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+        </>
+      )}
     </main>
   );
 }
-
-const styles = {
-  page: {
-    width: "100%",
-    maxWidth: "720px",
-    margin: "0 auto",
-    padding: "18px 16px 110px",
-    color: "#ffffff",
-    boxSizing: "border-box",
-  },
-
-  profileCard: {
-    borderRadius: "30px",
-    padding: "26px",
-    background:
-      "radial-gradient(circle at 90% 10%, rgba(255, 51, 51, 0.42), transparent 34%), linear-gradient(145deg, #222222, #050505)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    boxShadow: "0 22px 55px rgba(0, 0, 0, 0.45)",
-  },
-
-  cardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "16px",
-  },
-
-  kicker: {
-    margin: "0 0 10px",
-    color: "#ff5555",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.16em",
-  },
-
-  title: {
-    margin: 0,
-    fontSize: "34px",
-    lineHeight: 1.12,
-    letterSpacing: "-0.05em",
-  },
-
-  tierBadge: {
-    flexShrink: 0,
-    width: "92px",
-    height: "92px",
-    borderRadius: "24px",
-    background: "rgba(255, 59, 59, 0.16)",
-    border: "1px solid rgba(255, 85, 85, 0.5)",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  tierLabel: {
-    color: "rgba(255, 255, 255, 0.55)",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  tierName: {
-    marginTop: "6px",
-    fontSize: "18px",
-  },
-
-  photoSection: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-    marginTop: "24px",
-  },
-
-  photoCircle: {
-    width: "108px",
-    height: "108px",
-    borderRadius: "30px",
-    overflow: "hidden",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    flexShrink: 0,
-  },
-
-  profileImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    display: "block",
-  },
-
-  photoPlaceholder: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    color: "rgba(255, 255, 255, 0.5)",
-  },
-
-  photoButtons: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    flex: 1,
-  },
-
-  profileActionButton: {
-    flex: "1 1 120px",
-    minWidth: "120px",
-  },
-
-  photoButton: {
-    border: "none",
-    borderRadius: "16px",
-    padding: "13px 14px",
-    background: "#ff3333",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  darkButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: "16px",
-    padding: "13px 14px",
-    background: "rgba(255, 255, 255, 0.06)",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  profileSaveInlineButton: {
-    border: "none",
-    borderRadius: "16px",
-    padding: "13px 14px",
-    background: "#ffffff",
-    color: "#050505",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  profileNameBox: {
-    marginTop: "18px",
-    borderRadius: "20px",
-    padding: "16px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  profileNameLabel: {
-    display: "block",
-    color: "rgba(255, 255, 255, 0.45)",
-    fontSize: "11px",
-    fontWeight: 900,
-    letterSpacing: "0.12em",
-    marginBottom: "8px",
-  },
-
-  profileName: {
-    fontSize: "24px",
-  },
-
-  profileBio: {
-    margin: "10px 0 0",
-    color: "rgba(255, 255, 255, 0.68)",
-    fontSize: "14px",
-    lineHeight: 1.5,
-  },
-
-  profileEditInsideBox: {
-    marginTop: "18px",
-    paddingTop: "18px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-  },
-
-  label: {
-    display: "block",
-    marginBottom: "14px",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-  },
-
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    marginTop: "8px",
-    backgroundColor: "#050505",
-    color: "#ffffff",
-    border: "1px solid #44444a",
-    borderRadius: "14px",
-    padding: "13px",
-    fontSize: "15px",
-    fontWeight: 800,
-    outline: "none",
-  },
-
-  textarea: {
-    width: "100%",
-    minHeight: "88px",
-    boxSizing: "border-box",
-    marginTop: "8px",
-    backgroundColor: "#050505",
-    color: "#ffffff",
-    border: "1px solid #44444a",
-    borderRadius: "14px",
-    padding: "13px",
-    fontSize: "15px",
-    fontWeight: 700,
-    outline: "none",
-    resize: "vertical",
-    lineHeight: 1.5,
-  },
-
-  statGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "12px",
-    marginTop: "16px",
-  },
-
-  statBox: {
-    borderRadius: "24px",
-    padding: "18px",
-    background: "#171717",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
-  },
-
-  statLabel: {
-    display: "block",
-    color: "rgba(255, 255, 255, 0.52)",
-    fontSize: "13px",
-    fontWeight: 700,
-    marginBottom: "10px",
-  },
-
-  statValue: {
-    display: "block",
-    fontSize: "30px",
-    lineHeight: 1,
-  },
-
-  cardMakerSection: {
-    marginTop: "16px",
-    scrollMarginTop: "18px",
-    borderRadius: "26px",
-    padding: "21px",
-    background: "#121212",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
-  },
-
-  recentTrainingNotice: {
-    marginBottom: "16px",
-    padding: "15px",
-    borderRadius: "18px",
-    background: "rgba(255, 51, 51, 0.1)",
-    border: "1px solid rgba(255, 85, 85, 0.28)",
-  },
-
-  recentTrainingBadge: {
-    display: "inline-block",
-    marginBottom: "9px",
-    padding: "6px 9px",
-    borderRadius: "999px",
-    background: "#ff3333",
-    color: "#ffffff",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  recentTrainingTitle: {
-    display: "block",
-    color: "#ffffff",
-    fontSize: "15px",
-    fontWeight: 900,
-    marginBottom: "5px",
-  },
-
-  recentTrainingText: {
-    margin: 0,
-    color: "rgba(255, 255, 255, 0.68)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  selectorSection: {
-    marginBottom: "16px",
-  },
-
-  logSelectList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-
-  logSelectItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    width: "100%",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-    borderRadius: "18px",
-    background: "#050505",
-    padding: "14px",
-    color: "#ffffff",
-    cursor: "pointer",
-    textAlign: "left",
-  },
-
-  logSelectItemActive: {
-    border: "1px solid #ff3333",
-    background: "rgba(255, 51, 51, 0.08)",
-  },
-
-  logSelectCheck: {
-    width: "24px",
-    height: "24px",
-    borderRadius: "999px",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "13px",
-    fontWeight: 900,
-    flexShrink: 0,
-  },
-
-  logSelectTitle: {
-    display: "block",
-    fontSize: "15px",
-    fontWeight: 900,
-  },
-
-  logSelectMeta: {
-    margin: "6px 0 0",
-    color: "rgba(255, 255, 255, 0.54)",
-    fontSize: "13px",
-    lineHeight: 1.4,
-  },
-
-  cardPhotoBox: {
-    marginTop: "6px",
-    marginBottom: "16px",
-    padding: "16px",
-    borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  cardMakerLabel: {
-    margin: "0 0 8px",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-  },
-
-  cardMakerHelp: {
-    margin: "0 0 14px",
-    color: "rgba(255, 255, 255, 0.56)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  cardPhotoButtonRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "8px",
-  },
-
-  videoNotice: {
-    margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.55)",
-    fontSize: "12px",
-    lineHeight: 1.5,
-  },
-
-  filterSection: {
-    marginBottom: "16px",
-  },
-
-  cardStyleGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: "10px",
-  },
-
-  cardStyleButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: "16px",
-    padding: "14px",
-    background: "#050505",
-    color: "#ffffff",
-    textAlign: "left",
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-
-  activeCardStyleButton: {
-    background: "#ffffff",
-    color: "#050505",
-    border: "1px solid #ffffff",
-  },
-
-  filterGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "10px",
-  },
-
-  filterButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: "16px",
-    padding: "13px",
-    background: "#050505",
-    color: "#ffffff",
-    textAlign: "left",
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-
-  activeFilterButton: {
-    background: "#ff3333",
-    border: "1px solid #ff3333",
-  },
-
-  adjustSection: {
-    marginBottom: "16px",
-    padding: "16px",
-    borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  rangeLabel: {
-    marginTop: "12px",
-    marginBottom: "8px",
-    display: "flex",
-    justifyContent: "space-between",
-    color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: 900,
-  },
-
-  rangeInput: {
-    width: "100%",
-    accentColor: "#ff3333",
-  },
-
-  commentToggle: {
-    marginTop: "16px",
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 900,
-  },
-
-  commentCheckbox: {
-    width: "18px",
-    height: "18px",
-    accentColor: "#ff3333",
-  },
-
-  commentToggleHelp: {
-    margin: "8px 0 0",
-    color: "rgba(255, 255, 255, 0.5)",
-    fontSize: "12px",
-    lineHeight: 1.5,
-  },
-
-  trainingCard: {
-    marginTop: "16px",
-    borderRadius: "30px",
-    overflow: "hidden",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
-    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.4)",
-  },
-
-  trainingCardPhotoArea: {
-    position: "relative",
-    minHeight: "650px",
-    overflow: "hidden",
-  },
-
-  trainingCardImage: {
-    position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-    objectPosition: "center",
-    transformOrigin: "center",
-  },
-
-  trainingCardDefaultBg: {
-    position: "absolute",
-    inset: 0,
-    background:
-      "radial-gradient(circle at center, rgba(255, 255, 255, 0.04), transparent 34%)",
-  },
-
-  trainingCardOverlay: {
-    position: "absolute",
-    inset: 0,
-  },
-
-  trainingCardTextLayer: {
-    position: "relative",
-    zIndex: 1,
-    minHeight: "650px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: "22px",
-    boxSizing: "border-box",
-  },
-
-  trainingCardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-    alignItems: "center",
-  },
-
-  trainingCardKicker: {
-    color: "#ffffff",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.16em",
-  },
-
-  trainingCardBottomContent: {
-    marginTop: "auto",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    width: "100%",
-  },
-
-
-  basicPosterInfo: {
-    width: "min(320px, 86%)",
-    display: "flex",
-    alignItems: "stretch",
-    gap: "12px",
-    textShadow: "0 4px 16px rgba(0, 0, 0, 0.98)",
-  },
-  
-  basicPosterLine: {
-    width: "3px",
-    borderRadius: "999px",
-    background:
-      "linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 51, 51, 0.85))",
-    boxShadow: "0 0 18px rgba(255, 51, 51, 0.38)",
-    flexShrink: 0,
-  },
-  
-  basicPosterContent: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    minWidth: 0,
-  },
-  
-  basicPosterLabel: {
-    color: "rgba(255, 255, 255, 0.56)",
-    fontSize: "10px",
-    fontWeight: 950,
-    letterSpacing: "0.16em",
-  },
-  
-  basicTrainingLineList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-  
-  basicTrainingLine: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    color: "#ffffff",
-    lineHeight: 1.18,
-  },
-  
-  basicTrainingMore: {
-    color: "rgba(255, 255, 255, 0.62)",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-  
-  basicCardComment: {
-    margin: "4px 0 0",
-    width: "min(270px, 94%)",
-    color: "rgba(255, 255, 255, 0.76)",
-    fontSize: "12px",
-    lineHeight: 1.45,
-    fontWeight: 800,
-  },
-  
-  basicFighterMeta: {
-    marginTop: "4px",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    color: "rgba(255, 255, 255, 0.72)",
-    fontSize: "11px",
-    fontWeight: 900,
-    letterSpacing: "0.04em",
-  },
-
-
-  socialCardTextLayer: {
-    position: "relative",
-    zIndex: 1,
-    minHeight: "650px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: "24px",
-    boxSizing: "border-box",
-    color: "#ffffff",
-    textShadow: "0 5px 18px rgba(0, 0, 0, 0.95)",
-  },
-
-  socialCardTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    fontSize: "12px",
-    fontWeight: 900,
-    letterSpacing: "0.14em",
-  },
-
-  socialCardKicker: {
-    color: "rgba(255, 255, 255, 0.86)",
-  },
-
-  socialCardBottom: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-
-  socialTitle: {
-    margin: 0,
-    color: "#ffffff",
-    fontSize: "24px",
-    fontWeight: 950,
-    lineHeight: 1.12,
-    letterSpacing: "-0.04em",
-    maxWidth: "320px",
-  },
-
-  socialComment: {
-    margin: "9px 0 0",
-    width: "min(310px, 88%)",
-    color: "rgba(255, 255, 255, 0.8)",
-    fontSize: "13px",
-    lineHeight: 1.45,
-    fontWeight: 800,
-  },
-
-  socialMetricRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "7px",
-  },
-
-  socialMetricBox: {
-    padding: "9px 8px",
-    borderRadius: "14px",
-    background: "rgba(0, 0, 0, 0.26)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    backdropFilter: "blur(8px)",
-  },
-
-  socialMetricLabel: {
-    display: "block",
-    color: "rgba(255, 255, 255, 0.52)",
-    fontSize: "9px",
-    fontWeight: 900,
-    letterSpacing: "0.12em",
-    marginBottom: "5px",
-  },
-
-  socialMetricValue: {
-    display: "block",
-    color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: 950,
-    lineHeight: 1.15,
-  },
-
-  posterInputBox: {
-    marginTop: "18px",
-    paddingTop: "16px",
-    borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  posterInputGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "10px",
-  },
-
-  posterInputRow: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) 70px",
-    alignItems: "center",
-    gap: "8px",
-  },
-
-  posterInputLabel: {
-    display: "grid",
-    gridTemplateColumns: "82px minmax(0, 1fr)",
-    alignItems: "center",
-    gap: "8px",
-    color: "rgba(255, 255, 255, 0.82)",
-    fontSize: "12px",
-    fontWeight: 900,
-  },
-
-  posterInputLabelText: {
-    color: "rgba(255, 255, 255, 0.72)",
-    fontSize: "11px",
-    fontWeight: 950,
-    lineHeight: 1.2,
-    whiteSpace: "nowrap",
-  },
-
-  posterInput: {
-    width: "100%",
-    boxSizing: "border-box",
-    marginTop: 0,
-    backgroundColor: "#050505",
-    color: "#ffffff",
-    border: "1px solid rgba(255, 255, 255, 0.14)",
-    borderRadius: "13px",
-    padding: "11px",
-    fontSize: "13px",
-    fontWeight: 900,
-    outline: "none",
-  },
-
-  posterToggleLabel: {
-    height: "100%",
-    minHeight: "42px",
-    borderRadius: "13px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "11px",
-    fontWeight: 950,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "5px",
-    cursor: "pointer",
-    boxSizing: "border-box",
-  },
-
-  posterToggleCheckbox: {
-    width: "15px",
-    height: "15px",
-    accentColor: "#ff3333",
-    margin: 0,
-  },
-
-  posterCardTextLayer: {
-    position: "relative",
-    zIndex: 2,
-    minHeight: "700px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: "18px 16px 20px",
-    boxSizing: "border-box",
-    color: "#ffffff",
-    textAlign: "center",
-    textShadow: "0 7px 24px rgba(0, 0, 0, 0.98)",
-  },
-
-  posterVignette: {
-    position: "absolute",
-    inset: 0,
-    zIndex: 1,
-    background:
-      "radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.08), transparent 26%), linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.08) 28%, rgba(0, 0, 0, 0.58) 70%, rgba(0, 0, 0, 0.96)), radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.46))",
-    pointerEvents: "none",
-  },
-
-  posterHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: "11px",
-    fontWeight: 950,
-    letterSpacing: "0.34em",
-    textTransform: "uppercase",
-  },
-
-  posterHeaderLine: {
-    width: "58px",
-    height: "2px",
-    background:
-      "linear-gradient(90deg, transparent, rgba(255, 51, 51, 0.9), transparent)",
-    flexShrink: 1,
-  },
-
-  posterCenterBlock: {
-    marginTop: "auto",
-    marginBottom: "10px",
-    paddingTop: "220px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    textAlign: "center",
-  },
-
-  posterMainName: {
-    margin: 0,
-    maxWidth: "100%",
-    color: "#f4f1ea",
-    fontSize: "clamp(46px, 14vw, 92px)",
-    lineHeight: 0.86,
-    fontWeight: 950,
-    letterSpacing: "-0.08em",
-    textTransform: "uppercase",
-    overflowWrap: "break-word",
-    textShadow:
-      "0 4px 0 rgba(0, 0, 0, 0.6), 0 14px 34px rgba(0, 0, 0, 0.95)",
-  },
-
-  posterSubtitle: {
-    margin: "2px 0 0",
-    color: "#ff3333",
-    fontSize: "clamp(20px, 6.2vw, 38px)",
-    lineHeight: 1,
-    fontWeight: 950,
-    fontStyle: "italic",
-    letterSpacing: "-0.06em",
-    textTransform: "uppercase",
-    transform: "rotate(-3deg)",
-  },
-
-  posterStarLine: {
-    margin: "14px 0 8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    width: "100%",
-    color: "#ff3333",
-    fontSize: "15px",
-  },
-
-  posterStarRule: {
-    width: "78px",
-    height: "2px",
-    background:
-      "linear-gradient(90deg, transparent, rgba(255, 51, 51, 0.9), transparent)",
-  },
-
-  posterEventTitle: {
-    margin: "0",
-    color: "#e72a22",
-    fontSize: "clamp(28px, 8.3vw, 50px)",
-    lineHeight: 0.95,
-    fontWeight: 950,
-    letterSpacing: "-0.035em",
-    textTransform: "uppercase",
-    overflowWrap: "break-word",
-  },
-
-  posterDateText: {
-    margin: "8px 0 0",
-    color: "#ffffff",
-    fontSize: "clamp(22px, 6.4vw, 38px)",
-    lineHeight: 1,
-    fontWeight: 950,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-  },
-
-  posterBottomBlock: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "6px",
-  },
-
-  posterMetaText: {
-    margin: 0,
-    maxWidth: "94%",
-    color: "#ff3333",
-    fontSize: "9px",
-    lineHeight: 1.45,
-    fontWeight: 950,
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    overflowWrap: "break-word",
-  },
-
-  posterComment: {
-    margin: 0,
-    width: "min(360px, 92%)",
-    color: "rgba(255, 255, 255, 0.78)",
-    fontSize: "12px",
-    lineHeight: 1.45,
-    fontWeight: 850,
-  },
-
-  posterFooterText: {
-    margin: "2px 0 0",
-    maxWidth: "94%",
-    color: "rgba(255, 255, 255, 0.88)",
-    fontSize: "9px",
-    lineHeight: 1.55,
-    fontWeight: 950,
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    overflowWrap: "break-word",
-  },
-
-  saveImageButton: {
-    width: "100%",
-    marginTop: "14px",
-    border: "none",
-    borderRadius: "16px",
-    padding: "15px",
-    background: "#ffffff",
-    color: "#050505",
-    fontSize: "15px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  disabledSaveButton: {
-    background: "rgba(255, 255, 255, 0.14)",
-    color: "rgba(255, 255, 255, 0.62)",
-    cursor: "not-allowed",
-    opacity: 0.82,
-  },
-
-  copyButton: {
-    width: "100%",
-    marginTop: "14px",
-    border: "none",
-    borderRadius: "16px",
-    padding: "15px",
-    background: "#ff3333",
-    color: "#ffffff",
-    fontSize: "15px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  shareHint: {
-    margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.5)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  exportPreviewBox: {
-    marginTop: "14px",
-    padding: "14px",
-    borderRadius: "18px",
-    background: "rgba(255, 255, 255, 0.06)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-  },
-
-  exportPreviewTitle: {
-    display: "block",
-    color: "#ffffff",
-    fontSize: "14px",
-    fontWeight: 950,
-    marginBottom: "6px",
-  },
-
-  exportPreviewText: {
-    margin: "0 0 12px",
-    color: "rgba(255, 255, 255, 0.62)",
-    fontSize: "12px",
-    lineHeight: 1.5,
-  },
-
-  exportPreviewImage: {
-    width: "100%",
-    maxHeight: "520px",
-    objectFit: "contain",
-    borderRadius: "16px",
-    background: "#050505",
-    border: "1px solid rgba(255, 255, 255, 0.1)",
-    display: "block",
-  },
-
-  exportPreviewButtonRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 0.7fr",
-    gap: "8px",
-    marginTop: "12px",
-  },
-
-  exportPreviewPrimaryButton: {
-    border: "none",
-    borderRadius: "14px",
-    padding: "12px",
-    background: "#ffffff",
-    color: "#050505",
-    fontSize: "13px",
-    fontWeight: 950,
-    cursor: "pointer",
-  },
-
-  exportPreviewSecondaryButton: {
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    borderRadius: "14px",
-    padding: "12px",
-    background: "rgba(255, 255, 255, 0.06)",
-    color: "#ffffff",
-    fontSize: "13px",
-    fontWeight: 950,
-    cursor: "pointer",
-  },
-
-  sectionCard: {
-    marginTop: "16px",
-    borderRadius: "26px",
-    padding: "21px",
-    background: "#121212",
-    border: "1px solid rgba(255, 255, 255, 0.09)",
-  },
-
-  sectionTitle: {
-    margin: "0 0 14px",
-    fontSize: "22px",
-    letterSpacing: "-0.03em",
-  },
-
-  proofBox: {
-    padding: "18px",
-    borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-  },
-
-  proofText: {
-    margin: 0,
-    color: "rgba(255, 255, 255, 0.75)",
-    fontSize: "15px",
-    lineHeight: 1.6,
-  },
-
-  proofSmallText: {
-    margin: "12px 0 0",
-    color: "rgba(255, 255, 255, 0.46)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  redText: {
-    color: "#ff5555",
-  },
-
-  emptyFeaturedLog: {
-    padding: "18px",
-    borderRadius: "18px",
-    background: "rgba(255, 255, 255, 0.05)",
-    color: "rgba(255, 255, 255, 0.55)",
-    fontSize: "14px",
-    lineHeight: 1.5,
-  },
-
-  featuredLogList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-  },
-
-  featuredLogItem: {
-    padding: "16px",
-    borderRadius: "20px",
-    background: "rgba(255, 255, 255, 0.05)",
-    border: "1px solid rgba(255, 255, 255, 0.08)",
-  },
-
-  featuredLogTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "12px",
-  },
-
-  featuredBadgeRow: {
-    display: "flex",
-    gap: "6px",
-    flexWrap: "wrap",
-  },
-
-  featuredBadge: {
-    display: "inline-block",
-    padding: "5px 8px",
-    borderRadius: "999px",
-    background: "rgba(255, 51, 51, 0.14)",
-    color: "#ff7777",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  featuredEditedBadge: {
-    display: "inline-block",
-    padding: "5px 8px",
-    borderRadius: "999px",
-    background: "rgba(255, 255, 255, 0.08)",
-    color: "rgba(255, 255, 255, 0.65)",
-    fontSize: "11px",
-    fontWeight: 900,
-  },
-
-  featuredLogTitle: {
-    margin: "10px 0 6px",
-    fontSize: "17px",
-    fontWeight: 900,
-  },
-
-  featuredLogMeta: {
-    margin: 0,
-    color: "rgba(255, 255, 255, 0.52)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  featuredScore: {
-    color: "#ff5555",
-    fontSize: "16px",
-    whiteSpace: "nowrap",
-  },
-
-  featuredComment: {
-    margin: "14px 0 0",
-    padding: "13px",
-    borderRadius: "16px",
-    background: "rgba(0, 0, 0, 0.28)",
-    color: "rgba(255, 255, 255, 0.82)",
-    fontSize: "14px",
-    lineHeight: 1.55,
-    fontWeight: 800,
-  },
-
-  achievementList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-
-  achievementItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    padding: "14px",
-    borderRadius: "18px",
-    fontSize: "14px",
-  },
-
-  unlocked: {
-    background: "rgba(255, 51, 51, 0.12)",
-    color: "#ffffff",
-    border: "1px solid rgba(255, 85, 85, 0.26)",
-  },
-
-  locked: {
-    background: "rgba(255, 255, 255, 0.04)",
-    color: "rgba(255, 255, 255, 0.45)",
-    border: "1px solid rgba(255, 255, 255, 0.06)",
-  },
-
-  achievementIcon: {
-    width: "38px",
-    height: "30px",
-    borderRadius: "12px",
-    background: "rgba(255, 255, 255, 0.08)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "12px",
-    fontWeight: 900,
-    flexShrink: 0,
-  },
-
-  achievementDescription: {
-    margin: "5px 0 0",
-    color: "rgba(255, 255, 255, 0.55)",
-    fontSize: "12px",
-    lineHeight: 1.4,
-  },
-};

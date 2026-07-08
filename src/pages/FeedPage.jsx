@@ -7,7 +7,7 @@ function FeedPage() {
     <div>
       <section>
         <p style={sectionLabel}>COMMUNITY</p>
-        <h2 style={titleStyle}>🌍 공유 피드</h2>
+        <h2 style={titleStyle}>공유 피드</h2>
         <p style={descStyle}>
           내가 공유한 운동 기록을 피드 형태로 확인하는 공간이야.
         </p>
@@ -23,7 +23,7 @@ function FeedPage() {
             <div key={item.feedId} style={feedCardStyle}>
               <div style={feedTopStyle}>
                 <div>
-                  <strong style={{ fontSize: "17px" }}>🥊 익명의 복서</strong>
+                  <strong style={{ fontSize: "17px" }}>익명의 복서</strong>
                   <p style={{ color: "#888", margin: "6px 0 0" }}>
                     {item.date}
                   </p>

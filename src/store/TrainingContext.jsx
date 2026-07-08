@@ -5,14 +5,88 @@ import {
   useMemo,
   useState,
 } from "react";
+import {
+  calculateLogScore,
+  getConditionLabel,
+  getLogRounds,
+  getWeekEnd,
+  getWeekStart,
+  isThisWeek,
+  normalizeLogScores,
+} from "../utils/trainingStats";
+import { sanitizeProfileForStorage } from "../utils/privacy";
+import {
+  createBackupPayload,
+  mergeFeed,
+  mergeLogs,
+  parseBackupFileText,
+  validateBackupPayload,
+} from "../utils/dataBackup";
+import { validateBodySpecs } from "../utils/bodySpecs";
+import { getFighterProgress } from "../utils/fighterProgress";
+import { syncListingFromProfile } from "../utils/sparringPartners";
+import { registerNickname } from "../api/nicknameApi";
 
 const TrainingContext = createContext(null);
 
-const STORAGE_KEY = "fitness-league-logs";
-const FEED_STORAGE_KEY = "fitness-league-feed";
-const TIER_STORAGE_KEY = "fitness-league-tier";
-const MODE_STORAGE_KEY = "fitness-league-mode";
-const PROFILE_STORAGE_KEY = "fitness-league-profile";
+export const GUEST_USER_ID = "local-user";
+
+const LEGACY_STORAGE_KEYS = {
+  logs: "fitness-league-logs",
+  feed: "fitness-league-feed",
+  mode: "fitness-league-mode",
+  profile: "fitness-league-profile",
+};
+
+function getStorageKeys(userId) {
+  if (!userId || userId === GUEST_USER_ID) {
+    return LEGACY_STORAGE_KEYS;
+  }
+
+  return {
+    logs: `fitness-league-logs-${userId}`,
+    feed: `fitness-league-feed-${userId}`,
+    mode: `fitness-league-mode-${userId}`,
+    profile: `fitness-league-profile-${userId}`,
+  };
+}
+
+function migrateLegacyStorage(userId) {
+  const keys = getStorageKeys(userId);
+
+  if (localStorage.getItem(keys.logs)) {
+    return;
+  }
+
+  if (!localStorage.getItem(LEGACY_STORAGE_KEYS.logs)) {
+    return;
+  }
+
+  Object.entries(LEGACY_STORAGE_KEYS).forEach(([field, legacyKey]) => {
+    const value = localStorage.getItem(legacyKey);
+
+    if (value !== null) {
+      localStorage.setItem(keys[field], value);
+    }
+  });
+}
+
+function loadUserState(userId) {
+  migrateLegacyStorage(userId);
+
+  const keys = getStorageKeys(userId);
+  const savedProfile = loadStorage(keys.profile, DEFAULT_PROFILE);
+
+  return {
+    logs: normalizeLogScores(loadStorage(keys.logs, [])),
+    feed: loadStorage(keys.feed, []),
+    profile: {
+      ...DEFAULT_PROFILE,
+      ...sanitizeProfileForStorage(savedProfile),
+    },
+    mode: localStorage.getItem(keys.mode) || "solo",
+  };
+}
 
 const DAILY_SCORE_LIMIT = 120;
 
@@ -20,13 +94,15 @@ const DEFAULT_PROFILE = {
   nickname: "나",
   bio: "아직 초보지만 링에 계속 올라가는 중",
   photo: "",
-};
-
-const DIFFICULTY_MULTIPLIER = {
-  easy: 0.8,
-  normal: 1,
-  hard: 1.2,
-  crazy: 1.5,
+  heightCm: null,
+  weightKg: null,
+  reachCm: null,
+  weightClass: "라이트급",
+  experience: "1년차",
+  sparringStyle: "미디엄",
+  area: "",
+  contact: "",
+  onboardingComplete: false,
 };
 
 const DIFFICULTY_LABEL = {
@@ -35,39 +111,6 @@ const DIFFICULTY_LABEL = {
   hard: "빡셈",
   crazy: "죽음",
 };
-
-const TIERS = [
-  {
-    id: "bronze",
-    name: "브론즈",
-    keepScore: 0,
-    promoteScore: 150,
-  },
-  {
-    id: "silver",
-    name: "실버",
-    keepScore: 80,
-    promoteScore: 220,
-  },
-  {
-    id: "gold",
-    name: "골드",
-    keepScore: 150,
-    promoteScore: 320,
-  },
-  {
-    id: "platinum",
-    name: "플래티넘",
-    keepScore: 220,
-    promoteScore: 450,
-  },
-  {
-    id: "diamond",
-    name: "다이아",
-    keepScore: 300,
-    promoteScore: 600,
-  },
-];
 
 const SAMPLE_PLAYERS = [];
 
@@ -78,34 +121,6 @@ function getTodayString() {
   const date = String(today.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${date}`;
-}
-
-function getWeekStart(date = new Date()) {
-  const target = new Date(date);
-  const day = target.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-
-  target.setDate(target.getDate() + diff);
-  target.setHours(0, 0, 0, 0);
-
-  return target;
-}
-
-function getWeekEnd(date = new Date()) {
-  const weekStart = getWeekStart(date);
-  const weekEnd = new Date(weekStart);
-
-  weekEnd.setDate(weekStart.getDate() + 6);
-  weekEnd.setHours(23, 59, 59, 999);
-
-  return weekEnd;
-}
-
-function getShortDateText(date) {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${month}.${day}`;
 }
 
 function getSeasonInfo() {
@@ -129,19 +144,11 @@ function getSeasonInfo() {
   };
 }
 
-function isThisWeek(dateString) {
-  const date = new Date(`${dateString}T00:00:00`);
-  const weekStart = getWeekStart();
-  const nextWeekStart = new Date(weekStart);
+function getShortDateText(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
-  nextWeekStart.setDate(weekStart.getDate() + 7);
-
-  return date >= weekStart && date < nextWeekStart;
-}
-
-function calculateLogScore(minutes, difficulty) {
-  const multiplier = DIFFICULTY_MULTIPLIER[difficulty] || 1;
-  return Math.round(Number(minutes || 0) * multiplier);
+  return `${month}.${day}`;
 }
 
 function calculateWeeklyScore(logs) {
@@ -149,9 +156,7 @@ function calculateWeeklyScore(logs) {
   const scoreByDate = {};
 
   thisWeekLogs.forEach((log) => {
-    const minutes = Number(log.minutes || log.duration || 0);
-    const difficulty = log.difficulty || "normal";
-    const rawScore = calculateLogScore(minutes, difficulty);
+    const rawScore = calculateLogScore(log);
 
     if (!scoreByDate[log.date]) {
       scoreByDate[log.date] = 0;
@@ -165,44 +170,6 @@ function calculateWeeklyScore(logs) {
   }, 0);
 }
 
-function getTierById(tierId) {
-  return TIERS.find((tier) => tier.id === tierId) || TIERS[0];
-}
-
-function getNextTier(currentTierId) {
-  const currentIndex = TIERS.findIndex((tier) => tier.id === currentTierId);
-
-  if (currentIndex === -1 || currentIndex === TIERS.length - 1) {
-    return null;
-  }
-
-  return TIERS[currentIndex + 1];
-}
-
-function getTierStatus(currentTier, weeklyScore) {
-  if (weeklyScore >= currentTier.promoteScore) {
-    return {
-      type: "promote",
-      title: "승급 가능",
-      message: "이번 주 기준을 넘겼어요. 시즌 종료 시 승급 후보입니다.",
-    };
-  }
-
-  if (weeklyScore >= currentTier.keepScore) {
-    return {
-      type: "safe",
-      title: "티어 안전",
-      message: "이번 주 티어 유지 기준을 넘겼어요.",
-    };
-  }
-
-  return {
-    type: "danger",
-    title: "강등 위험",
-    message: "이번 주 유지 점수가 부족해요. 조금만 더 움직이면 됩니다.",
-  };
-}
-
 function loadStorage(key, defaultValue) {
   try {
     const saved = localStorage.getItem(key);
@@ -212,8 +179,12 @@ function loadStorage(key, defaultValue) {
   }
 }
 
-function getFinalRounds({ rounds, totalRounds, completedRounds }) {
-  return Number(rounds || totalRounds || completedRounds || 0);
+function getFinalRounds(logLike) {
+  if (typeof logLike === "object") {
+    return getLogRounds(logLike);
+  }
+
+  return Number(logLike || 0);
 }
 
 function getRecordSourceLabel(source) {
@@ -222,51 +193,40 @@ function getRecordSourceLabel(source) {
   return "기록";
 }
 
-export function TrainingProvider({ children }) {
-  const [logs, setLogs] = useState(() => {
-    return loadStorage(STORAGE_KEY, []);
-  });
+export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
+  const storageKeys = useMemo(() => getStorageKeys(userId), [userId]);
 
-  const [feed, setFeed] = useState(() => {
-    return loadStorage(FEED_STORAGE_KEY, []);
-  });
-
-  const [profile, setProfile] = useState(() => {
-    const savedProfile = loadStorage(PROFILE_STORAGE_KEY, DEFAULT_PROFILE);
-
-    return {
-      ...DEFAULT_PROFILE,
-      ...savedProfile,
-    };
-  });
-
-  const [tierId, setTierId] = useState(() => {
-    return localStorage.getItem(TIER_STORAGE_KEY) || "bronze";
-  });
-
-  const [mode, setMode] = useState(() => {
-    return localStorage.getItem(MODE_STORAGE_KEY) || "solo";
-  });
+  const [logs, setLogs] = useState(() => loadUserState(userId).logs);
+  const [feed, setFeed] = useState(() => loadUserState(userId).feed);
+  const [profile, setProfile] = useState(() => loadUserState(userId).profile);
+  const [mode, setMode] = useState(() => loadUserState(userId).mode);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-  }, [logs]);
+    const nextState = loadUserState(userId);
+    setLogs(nextState.logs);
+    setFeed(nextState.feed);
+    setProfile(nextState.profile);
+    setMode(nextState.mode);
+  }, [userId]);
 
   useEffect(() => {
-    localStorage.setItem(FEED_STORAGE_KEY, JSON.stringify(feed));
-  }, [feed]);
+    localStorage.setItem(storageKeys.logs, JSON.stringify(logs));
+  }, [logs, storageKeys.logs]);
 
   useEffect(() => {
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-  }, [profile]);
+    localStorage.setItem(storageKeys.feed, JSON.stringify(feed));
+  }, [feed, storageKeys.feed]);
 
   useEffect(() => {
-    localStorage.setItem(TIER_STORAGE_KEY, tierId);
-  }, [tierId]);
+    localStorage.setItem(
+      storageKeys.profile,
+      JSON.stringify(sanitizeProfileForStorage(profile))
+    );
+  }, [profile, storageKeys.profile]);
 
   useEffect(() => {
-    localStorage.setItem(MODE_STORAGE_KEY, mode);
-  }, [mode]);
+    localStorage.setItem(storageKeys.mode, mode);
+  }, [mode, storageKeys.mode]);
 
   const weeklyLogs = useMemo(() => {
     return logs.filter((log) => isThisWeek(log.date));
@@ -276,9 +236,6 @@ export function TrainingProvider({ children }) {
     return calculateWeeklyScore(logs);
   }, [logs]);
 
-  const currentTier = getTierById(tierId);
-  const nextTier = getNextTier(tierId);
-  const tierStatus = getTierStatus(currentTier, weeklyScore);
   const isLeagueMode = mode === "league";
 
   const seasonInfo = useMemo(() => {
@@ -297,11 +254,13 @@ export function TrainingProvider({ children }) {
   }, [weeklyScore, profile.nickname]);
 
   function updateProfile(nextProfile) {
-    setProfile((prevProfile) => ({
-      ...prevProfile,
-      ...nextProfile,
-      updatedAt: new Date().toISOString(),
-    }));
+    setProfile((prevProfile) =>
+      sanitizeProfileForStorage({
+        ...prevProfile,
+        ...nextProfile,
+        updatedAt: new Date().toISOString(),
+      })
+    );
   }
 
   function updateNickname(nickname) {
@@ -328,11 +287,29 @@ export function TrainingProvider({ children }) {
     });
   }
 
+  async function completeOnboarding(form) {
+    const specs = validateBodySpecs(form);
+    await registerNickname(specs.nickname, userId);
+
+    const nextProfile = sanitizeProfileForStorage({
+      ...profile,
+      ...specs,
+    });
+
+    setProfile(nextProfile);
+    syncListingFromProfile(nextProfile, userId, {
+      fighterLevel: getFighterProgress(logs).level,
+    });
+
+    return nextProfile;
+  }
+
   function addLog({
     type,
     minutes,
     duration,
     difficulty = "normal",
+    condition = "normal",
     memo = "",
     date,
     rounds = 0,
@@ -348,6 +325,7 @@ export function TrainingProvider({ children }) {
       completedRounds,
     });
     const finalDate = date || getTodayString();
+    const finalType = type || "복싱 훈련";
 
     const finalSource =
       source || (finalRounds > 0 && memo.includes("라운드") ? "timer" : "manual");
@@ -355,7 +333,7 @@ export function TrainingProvider({ children }) {
     const newLog = {
       id: crypto.randomUUID(),
       date: finalDate,
-      type: type || "복싱 훈련",
+      type: finalType,
       minutes: finalMinutes,
       duration: finalMinutes,
       rounds: finalRounds,
@@ -363,15 +341,19 @@ export function TrainingProvider({ children }) {
       completedRounds: finalRounds,
       difficulty,
       difficultyLabel: DIFFICULTY_LABEL[difficulty] || "보통",
+      condition: condition || "normal",
+      conditionLabel: getConditionLabel(condition),
       memo,
       publicComment,
       source: finalSource,
       sourceLabel: getRecordSourceLabel(finalSource),
       isEdited: false,
-      score: calculateLogScore(finalMinutes, difficulty),
+      score: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+
+    newLog.score = calculateLogScore(newLog);
 
     setLogs((prevLogs) => [newLog, ...prevLogs]);
 
@@ -386,6 +368,7 @@ export function TrainingProvider({ children }) {
         }
 
         const nextDifficulty = updates.difficulty || log.difficulty || "normal";
+        const nextCondition = updates.condition || log.condition || "normal";
         const nextMinutes = Number(
           updates.minutes ?? updates.duration ?? log.minutes ?? log.duration ?? 0
         );
@@ -398,7 +381,7 @@ export function TrainingProvider({ children }) {
 
         const nextSource = updates.source || log.source || "manual";
 
-        return {
+        const nextLog = {
           ...log,
           ...updates,
           minutes: nextMinutes,
@@ -408,11 +391,17 @@ export function TrainingProvider({ children }) {
           completedRounds: nextRounds,
           difficulty: nextDifficulty,
           difficultyLabel: DIFFICULTY_LABEL[nextDifficulty] || "보통",
+          condition: nextCondition,
+          conditionLabel: getConditionLabel(nextCondition),
           source: nextSource,
           sourceLabel: getRecordSourceLabel(nextSource),
-          score: calculateLogScore(nextMinutes, nextDifficulty),
           isEdited: true,
           updatedAt: new Date().toISOString(),
+        };
+
+        return {
+          ...nextLog,
+          score: calculateLogScore(nextLog),
         };
       });
     });
@@ -451,7 +440,60 @@ export function TrainingProvider({ children }) {
     setFeed((prevFeed) => [newFeedItem, ...prevFeed]);
   }
 
+  function buildBackupPayload() {
+    return createBackupPayload({
+      logs,
+      feed,
+      profile,
+      mode,
+    });
+  }
+
+  function applyBackupData(data, { merge = false } = {}) {
+    if (!data || typeof data !== "object") {
+      throw new Error("백업 데이터가 비어 있습니다.");
+    }
+
+    if (!Array.isArray(data.logs)) {
+      throw new Error("훈련 기록 데이터가 없습니다.");
+    }
+
+    const nextLogs = merge
+      ? normalizeLogScores(mergeLogs(logs, data.logs))
+      : normalizeLogScores(data.logs);
+
+    const nextFeed = merge ? mergeFeed(feed, data.feed || []) : data.feed || [];
+    const safeImportedProfile = sanitizeProfileForStorage(data.profile);
+    const nextProfile = merge
+      ? { ...profile, ...safeImportedProfile }
+      : { ...DEFAULT_PROFILE, ...safeImportedProfile };
+
+    setLogs(nextLogs);
+    setFeed(nextFeed);
+    setProfile(nextProfile);
+
+    if (!merge) {
+      setMode(data.mode || "solo");
+    }
+
+    return {
+      logCount: nextLogs.length,
+      merged: merge,
+    };
+  }
+
+  function restoreBackupFromPayload(payload, options = {}) {
+    const validated = validateBackupPayload(payload);
+    return applyBackupData(validated.data, options);
+  }
+
+  function restoreBackupFromText(text, options = {}) {
+    const payload = parseBackupFileText(text);
+    return restoreBackupFromPayload(payload, options);
+  }
+
   const value = {
+    userId,
     logs,
     feed,
 
@@ -461,23 +503,21 @@ export function TrainingProvider({ children }) {
     updateBio,
     updateProfilePhoto,
     removeProfilePhoto,
+    completeOnboarding,
 
     addLog,
     updateLog,
     deleteLog,
     resetAllLogs,
     shareToFeed,
+    buildBackupPayload,
+    restoreBackupFromPayload,
+    restoreBackupFromText,
 
     weeklyLogs,
     weeklyScore,
     rankings,
     seasonInfo,
-
-    currentTier,
-    nextTier,
-    tierStatus,
-    tiers: TIERS,
-    setTierId,
 
     mode,
     setMode,

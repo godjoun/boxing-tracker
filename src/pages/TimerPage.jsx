@@ -1,5 +1,45 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
+import { getCompletionDelta } from "../utils/fighterProgress";
+import {
+  SPARRING_UNLOCK_LEVEL,
+  isSparringUnlocked,
+} from "../utils/featureUnlocks";
+import {
+  getCurriculumPhaseFocus,
+  markCurriculumSessionComplete,
+} from "../utils/homeCurriculum";
+import { formatTimerDurationLabel } from "../utils/curriculumTimerSync";
+import {
+  shouldApplyLaunchConfig,
+  useTimerSessionListener,
+} from "../hooks/useBackgroundTimerSession";
+import {
+  clearTimerSession,
+  getTimerSessionSummary,
+  reconcileTimerSession,
+  saveTimerSession,
+} from "../utils/timerSession";
+import {
+  bindTimerMediaSessionHandlers,
+  clearTimerMediaSession,
+  updateTimerMediaSession,
+} from "../utils/timerMediaSession";
+import {
+  playTimerBeep,
+  previewTimerBeep,
+  resumeTimerAudio,
+  startTimerAudioSession,
+  stopTimerAudioSession,
+  supportsHeadphoneTimerAudio,
+} from "../utils/timerAudio";
+import {
+  buildTimerSnapshot,
+  readInitialTimerState,
+} from "../utils/timerPagePersistence";
+import { styles } from "./TimerPage.styles";
+import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
 
 const MATCH_PRESETS = [
   {
@@ -7,32 +47,32 @@ const MATCH_PRESETS = [
     title: "3R",
     description: "가볍게 실전 감각을 올리는 기본 경기식",
     rounds: 3,
-    workMinutes: 3,
-    restMinutes: 1,
+    workSeconds: 180,
+    restSeconds: 30,
   },
   {
     id: "match6",
     title: "6R",
     description: "체력과 집중력을 같이 올리는 중간 강도",
     rounds: 6,
-    workMinutes: 3,
-    restMinutes: 1,
+    workSeconds: 180,
+    restSeconds: 30,
   },
   {
     id: "match9",
     title: "9R",
     description: "길게 버티는 훈련용 경기식",
     rounds: 9,
-    workMinutes: 3,
-    restMinutes: 1,
+    workSeconds: 180,
+    restSeconds: 30,
   },
   {
     id: "match12",
     title: "12R",
     description: "챔피언 라운드 감각으로 끝까지 버티기",
     rounds: 12,
-    workMinutes: 3,
-    restMinutes: 1,
+    workSeconds: 180,
+    restSeconds: 30,
   },
 ];
 
@@ -64,131 +104,325 @@ const formatTime = (seconds) => {
   return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 };
 
-export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
-  const { addLog } = useTraining();
+const formatDurationLabel = (seconds) => {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const min = Math.floor(safeSeconds / 60);
+  const sec = safeSeconds % 60;
 
-  const [selectedPresetId, setSelectedPresetId] = useState("match3");
+  if (min > 0 && sec > 0) {
+    return `${min}분 ${sec}초`;
+  }
+
+  if (min > 0) {
+    return `${min}분`;
+  }
+
+  return `${sec}초`;
+};
+
+const clampSeconds = (value, min, max) => {
+  const number = Number(value);
+
+  if (Number.isNaN(number)) return min;
+
+  return Math.max(min, Math.min(max, number));
+};
+
+export default function TimerPage({
+  launchConfig = null,
+  onLaunchConsumed,
+  onGoLog,
+  onGoHome,
+  onGoProfile,
+}) {
+  const { addLog, logs } = useTraining();
+  const initialTimerState = readInitialTimerState();
+
+  const [selectedPresetId, setSelectedPresetId] = useState(
+    initialTimerState.selectedPresetId
+  );
+  const [curriculumSessionId, setCurriculumSessionId] = useState(
+    initialTimerState.curriculumSessionId
+  );
+  const [curriculumRoutineTitle, setCurriculumRoutineTitle] = useState(
+    initialTimerState.curriculumRoutineTitle
+  );
+  const [curriculumLogType, setCurriculumLogType] = useState(
+    initialTimerState.curriculumLogType
+  );
+  const [curriculumSessionTitle, setCurriculumSessionTitle] = useState(
+    initialTimerState.curriculumSessionTitle
+  );
+  const [curriculumGoal, setCurriculumGoal] = useState(
+    initialTimerState.curriculumGoal
+  );
+  const [curriculumSessionCode, setCurriculumSessionCode] = useState(
+    initialTimerState.curriculumSessionCode
+  );
+  const [curriculumWeekLabel, setCurriculumWeekLabel] = useState(
+    initialTimerState.curriculumWeekLabel
+  );
+  const [curriculumWeekTheme, setCurriculumWeekTheme] = useState(
+    initialTimerState.curriculumWeekTheme
+  );
+  const [curriculumDrills, setCurriculumDrills] = useState(
+    initialTimerState.curriculumDrills
+  );
+  const [prepSecondsSetting, setPrepSecondsSetting] = useState(
+    initialTimerState.prepSecondsSetting
+  );
+  const [cooldownSecondsSetting, setCooldownSecondsSetting] = useState(
+    initialTimerState.cooldownSecondsSetting
+  );
+
+  const isCurriculumSession = curriculumDrills.length > 0;
+  const activePrepSeconds = isCurriculumSession ? prepSecondsSetting : PREP_SECONDS;
 
   const selectedPreset = MATCH_PRESETS.find((preset) => {
     return preset.id === selectedPresetId;
   });
 
-  const [totalRounds, setTotalRounds] = useState(3);
-  const [workMinutes, setWorkMinutes] = useState(3);
-  const [restMinutes, setRestMinutes] = useState(1);
+  const [totalRounds, setTotalRounds] = useState(initialTimerState.totalRounds);
+  const [workSecondsSetting, setWorkSecondsSetting] = useState(
+    initialTimerState.workSecondsSetting
+  );
+  const [restSecondsSetting, setRestSecondsSetting] = useState(
+    initialTimerState.restSecondsSetting
+  );
 
-  const [currentRound, setCurrentRound] = useState(1);
-  const [phase, setPhase] = useState("work"); // prep, work, rest, done
-  const [remainingTime, setRemainingTime] = useState(180);
-  const [isRunning, setIsRunning] = useState(false);
-  const [hasStartedSession, setHasStartedSession] = useState(false);
-  const [hasSavedLog, setHasSavedLog] = useState(false);
-  const [soundMode, setSoundMode] = useState("basic");
+  const [currentRound, setCurrentRound] = useState(initialTimerState.currentRound);
+  const [phase, setPhase] = useState(initialTimerState.phase);
+  const [remainingTime, setRemainingTime] = useState(
+    initialTimerState.remainingTime
+  );
+  const [isRunning, setIsRunning] = useState(initialTimerState.isRunning);
+  const [hasStartedSession, setHasStartedSession] = useState(
+    initialTimerState.hasStartedSession
+  );
+  const [hasSavedLog, setHasSavedLog] = useState(initialTimerState.hasSavedLog);
+  const [completionResult, setCompletionResult] = useState(null);
+  const [soundMode, setSoundMode] = useState(initialTimerState.soundMode);
 
-  const savedLogRef = useRef(false);
-  const previousPhaseRef = useRef("work");
-  const audioContextRef = useRef(null);
+  const savedLogRef = useRef(initialTimerState.hasSavedLog);
+  const previousPhaseRef = useRef(initialTimerState.phase);
 
-  const workSeconds = workMinutes * 60;
-  const restSeconds = restMinutes * 60;
+  const workSeconds = workSecondsSetting;
+  const restSeconds = restSecondsSetting;
 
-  const totalWorkMinutes = totalRounds * workMinutes;
-  const totalSessionMinutes =
-    totalRounds * workMinutes + Math.max(totalRounds - 1, 0) * restMinutes;
+  const totalWorkSeconds = totalRounds * workSecondsSetting;
+  const totalSessionSeconds =
+    totalWorkSeconds + Math.max(totalRounds - 1, 0) * restSecondsSetting;
+  const totalWorkMinutes = Math.max(1, Math.round(totalWorkSeconds / 60));
 
-  const routineTitle = selectedPreset
-    ? selectedPreset.title
-    : "직접 설정 루틴";
+  const routineTitle = curriculumRoutineTitle
+    ? curriculumRoutineTitle
+    : selectedPreset
+      ? selectedPreset.title
+      : "직접 설정 루틴";
 
-  const playBeep = async (type = "work") => {
-    if (soundMode === "mute") return;
+  const curriculumFocus = useMemo(
+    () =>
+      getCurriculumPhaseFocus(
+        curriculumDrills,
+        phase,
+        currentRound,
+        totalRounds
+      ),
+    [curriculumDrills, phase, currentRound, totalRounds]
+  );
 
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const applyPersistedState = useCallback((saved) => {
+    if (!saved) return;
 
-    if (!AudioContext) return;
+    setSelectedPresetId(saved.selectedPresetId ?? "match3");
+    setCurriculumSessionId(saved.curriculumSessionId ?? null);
+    setCurriculumRoutineTitle(saved.curriculumRoutineTitle ?? "");
+    setCurriculumLogType(saved.curriculumLogType ?? "");
+    setCurriculumSessionTitle(saved.curriculumSessionTitle ?? "");
+    setCurriculumGoal(saved.curriculumGoal ?? "");
+    setCurriculumSessionCode(saved.curriculumSessionCode ?? "");
+    setCurriculumWeekLabel(saved.curriculumWeekLabel ?? "");
+    setCurriculumWeekTheme(saved.curriculumWeekTheme ?? "");
+    setCurriculumDrills(
+      Array.isArray(saved.curriculumDrills) ? saved.curriculumDrills : []
+    );
+    setPrepSecondsSetting(saved.prepSecondsSetting ?? 10);
+    setCooldownSecondsSetting(saved.cooldownSecondsSetting ?? 0);
+    setTotalRounds(saved.totalRounds ?? 3);
+    setWorkSecondsSetting(saved.workSecondsSetting ?? 180);
+    setRestSecondsSetting(saved.restSecondsSetting ?? 30);
+    setCurrentRound(saved.currentRound ?? 1);
+    setPhase(saved.phase ?? "work");
+    setRemainingTime(saved.remainingTime ?? 180);
+    setIsRunning(Boolean(saved.isRunning));
+    setHasStartedSession(Boolean(saved.hasStartedSession));
+    setHasSavedLog(Boolean(saved.hasSavedLog));
+    setSoundMode(saved.soundMode ?? "basic");
+    previousPhaseRef.current = saved.phase ?? "work";
+    savedLogRef.current = Boolean(saved.hasSavedLog);
+  }, []);
 
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
+  useTimerSessionListener(applyPersistedState);
+
+  function clearCurriculumContext() {
+    setCurriculumSessionId(null);
+    setCurriculumRoutineTitle("");
+    setCurriculumLogType("");
+    setCurriculumSessionTitle("");
+    setCurriculumGoal("");
+    setCurriculumSessionCode("");
+    setCurriculumWeekLabel("");
+    setCurriculumWeekTheme("");
+    setCurriculumDrills([]);
+    setPrepSecondsSetting(10);
+    setCooldownSecondsSetting(0);
+  }
+
+  useEffect(() => {
+    const snapshot = buildTimerSnapshot({
+      selectedPresetId,
+      curriculumSessionId,
+      curriculumRoutineTitle,
+      curriculumLogType,
+      curriculumSessionTitle,
+      curriculumGoal,
+      curriculumSessionCode,
+      curriculumWeekLabel,
+      curriculumWeekTheme,
+      curriculumDrills,
+      prepSecondsSetting,
+      cooldownSecondsSetting,
+      totalRounds,
+      workSecondsSetting,
+      restSecondsSetting,
+      currentRound,
+      phase,
+      remainingTime,
+      isRunning,
+      hasStartedSession,
+      hasSavedLog,
+      soundMode,
+      routineTitle,
+    });
+
+    saveTimerSession(snapshot);
+    updateTimerMediaSession(getTimerSessionSummary(snapshot));
+  }, [
+    selectedPresetId,
+    curriculumSessionId,
+    curriculumRoutineTitle,
+    curriculumLogType,
+    curriculumSessionTitle,
+    curriculumGoal,
+    curriculumSessionCode,
+    curriculumWeekLabel,
+    curriculumWeekTheme,
+    curriculumDrills,
+    prepSecondsSetting,
+    cooldownSecondsSetting,
+    totalRounds,
+    workSecondsSetting,
+    restSecondsSetting,
+    currentRound,
+    phase,
+    remainingTime,
+    isRunning,
+    hasStartedSession,
+    hasSavedLog,
+    soundMode,
+    routineTitle,
+  ]);
+
+  useEffect(() => {
+    return bindTimerMediaSessionHandlers({
+      onPlay: () => {
+        resumeTimerAudio();
+        setIsRunning(true);
+      },
+      onPause: () => setIsRunning(false),
+    });
+  }, []);
+
+  useEffect(() => {
+    if (soundMode === "mute" || !hasStartedSession) {
+      stopTimerAudioSession();
+      return undefined;
     }
 
-    const audioContext = audioContextRef.current;
-
-    if (audioContext.state === "suspended") {
-      await audioContext.resume();
+    if (phase === "done") {
+      const timeoutId = setTimeout(() => stopTimerAudioSession(), 2500);
+      return () => clearTimeout(timeoutId);
     }
 
-    const now = audioContext.currentTime;
+    startTimerAudioSession();
+    return undefined;
+  }, [hasStartedSession, phase, soundMode]);
 
-    // 기본음: 띵~ 하는 복싱 종 울림 느낌
-    if (soundMode === "basic") {
-      const isRest = type === "rest";
-      const isDone = type === "done";
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        resumeTimerAudio();
+      }
 
-      const baseFrequencies = isRest
-        ? [520, 1040, 1560]
-        : [740, 1480, 2220];
+      if (document.visibilityState !== "visible") return;
 
-      const duration = isDone ? 0.95 : 0.72;
-      const volume = isDone ? 0.34 : 0.28;
+      const saved = reconcileTimerSession(
+        buildTimerSnapshot({
+          selectedPresetId,
+          curriculumSessionId,
+          curriculumRoutineTitle,
+          curriculumLogType,
+          curriculumSessionTitle,
+          curriculumGoal,
+          curriculumSessionCode,
+          curriculumWeekLabel,
+          curriculumWeekTheme,
+          curriculumDrills,
+          totalRounds,
+          workSecondsSetting,
+          restSecondsSetting,
+          currentRound,
+          phase,
+          remainingTime,
+          isRunning,
+          hasStartedSession,
+          hasSavedLog,
+          soundMode,
+          routineTitle,
+        })
+      );
 
-      baseFrequencies.forEach((frequency, index) => {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-
-        oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(frequency, now);
-
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(
-          volume / (index + 1),
-          now + 0.015
-        );
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-
-        oscillator.start(now);
-        oscillator.stop(now + duration);
-      });
-
-      return;
+      applyPersistedState(saved);
     }
 
-    // 강한 알림음: 운동 중 잘 들리는 짧고 강한 소리
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    const frequencyMap = {
-      prep: 920,
-      work: 1120,
-      rest: 620,
-      done: 1280,
-    };
-
-    const durationMap = {
-      prep: 0.26,
-      work: 0.3,
-      rest: 0.34,
-      done: 0.46,
-    };
-
-    const frequency = frequencyMap[type] || 1120;
-    const duration = durationMap[type] || 0.3;
-
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(frequency, now);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.42, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-
-    oscillator.start(now);
-    oscillator.stop(now + duration);
-  };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [
+    applyPersistedState,
+    selectedPresetId,
+    curriculumSessionId,
+    curriculumRoutineTitle,
+    curriculumLogType,
+    curriculumSessionTitle,
+    curriculumGoal,
+    curriculumSessionCode,
+    curriculumWeekLabel,
+    curriculumWeekTheme,
+    curriculumDrills,
+    prepSecondsSetting,
+    cooldownSecondsSetting,
+    totalRounds,
+    workSecondsSetting,
+    restSecondsSetting,
+    currentRound,
+    phase,
+    remainingTime,
+    isRunning,
+    hasStartedSession,
+    hasSavedLog,
+    soundMode,
+    routineTitle,
+  ]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -206,6 +440,11 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
         if (phase === "work") {
           if (currentRound === totalRounds) {
+            if (isCurriculumSession && cooldownSecondsSetting > 0) {
+              setPhase("cooldown");
+              return cooldownSecondsSetting;
+            }
+
             setPhase("done");
             setIsRunning(false);
             return 0;
@@ -213,6 +452,12 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
           setPhase("rest");
           return restSeconds;
+        }
+
+        if (phase === "cooldown") {
+          setPhase("done");
+          setIsRunning(false);
+          return 0;
         }
 
         if (phase === "rest") {
@@ -226,33 +471,37 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRunning, phase, currentRound, totalRounds, workSeconds, restSeconds]);
+  }, [isRunning, phase, currentRound, totalRounds, workSeconds, restSeconds, isCurriculumSession, cooldownSecondsSetting]);
 
   useEffect(() => {
     if (previousPhaseRef.current === phase) return;
 
     if (phase === "prep") {
-      playBeep("prep");
+      playTimerBeep(soundMode, "prep");
     }
 
     if (phase === "work") {
-      playBeep("work");
+      playTimerBeep(soundMode, "work");
     }
 
     if (phase === "rest") {
-      playBeep("rest");
+      playTimerBeep(soundMode, "rest");
+    }
+
+    if (phase === "cooldown") {
+      playTimerBeep(soundMode, "cooldown");
     }
 
     if (phase === "done") {
-      playBeep("done");
+      playTimerBeep(soundMode, "done");
 
       setTimeout(() => {
-        playBeep("done");
+        playTimerBeep(soundMode, "done");
       }, 180);
     }
 
     previousPhaseRef.current = phase;
-  }, [phase]);
+  }, [phase, soundMode]);
 
   useEffect(() => {
     if (phase !== "done") return;
@@ -261,18 +510,30 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
     savedLogRef.current = true;
 
-    addLog({
-      type: routineTitle,
+    const savedLog = addLog({
+      type: curriculumLogType || `${totalRounds}R 라운드 훈련`,
       minutes: totalWorkMinutes,
       duration: totalWorkMinutes,
       rounds: totalRounds,
       totalRounds,
       completedRounds: totalRounds,
       difficulty: "normal",
-      memo: `${totalRounds}라운드 완료 / 운동 ${workMinutes}분 / 휴식 ${restMinutes}분 / 준비 ${PREP_SECONDS}초`,
-      publicComment: `${totalRounds}라운드 완료. 오늘도 끝까지 버텼다.`,
+      source: "timer",
+      memo: `${routineTitle} · ${totalRounds}라운드 완료 / 운동 ${formatDurationLabel(
+        workSecondsSetting
+      )} / 휴식 ${formatDurationLabel(
+        restSecondsSetting
+      )} / 준비 ${isCurriculumSession ? formatTimerDurationLabel(activePrepSeconds) : `${PREP_SECONDS}초`}`,
+      publicComment: curriculumSessionId
+        ? `${routineTitle} 완료. 홈 커리큘럼 한 세션 더 버텼다.`
+        : `${totalRounds}R 완료. 오늘도 끝까지 버텼다.`,
     });
 
+    if (curriculumSessionId) {
+      markCurriculumSessionComplete(curriculumSessionId);
+    }
+
+    setCompletionResult(getCompletionDelta(logs, savedLog));
     setHasSavedLog(true);
   }, [
     phase,
@@ -280,31 +541,78 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     addLog,
     routineTitle,
     totalRounds,
-    workMinutes,
-    restMinutes,
+    workSecondsSetting,
+    restSecondsSetting,
     totalWorkMinutes,
+    logs,
+    curriculumLogType,
+    curriculumSessionId,
   ]);
 
-  const resetTimerState = (nextWorkMinutes = workMinutes) => {
+  const resetTimerState = (nextWorkSeconds = workSecondsSetting) => {
     setIsRunning(false);
     setCurrentRound(1);
     setPhase("work");
     previousPhaseRef.current = "work";
-    setRemainingTime(nextWorkMinutes * 60);
+    setRemainingTime(nextWorkSeconds);
     setHasStartedSession(false);
     setHasSavedLog(false);
+    setCompletionResult(null);
     savedLogRef.current = false;
+  };
+
+  const applyLaunchConfig = (config) => {
+    if (!config) return;
+
+    setSelectedPresetId(config.presetId || "custom");
+    setTotalRounds(config.rounds);
+    setWorkSecondsSetting(config.workSeconds);
+    setRestSecondsSetting(config.restSeconds);
+    setCurriculumSessionId(config.curriculumSessionId || null);
+    setCurriculumRoutineTitle(config.routineTitle || "");
+    setCurriculumLogType(config.logType || "");
+    setCurriculumSessionTitle(config.curriculumTitle || "");
+    setCurriculumGoal(config.curriculumGoal || "");
+    setCurriculumSessionCode(config.curriculumSessionCode || "");
+    setCurriculumWeekLabel(config.curriculumWeekLabel || "");
+    setCurriculumWeekTheme(config.curriculumWeekTheme || "");
+    setCurriculumDrills(config.curriculumDrills || []);
+    setPrepSecondsSetting(config.prepSeconds ?? 10);
+    setCooldownSecondsSetting(config.cooldownSeconds ?? 0);
+    resetTimerState(config.workSeconds);
   };
 
   const applyPreset = (preset) => {
     setSelectedPresetId(preset.id);
+    clearCurriculumContext();
     setTotalRounds(preset.rounds);
-    setWorkMinutes(preset.workMinutes);
-    setRestMinutes(preset.restMinutes);
-    resetTimerState(preset.workMinutes);
+    setWorkSecondsSetting(preset.workSeconds);
+    setRestSecondsSetting(preset.restSeconds);
+    resetTimerState(preset.workSeconds);
   };
 
-  const handleStart = () => {
+  useEffect(() => {
+    if (!launchConfig) return;
+    if (!shouldApplyLaunchConfig(launchConfig)) {
+      onLaunchConsumed?.();
+      return;
+    }
+
+    applyLaunchConfig(launchConfig);
+    onLaunchConsumed?.();
+  }, [launchConfig]);
+
+  const handleStart = async () => {
+    if (phase === "done" || !hasStartedSession) {
+      track("training_start", {
+        mode: launchConfig?.curriculumSessionId ? "curriculum" : "timer",
+      });
+    }
+
+    if (soundMode !== "mute") {
+      await startTimerAudioSession();
+    }
+
     if (phase === "done") {
       resetTimerState();
 
@@ -312,9 +620,9 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
         setHasStartedSession(true);
         setCurrentRound(1);
         setPhase("prep");
-        setRemainingTime(PREP_SECONDS);
+        setRemainingTime(activePrepSeconds);
         setIsRunning(true);
-        playBeep("prep");
+        playTimerBeep(soundMode, "prep");
       }, 0);
 
       return;
@@ -324,9 +632,9 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       setHasStartedSession(true);
       setCurrentRound(1);
       setPhase("prep");
-      setRemainingTime(PREP_SECONDS);
+      setRemainingTime(activePrepSeconds);
       setIsRunning(true);
-      playBeep("prep");
+      playTimerBeep(soundMode, "prep");
       return;
     }
 
@@ -339,6 +647,27 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
   const handleReset = () => {
     resetTimerState();
+    clearCurriculumContext();
+    clearTimerSession();
+    clearTimerMediaSession();
+    stopTimerAudioSession();
+  };
+
+  const handleEndCurriculum = () => {
+    if (
+      !window.confirm(
+        "커리큘럼을 종료할까요? 이번 세션은 완료 처리되지 않습니다."
+      )
+    ) {
+      return;
+    }
+
+    setIsRunning(false);
+    clearCurriculumContext();
+    clearTimerSession();
+    clearTimerMediaSession();
+    stopTimerAudioSession();
+    resetTimerState();
   };
 
   const handleTotalRoundsChange = (value) => {
@@ -347,36 +676,54 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     if (!number || number < 1) return;
 
     setSelectedPresetId("custom");
+    clearCurriculumContext();
     setTotalRounds(number);
-    resetTimerState(workMinutes);
+    resetTimerState(workSecondsSetting);
   };
 
-  const handleWorkMinutesChange = (value) => {
-    const number = Number(value);
+  const handleWorkSecondsChange = (deltaSeconds) => {
+    if (isRunning) return;
 
-    if (!number || number < 1) return;
+    const nextSeconds = clampSeconds(
+      workSecondsSetting + deltaSeconds,
+      10,
+      600
+    );
 
     setSelectedPresetId("custom");
-    setWorkMinutes(number);
+    clearCurriculumContext();
+    setWorkSecondsSetting(nextSeconds);
 
     if (!isRunning && phase === "work") {
-      setRemainingTime(number * 60);
+      setRemainingTime(nextSeconds);
     }
   };
 
-  const handleRestMinutesChange = (value) => {
-    const number = Number(value);
+  const handleRestSecondsChange = (deltaSeconds) => {
+    if (isRunning) return;
 
-    if (!number || number < 0) return;
+    const nextSeconds = clampSeconds(
+      restSecondsSetting + deltaSeconds,
+      0,
+      300
+    );
 
     setSelectedPresetId("custom");
-    setRestMinutes(number);
+    setRestSecondsSetting(nextSeconds);
+  };
+
+  const handleRestQuickSelect = (seconds) => {
+    if (isRunning) return;
+
+    setSelectedPresetId("custom");
+    setRestSecondsSetting(seconds);
   };
 
   const getPhaseText = () => {
     if (phase === "prep") return "준비 시간";
     if (phase === "work") return "훈련 시간";
     if (phase === "rest") return "휴식 시간";
+    if (phase === "cooldown") return "마무리 시간";
     return "운동 완료";
   };
 
@@ -384,12 +731,20 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
     if (phase === "prep") return styles.prepBadge;
     if (phase === "work") return styles.workBadge;
     if (phase === "rest") return styles.restBadge;
+    if (phase === "cooldown") return styles.prepBadge;
     return styles.doneBadge;
   };
 
   const getCurrentRoundName = () => {
-    if (phase === "prep") return "10초 후 1라운드 자동 시작";
+    if (phase === "prep") {
+      return `${formatTimerDurationLabel(activePrepSeconds)} 준비 후 1라운드 시작`;
+    }
+    if (phase === "cooldown") return "쿨다운 · 스트레칭";
     if (phase === "done") return "훈련 완료";
+
+    if (curriculumRoutineTitle) {
+      return `${curriculumRoutineTitle} · ${currentRound}라운드`;
+    }
 
     if (selectedPreset) {
       return `${selectedPreset.title} · ${currentRound}라운드`;
@@ -410,14 +765,14 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
   };
 
   return (
-    <div style={styles.page}>
+    <div className="timer-page" style={styles.page}>
       <section style={styles.heroCard}>
         <div style={styles.kicker}>BOXING ROUND TIMER</div>
 
         <h1 style={styles.title}>오늘 몇 라운드 버텼나?</h1>
 
         <p style={styles.subtitle}>
-          10초 준비 후 3분 라운드와 1분 휴식으로 훈련하고, 완료 기록을
+          10초 준비 후 3분 라운드와 30초 휴식으로 훈련하고, 완료 기록을
           프로필 카드로 남기세요.
         </p>
 
@@ -440,7 +795,14 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
                     ? styles.activeSoundOptionButton
                     : {}),
                 }}
-                onClick={() => setSoundMode(option.id)}
+                onClick={() => {
+                  setSoundMode(option.id);
+                  if (option.id === "mute") {
+                    stopTimerAudioSession();
+                    return;
+                  }
+                  previewTimerBeep(option.id);
+                }}
               >
                 <strong style={styles.soundOptionLabel}>{option.label}</strong>
                 <span style={styles.soundOptionDescription}>
@@ -449,6 +811,19 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
               </button>
             ))}
           </div>
+
+          {supportsHeadphoneTimerAudio() ? (
+            <div style={styles.headsetTip}>
+              <strong style={styles.headsetTipTitle}>
+                에어팟 · 블루투스 이어폰
+              </strong>
+              <span style={styles.headsetTipCopy}>
+                타이머 시작 후 연결된 이어폰으로 라운드 알림음이 재생됩니다.
+                화면을 끄거나 다른 앱으로 이동해도 들으려면 무음 모드를 해제하고
+                시작 버튼을 눌러 주세요.
+              </span>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -469,6 +844,22 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
 
         <div style={styles.timeText}>{formatTime(remainingTime)}</div>
 
+        {curriculumDrills.length > 0 && phase !== "done" ? (
+          <CurriculumTimerPanel
+            sessionTitle={curriculumSessionTitle}
+            sessionGoal={curriculumGoal}
+            sessionCode={curriculumSessionCode}
+            weekLabel={curriculumWeekLabel}
+            weekTheme={curriculumWeekTheme}
+            phase={phase}
+            currentRound={currentRound}
+            totalRounds={totalRounds}
+            focus={curriculumFocus}
+            drills={curriculumDrills}
+            onEndCurriculum={handleEndCurriculum}
+          />
+        ) : null}
+
         <div style={styles.sessionInfoGrid}>
           <div style={styles.sessionInfoBox}>
             <span style={styles.sessionInfoLabel}>라운드</span>
@@ -483,31 +874,125 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
           <div style={styles.sessionInfoBox}>
             <span style={styles.sessionInfoLabel}>전체</span>
             <strong style={styles.sessionInfoValue}>
-              {totalSessionMinutes}분
+              {formatDurationLabel(totalSessionSeconds)}
             </strong>
           </div>
         </div>
 
         {phase === "done" && (
           <div style={styles.doneBox}>
-            <div style={styles.completeTitle}>SESSION COMPLETE</div>
+            <div style={styles.completeTitle}>훈련 완료</div>
 
             <p style={styles.savedText}>
-              운동 기록에 자동 저장됐습니다. 이제 프로필 카드에서 인증 카드로
-              만들 수 있어요.
+              운동 기록에 자동 저장됐습니다.
             </p>
+
+            {completionResult && (
+              <div style={styles.growthResult}>
+                {completionResult.didLevelUp && (
+                  <div style={styles.levelUpBadge}>LEVEL UP!</div>
+                )}
+
+                <div style={styles.growthResultGrid}>
+                  <div style={styles.growthResultItem}>
+                    <span style={styles.growthResultLabel}>완료 라운드</span>
+                    <strong style={styles.growthResultValue}>{totalRounds}R</strong>
+                  </div>
+                  <div style={styles.growthResultItem}>
+                    <span style={styles.growthResultLabel}>이번 주</span>
+                    <strong style={styles.growthResultValue}>
+                      {completionResult.weeklyRounds}R
+                    </strong>
+                    {completionResult.weeklyRoundsAdded > 0 ? (
+                      <span style={styles.growthResultSub}>
+                        +{completionResult.weeklyRoundsAdded}R
+                      </span>
+                    ) : null}
+                  </div>
+                  <div style={styles.growthResultItem}>
+                    <span style={styles.growthResultLabel}>훈련 시간</span>
+                    <strong style={styles.growthResultValue}>
+                      {totalWorkMinutes}분
+                    </strong>
+                  </div>
+                  <div style={styles.growthResultItem}>
+                    <span style={styles.growthResultLabel}>획득 경험치</span>
+                    <strong style={styles.growthExpValue}>
+                      +{completionResult.gainedExp} EXP
+                    </strong>
+                  </div>
+                </div>
+
+                <div style={styles.levelProgressHeader}>
+                  <strong style={styles.levelText}>
+                    {completionResult.levelLabel}
+                  </strong>
+                  <span style={styles.levelProgressText}>
+                    {completionResult.isMaxLevel
+                      ? "MAX LEVEL"
+                      : `${completionResult.currentLevelExp} / ${completionResult.nextLevelExp} EXP`}
+                  </span>
+                </div>
+                <div style={styles.levelProgressTrack}>
+                  <div
+                    style={{
+                      ...styles.levelProgressFill,
+                      width: `${completionResult.currentLevelExp}%`,
+                    }}
+                  />
+                </div>
+                <p style={styles.nextLevelText}>
+                  {completionResult.isMaxLevel
+                    ? "최대 레벨에 도달했습니다"
+                    : `다음 레벨까지 ${completionResult.expToNextLevel} EXP`}
+                </p>
+
+                {completionResult.didLevelUp && completionResult.newTitle ? (
+                  <div style={styles.unlockNotice}>
+                    <span style={styles.unlockNoticeLabel}>
+                      NEW TITLE · 새 칭호
+                    </span>
+                    <p style={styles.unlockNoticeTitle}>
+                      {completionResult.newTitle.ko}
+                    </p>
+                    <p style={styles.unlockNoticeItem}>
+                      {completionResult.newTitle.en}
+                    </p>
+                    <p style={styles.unlockNoticeFlavor}>
+                      {completionResult.newTitle.flavor}
+                    </p>
+                    {completionResult.currentLevel === SPARRING_UNLOCK_LEVEL &&
+                    isSparringUnlocked(completionResult.currentLevel) ? (
+                      <p style={styles.unlockNoticeSub}>
+                        스파링 상대찾기 이용 가능
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             <button
               type="button"
               style={styles.goLogButton}
               onClick={handleGoProfile}
             >
-              내 프로필 확인하기
+              파이터 카드 만들기
             </button>
 
             <button
               type="button"
-              style={styles.secondaryButton}
+              style={styles.homeResultButton}
+              onClick={() => {
+                if (onGoHome) onGoHome();
+              }}
+            >
+              홈에서 성장 확인
+            </button>
+
+            <button
+              type="button"
+              style={styles.textResultButton}
               onClick={() => {
                 if (onGoLog) onGoLog();
               }}
@@ -541,7 +1026,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       <section style={styles.routineCard}>
         <div style={styles.cardHeaderRow}>
           <h2 style={styles.cardTitle}>경기식 라운드 선택</h2>
-          <span style={styles.cardHint}>3분 / 1분</span>
+          <span style={styles.cardHint}>3분 / 30초</span>
         </div>
 
         <div style={styles.routineButtonGrid}>
@@ -577,17 +1062,21 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
           <div style={styles.roundPreviewGrid}>
             <div>
               <span>운동</span>
-              <strong>{workMinutes}분</strong>
+              <strong>{formatDurationLabel(workSecondsSetting)}</strong>
             </div>
 
             <div>
               <span>휴식</span>
-              <strong>{restMinutes}분</strong>
+              <strong>{formatDurationLabel(restSecondsSetting)}</strong>
             </div>
 
             <div>
               <span>준비</span>
-              <strong>{PREP_SECONDS}초</strong>
+              <strong>
+                {isCurriculumSession
+                  ? formatTimerDurationLabel(activePrepSeconds)
+                  : `${PREP_SECONDS}초`}
+              </strong>
             </div>
           </div>
         </div>
@@ -596,7 +1085,7 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
       <section style={styles.settingCard}>
         <div style={styles.cardHeaderRow}>
           <h2 style={styles.cardTitle}>직접 설정</h2>
-          <span style={styles.cardHint}>커스텀</span>
+          <span style={styles.cardHint}>버튼으로 조절</span>
         </div>
 
         <label style={styles.label}>
@@ -612,435 +1101,121 @@ export default function TimerPage({ onGoLog, onGoHome, onGoProfile }) {
           />
         </label>
 
-        <label style={styles.label}>
-          운동 시간 / 분
-          <input
-            style={styles.input}
-            type="number"
-            min="1"
-            max="10"
-            value={workMinutes}
-            onChange={(event) => handleWorkMinutesChange(event.target.value)}
-            disabled={isRunning}
-          />
-        </label>
+        <div style={styles.settingGroup}>
+          <div style={styles.settingLabelRow}>
+            <span style={styles.settingLabel}>운동 시간</span>
+            <strong style={styles.timeDisplay}>
+              {formatTime(workSecondsSetting)}
+            </strong>
+          </div>
 
-        <label style={styles.label}>
-          휴식 시간 / 분
-          <input
-            style={styles.input}
-            type="number"
-            min="0"
-            max="5"
-            value={restMinutes}
-            onChange={(event) => handleRestMinutesChange(event.target.value)}
-            disabled={isRunning}
-          />
-        </label>
+          <div style={styles.timeButtonRow}>
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleWorkSecondsChange(-10)}
+              disabled={isRunning}
+            >
+              -10초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleWorkSecondsChange(-1)}
+              disabled={isRunning}
+            >
+              -1초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleWorkSecondsChange(1)}
+              disabled={isRunning}
+            >
+              +1초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleWorkSecondsChange(10)}
+              disabled={isRunning}
+            >
+              +10초
+            </button>
+          </div>
+        </div>
+
+        <div style={styles.settingGroup}>
+          <div style={styles.settingLabelRow}>
+            <span style={styles.settingLabel}>휴식 시간</span>
+            <strong style={styles.timeDisplay}>
+              {formatTime(restSecondsSetting)}
+            </strong>
+          </div>
+
+          <div style={styles.quickButtonRow}>
+            {[30, 45, 60].map((seconds) => (
+              <button
+                key={seconds}
+                type="button"
+                style={{
+                  ...styles.quickSelectButton,
+                  ...(restSecondsSetting === seconds
+                    ? styles.activeQuickSelectButton
+                    : {}),
+                }}
+                onClick={() => handleRestQuickSelect(seconds)}
+                disabled={isRunning}
+              >
+                {formatDurationLabel(seconds)}
+              </button>
+            ))}
+          </div>
+
+          <div style={styles.timeButtonRow}>
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleRestSecondsChange(-10)}
+              disabled={isRunning}
+            >
+              -10초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleRestSecondsChange(-1)}
+              disabled={isRunning}
+            >
+              -1초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleRestSecondsChange(1)}
+              disabled={isRunning}
+            >
+              +1초
+            </button>
+
+            <button
+              type="button"
+              style={styles.timeAdjustButton}
+              onClick={() => handleRestSecondsChange(10)}
+              disabled={isRunning}
+            >
+              +10초
+            </button>
+          </div>
+        </div>
       </section>
     </div>
   );
 }
 
-const styles = {
-  page: {
-    width: "100%",
-    maxWidth: "430px",
-    margin: "0 auto",
-    padding: "18px 14px 110px",
-    boxSizing: "border-box",
-    color: "#ffffff",
-  },
 
-  heroCard: {
-    background: "linear-gradient(180deg, #1d1d1f 0%, #121212 100%)",
-    border: "1px solid #2f2f33",
-    borderRadius: "24px",
-    padding: "20px",
-    marginBottom: "14px",
-    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.32)",
-  },
-
-  kicker: {
-    color: "#ff4444",
-    fontSize: "11px",
-    fontWeight: 900,
-    letterSpacing: "1px",
-    marginBottom: "8px",
-  },
-
-  title: {
-    fontSize: "26px",
-    lineHeight: 1.2,
-    margin: "0 0 8px",
-    fontWeight: 950,
-    letterSpacing: "-0.04em",
-  },
-
-  subtitle: {
-    color: "#b8b8b8",
-    fontSize: "13px",
-    lineHeight: 1.55,
-    margin: "0 0 14px",
-  },
-
-  soundBox: {
-    backgroundColor: "#0d0d0f",
-    border: "1px solid #2f2f33",
-    borderRadius: "16px",
-    padding: "12px",
-  },
-
-  soundHeaderRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "10px",
-    marginBottom: "10px",
-  },
-
-  soundText: {
-    color: "#eeeeee",
-    fontSize: "13px",
-    fontWeight: 900,
-  },
-
-  soundStatus: {
-    color: "#ff5555",
-    fontSize: "12px",
-    fontWeight: 950,
-  },
-
-  soundOptionGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "8px",
-  },
-
-  soundOptionButton: {
-    width: "100%",
-    border: "1px solid #2f2f33",
-    borderRadius: "14px",
-    padding: "11px 12px",
-    backgroundColor: "#151517",
-    color: "#ffffff",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "10px",
-    cursor: "pointer",
-    textAlign: "left",
-  },
-
-  activeSoundOptionButton: {
-    backgroundColor: "#ff3333",
-    border: "1px solid #ff3333",
-  },
-
-  soundOptionLabel: {
-    fontSize: "13px",
-    fontWeight: 950,
-  },
-
-  soundOptionDescription: {
-    color: "rgba(255, 255, 255, 0.68)",
-    fontSize: "11px",
-    fontWeight: 800,
-    whiteSpace: "nowrap",
-  },
-
-  timerCard: {
-    backgroundColor: "#1b1b1d",
-    border: "1px solid #343438",
-    borderRadius: "26px",
-    padding: "20px",
-    textAlign: "center",
-    marginBottom: "14px",
-    boxShadow: "0 18px 45px rgba(0, 0, 0, 0.28)",
-  },
-
-  timerTopRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "10px",
-    marginBottom: "14px",
-  },
-
-  phaseBadge: {
-    borderRadius: "999px",
-    padding: "7px 10px",
-    fontSize: "12px",
-    fontWeight: 900,
-  },
-
-  prepBadge: {
-    backgroundColor: "#ffffff",
-    color: "#111111",
-  },
-
-  workBadge: {
-    backgroundColor: "#ff3333",
-    color: "#ffffff",
-  },
-
-  restBadge: {
-    backgroundColor: "#2b65ff",
-    color: "#ffffff",
-  },
-
-  doneBadge: {
-    backgroundColor: "#25d366",
-    color: "#06150b",
-  },
-
-  roundText: {
-    color: "#ff4d4d",
-    fontSize: "14px",
-    fontWeight: 900,
-  },
-
-  currentRoundName: {
-    minHeight: "22px",
-    fontSize: "17px",
-    fontWeight: 900,
-    marginBottom: "8px",
-  },
-
-  timeText: {
-    fontSize: "62px",
-    lineHeight: 1,
-    fontWeight: 950,
-    letterSpacing: "1px",
-    margin: "14px 0 18px",
-  },
-
-  sessionInfoGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "8px",
-    marginBottom: "16px",
-  },
-
-  sessionInfoBox: {
-    backgroundColor: "#0e0e10",
-    border: "1px solid #2f2f33",
-    borderRadius: "14px",
-    padding: "10px 6px",
-  },
-
-  sessionInfoLabel: {
-    display: "block",
-    color: "#888888",
-    fontSize: "11px",
-    fontWeight: 800,
-    marginBottom: "4px",
-  },
-
-  sessionInfoValue: {
-    color: "#ffffff",
-    fontSize: "15px",
-  },
-
-  doneBox: {
-    backgroundColor: "#0f1912",
-    border: "1px solid #244f30",
-    borderRadius: "18px",
-    padding: "14px",
-    marginBottom: "14px",
-  },
-
-  completeTitle: {
-    color: "#7CFF7C",
-    fontSize: "12px",
-    fontWeight: 950,
-    letterSpacing: "1px",
-    marginBottom: "6px",
-  },
-
-  savedText: {
-    color: "#d9ffd9",
-    fontSize: "13px",
-    fontWeight: 800,
-    lineHeight: 1.5,
-    margin: "0 0 12px",
-  },
-
-  goLogButton: {
-    width: "100%",
-    backgroundColor: "#ffffff",
-    color: "#111111",
-    border: "none",
-    borderRadius: "14px",
-    padding: "13px 16px",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  secondaryButton: {
-    width: "100%",
-    marginTop: "8px",
-    backgroundColor: "#1c1c1c",
-    color: "#ffffff",
-    border: "1px solid #333333",
-    borderRadius: "14px",
-    padding: "13px 16px",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-
-  buttonRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "10px",
-  },
-
-  startButton: {
-    backgroundColor: "#ff3333",
-    color: "white",
-    border: "none",
-    borderRadius: "15px",
-    padding: "15px",
-    fontSize: "15px",
-    fontWeight: 950,
-    cursor: "pointer",
-  },
-
-  pauseButton: {
-    backgroundColor: "#3a3a3f",
-    color: "white",
-    border: "none",
-    borderRadius: "15px",
-    padding: "15px",
-    fontSize: "15px",
-    fontWeight: 950,
-    cursor: "pointer",
-  },
-
-  resetButton: {
-    backgroundColor: "#0f0f11",
-    color: "white",
-    border: "1px solid #44444a",
-    borderRadius: "15px",
-    padding: "15px",
-    fontSize: "15px",
-    fontWeight: 800,
-    cursor: "pointer",
-  },
-
-  routineCard: {
-    backgroundColor: "#1b1b1d",
-    border: "1px solid #343438",
-    borderRadius: "24px",
-    padding: "16px",
-    marginBottom: "14px",
-  },
-
-  cardHeaderRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "10px",
-    marginBottom: "12px",
-  },
-
-  cardTitle: {
-    fontSize: "17px",
-    margin: 0,
-    fontWeight: 950,
-  },
-
-  cardHint: {
-    color: "#9b9b9b",
-    fontSize: "12px",
-    fontWeight: 800,
-  },
-
-  routineButtonGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "8px",
-    marginBottom: "12px",
-  },
-
-  routineButton: {
-    backgroundColor: "#0f0f11",
-    color: "#dddddd",
-    border: "1px solid #39393f",
-    borderRadius: "18px",
-    padding: "18px 10px",
-    fontSize: "16px",
-    fontWeight: 950,
-    cursor: "pointer",
-    minHeight: "58px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-  },
-
-  activeRoutineButton: {
-    backgroundColor: "#ff3333",
-    color: "white",
-    border: "1px solid #ff3333",
-  },
-
-  selectedRoutineBox: {
-    backgroundColor: "#0f0f11",
-    border: "1px solid #303036",
-    borderRadius: "18px",
-    padding: "14px",
-  },
-
-  selectedRoutineTitle: {
-    fontSize: "16px",
-    fontWeight: 950,
-    marginBottom: "6px",
-  },
-
-  selectedRoutineDescription: {
-    color: "#a9a9a9",
-    fontSize: "12px",
-    marginTop: 0,
-    marginBottom: "12px",
-    lineHeight: 1.5,
-  },
-
-  roundPreviewGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    gap: "8px",
-  },
-
-  settingCard: {
-    backgroundColor: "#1b1b1d",
-    border: "1px solid #343438",
-    borderRadius: "24px",
-    padding: "16px",
-  },
-
-  label: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "7px",
-    marginBottom: "12px",
-    color: "#dddddd",
-    fontSize: "13px",
-    fontWeight: 850,
-  },
-
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    backgroundColor: "#050505",
-    color: "#ffffff",
-    border: "1px solid #44444a",
-    borderRadius: "12px",
-    padding: "12px",
-    fontSize: "15px",
-    fontWeight: 800,
-    outline: "none",
-  },
-};

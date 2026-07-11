@@ -215,16 +215,16 @@ export default function GrowthHubPage({
       >
         <div className="growth-hub-card-head">
           <div>
-            <p className="growth-hub-kicker">HOME CURRICULUM</p>
+            <p className="growth-hub-kicker">LEARN</p>
             <strong className="growth-hub-card-title">
               {curriculum.isComplete
-                ? "커리큘럼 완주"
-                : `커리큘럼 ${curriculum.completedCount}/${curriculum.totalSessions}`}
+                ? "프로그램 완주"
+                : `배움 ${curriculum.completedCount}/${curriculum.totalSessions}`}
             </strong>
             <small className="growth-hub-card-desc">
               {curriculum.isComplete
                 ? "4주 프로그램을 모두 마쳤어요"
-                : "레벨업 탭에서 이어서 훈련할 수 있어요"}
+                : "4주 코스에서 영상·훈련을 이어갈 수 있어요"}
             </small>
           </div>
           <span className="growth-hub-card-arrow" aria-hidden="true">

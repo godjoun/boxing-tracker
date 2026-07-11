@@ -129,7 +129,7 @@ export const styles = {
   },
 
   timerCard: {
-    backgroundColor: "var(--p-bg-card)",
+    backgroundColor: "var(--p-bg-panel)",
     border: "1px solid var(--p-border)",
     borderRadius: "26px",
     padding: "20px",
@@ -202,7 +202,7 @@ export const styles = {
   },
 
   sessionInfoBox: {
-    backgroundColor: "var(--p-bg-deep)",
+    backgroundColor: "var(--p-bg-inner)",
     border: "1px solid var(--p-border)",
     borderRadius: "14px",
     padding: "10px 6px",
@@ -475,7 +475,7 @@ export const styles = {
   },
 
   resetButton: {
-    backgroundColor: "var(--p-bg-deep)",
+    backgroundColor: "var(--p-bg-inner)",
     color: "var(--p-text)",
     border: "1px solid var(--p-border-strong)",
     borderRadius: "15px",
@@ -486,7 +486,7 @@ export const styles = {
   },
 
   routineCard: {
-    backgroundColor: "var(--p-bg-card)",
+    backgroundColor: "var(--p-bg-panel)",
     border: "1px solid var(--p-border)",
     borderRadius: "24px",
     padding: "16px",
@@ -521,7 +521,7 @@ export const styles = {
   },
 
   routineButton: {
-    backgroundColor: "var(--p-bg-deep)",
+    backgroundColor: "var(--p-bg-inner)",
     color: "var(--p-text-body)",
     border: "1px solid var(--p-border-soft)",
     borderRadius: "18px",

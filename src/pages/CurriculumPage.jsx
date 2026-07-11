@@ -28,7 +28,14 @@ import {
 import { getLevelTitle } from "../utils/fighterTitles";
 import { resolveSessionTimerConfig } from "../utils/curriculumTimerSync";
 import SessionDrillGuide from "../components/SessionDrillGuide";
+import LessonVideoPlayer from "../components/LessonVideoPlayer";
+import { getLessonBySessionId } from "../utils/lessonCatalog";
 import "./CurriculumPage.css";
+
+const CURRICULUM_TABS = [
+  { id: "today", label: "오늘" },
+  { id: "program", label: "4주 코스" },
+];
 
 const EMPTY_CUSTOM_FORM = {
   title: "",
@@ -137,6 +144,8 @@ export default function CurriculumPage({
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [sessionDrafts, setSessionDrafts] = useState({});
   const [expandedDrillId, setExpandedDrillId] = useState(null);
+  const [expandedVideoId, setExpandedVideoId] = useState(null);
+  const [activeTab, setActiveTab] = useState("today");
   const [openWeekId, setOpenWeekId] = useState(() => {
     const next = getRecommendedSession(progress);
     return next?.weekId || HOME_CURRICULUM.weeks[0]?.id || null;
@@ -156,6 +165,11 @@ export default function CurriculumPage({
     () =>
       recommendedAdjusted ? resolveSessionTimerConfig(recommendedAdjusted) : null,
     [recommendedAdjusted]
+  );
+
+  const recommendedLesson = useMemo(
+    () => (recommended ? getLessonBySessionId(recommended.id) : null),
+    [recommended]
   );
 
   const sessions = useMemo(() => getAllCurriculumSessions(), []);
@@ -187,16 +201,6 @@ export default function CurriculumPage({
 
   function toggleWeek(weekId) {
     setOpenWeekId((current) => (current === weekId ? null : weekId));
-  }
-
-  function jumpToWeek(weekId) {
-    setOpenWeekId(weekId);
-    requestAnimationFrame(() => {
-      document.getElementById(`curriculum-week-${weekId}`)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    });
   }
 
   function toggleSessionEdit(session) {
@@ -279,13 +283,38 @@ export default function CurriculumPage({
     <main className="curriculum-page">
       <header className="curriculum-hero">
         <button className="curriculum-back" type="button" onClick={onGoBack}>
-          <span aria-hidden="true">←</span> 더보기
+          <span aria-hidden="true">←</span> 레벨업
         </button>
-        <p className="curriculum-kicker">HOME CURRICULUM</p>
-        <h1>{HOME_CURRICULUM.title}</h1>
-        <p className="curriculum-intro">{HOME_CURRICULUM.subtitle}</p>
+        <p className="curriculum-kicker">LEARN</p>
+        <h1>배움</h1>
+        <p className="curriculum-intro">
+          {activeTab === "today"
+            ? "오늘 할 세션만 빠르게 시작하세요."
+            : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
+        </p>
       </header>
 
+      <div
+        className="curriculum-tabs"
+        role="tablist"
+        aria-label="배움 메뉴"
+      >
+        {CURRICULUM_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            className={`curriculum-tab${activeTab === tab.id ? " is-active" : ""}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "today" ? (
+        <>
       <section className="curriculum-card curriculum-progress-card">
         <div className="curriculum-progress-head">
           <div>
@@ -323,13 +352,6 @@ export default function CurriculumPage({
                 </p>
               ) : null}
             </div>
-            <button
-              type="button"
-              className="curriculum-cta"
-              onClick={() => handleStartSession(recommended)}
-            >
-              타이머로 시작
-            </button>
           </div>
           <div className="curriculum-today-meta">
             <span>{recommendedAdjusted.rounds}R</span>
@@ -340,39 +362,75 @@ export default function CurriculumPage({
               <span className="curriculum-adjusted-badge">조정됨</span>
             ) : null}
           </div>
+
+          {recommendedLesson ? (
+            <div className="curriculum-today-lesson">
+              <button
+                type="button"
+                className="curriculum-drill-toggle"
+                onClick={() =>
+                  setExpandedVideoId((current) =>
+                    current === recommended.id ? null : recommended.id
+                  )
+                }
+                aria-expanded={expandedVideoId === recommended.id}
+              >
+                {expandedVideoId === recommended.id
+                  ? "영상 접기"
+                  : recommendedLesson.hasVideo
+                    ? "① 영상 보기"
+                    : "① 영상 (준비 중)"}
+              </button>
+              {expandedVideoId === recommended.id ? (
+                <LessonVideoPlayer
+                  videoUrl={recommendedLesson.videoUrl}
+                  title={recommendedLesson.title}
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            className="curriculum-cta curriculum-today-start"
+            onClick={() => handleStartSession(recommended)}
+          >
+            ② 타이머 훈련 시작
+          </button>
         </section>
       ) : null}
 
-      <section className="curriculum-card curriculum-roadmap-card">
-        <p className="curriculum-section-label">4 WEEK PLAN</p>
-        <h2>프로그램 로드맵</h2>
-        <p className="curriculum-roadmap-intro">{HOME_CURRICULUM.intro}</p>
+      {progress.isComplete ? (
+        <section className="curriculum-card curriculum-graduate-card">
+          <p className="curriculum-section-label">{CURRICULUM_GRADUATION.badge}</p>
+          <h2>{CURRICULUM_GRADUATION.title}</h2>
+          <p className="curriculum-settings-note">{CURRICULUM_GRADUATION.message}</p>
+          <ul className="curriculum-graduate-list">
+            {CURRICULUM_GRADUATION.nextSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+        </>
+      ) : null}
 
-        <div className="curriculum-roadmap-quick">
-          {weekOverviews.map((week, index) => {
-            const weekPercent = week.sessionCount
-              ? Math.round((week.completedCount / week.sessionCount) * 100)
-              : 0;
-            const isActive = openWeekId === week.id;
-            const isDone = week.completedCount >= week.sessionCount;
-
-            return (
-              <button
-                key={week.id}
-                type="button"
-                className={`curriculum-roadmap-chip${isActive ? " is-active" : ""}${isDone ? " is-done" : ""}`}
-                onClick={() => jumpToWeek(week.id)}
-              >
-                <span className="curriculum-roadmap-chip-week">{week.label}</span>
-                <strong>{week.theme}</strong>
-                <em>{week.completedCount}/{week.sessionCount}</em>
-                <div className="curriculum-roadmap-chip-bar" aria-hidden="true">
-                  <div style={{ width: `${weekPercent}%` }} />
-                </div>
-              </button>
-            );
-          })}
+      {activeTab === "program" ? (
+        <>
+      <section className="curriculum-card curriculum-progress-card curriculum-progress-card-compact">
+        <div className="curriculum-progress-head">
+          <div>
+            <span>4주 코스</span>
+            <strong>
+              {progress.completedCount}/{progress.totalSessions} 세션
+            </strong>
+          </div>
+          <b>{progress.progressPercent}%</b>
         </div>
+        <div className="curriculum-progress-bar" aria-hidden="true">
+          <div style={{ width: `${progress.progressPercent}%` }} />
+        </div>
+        <p className="curriculum-progress-note">{HOME_CURRICULUM.intro}</p>
       </section>
 
       {progress.isComplete ? (
@@ -388,22 +446,7 @@ export default function CurriculumPage({
         </section>
       ) : null}
 
-      <section className="curriculum-card curriculum-equipment-card">
-        <p className="curriculum-section-label">EQUIPMENT</p>
-        <h2>준비물</h2>
-        <div className="curriculum-equipment-chips">
-          {HOME_CURRICULUM.equipment.map((item) => (
-            <span key={item}>{item}</span>
-          ))}
-        </div>
-      </section>
-
       <section className="curriculum-timeline">
-        <div className="curriculum-timeline-head">
-          <h2>12세션 커리큘럼</h2>
-          <p>주차를 눌러 세션을 펼쳐 보세요.</p>
-        </div>
-
         {HOME_CURRICULUM.weeks.map((week, weekIndex) => {
           const weekSessions = sessions.filter(
             (session) => session.weekId === week.id
@@ -455,6 +498,8 @@ export default function CurriculumPage({
                   const drillsOpen = expandedDrillId === session.id;
                   const editValues =
                     sessionDrafts[session.id] || getSessionEditValues(session);
+                  const sessionLesson = getLessonBySessionId(session.id);
+                  const videoOpen = expandedVideoId === session.id;
 
                   return (
                     <article
@@ -489,18 +534,43 @@ export default function CurriculumPage({
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        className="curriculum-drill-toggle"
-                        onClick={() =>
-                          setExpandedDrillId((current) =>
-                            current === session.id ? null : session.id
-                          )
-                        }
-                        aria-expanded={drillsOpen}
-                      >
-                        {drillsOpen ? "드릴 접기" : "드릴 보기"}
-                      </button>
+                      <div className="curriculum-session-media-row">
+                        <button
+                          type="button"
+                          className="curriculum-session-media-button"
+                          onClick={() =>
+                            setExpandedVideoId((current) =>
+                              current === session.id ? null : session.id
+                            )
+                          }
+                          aria-expanded={videoOpen}
+                        >
+                          {videoOpen
+                            ? "영상 접기"
+                            : sessionLesson?.hasVideo
+                              ? "① 영상"
+                              : "① 영상 준비 중"}
+                        </button>
+                        <button
+                          type="button"
+                          className="curriculum-drill-toggle curriculum-session-media-button"
+                          onClick={() =>
+                            setExpandedDrillId((current) =>
+                              current === session.id ? null : session.id
+                            )
+                          }
+                          aria-expanded={drillsOpen}
+                        >
+                          {drillsOpen ? "드릴 접기" : "드릴"}
+                        </button>
+                      </div>
+
+                      {videoOpen ? (
+                        <LessonVideoPlayer
+                          videoUrl={sessionLesson?.videoUrl || ""}
+                          title={session.title}
+                        />
+                      ) : null}
 
                       {drillsOpen ? (
                         <SessionDrillGuide
@@ -563,7 +633,7 @@ export default function CurriculumPage({
                           className="curriculum-session-button"
                           onClick={() => handleStartSession(session)}
                         >
-                          {status === "complete" ? "다시 하기" : "시작하기"}
+                          {status === "complete" ? "② 다시 훈련" : "② 훈련 시작"}
                         </button>
                       </div>
                     </article>
@@ -575,7 +645,10 @@ export default function CurriculumPage({
         })}
       </section>
 
-      <section className="curriculum-card curriculum-settings-card">
+      <details className="curriculum-card curriculum-advanced-details">
+        <summary>훈련 설정 · 커스텀 루틴</summary>
+
+      <section className="curriculum-card curriculum-settings-card curriculum-nested-card">
         <p className="curriculum-section-label">SETTINGS</p>
         <h2>내 훈련 강도</h2>
         <p className="curriculum-settings-note">
@@ -767,15 +840,11 @@ export default function CurriculumPage({
           ) : null}
         </section>
       ) : null}
+      </details>
+        </>
+      ) : null}
 
-      <section className="curriculum-card curriculum-market-card">
-        <p className="curriculum-section-label">COMING SOON</p>
-        <h2>코치 커리큘럼 마켓</h2>
-        <p className="curriculum-settings-note">
-          한 달짜리 전문 프로그램을 코치·연구자가 판매하는 마켓플레이스를 준비 중입니다.
-        </p>
-      </section>
-
+      {activeTab === "today" || activeTab === "program" ? (
       <button
         type="button"
         className="curriculum-refresh"
@@ -783,6 +852,7 @@ export default function CurriculumPage({
       >
         진행 상태 새로고침
       </button>
+      ) : null}
     </main>
   );
 }

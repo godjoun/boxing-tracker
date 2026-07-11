@@ -1285,3 +1285,214 @@
   border-color: rgba(196, 154, 46, 0.22);
   color: #1f1a12;
 }
+
+.curriculum-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.curriculum-tab {
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.curriculum-tab.is-active {
+  border-color: rgba(239, 63, 54, 0.34);
+  background: rgba(239, 63, 54, 0.14);
+  color: #fff;
+}
+
+.curriculum-today-start {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.curriculum-today-lesson {
+  margin-top: 12px;
+}
+
+.curriculum-session-media-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.curriculum-session-media-button {
+  margin-top: 0;
+}
+
+.curriculum-progress-card-compact {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.curriculum-advanced-details {
+  margin-top: 14px;
+}
+
+.curriculum-advanced-details > summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  list-style: none;
+}
+
+.curriculum-advanced-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.curriculum-nested-card {
+  margin-top: 12px;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.curriculum-lessons-panel {
+  margin-top: 0;
+}
+
+.curriculum-lessons-group {
+  margin-top: 14px;
+}
+
+.curriculum-lessons-group-head h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+
+.curriculum-lessons-group-head p {
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.curriculum-lessons-list {
+  display: grid;
+  gap: 8px;
+}
+
+.curriculum-lesson-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.curriculum-lesson-card.has-video {
+  border-color: rgba(196, 154, 46, 0.24);
+}
+
+.curriculum-lesson-card-copy span {
+  display: block;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.curriculum-lesson-card-copy strong {
+  display: block;
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+.curriculum-lesson-card-copy small {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+}
+
+.curriculum-lesson-card em {
+  flex: 0 0 auto;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 900;
+  color: #ef3f36;
+}
+
+.curriculum-lesson-card.has-video em {
+  color: #e8c66a;
+}
+
+.curriculum-lesson-player .curriculum-lesson-back {
+  margin-bottom: 8px;
+}
+
+.curriculum-lesson-embed {
+  position: relative;
+  width: 100%;
+  margin: 14px 0;
+  padding-top: 56.25%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+}
+
+.curriculum-lesson-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.curriculum-lesson-video {
+  width: 100%;
+  margin: 14px 0;
+  border-radius: 16px;
+  background: #000;
+}
+
+.curriculum-lesson-placeholder {
+  margin: 14px 0;
+  padding: 28px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.curriculum-lesson-placeholder span {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.curriculum-lesson-placeholder p {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+}
+
+.theme-light .curriculum-tab {
+  border-color: rgba(31, 26, 18, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--p-text-muted);
+}
+
+.theme-light .curriculum-tab.is-active {
+  border-color: rgba(196, 154, 46, 0.34);
+  background: rgba(212, 168, 50, 0.14);
+  color: #1f1a12;
+}
+
+.theme-light .curriculum-lesson-card {
+  border-color: rgba(31, 26, 18, 0.1);
+  background: rgba(255, 255, 255, 0.72);
+}

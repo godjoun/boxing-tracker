@@ -36,6 +36,10 @@ import {
 } from "../utils/timerPagePersistence";
 import { styles } from "./TimerPage.styles";
 import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
+import {
+  INTERVAL_TIMER_PRESET,
+  getTimerPresetById,
+} from "../utils/timerPresets";
 import "./TimerPage.css";
 
 const MATCH_PRESETS = [
@@ -175,9 +179,8 @@ export default function TimerPage({
   const isCurriculumSession = curriculumDrills.length > 0;
   const activePrepSeconds = isCurriculumSession ? prepSecondsSetting : PREP_SECONDS;
 
-  const selectedPreset = MATCH_PRESETS.find((preset) => {
-    return preset.id === selectedPresetId;
-  });
+  const selectedPreset = getTimerPresetById(selectedPresetId);
+  const isIntervalMode = selectedPresetId === INTERVAL_TIMER_PRESET.id;
 
   const [totalRounds, setTotalRounds] = useState(initialTimerState.totalRounds);
   const [workSecondsSetting, setWorkSecondsSetting] = useState(
@@ -586,6 +589,7 @@ export default function TimerPage({
   const applyPreset = (preset) => {
     setSelectedPresetId(preset.id);
     clearCurriculumContext();
+    setCurriculumLogType(preset.logType || "");
     setTotalRounds(preset.rounds);
     setWorkSecondsSetting(preset.workSeconds);
     setRestSecondsSetting(preset.restSeconds);
@@ -748,7 +752,9 @@ export default function TimerPage({
     }
 
     if (selectedPreset) {
-      return `${selectedPreset.title} · ${currentRound}라운드`;
+      return isIntervalMode
+        ? `인터벌 · ${currentRound}세트`
+        : `${selectedPreset.title} · ${currentRound}라운드`;
     }
 
     return `직접 설정 루틴 · ${currentRound}라운드`;
@@ -804,9 +810,9 @@ export default function TimerPage({
 
   return (
     <div
-      className={`timer-page${isFocusMode ? " timer-page-focus" : ""}${
-        isComplete ? " timer-page-complete" : ""
-      }`}
+      className={`timer-page${isSetupMode ? " timer-page-setup" : ""}${
+        isFocusMode ? " timer-page-focus" : ""
+      }${isComplete ? " timer-page-complete" : ""}`}
       style={styles.page}
     >
       {isSetupMode ? (
@@ -870,7 +876,9 @@ export default function TimerPage({
       ) : null}
 
       <section
-        className={isFocusMode ? "timer-focus-card" : ""}
+        className={`${isFocusMode ? "timer-focus-card" : ""}${
+          isSetupMode ? " timer-setup-card timer-setup-preview" : ""
+        }`.trim()}
         style={timerCardStyle}
         onClick={isFocusMode ? handleTimerSurfaceTap : undefined}
       >
@@ -887,7 +895,7 @@ export default function TimerPage({
             className={isFocusMode ? "timer-focus-round" : ""}
             style={styles.roundText}
           >
-            {phase === "done" ? "완료" : `${currentRound} / ${totalRounds} R`}
+            {phase === "done" ? "완료" : isIntervalMode ? `${currentRound} / ${totalRounds} 세트` : `${currentRound} / ${totalRounds} R`}
           </span>
         </div>
 
@@ -925,8 +933,12 @@ export default function TimerPage({
         {!isFocusMode && !isComplete ? (
         <div style={styles.sessionInfoGrid}>
           <div style={styles.sessionInfoBox}>
-            <span style={styles.sessionInfoLabel}>라운드</span>
-            <strong style={styles.sessionInfoValue}>{totalRounds}R</strong>
+            <span style={styles.sessionInfoLabel}>
+              {isIntervalMode ? "세트" : "라운드"}
+            </span>
+            <strong style={styles.sessionInfoValue}>
+              {isIntervalMode ? `${totalRounds}세트` : `${totalRounds}R`}
+            </strong>
           </div>
 
           <div style={styles.sessionInfoBox}>
@@ -951,7 +963,7 @@ export default function TimerPage({
             {completionResult ? (
               <>
                 <div className="timer-complete-statline">
-                  <strong>{totalRounds}R</strong>
+                  <strong>{isIntervalMode ? `${totalRounds}세트` : `${totalRounds}R`}</strong>
                   <span>·</span>
                   <em>+{completionResult.gainedExp} EXP</em>
                 </div>
@@ -1066,7 +1078,29 @@ export default function TimerPage({
       </section>
 
       {isSetupMode ? (
-      <>
+      <div className="timer-setup-config">
+      <section className="timer-interval-card">
+        <div className="timer-interval-head">
+          <div>
+            <p className="timer-interval-kicker">INTERVAL</p>
+            <h2>인터벌 훈련</h2>
+          </div>
+          <span>30초 / 15초</span>
+        </div>
+
+        <button
+          type="button"
+          className={`timer-interval-preset${
+            selectedPresetId === INTERVAL_TIMER_PRESET.id ? " is-active" : ""
+          }`}
+          onClick={() => applyPreset(INTERVAL_TIMER_PRESET)}
+          disabled={isRunning}
+        >
+          <strong>30초 · 15초 · 12세트</strong>
+          <span>{INTERVAL_TIMER_PRESET.description}</span>
+        </button>
+      </section>
+
       <section style={styles.routineCard}>
         <div style={styles.cardHeaderRow}>
           <h2 style={styles.cardTitle}>경기식 라운드 선택</h2>
@@ -1258,7 +1292,7 @@ export default function TimerPage({
           </div>
         </div>
       </section>
-      </>
+      </div>
       ) : null}
     </div>
   );

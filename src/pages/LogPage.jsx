@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
-import { getCompletionDelta, getFighterProgress } from "../utils/fighterProgress";
+import { getCompletionDelta } from "../utils/fighterProgress";
 import {
   SPARRING_UNLOCK_LEVEL,
   isSparringUnlocked,
@@ -112,14 +112,11 @@ function OptionButton({ isActive, title, description, onClick }) {
 export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLevel = 1 } = {}) {
   const {
     logs,
-    weeklyLogs,
     addLog,
     updateLog,
     deleteLog,
     resetAllLogs,
-    weeklyScore,
     dailyScoreLimit,
-    seasonInfo,
   } = useTraining();
 
   const [form, setForm] = useState(createEmptyForm);
@@ -130,37 +127,12 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
   const [showAdvancedWrite, setShowAdvancedWrite] = useState(false);
   const [historyLimit, setHistoryLimit] = useState(5);
 
-  const safeWeeklyLogs = Array.isArray(weeklyLogs) ? weeklyLogs : logs;
-  const fighter = useMemo(() => getFighterProgress(logs), [logs]);
-
   const previewScore = calculatePreviewScore(
     form.minutes,
     form.difficulty,
     form.rounds,
     form.type === CUSTOM_EXERCISE_VALUE ? form.customType : form.type
   );
-  const progressPercent = fighter.progressPercent;
-  const progressText = fighter.isMaxLevel
-    ? "최대 레벨에 도달했습니다"
-    : `다음 레벨까지 ${fighter.xpToNextLevel} EXP`;
-
-  const weeklySummary = useMemo(() => {
-    const workoutCount = safeWeeklyLogs.length;
-
-    const totalMinutes = safeWeeklyLogs.reduce((total, log) => {
-      return total + Number(log.minutes || log.duration || 0);
-    }, 0);
-
-    const totalRounds = safeWeeklyLogs.reduce((total, log) => {
-      return total + getRounds(log);
-    }, 0);
-
-    return {
-      workoutCount,
-      totalMinutes,
-      totalRounds,
-    };
-  }, [safeWeeklyLogs]);
 
   function updateFormField(field, value) {
     setForm((prev) => ({
@@ -377,71 +349,6 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
 
         {logView === "write" && (
           <>
-        <section className="log-card log-season-card">
-          <div className="log-season-head">
-            <div>
-              <p className="log-season-label">성장 현황</p>
-              <p className="log-season-range">
-                {fighter.levelLabel} · {fighter.fighterTitle}
-              </p>
-            </div>
-
-            <span className="log-season-badge">{fighter.fighterTitleEn}</span>
-          </div>
-
-          <div className="log-score-panel">
-            <div className="log-score-row">
-              <span>레벨 경험치</span>
-              <span className="log-score-value">
-                {fighter.isMaxLevel
-                  ? "MAX LEVEL"
-                  : `${fighter.currentLevelExp} / ${fighter.nextLevelExp} EXP`}
-              </span>
-            </div>
-
-            <div className="log-progress-track">
-              <div
-                className="log-progress-fill"
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-
-            <p className="log-progress-text">{progressText}</p>
-          </div>
-
-          <div className="log-score-panel">
-            <div className="log-score-row">
-              <span>이번 주 점수</span>
-              <span className="log-score-value">{weeklyScore}점</span>
-            </div>
-            <p className="log-progress-text">
-              {seasonInfo?.startText || "이번 주"} – {seasonInfo?.endText || "주간"}{" "}
-              · D-{seasonInfo?.daysLeft ?? 0}
-            </p>
-          </div>
-
-          <div className="log-stat-grid">
-            <div className="log-stat-box">
-              <p className="log-stat-label">훈련 횟수</p>
-              <p className="log-stat-number">{weeklySummary.workoutCount}</p>
-            </div>
-
-            <div className="log-stat-box">
-              <p className="log-stat-label">운동 시간</p>
-              <p className="log-stat-number">{weeklySummary.totalMinutes}</p>
-            </div>
-
-            <div className="log-stat-box">
-              <p className="log-stat-label">라운드</p>
-              <p className="log-stat-number">{weeklySummary.totalRounds}</p>
-            </div>
-          </div>
-
-          <p className="log-tier-status">
-            누적 {fighter.totalRounds}R · 총 EXP {fighter.totalExp}
-          </p>
-        </section>
-
         {reward?.type === "growth" && reward.delta ? (
           <section className="log-growth-reward" aria-live="polite">
             <p className="log-growth-kicker">주인공 스펙 상승</p>
@@ -701,9 +608,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
 
             <div className="log-preview">
               <div className="log-preview-copy">
-                <p className="log-preview-label">예상 획득 점수</p>
+                <p className="log-preview-label">예상 획득 EXP</p>
                 <p className="log-preview-note">
-                  라운드 · 분 · 난이도 기준 · 하루 최대 {dailyScoreLimit}점
+                  라운드 · 분 · 난이도 기준 · 하루 최대 {dailyScoreLimit} EXP
                 </p>
               </div>
               <strong className="log-preview-score">+{previewScore}</strong>
@@ -772,7 +679,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
                           </div>
 
                           <div>
-                            <p className="log-item-score">+{log.score}점</p>
+                            <p className="log-item-score">+{log.score} EXP</p>
 
                             <div className="log-action-row">
                               <button

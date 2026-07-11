@@ -22,7 +22,12 @@ import {
   parseBackupFileText,
   validateBackupPayload,
 } from "../utils/dataBackup";
-import { validateBodySpecs } from "../utils/bodySpecs";
+import { needsOnboarding, validateBodySpecs } from "../utils/bodySpecs";
+import {
+  DEV_DEFAULT_PROFILE,
+  DEV_USER_ID,
+  getDevUserId,
+} from "../utils/devMode";
 import { getFighterProgress } from "../utils/fighterProgress";
 import { syncListingFromProfile } from "../utils/sparringPartners";
 import { registerNickname } from "../api/nicknameApi";
@@ -71,19 +76,35 @@ function migrateLegacyStorage(userId) {
   });
 }
 
+function resolveDevProfile(profile) {
+  if (!getDevUserId() || !needsOnboarding(profile)) {
+    return profile;
+  }
+
+  return sanitizeProfileForStorage({
+    ...profile,
+    ...DEV_DEFAULT_PROFILE,
+  });
+}
+
 function loadUserState(userId) {
   migrateLegacyStorage(userId);
 
   const keys = getStorageKeys(userId);
   const savedProfile = loadStorage(keys.profile, DEFAULT_PROFILE);
+  const profile = resolveDevProfile({
+    ...DEFAULT_PROFILE,
+    ...sanitizeProfileForStorage(savedProfile),
+  });
+
+  if (userId === DEV_USER_ID && needsOnboarding(savedProfile)) {
+    localStorage.setItem(keys.profile, JSON.stringify(profile));
+  }
 
   return {
     logs: normalizeLogScores(loadStorage(keys.logs, [])),
     feed: loadStorage(keys.feed, []),
-    profile: {
-      ...DEFAULT_PROFILE,
-      ...sanitizeProfileForStorage(savedProfile),
-    },
+    profile,
     mode: localStorage.getItem(keys.mode) || "solo",
   };
 }
@@ -193,7 +214,10 @@ function getRecordSourceLabel(source) {
   return "기록";
 }
 
-export function TrainingProvider({ children, userId = GUEST_USER_ID }) {
+export function TrainingProvider({
+  children,
+  userId = getDevUserId() || GUEST_USER_ID,
+}) {
   const storageKeys = useMemo(() => getStorageKeys(userId), [userId]);
 
   const [logs, setLogs] = useState(() => loadUserState(userId).logs);

@@ -417,17 +417,17 @@ export const styles = {
     cursor: "pointer",
     borderRadius: "24px",
     padding: "22px",
-    color: "#fff",
-    border: "1px solid rgba(214, 162, 52, 0.32)",
-    background:
-      "radial-gradient(circle at 84% 10%, rgba(214, 162, 52, 0.3), transparent 44%), linear-gradient(150deg, #1b1509, #0b0b0c)",
+    color: "var(--p-text)",
+    border: "1px solid var(--p-border-strong)",
+    background: "var(--p-hero-bg)",
+    boxShadow: "var(--p-shadow-hero)",
   },
 
   cardStudioEntryKicker: {
     fontSize: "12px",
     fontWeight: 800,
     letterSpacing: "0.04em",
-    color: "rgba(232, 198, 106, 0.95)",
+    color: "var(--p-accent)",
   },
 
   cardStudioEntryTitle: {
@@ -438,14 +438,14 @@ export const styles = {
   cardStudioEntryDesc: {
     fontSize: "13px",
     lineHeight: 1.5,
-    color: "rgba(255, 255, 255, 0.72)",
+    color: "var(--p-text-muted)",
   },
 
   cardStudioEntryCta: {
     marginTop: "6px",
     fontSize: "14px",
     fontWeight: 900,
-    color: "#e8c66a",
+    color: "var(--p-accent)",
   },
 
   studioBackButton: {

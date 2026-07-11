@@ -11,15 +11,7 @@ export function needsOnboarding(profile) {
     return true;
   }
 
-  if (profile.onboardingComplete === true) {
-    return false;
-  }
-
-  if (profile.heightCm && profile.weightKg) {
-    return false;
-  }
-
-  return true;
+  return profile.onboardingComplete !== true;
 }
 
 export function validateBodySpecs(form) {

@@ -81,14 +81,23 @@ export default function OnboardingSetupPage() {
       return;
     }
 
-    if (verifiedNickname !== trimmedNickname) {
-      setError("파이터 이름 중복확인을 먼저 해 주세요.");
-      return;
-    }
-
     setSubmitting(true);
 
     try {
+      if (verifiedNickname !== trimmedNickname) {
+        const result = await checkNicknameAvailability(trimmedNickname, userId);
+
+        if (!result.available) {
+          setVerifiedNickname("");
+          setNicknameNotice(result.message);
+          setError("다른 파이터 이름을 입력해 주세요.");
+          return;
+        }
+
+        setVerifiedNickname(result.nickname);
+        setNicknameNotice(result.message);
+      }
+
       await completeOnboarding(form);
     } catch (submitError) {
       setError(submitError.message || "입력값을 확인해 주세요.");
@@ -141,7 +150,12 @@ export default function OnboardingSetupPage() {
               >
                 {nicknameNotice}
               </p>
-            ) : null}
+            ) : (
+              <p className="onboarding-inline-note">
+                제출 시 이름을 자동으로 확인합니다. 네트워크가 없어도 이 기기에서
+                진행할 수 있어요.
+              </p>
+            )}
           </div>
 
           <div className="onboarding-row">
@@ -176,7 +190,7 @@ export default function OnboardingSetupPage() {
           </div>
 
           <label className="onboarding-field">
-            <span>리치 (cm, 선택)</span>
+            <span>팔 길이 · 리치 (cm, 선택)</span>
             <input
               type="number"
               inputMode="numeric"

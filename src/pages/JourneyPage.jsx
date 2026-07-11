@@ -81,7 +81,7 @@ export default function JourneyPage({ onStartTraining, onGoBack }) {
         </div>
         <p className="journey-summary-note">
           {summary.careerStageKo} · {summary.levelLabel} · {summary.fighterTitle} ·
-          이번 주 {summary.weeklyScore}점 · 총 EXP {summary.totalExp}
+          이번 주 {summary.weeklyScore} EXP · 총 EXP {summary.totalExp}
         </p>
       </section>
 

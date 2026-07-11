@@ -5,7 +5,7 @@ import {
   SPARRING_UNLOCK_LEVEL,
 } from "../utils/featureUnlocks";
 import { getLevelTitle } from "../utils/fighterTitles";
-import { MENU_GROUPS, TIMER_MENU_CARD } from "../utils/appMenu";
+import { MENU_GROUPS } from "../utils/appMenu";
 
 export default function AppMenuBoard({
   fighterLevel = 1,
@@ -79,21 +79,6 @@ export default function AppMenuBoard({
           </div>
         </header>
       ) : null}
-
-      <button
-        type="button"
-        className="app-menu-timer-card accent-red"
-        onClick={() => selectItem(TIMER_MENU_CARD)}
-      >
-        <span className="app-menu-timer-icon" aria-hidden="true">
-          {TIMER_MENU_CARD.icon}
-        </span>
-        <div className="app-menu-timer-copy">
-          <strong>{TIMER_MENU_CARD.title}</strong>
-          <small>{TIMER_MENU_CARD.description}</small>
-        </div>
-        <em>시작</em>
-      </button>
 
       <div className="app-menu-sections">
         {MENU_GROUPS.map((group) => (

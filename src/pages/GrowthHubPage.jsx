@@ -7,6 +7,7 @@ export default function GrowthHubPage({
   onOpenStats,
   onOpenWeekly,
   onOpenJourney,
+  onStartTraining,
 }) {
   const { logs, weeklyScore } = useTraining();
 
@@ -16,6 +17,8 @@ export default function GrowthHubPage({
       stats: buildAllTimeStats(logs),
     };
   }, [logs]);
+
+  const isEmpty = fighter.totalLogs === 0;
 
   const items = [
     {
@@ -42,13 +45,31 @@ export default function GrowthHubPage({
   ];
 
   return (
-    <main style={styles.page}>
+    <main className="hub-page">
       <header style={styles.header}>
         <h1 style={styles.title}>성장</h1>
         <p style={styles.subtitle}>
           내 훈련이 어떻게 쌓이고 있는지 한눈에 확인하세요.
         </p>
       </header>
+
+      {isEmpty ? (
+        <section style={styles.emptyCard}>
+          <p style={styles.emptyKicker}>FIRST ROUND</p>
+          <h2 style={styles.emptyTitle}>아직 훈련 기록이 없어요</h2>
+          <p style={styles.emptyText}>
+            타이머로 첫 라운드를 완료하면 EXP가 쌓이고, 여기에 성장 데이터가
+            표시됩니다.
+          </p>
+          <button
+            type="button"
+            style={styles.emptyButton}
+            onClick={onStartTraining}
+          >
+            3R 바로 시작하기
+          </button>
+        </section>
+      ) : null}
 
       <section style={styles.summaryCard}>
         <div style={styles.summaryItem}>
@@ -60,10 +81,12 @@ export default function GrowthHubPage({
           <strong style={styles.summaryValue}>{stats.totalRounds}R</strong>
         </div>
         <div style={styles.summaryItem}>
-          <span style={styles.summaryLabel}>이번 주 점수</span>
-          <strong style={styles.summaryValue}>{weeklyScore}점</strong>
+          <span style={styles.summaryLabel}>이번 주 EXP</span>
+          <strong style={styles.summaryValue}>{weeklyScore}</strong>
         </div>
       </section>
+
+      <p style={styles.expHint}>주간 EXP = 이번 주 획득한 경험치 합계입니다.</p>
 
       <div style={styles.grid}>
         {items.map((item) => (
@@ -91,14 +114,6 @@ export default function GrowthHubPage({
 }
 
 const styles = {
-  page: {
-    width: "100%",
-    maxWidth: "720px",
-    margin: "0 auto",
-    padding: "24px 16px 40px",
-    boxSizing: "border-box",
-  },
-
   header: {
     marginBottom: "18px",
   },
@@ -113,18 +128,67 @@ const styles = {
     margin: 0,
     fontSize: "13px",
     lineHeight: 1.5,
-    color: "var(--p-text-muted, rgba(255,255,255,0.6))",
+    color: "var(--p-text-muted)",
+  },
+
+  emptyCard: {
+    borderRadius: "22px",
+    padding: "20px",
+    marginBottom: "14px",
+    background: "var(--p-bg-subtle)",
+    border: "1px solid var(--p-border-soft)",
+    color: "var(--p-text)",
+  },
+
+  emptyKicker: {
+    margin: "0 0 6px",
+    fontSize: "11px",
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    color: "var(--p-accent)",
+  },
+
+  emptyTitle: {
+    margin: "0 0 8px",
+    fontSize: "20px",
+    fontWeight: 900,
+  },
+
+  emptyText: {
+    margin: "0 0 16px",
+    fontSize: "13px",
+    lineHeight: 1.55,
+    color: "var(--p-text-muted)",
+  },
+
+  emptyButton: {
+    width: "100%",
+    border: "none",
+    borderRadius: "16px",
+    padding: "14px",
+    fontSize: "15px",
+    fontWeight: 900,
+    cursor: "pointer",
+    background: "linear-gradient(135deg, #e8c66a, #c49a2e)",
+    color: "#1f1a12",
   },
 
   summaryCard: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
     gap: "8px",
-    marginBottom: "18px",
+    marginBottom: "8px",
     padding: "16px",
     borderRadius: "20px",
-    background: "var(--p-bg-subtle, rgba(255,255,255,0.05))",
-    border: "1px solid var(--p-border-soft, rgba(255,255,255,0.08))",
+    background: "var(--p-bg-subtle)",
+    border: "1px solid var(--p-border-soft)",
+  },
+
+  expHint: {
+    margin: "0 0 18px",
+    fontSize: "12px",
+    lineHeight: 1.5,
+    color: "var(--p-text-muted)",
   },
 
   summaryItem: {
@@ -138,7 +202,7 @@ const styles = {
   summaryLabel: {
     fontSize: "11px",
     fontWeight: 700,
-    color: "var(--p-text-muted, rgba(255,255,255,0.55))",
+    color: "var(--p-text-muted)",
   },
 
   summaryValue: {
@@ -160,9 +224,9 @@ const styles = {
     borderRadius: "18px",
     padding: "18px",
     cursor: "pointer",
-    background: "var(--p-bg-deep, #16181c)",
-    border: "1px solid var(--p-border-strong, rgba(255,255,255,0.12))",
-    color: "var(--p-text, #fff)",
+    background: "var(--p-bg-deep)",
+    border: "1px solid var(--p-border-strong)",
+    color: "var(--p-text)",
   },
 
   tileIcon: {
@@ -193,13 +257,13 @@ const styles = {
 
   tileDesc: {
     fontSize: "12px",
-    color: "var(--p-text-muted, rgba(255,255,255,0.6))",
+    color: "var(--p-text-muted)",
   },
 
   tileArrow: {
     flexShrink: 0,
     fontSize: "18px",
     fontWeight: 900,
-    color: "var(--p-text-muted, rgba(255,255,255,0.4))",
+    color: "var(--p-text-faint)",
   },
 };

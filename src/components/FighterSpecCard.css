@@ -25,18 +25,29 @@
 
 .fighter-nameplate-top {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) auto;
+  grid-template-columns: 80px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
 }
 
 .fighter-nameplate-photo {
-  width: 72px;
-  height: 72px;
-  border-radius: 16px;
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 18px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
+}
+
+.fighter-nameplate-photo-btn {
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.fighter-nameplate-photo-btn:active {
+  transform: scale(0.98);
 }
 
 .fighter-nameplate-photo img {
@@ -48,14 +59,94 @@
 
 .fighter-nameplate-photo-empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   width: 100%;
   height: 100%;
   color: rgba(255, 255, 255, 0.28);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.06em;
+}
+
+.fighter-nameplate-photo-empty em {
+  font-style: normal;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.fighter-nameplate-photo-empty strong {
+  font-size: 18px;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1;
+}
+
+.fighter-nameplate-photo-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 4px 0;
+  background: rgba(0, 0, 0, 0.62);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.fighter-nameplate-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fighter-nameplate-photo-action {
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.fighter-nameplate-photo-action.is-primary {
+  border-color: rgba(239, 63, 54, 0.42);
+  background: rgba(239, 63, 54, 0.14);
+  color: #ffb4ae;
+}
+
+.fighter-nameplate-edit {
+  margin-top: 12px;
+  margin-bottom: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.fighter-nameplate-edit .profile-edit-toggle {
+  color: #fff;
+}
+
+.fighter-nameplate-edit .profile-edit-toggle-hint {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.fighter-nameplate-edit .profile-edit-toggle-action {
+  color: #ff8a84;
+}
+
+.fighter-nameplate-edit .profile-edit-content {
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 .fighter-nameplate-kicker {
@@ -367,6 +458,52 @@
   box-shadow:
     0 12px 28px rgba(120, 90, 30, 0.1),
     0 0 20px rgba(212, 168, 50, 0.08);
+}
+
+.theme-light .fighter-nameplate-photo-empty em {
+  color: #968d7e;
+}
+
+.theme-light .fighter-nameplate-photo-empty strong {
+  color: #6b6254;
+}
+
+.theme-light .fighter-nameplate-photo-overlay {
+  background: rgba(31, 26, 18, 0.72);
+  color: #fffdf8;
+}
+
+.theme-light .fighter-nameplate-photo-action {
+  background: #faf6ee;
+  border-color: rgba(196, 154, 46, 0.2);
+  color: #4a4338;
+}
+
+.theme-light .fighter-nameplate-photo-action.is-primary {
+  border-color: rgba(196, 154, 46, 0.34);
+  background: rgba(212, 168, 50, 0.14);
+  color: #8a6a12;
+}
+
+.theme-light .fighter-nameplate-edit {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(196, 154, 46, 0.16);
+}
+
+.theme-light .fighter-nameplate-edit .profile-edit-toggle {
+  color: #1f1a12;
+}
+
+.theme-light .fighter-nameplate-edit .profile-edit-toggle-hint {
+  color: #6b6254;
+}
+
+.theme-light .fighter-nameplate-edit .profile-edit-toggle-action {
+  color: #a67c00;
+}
+
+.theme-light .fighter-nameplate-edit .profile-edit-content {
+  border-top-color: rgba(196, 154, 46, 0.14);
 }
 
 .theme-light .fighter-nameplate-photo {

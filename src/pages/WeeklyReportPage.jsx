@@ -36,9 +36,9 @@ export default function WeeklyReportPage({ onGoBack }) {
           <small>{report.sparringRounds}R</small>
         </article>
         <article className="report-stat-card">
-          <span>주간 점수</span>
+          <span>주간 EXP</span>
           <strong>{weeklyScore}</strong>
-          <small>이번 주 활동</small>
+          <small>이번 주 획득 EXP 합</small>
         </article>
         <article className="report-stat-card">
           <span>훈련 시간</span>

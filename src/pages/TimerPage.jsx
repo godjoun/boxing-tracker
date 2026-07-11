@@ -40,6 +40,7 @@ import {
 } from "../utils/timerPagePersistence";
 import { styles } from "./TimerPage.styles";
 import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
+import "./TimerPage.css";
 
 const MATCH_PRESETS = [
   {
@@ -205,6 +206,7 @@ export default function TimerPage({
 
   const savedLogRef = useRef(initialTimerState.hasSavedLog);
   const previousPhaseRef = useRef(initialTimerState.phase);
+  const lastTapRef = useRef(0);
 
   const workSeconds = workSecondsSetting;
   const restSeconds = restSecondsSetting;
@@ -764,85 +766,142 @@ export default function TimerPage({
     }
   };
 
+  const isComplete = phase === "done";
+  const isFocusMode = hasStartedSession && !isComplete;
+  const isSetupMode = !hasStartedSession && !isComplete;
+
+  function handleTimerSurfaceTap() {
+    if (!isFocusMode) return;
+
+    const now = Date.now();
+
+    if (now - lastTapRef.current < 350) {
+      if (isRunning) {
+        handlePause();
+      } else {
+        handleStart();
+      }
+    }
+
+    lastTapRef.current = now;
+  }
+
+  function handleFocusStop() {
+    const ok = window.confirm("훈련을 종료하고 타이머를 초기화할까요?");
+    if (!ok) return;
+
+    handleReset();
+  }
+
+  const timerCardStyle = {
+    ...styles.timerCard,
+    ...(isFocusMode ? { marginBottom: 0 } : {}),
+  };
+
+  const timeTextStyle = {
+    ...styles.timeText,
+    ...(isFocusMode ? { fontSize: "clamp(72px, 22vw, 96px)", margin: "20px 0 12px" } : {}),
+  };
+
   return (
-    <div className="timer-page" style={styles.page}>
-      <section style={styles.heroCard}>
-        <div style={styles.kicker}>BOXING ROUND TIMER</div>
+    <div
+      className={`timer-page${isFocusMode ? " timer-page-focus" : ""}`}
+      style={styles.page}
+    >
+      {isSetupMode ? (
+        <section className="timer-setup-hero" style={styles.heroCard}>
+          <div style={styles.kicker}>라운드 타이머</div>
 
-        <h1 style={styles.title}>오늘 몇 라운드 버텼나?</h1>
+          <h1 style={styles.title}>오늘 몇 라운드 버틸까요?</h1>
 
-        <p style={styles.subtitle}>
-          10초 준비 후 3분 라운드와 30초 휴식으로 훈련하고, 완료 기록을
-          프로필 카드로 남기세요.
-        </p>
+          <p style={styles.subtitle}>
+            1R = 운동 1세트. 라운드를 고르고 시작하면 자동으로 기록되고 EXP가
+            쌓입니다.
+          </p>
 
-        <div style={styles.soundBox}>
-          <div style={styles.soundHeaderRow}>
-            <span style={styles.soundText}>알림음 선택</span>
-            <strong style={styles.soundStatus}>
+          <details className="timer-sound-details">
+            <summary>
+              알림음 ·{" "}
               {SOUND_OPTIONS.find((option) => option.id === soundMode)?.label}
-            </strong>
-          </div>
+            </summary>
+            <div className="timer-sound-details-body" style={styles.soundBox}>
+              <div style={styles.soundOptionGrid}>
+                {SOUND_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    style={{
+                      ...styles.soundOptionButton,
+                      ...(soundMode === option.id
+                        ? styles.activeSoundOptionButton
+                        : {}),
+                    }}
+                    onClick={() => {
+                      setSoundMode(option.id);
+                      if (option.id === "mute") {
+                        stopTimerAudioSession();
+                        return;
+                      }
+                      previewTimerBeep(option.id);
+                    }}
+                  >
+                    <strong style={styles.soundOptionLabel}>{option.label}</strong>
+                    <span style={styles.soundOptionDescription}>
+                      {option.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-          <div style={styles.soundOptionGrid}>
-            {SOUND_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                style={{
-                  ...styles.soundOptionButton,
-                  ...(soundMode === option.id
-                    ? styles.activeSoundOptionButton
-                    : {}),
-                }}
-                onClick={() => {
-                  setSoundMode(option.id);
-                  if (option.id === "mute") {
-                    stopTimerAudioSession();
-                    return;
-                  }
-                  previewTimerBeep(option.id);
-                }}
-              >
-                <strong style={styles.soundOptionLabel}>{option.label}</strong>
-                <span style={styles.soundOptionDescription}>
-                  {option.description}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {supportsHeadphoneTimerAudio() ? (
-            <div style={styles.headsetTip}>
-              <strong style={styles.headsetTipTitle}>
-                에어팟 · 블루투스 이어폰
-              </strong>
-              <span style={styles.headsetTipCopy}>
-                타이머 시작 후 연결된 이어폰으로 라운드 알림음이 재생됩니다.
-                화면을 끄거나 다른 앱으로 이동해도 들으려면 무음 모드를 해제하고
-                시작 버튼을 눌러 주세요.
-              </span>
+              {supportsHeadphoneTimerAudio() ? (
+                <div style={styles.headsetTip}>
+                  <strong style={styles.headsetTipTitle}>
+                    에어팟 · 블루투스 이어폰
+                  </strong>
+                  <span style={styles.headsetTipCopy}>
+                    시작 후 이어폰으로 라운드 알림음이 재생됩니다.
+                  </span>
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-      </section>
+          </details>
+        </section>
+      ) : null}
 
-      <section style={styles.timerCard}>
+      <section
+        className={isFocusMode ? "timer-focus-card" : ""}
+        style={timerCardStyle}
+        onClick={isFocusMode ? handleTimerSurfaceTap : undefined}
+      >
+        {isFocusMode ? (
+          <p className="timer-focus-hint">더블 탭 · 일시정지 / 재개</p>
+        ) : null}
+
         <div style={styles.timerTopRow}>
           <span style={{ ...styles.phaseBadge, ...getPhaseBadgeStyle() }}>
             {getPhaseText()}
           </span>
 
-          <span style={styles.roundText}>
+          <span
+            className={isFocusMode ? "timer-focus-round" : ""}
+            style={styles.roundText}
+          >
             {phase === "done" ? "완료" : `${currentRound} / ${totalRounds} R`}
           </span>
         </div>
 
         {phase !== "done" && (
-          <div style={styles.currentRoundName}>{getCurrentRoundName()}</div>
+          <div
+            className={isFocusMode ? "timer-focus-name" : ""}
+            style={styles.currentRoundName}
+          >
+            {getCurrentRoundName()}
+          </div>
         )}
 
-        <div style={styles.timeText}>{formatTime(remainingTime)}</div>
+        <div className={isFocusMode ? "timer-focus-time" : ""} style={timeTextStyle}>
+          {formatTime(remainingTime)}
+        </div>
 
         {curriculumDrills.length > 0 && phase !== "done" ? (
           <CurriculumTimerPanel
@@ -860,6 +919,7 @@ export default function TimerPage({
           />
         ) : null}
 
+        {!isFocusMode && !isComplete ? (
         <div style={styles.sessionInfoGrid}>
           <div style={styles.sessionInfoBox}>
             <span style={styles.sessionInfoLabel}>라운드</span>
@@ -878,6 +938,7 @@ export default function TimerPage({
             </strong>
           </div>
         </div>
+        ) : null}
 
         {phase === "done" && (
           <div style={styles.doneBox}>
@@ -1002,6 +1063,34 @@ export default function TimerPage({
           </div>
         )}
 
+        {isFocusMode ? (
+          <div className="timer-focus-controls">
+            <button
+              type="button"
+              className="timer-focus-pause"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (isRunning) {
+                  handlePause();
+                } else {
+                  handleStart();
+                }
+              }}
+            >
+              {isRunning ? "일시정지" : "계속"}
+            </button>
+            <button
+              type="button"
+              className="timer-focus-stop"
+              onClick={(event) => {
+                event.stopPropagation();
+                handleFocusStop();
+              }}
+            >
+              종료
+            </button>
+          </div>
+        ) : (
         <div style={styles.buttonRow}>
           {!isRunning ? (
             <button type="button" style={styles.startButton} onClick={handleStart}>
@@ -1021,8 +1110,11 @@ export default function TimerPage({
             초기화
           </button>
         </div>
+        )}
       </section>
 
+      {isSetupMode ? (
+      <>
       <section style={styles.routineCard}>
         <div style={styles.cardHeaderRow}>
           <h2 style={styles.cardTitle}>경기식 라운드 선택</h2>
@@ -1214,6 +1306,8 @@ export default function TimerPage({
           </div>
         </div>
       </section>
+      </>
+      ) : null}
     </div>
   );
 }

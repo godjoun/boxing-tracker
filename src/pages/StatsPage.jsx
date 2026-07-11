@@ -54,9 +54,9 @@ export default function StatsPage({ onGoWeekly, onGoBack }) {
           <small>누적 실전 훈련</small>
         </article>
         <article className="stats-card">
-          <span>주간 점수</span>
+          <span>주간 EXP</span>
           <strong>{weeklyScore}</strong>
-          <small>라운드 가중 점수</small>
+          <small>이번 주 획득 EXP 합</small>
         </article>
       </section>
 
@@ -197,7 +197,7 @@ export default function StatsPage({ onGoWeekly, onGoBack }) {
                       <span className="round-badge">{log.conditionLabel}</span>
                     )}
                     <span>{log.minutes || log.duration}분</span>
-                    <span>+{log.score}점</span>
+                    <span>+{log.score} EXP</span>
                   </div>
                 </article>
               );

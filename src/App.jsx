@@ -25,6 +25,7 @@ import { needsOnboarding } from "./utils/bodySpecs";
 import { isTutorialComplete } from "./utils/tutorial";
 import { getFighterProgress } from "./utils/fighterProgress";
 import { buildCurriculumTimerLaunch } from "./utils/homeCurriculum";
+import { buildPresetTimerLaunch } from "./utils/timerPresets";
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
 import "./App.css";
 
@@ -128,23 +129,18 @@ function MainAppShell() {
     setShowTutorial(false);
   };
 
-  const navActiveStyle = isDark ? styles.activeButton : styles.activeButtonLight;
+  function getNavClass(isActive) {
+    return `app-nav-button${isActive ? " is-active" : ""}`;
+  }
 
   return (
-    <div
-      className={`app-shell theme-${theme}`}
-      style={{
-        ...styles.app,
-        background: isDark ? "#0d0d0e" : "#faf8f4",
-        color: isDark ? "#ffffff" : "#171717",
-      }}
-    >
-      <main style={styles.main}>
+    <div className={`app-shell theme-${theme}`}>
+      <main className="app-main">
         {currentPage === "home" && (
           <HomePage
             fighterLevel={fighterLevel}
             timerSummary={timerSummary}
-            onStartTraining={() => goPage("timer")}
+            onStartTraining={() => goPage("train")}
             onOpenTimer={() => goPage("timer")}
             onNavigate={goPage}
             onNavigateGym={goGym}
@@ -179,6 +175,7 @@ function MainAppShell() {
           <TrainingHubPage
             fighterLevel={fighterLevel}
             onStartSession={goTimerWithSession}
+            onStartPreset={(preset) => goTimerWithLaunch(buildPresetTimerLaunch(preset))}
             onOpenTimer={() => goPage("timer")}
             onOpenCurriculum={() => goPage("curriculum")}
             onOpenComboCreator={() => goPage("combo-creator")}
@@ -209,6 +206,7 @@ function MainAppShell() {
             onOpenStats={() => goPage("stats")}
             onOpenWeekly={() => goPage("weekly")}
             onOpenJourney={() => goPage("journey")}
+            onStartTraining={() => goPage("timer")}
           />
         )}
 
@@ -295,102 +293,85 @@ function MainAppShell() {
         />
       ) : null}
 
-      <nav
-        className="app-bottom-nav"
-        style={{
-          ...styles.nav,
-          background: isDark
-            ? "rgba(25, 25, 27, 0.94)"
-            : "rgba(255, 255, 255, 0.94)",
-          borderColor: isDark
-            ? "rgba(255, 255, 255, 0.1)"
-            : "rgba(22, 22, 22, 0.08)",
-          boxShadow: isDark
-            ? "0 12px 34px rgba(0, 0, 0, 0.35)"
-            : "0 12px 34px rgba(25, 20, 16, 0.12)",
-        }}
-      >
+      <nav className="app-bottom-nav">
         <button
-          style={{
-            ...styles.navButton,
-            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "home" ? navActiveStyle : {}),
-          }}
+          type="button"
+          className={getNavClass(currentPage === "home")}
           onClick={() => goPage("home")}
         >
-          홈
+          <span className="app-nav-icon" aria-hidden="true">
+            ⌂
+          </span>
+          <span className="app-nav-label">홈</span>
         </button>
 
         <button
+          type="button"
           data-tutorial-target="nav-timer"
-          style={{
-            ...styles.navButton,
-            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "train" || currentPage === "timer"
-              ? navActiveStyle
-              : {}),
-          }}
+          className={getNavClass(
+            currentPage === "train" || currentPage === "timer"
+          )}
           onClick={() => goPage("train")}
         >
-          훈련
+          <span className="app-nav-icon" aria-hidden="true">
+            ↑
+          </span>
+          <span className="app-nav-label">레벨업</span>
         </button>
 
         <button
+          type="button"
           data-tutorial-target="nav-log"
-          style={{
-            ...styles.navButton,
-            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "log" ? navActiveStyle : {}),
-          }}
+          className={getNavClass(currentPage === "log")}
           onClick={() => goPage("log")}
         >
-          기록
+          <span className="app-nav-icon" aria-hidden="true">
+            ☰
+          </span>
+          <span className="app-nav-label">기록</span>
         </button>
 
         <button
-          style={{
-            ...styles.navButton,
-            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "profile" ? navActiveStyle : {}),
-          }}
+          type="button"
+          className={getNavClass(currentPage === "profile")}
           onClick={goProfile}
         >
-          명패
+          <span className="app-nav-icon" aria-hidden="true">
+            ▣
+          </span>
+          <span className="app-nav-label">명패</span>
         </button>
 
         <button
+          type="button"
           data-tutorial-target="nav-journey"
-          style={{
-            ...styles.navButton,
-            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "growth" ||
-            currentPage === "journey" ||
-            currentPage === "stats" ||
-            currentPage === "weekly"
-              ? navActiveStyle
-              : {}),
-          }}
+          className={getNavClass(
+            currentPage === "growth" ||
+              currentPage === "journey" ||
+              currentPage === "stats" ||
+              currentPage === "weekly"
+          )}
           onClick={() => goPage("growth")}
         >
-          성장
+          <span className="app-nav-icon" aria-hidden="true">
+            ↗
+          </span>
+          <span className="app-nav-label">성장</span>
         </button>
 
         <button
+          type="button"
           data-tutorial-target="nav-category"
-          style={{
-            ...styles.navButton,
-            color: isDark ? "rgba(255,255,255,.58)" : "#74706b",
-            ...(currentPage === "category" ? navActiveStyle : {}),
-          }}
+          className={getNavClass(currentPage === "category")}
           onClick={() => goPage("category")}
         >
-          <span className="nav-category-icon" aria-hidden="true">
+          <span className="app-nav-icon nav-category-icon" aria-hidden="true">
             <i />
             <i />
             <i />
             <i />
           </span>
-          <span>더보기</span>
+          <span className="app-nav-label">더보기</span>
         </button>
       </nav>
 
@@ -398,67 +379,3 @@ function MainAppShell() {
     </div>
   );
 }
-
-const styles = {
-  app: {
-    minHeight: "100vh",
-    background: "#f6f5f2",
-    color: "#171717",
-    paddingBottom: "86px",
-  },
-
-  main: {
-    width: "100%",
-    minHeight: "100vh",
-  },
-
-  nav: {
-    position: "fixed",
-    left: "50%",
-    bottom: "16px",
-    transform: "translateX(-50%)",
-    width: "calc(100% - 28px)",
-    maxWidth: "720px",
-    display: "grid",
-    gridTemplateColumns: "repeat(6, 1fr)",
-    gap: "8px",
-    padding: "10px",
-    borderRadius: "24px",
-    background: "rgba(255, 255, 255, 0.94)",
-    border: "1px solid rgba(22, 22, 22, 0.08)",
-    boxShadow: "0 12px 34px rgba(25, 20, 16, 0.12)",
-    backdropFilter: "blur(14px)",
-    zIndex: 100,
-  },
-
-  navButton: {
-    position: "relative",
-    border: "none",
-    borderRadius: "16px",
-    minHeight: "48px",
-    padding: "8px 6px",
-    background: "transparent",
-    color: "#74706b",
-    fontSize: "12px",
-    fontWeight: 800,
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "3px",
-  },
-
-  activeButton: {
-    background: "#ef3f36",
-    color: "#ffffff",
-    boxShadow: "0 7px 16px rgba(239, 63, 54, 0.2)",
-  },
-
-  activeButtonLight: {
-    background: "linear-gradient(135deg, #e8c66a, #c49a2e)",
-    color: "#1f1a12",
-    boxShadow: "0 7px 16px rgba(196, 154, 46, 0.28)",
-  },
-
-};

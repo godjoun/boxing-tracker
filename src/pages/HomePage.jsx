@@ -238,7 +238,7 @@ export default function HomePage({
       <section className="home-growth-hero">
         <div className="home-growth-head">
           <div>
-            <p className="home-kicker">GROWTH STATUS</p>
+            <p className="home-kicker">성장 현황</p>
             <h1>{profile?.nickname || "나의 파이터"}</h1>
             <p className="home-growth-title">{dashboard.fighterTitle}</p>
             {dashboard.fighterTitleEn ? (
@@ -329,25 +329,39 @@ export default function HomePage({
         )}
       </section>
 
-      <button
-        className="home-main-button"
-        data-tutorial-target="home-start"
-        onClick={onStartTraining}
-      >
-        <span>
-          {dashboard.trainedToday ? "오늘 훈련 이어가기" : "오늘 훈련 시작"}
-        </span>
-        <b>→</b>
-      </button>
+      <div className="home-cta-row">
+        <button
+          type="button"
+          className="home-main-button"
+          data-tutorial-target="home-start"
+          onClick={onOpenTimer}
+        >
+          <span>
+            {dashboard.trainedToday ? "훈련 이어가기" : "3R 바로 시작"}
+          </span>
+          <b>→</b>
+        </button>
+
+        <button
+          type="button"
+          className="home-secondary-button"
+          onClick={onStartTraining}
+        >
+          레벨업 메뉴에서 더 보기
+        </button>
+      </div>
 
       {dashboard.weeklyTrend.length > 0 ? (
+        <details className="home-collapsible">
+          <summary className="home-collapsible-summary">
+            <span className="home-section-label">주간 성장</span>
+            <strong>주간 라운드 추이 · {weeklyScore} EXP</strong>
+          </summary>
         <section className="home-weekly-trend" aria-label="주간 라운드 추이">
           <div className="home-section-heading">
             <div>
-              <p className="home-section-label">WEEKLY GROWTH</p>
               <h2>주간 라운드 추이</h2>
             </div>
-            <span className="home-weekly-score">{weeklyScore}점</span>
           </div>
 
           <div className="home-weekly-bars">
@@ -365,37 +379,21 @@ export default function HomePage({
             ))}
           </div>
         </section>
+        </details>
       ) : null}
 
-      <section className="fighter-overview">
-        <div>
-          <span>THIS WEEK</span>
-          <strong>{dashboard.weeklyRounds}R</strong>
-          <small>이번 주 라운드</small>
-        </div>
-        <div>
-          <span>WEEK EXP</span>
-          <strong>{dashboard.weeklyExp}</strong>
-          <small>이번 주 경험치</small>
-        </div>
-        <div>
-          <span>TOTAL EXP</span>
-          <strong>{dashboard.totalExp}</strong>
-          <small>누적 성장</small>
-        </div>
-      </section>
-
+      <details className="home-collapsible">
+        <summary className="home-collapsible-summary">
+          <span className="home-section-label">훈련 구성</span>
+          <strong>
+            {topTrainingType ? `TOP · ${topTrainingType}` : "내 훈련 구성"}
+          </strong>
+        </summary>
       <section className="home-training-breakdown">
         <div className="home-section-heading">
           <div>
-            <p className="home-section-label">TRAINING MIX</p>
             <h2>내 훈련 구성</h2>
           </div>
-          {topTrainingType ? (
-            <span className="breakdown-top-pick">TOP · {topTrainingType}</span>
-          ) : (
-            <span>—</span>
-          )}
         </div>
 
         {trainingBreakdown.length === 0 ? (
@@ -421,11 +419,16 @@ export default function HomePage({
           </div>
         )}
       </section>
+      </details>
 
+      <details className="home-collapsible">
+        <summary className="home-collapsible-summary">
+          <span className="home-section-label">빠른 메뉴</span>
+          <strong>나의 파이터 대시보드</strong>
+        </summary>
       <section className="home-features home-quick-dashboard">
         <div className="home-section-heading">
           <div>
-            <p className="home-section-label">QUICK ACCESS</p>
             <h2>나의 파이터 대시보드</h2>
           </div>
           <button
@@ -499,14 +502,18 @@ export default function HomePage({
           </div>
         ) : null}
       </section>
+      </details>
 
+      <details className="home-collapsible">
+        <summary className="home-collapsible-summary">
+          <span className="home-section-label">캘린더</span>
+          <strong>이번 달 훈련 · {monthTitle}</strong>
+        </summary>
       <section className="training-calendar">
         <div className="home-section-heading">
           <div>
-            <p className="home-section-label">TRAINING CALENDAR</p>
             <h2>이번 달 훈련</h2>
           </div>
-          <strong>{monthTitle}</strong>
         </div>
 
         <div className="calendar-weekdays" aria-hidden="true">
@@ -573,6 +580,7 @@ export default function HomePage({
           </p>
         )}
       </section>
+      </details>
 
     </main>
   );

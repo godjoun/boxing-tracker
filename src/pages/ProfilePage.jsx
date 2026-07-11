@@ -91,6 +91,8 @@ export default function ProfilePage({
   const [levelUpLevel, setLevelUpLevel] = useState("56");
   const [levelUpSlogan, setLevelUpSlogan] = useState("ONE ROUND AT A TIME");
   const [cardStyle, setCardStyle] = useState("basic");
+  const cardStyleRef = useRef("basic");
+  const exportGenerationRef = useRef(0);
   const [posterMainName, setPosterMainName] = useState("");
   const [posterSubtitle, setPosterSubtitle] = useState("THE ROOKIE");
   const [posterEventTitle, setPosterEventTitle] = useState("TRAINING DAY");
@@ -139,6 +141,7 @@ export default function ProfilePage({
   // 공유/다운로드 권한이 끊길 수 있다. 그래서 저장 이미지를 미리 만들어 둔다.
   const exportCacheRef = useRef({
     key: "",
+    style: "",
     dataUrl: "",
     file: null,
     filename: "",
@@ -253,6 +256,28 @@ export default function ProfilePage({
     setProfileView("studio");
     setStudioTab("select");
   }, [scrollTarget]);
+
+  function handleSelectCardStyle(styleId) {
+    cardStyleRef.current = styleId;
+    posterExportRef.current.cardStyle = styleId;
+    exportGenerationRef.current += 1;
+    exportCacheRef.current = {
+      key: "",
+      style: "",
+      dataUrl: "",
+      file: null,
+      filename: "",
+      promise: null,
+    };
+    preparingExportKeyRef.current = "";
+    setExportPreview(null);
+    setCardStyle(styleId);
+  }
+
+  useEffect(() => {
+    cardStyleRef.current = cardStyle;
+    posterExportRef.current.cardStyle = cardStyle;
+  }, [cardStyle]);
 
   useEffect(() => {
     if (cardStyle === "poster") {
@@ -1943,22 +1968,35 @@ export default function ProfilePage({
   }
 
   async function buildCardExportDataUrl(styleOverride = null) {
-    const exportStyle = styleOverride || cardStyle;
+    const exportStyle = styleOverride || cardStyleRef.current || cardStyle;
     const filterIdForExport =
       posterExportRef.current.selectedFilter ||
       selectedFilterRef.current ||
       selectedFilter ||
       "levelup";
 
-    return exportStyle === "poster"
-      ? await createPosterCanvasDataUrl(filterIdForExport)
-      : await createTrainingCardCanvasDataUrl(exportStyle);
+    if (exportStyle === "poster") {
+      return createPosterCanvasDataUrl(filterIdForExport);
+    }
+
+    if (exportStyle === "social") {
+      return createTrainingCardCanvasDataUrl("social");
+    }
+
+    return createTrainingCardCanvasDataUrl("basic");
   }
 
   async function prepareCardExport({ force = false } = {}) {
     const key = getCardExportKey();
+    const styleForExport = cardStyleRef.current || cardStyle;
+    const generation = exportGenerationRef.current;
 
-    if (!force && exportCacheRef.current.key === key && exportCacheRef.current.file) {
+    if (
+      !force &&
+      exportCacheRef.current.key === key &&
+      exportCacheRef.current.style === styleForExport &&
+      exportCacheRef.current.file
+    ) {
       return exportCacheRef.current;
     }
 
@@ -1970,16 +2008,21 @@ export default function ProfilePage({
 
     const promise = (async () => {
       const filename =
-        cardStyle === "poster"
+        styleForExport === "poster"
           ? `boxing-fighter-poster-${Date.now()}.png`
-          : cardStyle === "basic"
+          : styleForExport === "basic"
           ? `boxing-level-up-card-${Date.now()}.png`
-          : `boxing-training-card-${Date.now()}.png`;
+          : `boxing-story-${Date.now()}.png`;
 
-      const dataUrl = await buildCardExportDataUrl();
+      const dataUrl = await buildCardExportDataUrl(styleForExport);
+
+      if (generation !== exportGenerationRef.current) {
+        throw new Error("EXPORT_STALE");
+      }
+
       const file = await dataUrlToPngFile(dataUrl, filename);
 
-      const cache = { key, dataUrl, file, filename };
+      const cache = { key, style: styleForExport, dataUrl, file, filename };
       exportCacheRef.current = cache;
 
       return cache;
@@ -2007,6 +2050,7 @@ export default function ProfilePage({
       dataUrl: cache.dataUrl,
       file: cache.file || null,
       filename: cache.filename || `boxing-training-card-${Date.now()}.png`,
+      style: cache.style || cardStyleRef.current || cardStyle,
     });
   }
 
@@ -2015,9 +2059,15 @@ export default function ProfilePage({
       throw new Error("저장할 이미지가 아직 준비되지 않았어요.");
     }
 
+    const exportStyle = cache.style || cardStyleRef.current || cardStyle;
     const shareData = {
       title: "Boxing Training Card",
-      text: cardStyle === "poster" ? "오늘의 파이터 포스터" : "오늘의 복싱 훈련 카드",
+      text:
+        exportStyle === "poster"
+          ? "오늘의 파이터 포스터"
+          : exportStyle === "social"
+          ? "오늘의 스토리 훈련 카드"
+          : "오늘의 레벨업 훈련 카드",
       files: [cache.file],
     };
 
@@ -2055,29 +2105,6 @@ export default function ProfilePage({
     link.remove();
   }
 
-  async function handleSaveStoryImage() {
-    if (cardMediaType === "video") {
-      alert("영상 카드는 스토리 저장을 지원하지 않습니다. 사진을 사용해 주세요.");
-      return;
-    }
-
-    track("card_save", { style: "social" });
-
-    setIsSavingImage(true);
-
-    try {
-      const dataUrl = await buildCardExportDataUrl("social");
-      const filename = `boxing-story-${Date.now()}.png`;
-      const file = await dataUrlToPngFile(dataUrl, filename);
-      shareOrDownloadPreparedExport({ dataUrl, file, filename });
-    } catch (error) {
-      console.error(error);
-      alert("스토리 이미지를 만들지 못했습니다. 사진과 운동 선택을 확인해 주세요.");
-    } finally {
-      setIsSavingImage(false);
-    }
-  }
-
   async function handleSaveCardImage() {
     if (cardMediaType === "video") {
       alert(
@@ -2086,7 +2113,8 @@ export default function ProfilePage({
       return;
     }
 
-    track("card_save", { style: cardStyle });
+    const styleToExport = cardStyleRef.current || cardStyle;
+    track("card_save", { style: styleToExport });
 
     if (!trainingCardRef.current) {
       alert("저장할 카드가 아직 준비되지 않았어.");
@@ -2101,8 +2129,12 @@ export default function ProfilePage({
     const key = getCardExportKey();
     const cache = exportCacheRef.current;
 
-    // 미리 준비된 이미지가 있으면 iOS 공유 안정성을 위해 동기적으로 즉시 저장한다.
-    if (cache.key === key && cache.file && cache.dataUrl) {
+    if (
+      cache.key === key &&
+      cache.style === styleToExport &&
+      cache.file &&
+      cache.dataUrl
+    ) {
       try {
         shareOrDownloadPreparedExport(cache);
       } catch (error) {
@@ -2112,16 +2144,23 @@ export default function ProfilePage({
       return;
     }
 
-    // 아직 준비된 이미지가 없으면 클릭 시점에 즉석에서 만들어 저장한다.
     try {
       setIsSavingImage(true);
       const freshCache = await prepareCardExport({ force: true });
       shareOrDownloadPreparedExport(freshCache);
     } catch (error) {
+      if (error?.message === "EXPORT_STALE") {
+        return;
+      }
+
       console.error(error);
       const fallback = exportCacheRef.current;
 
-      if (fallback?.dataUrl) {
+      if (
+        fallback?.dataUrl &&
+        fallback.style === styleToExport &&
+        fallback.key === key
+      ) {
         showExportPreview(fallback);
       } else {
         alert("이미지를 만들지 못했어. 사진과 설정을 확인한 뒤 다시 시도해줘.");
@@ -2191,6 +2230,7 @@ ${logLines}${commentText}${mediaText}`;
     const timer = setTimeout(() => {
       // 저장 버튼을 빠르게 누를 때를 대비해 이미지를 미리 만들어 캐시에 채워둔다.
       prepareCardExport({ force: true }).catch((error) => {
+        if (error?.message === "EXPORT_STALE") return;
         console.warn("저장 이미지 미리 준비 실패:", error);
       });
     }, 650);
@@ -2217,8 +2257,17 @@ ${logLines}${commentText}${mediaText}`;
   const isSaveCardDisabled =
     cardMediaType === "video" || isSavingImage || isCardImagePreparing;
 
+  const activeCardStyle =
+    CARD_STYLES.find((style) => style.id === cardStyle) || CARD_STYLES[0];
+  const cardSaveLabel =
+    cardStyle === "social"
+      ? "STORY 카드 저장 (9:16)"
+      : cardStyle === "poster"
+      ? "POSTER 카드 저장"
+      : "LEVEL UP 카드 저장";
+
   return (
-    <main style={styles.page}>
+    <main style={styles.page} className="profile-page">
       {profileView === "nameplate" && (
         <>
       <FighterSpecCard
@@ -2229,222 +2278,183 @@ ${logLines}${commentText}${mediaText}`;
         careerStageKo={profileStats.careerStageKo}
         streakDays={levelUpStreakDays}
         onOpenCardMaker={scrollToCardMaker}
-      />
+        onUploadPhoto={() => fileInputRef.current?.click()}
+        onRemovePhoto={handleRemovePhoto}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoChange}
+          style={{ display: "none" }}
+        />
 
-      <section style={styles.profileCard}>
-        <div style={styles.cardTop}>
-          <div>
-            <p style={styles.kicker}>PROFILE SETUP</p>
-            <h1 style={styles.title}>프로필 · 사진</h1>
-            <p style={styles.profileSetupHint}>
-              명패에 표시될 사진과 신체 스펙을 설정하세요.
-            </p>
-          </div>
-        </div>
-
-        <div style={styles.photoSection}>
-          <div style={styles.photoCircle}>
-            {profile.photo ? (
-              <img
-                src={profile.photo}
-                alt="프로필"
-                style={styles.profileImage}
-              />
-            ) : (
-              <div style={styles.photoPlaceholder}>
-                <span>사진</span>
-                <strong>+</strong>
-              </div>
-            )}
-          </div>
-
-          <div style={styles.photoButtons}>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-              style={{ display: "none" }}
-            />
-
-            <button
-              type="button"
-              style={{ ...styles.photoButton, ...styles.profileActionButton }}
-              onClick={() => fileInputRef.current?.click()}
+        <button
+          type="button"
+          className="profile-edit-toggle"
+          style={styles.profileEditToggle}
+          onClick={() => setIsProfileEditOpen((open) => !open)}
+          aria-expanded={isProfileEditOpen}
+        >
+          <div style={styles.profileEditToggleCopy}>
+            <p style={styles.profileEditToggleTitle}>프로필 · 신체 스펙 수정</p>
+            <span
+              className="profile-edit-toggle-hint"
+              style={styles.profileEditToggleHint}
             >
-              사진 업로드
-            </button>
-
-            {profile.photo && (
-              <button
-                type="button"
-                style={{ ...styles.darkButton, ...styles.profileActionButton }}
-                onClick={handleRemovePhoto}
-              >
-                사진 삭제
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div style={styles.profileEditPanel}>
-          <button
-            type="button"
-            style={styles.profileEditToggle}
-            onClick={() => setIsProfileEditOpen((open) => !open)}
-            aria-expanded={isProfileEditOpen}
-          >
-            <div style={styles.profileEditToggleCopy}>
-              <p style={styles.profileEditToggleTitle}>프로필 · 신체 스펙 수정</p>
-              <span style={styles.profileEditToggleHint}>
-                {isProfileEditOpen
-                  ? "닉네임, 소개, 키·체중·체급 등을 수정할 수 있어요."
-                  : profileSpecSummary || "탭해서 프로필과 신체 스펙을 수정하세요."}
-              </span>
-            </div>
-            <span style={styles.profileEditToggleAction}>
-              {isProfileEditOpen ? "접기 ▲" : "펼치기 ▼"}
+              {isProfileEditOpen
+                ? "닉네임, 소개, 키·체중·체급 등을 수정할 수 있어요."
+                : profileSpecSummary || "탭해서 프로필과 신체 스펙을 수정하세요."}
             </span>
-          </button>
+          </div>
+          <span
+            className="profile-edit-toggle-action"
+            style={styles.profileEditToggleAction}
+          >
+            {isProfileEditOpen ? "접기 ▲" : "펼치기 ▼"}
+          </span>
+        </button>
 
-          {isProfileEditOpen ? (
-            <div style={styles.profileEditContent}>
-              <div style={styles.profileEditSection}>
-                <p style={styles.profileEditSectionTitle}>PROFILE</p>
+        {isProfileEditOpen ? (
+          <div
+            className="profile-edit-content"
+            style={styles.profileEditContent}
+          >
+            <div style={styles.profileEditSection}>
+              <p style={styles.profileEditSectionTitle}>PROFILE</p>
 
+              <label style={styles.fieldLabel}>
+                닉네임
+                <input
+                  value={nickname}
+                  onChange={(event) => setNickname(event.target.value)}
+                  placeholder="예: 조운 파이터"
+                  style={styles.input}
+                />
+              </label>
+
+              <label style={styles.fieldLabel}>
+                한 줄 소개
+                <textarea
+                  value={bio}
+                  onChange={(event) => setBio(event.target.value)}
+                  placeholder="예: 아직 초보지만 매주 링에 올라가는 중"
+                  style={styles.textarea}
+                />
+              </label>
+            </div>
+
+            <div style={styles.profileEditSection}>
+              <p style={styles.profileEditSectionTitle}>BODY SPECS</p>
+
+              <div className="profile-body-specs-grid" style={styles.bodySpecsGrid}>
                 <label style={styles.fieldLabel}>
-                  닉네임
-                  <input
-                    value={nickname}
-                    onChange={(event) => setNickname(event.target.value)}
-                    placeholder="예: 조운 파이터"
-                    style={styles.input}
-                  />
-                </label>
-
-                <label style={styles.fieldLabel}>
-                  한 줄 소개
-                  <textarea
-                    value={bio}
-                    onChange={(event) => setBio(event.target.value)}
-                    placeholder="예: 아직 초보지만 매주 링에 올라가는 중"
-                    style={styles.textarea}
-                  />
-                </label>
-              </div>
-
-              <div style={styles.profileEditSection}>
-                <p style={styles.profileEditSectionTitle}>BODY SPECS</p>
-
-                <div className="profile-body-specs-grid" style={styles.bodySpecsGrid}>
-                  <label style={styles.fieldLabel}>
-                    키 (cm)
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min="120"
-                      max="230"
-                      value={heightCm}
-                      onChange={(event) => setHeightCm(event.target.value)}
-                      placeholder="175"
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <label style={styles.fieldLabel}>
-                    몸무게 (kg)
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      min="35"
-                      max="200"
-                      step="0.1"
-                      value={weightKg}
-                      onChange={(event) => setWeightKg(event.target.value)}
-                      placeholder="70"
-                      style={styles.input}
-                    />
-                  </label>
-                </div>
-
-                <label style={styles.fieldLabel}>
-                  리치 (cm)
-                  <span style={styles.fieldHint}>선택 입력</span>
+                  키 (cm)
                   <input
                     type="number"
                     inputMode="numeric"
-                    min="100"
-                    max="250"
-                    value={reachCm}
-                    onChange={(event) => setReachCm(event.target.value)}
-                    placeholder="178"
+                    min="120"
+                    max="230"
+                    value={heightCm}
+                    onChange={(event) => setHeightCm(event.target.value)}
+                    placeholder="175"
                     style={styles.input}
                   />
                 </label>
 
                 <label style={styles.fieldLabel}>
-                  체급
-                  <select
-                    value={weightClass}
-                    onChange={(event) => {
-                      setWeightClassTouched(true);
-                      setWeightClass(event.target.value);
-                    }}
-                    style={styles.input}
-                  >
-                    {WEIGHT_CLASSES.filter((item) => item !== "상관없음").map(
-                      (item) => (
-                        <option key={item} value={item}>
-                          {formatWeightClassOption(item)}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </label>
-
-                <label style={styles.fieldLabel}>
-                  경력
-                  <select
-                    value={experience}
-                    onChange={(event) => setExperience(event.target.value)}
-                    style={styles.input}
-                  >
-                    {EXPERIENCE_LEVELS.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label style={styles.fieldLabel}>
-                  활동 지역
-                  <span style={styles.fieldHint}>선택 입력 · 예: 강남, 홍대</span>
+                  몸무게 (kg)
                   <input
-                    value={area}
-                    onChange={(event) => setArea(event.target.value)}
-                    placeholder="강남, 홍대"
+                    type="number"
+                    inputMode="decimal"
+                    min="35"
+                    max="200"
+                    step="0.1"
+                    value={weightKg}
+                    onChange={(event) => setWeightKg(event.target.value)}
+                    placeholder="70"
                     style={styles.input}
                   />
                 </label>
               </div>
 
-              <div style={styles.profileSaveFooter}>
-                {saveError ? (
-                  <p style={styles.profileSaveError}>{saveError}</p>
-                ) : null}
-                <button
-                  type="button"
-                  style={styles.profileSaveButton}
-                  onClick={handleSaveProfile}
+              <label style={styles.fieldLabel}>
+                리치 (cm)
+                <span style={styles.fieldHint}>선택 입력</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="100"
+                  max="250"
+                  value={reachCm}
+                  onChange={(event) => setReachCm(event.target.value)}
+                  placeholder="178"
+                  style={styles.input}
+                />
+              </label>
+
+              <label style={styles.fieldLabel}>
+                체급
+                <select
+                  value={weightClass}
+                  onChange={(event) => {
+                    setWeightClassTouched(true);
+                    setWeightClass(event.target.value);
+                  }}
+                  style={styles.input}
                 >
-                  {isSaving ? "저장 완료!" : "변경사항 저장"}
-                </button>
-              </div>
+                  {WEIGHT_CLASSES.filter((item) => item !== "상관없음").map(
+                    (item) => (
+                      <option key={item} value={item}>
+                        {formatWeightClassOption(item)}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+
+              <label style={styles.fieldLabel}>
+                경력
+                <select
+                  value={experience}
+                  onChange={(event) => setExperience(event.target.value)}
+                  style={styles.input}
+                >
+                  {EXPERIENCE_LEVELS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={styles.fieldLabel}>
+                활동 지역
+                <span style={styles.fieldHint}>선택 입력 · 예: 강남, 홍대</span>
+                <input
+                  value={area}
+                  onChange={(event) => setArea(event.target.value)}
+                  placeholder="강남, 홍대"
+                  style={styles.input}
+                />
+              </label>
             </div>
-          ) : null}
-        </div>
-      </section>
+
+            <div style={styles.profileSaveFooter}>
+              {saveError ? (
+                <p style={styles.profileSaveError}>{saveError}</p>
+              ) : null}
+              <button
+                type="button"
+                style={styles.profileSaveButton}
+                onClick={handleSaveProfile}
+              >
+                {isSaving ? "저장 완료!" : "변경사항 저장"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </FighterSpecCard>
 
       <section style={styles.statGrid}>
         <div style={styles.statBox}>
@@ -2533,12 +2543,13 @@ ${logLines}${commentText}${mediaText}`;
           누적 {profileStats.totalRounds}R가 카드에 반영됩니다.
         </p>
 
-        <div style={styles.studioTabs} role="tablist" aria-label="카드 만들기 단계">
+        <div className="studio-tabs" style={styles.studioTabs} role="tablist" aria-label="카드 만들기 단계">
           <button
             type="button"
             role="tab"
             aria-selected={studioTab === "select"}
             onClick={() => setStudioTab("select")}
+            className="studio-tab"
             style={{
               ...styles.studioTab,
               ...(studioTab === "select" ? styles.studioTabActive : {}),
@@ -2551,6 +2562,7 @@ ${logLines}${commentText}${mediaText}`;
             role="tab"
             aria-selected={studioTab === "design"}
             onClick={() => setStudioTab("design")}
+            className="studio-tab"
             style={{
               ...styles.studioTab,
               ...(studioTab === "design" ? styles.studioTabActive : {}),
@@ -2679,7 +2691,7 @@ ${logLines}${commentText}${mediaText}`;
             <div style={styles.filterSection}>
               <p style={styles.cardMakerLabel}>3. 카드 스타일 선택</p>
 
-              <div style={styles.cardStyleGrid}>
+              <div className="card-style-grid" style={styles.cardStyleGrid}>
                 {CARD_STYLES.map((style) => (
                   <button
                     key={style.id}
@@ -2690,7 +2702,7 @@ ${logLines}${commentText}${mediaText}`;
                         ? styles.activeCardStyleButton
                         : {}),
                     }}
-                    onClick={() => setCardStyle(style.id)}
+                    onClick={() => handleSelectCardStyle(style.id)}
                   >
                     <strong>{style.name}</strong>
                     <span>{style.description}</span>
@@ -2712,7 +2724,7 @@ ${logLines}${commentText}${mediaText}`;
                 return (
                   <div key={groupName} style={styles.filterGroup}>
                     <p style={styles.filterGroupLabel}>{groupName}</p>
-                    <div style={styles.filterGrid}>
+                    <div className="filter-grid" style={styles.filterGrid}>
                       {groupFilters.map((filter) => {
                         const isLocked = !isVeteranFilterUnlocked(
                           filter.id,
@@ -3024,7 +3036,7 @@ ${logLines}${commentText}${mediaText}`;
                 </div>
               )}
             </div>
-            <div style={styles.livePreviewSection}>
+            <div className="training-card-preview-wrap" style={styles.livePreviewSection}>
               <div style={styles.livePreviewHeader}>
                 <p style={styles.cardMakerLabel}>결과 미리보기</p>
                 <p style={styles.cardMakerHelp}>
@@ -3388,20 +3400,7 @@ ${logLines}${commentText}${mediaText}`;
 
             <button
               type="button"
-              style={{
-                ...styles.saveImageButton,
-                ...(isSaveCardDisabled ? styles.disabledSaveButton : {}),
-              }}
-              onClick={isSaveCardDisabled ? undefined : handleSaveStoryImage}
-              disabled={isSaveCardDisabled || isSavingImage}
-            >
-              {isSavingImage
-                ? "스토리 저장 중..."
-                : "인스타 스토리로 저장 (9:16)"}
-            </button>
-
-            <button
-              type="button"
+              className="save-image-button"
               style={{
                 ...styles.saveImageButton,
                 ...(isSaveCardDisabled ? styles.disabledSaveButton : {}),
@@ -3415,7 +3414,7 @@ ${logLines}${commentText}${mediaText}`;
                 ? "이미지 저장 중..."
                 : isCardImagePreparing
                 ? "사진 준비 중..."
-                : "카드 이미지 저장하기"}
+                : cardSaveLabel}
             </button>
 
             <button
@@ -3427,8 +3426,12 @@ ${logLines}${commentText}${mediaText}`;
             </button>
 
             <p style={styles.shareHint}>
-              STORY 스타일은 1080×1920 인스타 스토리 비율입니다. 위 버튼으로
-              바로 저장하거나, 스타일에서 STORY를 선택해 미리볼 수 있어요.
+              선택한 <strong>{activeCardStyle.name}</strong> 스타일 그대로 저장됩니다.
+              {cardStyle === "social"
+                ? " 1080×1920 인스타 스토리 비율이에요."
+                : cardStyle === "poster"
+                ? " 세로 포스터 비율이에요."
+                : " 레벨업 카드 비율이에요."}
             </p>
 
             {exportPreview && (

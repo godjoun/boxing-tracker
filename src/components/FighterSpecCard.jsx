@@ -10,6 +10,9 @@ export default function FighterSpecCard({
   careerStageKo,
   streakDays = 0,
   onOpenCardMaker,
+  onUploadPhoto,
+  onRemovePhoto,
+  children,
 }) {
   const fighter = getFighterProgress(logs);
   const nameplateTier = getNameplateTier(fighter.level);
@@ -39,13 +42,34 @@ export default function FighterSpecCard({
         ) : null}
 
         <div className="fighter-nameplate-top">
-          <div className="fighter-nameplate-photo">
-            {profile?.photo ? (
-              <img src={profile.photo} alt="" />
-            ) : (
-              <span className="fighter-nameplate-photo-empty">NO PHOTO</span>
-            )}
-          </div>
+          {onUploadPhoto ? (
+            <button
+              type="button"
+              className="fighter-nameplate-photo fighter-nameplate-photo-btn"
+              onClick={onUploadPhoto}
+              aria-label={profile?.photo ? "프로필 사진 변경" : "프로필 사진 업로드"}
+            >
+              {profile?.photo ? (
+                <img src={profile.photo} alt="" />
+              ) : (
+                <span className="fighter-nameplate-photo-empty">
+                  <em>사진</em>
+                  <strong>+</strong>
+                </span>
+              )}
+              <span className="fighter-nameplate-photo-overlay" aria-hidden="true">
+                {profile?.photo ? "변경" : "추가"}
+              </span>
+            </button>
+          ) : (
+            <div className="fighter-nameplate-photo">
+              {profile?.photo ? (
+                <img src={profile.photo} alt="" />
+              ) : (
+                <span className="fighter-nameplate-photo-empty">NO PHOTO</span>
+              )}
+            </div>
+          )}
 
           <div className="fighter-nameplate-identity">
             <p className="fighter-nameplate-kicker">MY FIGHTER</p>
@@ -65,6 +89,31 @@ export default function FighterSpecCard({
             <small>{careerStageKo || fighter.careerStageKo || "일반인"}</small>
           </div>
         </div>
+
+        {onUploadPhoto ? (
+          <div className="fighter-nameplate-photo-actions">
+            <button
+              type="button"
+              className="fighter-nameplate-photo-action is-primary"
+              onClick={onUploadPhoto}
+            >
+              {profile?.photo ? "사진 변경" : "사진 업로드"}
+            </button>
+            {profile?.photo && onRemovePhoto ? (
+              <button
+                type="button"
+                className="fighter-nameplate-photo-action"
+                onClick={onRemovePhoto}
+              >
+                삭제
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {children ? (
+          <div className="fighter-nameplate-edit">{children}</div>
+        ) : null}
 
         {specItems.length > 0 ? (
           <div className="fighter-nameplate-specs">
@@ -114,8 +163,8 @@ export default function FighterSpecCard({
             <strong>{fighter.totalExp}</strong>
           </div>
           <div className="fighter-nameplate-stat">
-            <span>주간 점수</span>
-            <strong>{weeklyScore ?? 0}점</strong>
+            <span>주간 EXP</span>
+            <strong>{weeklyScore ?? 0}</strong>
             {streakDays > 0 ? <small>{streakDays}일 연속</small> : null}
           </div>
         </div>

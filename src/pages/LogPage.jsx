@@ -295,14 +295,10 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
   }
 
   function handleOpenCardFromReward(logId) {
-    if (logId) {
-      localStorage.setItem("fitness-league-card-maker-log-id", logId);
-    }
-
     const goCardMaker = onGoProfileCardMaker || onGoProfile;
 
     if (typeof goCardMaker === "function") {
-      goCardMaker();
+      goCardMaker(logId);
       return;
     }
 

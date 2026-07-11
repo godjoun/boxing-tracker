@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import FighterSpecCard from "../components/FighterSpecCard";
-import { getFighterProgress, MAX_FIGHTER_LEVEL } from "../utils/fighterProgress";
+import { getFighterProgress, MAX_FIGHTER_LEVEL, getLogExp } from "../utils/fighterProgress";
 import { getLevelTitle, getNextTitleMilestone } from "../utils/fighterTitles";
 import { isVeteranFilterUnlocked } from "../utils/veteranPerks";
 import { buildWeeklyReport } from "../utils/trainingStats";
@@ -36,6 +36,7 @@ import {
 
 export default function ProfilePage({
   scrollTarget,
+  cardMakerFocusLogId = null,
   fighterLevel = 1,
   onStartTraining,
 }) {
@@ -55,12 +56,16 @@ export default function ProfilePage({
   const cardMakerRef = useRef(null);
   const videoObjectUrlRef = useRef(null);
 
+  const startsInQuickCardFlow =
+    scrollTarget === "cardMaker" && Boolean(cardMakerFocusLogId);
+
   const [profileView, setProfileView] = useState(
     scrollTarget === "cardMaker" ? "studio" : "nameplate"
   );
   const [studioTab, setStudioTab] = useState(
-    scrollTarget === "cardMaker" ? "design" : "select"
+    startsInQuickCardFlow ? "design" : "select"
   );
+  const [isQuickCardFlow, setIsQuickCardFlow] = useState(startsInQuickCardFlow);
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
     profile.bio || "아직 초보지만 링에 계속 올라가는 중"
@@ -76,7 +81,9 @@ export default function ProfilePage({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  const [selectedLogIds, setSelectedLogIds] = useState([]);
+  const [selectedLogIds, setSelectedLogIds] = useState(
+    cardMakerFocusLogId ? [cardMakerFocusLogId] : []
+  );
   const [cardMedia, setCardMedia] = useState("");
   const [cardMediaType, setCardMediaType] = useState("");
   const [cardMediaReady, setCardMediaReady] = useState(true);
@@ -225,7 +232,16 @@ export default function ProfilePage({
 
   useEffect(() => {
     setSelectedLogIds((prev) => {
-      if (logs.length === 0) return [];
+      if (logs.length === 0) {
+        return prev.length > 0 ? prev : [];
+      }
+
+      if (
+        cardMakerFocusLogId &&
+        logs.some((log) => log.id === cardMakerFocusLogId)
+      ) {
+        return [cardMakerFocusLogId];
+      }
 
       if (prev.length === 0) {
         return [logs[0].id];
@@ -240,7 +256,7 @@ export default function ProfilePage({
 
       return validIds;
     });
-  }, [logs]);
+  }, [logs, cardMakerFocusLogId]);
 
   useEffect(() => {
     return () => {
@@ -254,8 +270,27 @@ export default function ProfilePage({
     if (scrollTarget !== "cardMaker") return;
 
     setProfileView("studio");
-    setStudioTab("select");
-  }, [scrollTarget]);
+
+    if (cardMakerFocusLogId) {
+      setIsQuickCardFlow(true);
+      setStudioTab("design");
+      setSelectedLogIds([cardMakerFocusLogId]);
+      track("card_maker_quick_flow", { hasFocusLog: true });
+    } else {
+      setIsQuickCardFlow(false);
+      setStudioTab("select");
+    }
+
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        cardMakerRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
+  }, [scrollTarget, cardMakerFocusLogId]);
 
   function handleSelectCardStyle(styleId) {
     cardStyleRef.current = styleId;
@@ -341,6 +376,11 @@ export default function ProfilePage({
     ? selectedLogIds.includes(latestLog.id)
     : false;
 
+  const quickFlowLog = useMemo(() => {
+    if (!isQuickCardFlow || selectedLogIds.length !== 1) return null;
+    return logs.find((log) => log.id === selectedLogIds[0]) || null;
+  }, [isQuickCardFlow, selectedLogIds, logs]);
+
   const visibleCardLogs = selectedLogs.slice(0, 3);
   const hiddenCardLogCount = Math.max(0, selectedLogs.length - 3);
 
@@ -385,6 +425,7 @@ export default function ProfilePage({
 
   function scrollToCardMaker() {
     setProfileView("studio");
+    setIsQuickCardFlow(false);
     setStudioTab("select");
 
     if (typeof window !== "undefined") {
@@ -394,6 +435,7 @@ export default function ProfilePage({
 
   function backToNameplate() {
     setProfileView("nameplate");
+    setIsQuickCardFlow(false);
 
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2259,12 +2301,16 @@ ${logLines}${commentText}${mediaText}`;
 
   const activeCardStyle =
     CARD_STYLES.find((style) => style.id === cardStyle) || CARD_STYLES[0];
-  const cardSaveLabel =
+  const baseCardSaveLabel =
     cardStyle === "social"
       ? "STORY 카드 저장 (9:16)"
       : cardStyle === "poster"
       ? "POSTER 카드 저장"
       : "LEVEL UP 카드 저장";
+  const cardSaveLabel =
+    isQuickCardFlow && cardMedia
+      ? `인증 카드 저장·공유하기`
+      : baseCardSaveLabel;
 
   return (
     <main style={styles.page} className="profile-page">
@@ -2563,7 +2609,33 @@ ${logLines}${commentText}${mediaText}`;
           </button>
         </div>
 
-        {latestLog && isLatestLogSelected && (
+        {isQuickCardFlow && quickFlowLog ? (
+          <div className="card-quick-flow-hero" style={styles.quickCardFlowHero}>
+            <p style={styles.quickCardFlowKicker}>방금 훈련 인증</p>
+            <div className="quick-card-flow-statline" style={styles.quickCardFlowStatline}>
+              <strong>{getRounds(quickFlowLog)}R</strong>
+              <span aria-hidden="true">·</span>
+              <em>+{getLogExp(quickFlowLog)} EXP</em>
+            </div>
+            <p style={styles.quickCardFlowCopy}>
+              {quickFlowLog.type} · {getTotalMinutes(quickFlowLog)}분
+            </p>
+            {!cardMedia ? (
+              <button
+                type="button"
+                className="card-quick-flow-photo-cta"
+                style={styles.quickCardFlowPhotoCta}
+                onClick={() => cardMediaInputRef.current?.click()}
+              >
+                훈련 사진 넣고 카드 완성하기
+              </button>
+            ) : (
+              <p style={styles.quickCardFlowReady}>
+                사진이 준비됐어요. 스타일을 고르고 아래에서 저장·공유하세요.
+              </p>
+            )}
+          </div>
+        ) : latestLog && isLatestLogSelected ? (
           <div style={styles.recentTrainingNotice}>
             <span style={styles.recentTrainingBadge}>최근 훈련 선택됨</span>
 
@@ -2578,7 +2650,7 @@ ${logLines}${commentText}${mediaText}`;
               </p>
             </div>
           </div>
-        )}
+        ) : null}
 
         {logs.length === 0 ? (
           <div style={styles.emptyFeaturedLog}>

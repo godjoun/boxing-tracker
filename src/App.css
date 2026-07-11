@@ -1243,6 +1243,33 @@
   cursor: pointer;
 }
 
+.card-quick-flow-hero .quick-card-flow-statline strong {
+  font-size: clamp(32px, 10vw, 42px);
+  font-weight: 950;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.card-quick-flow-hero .quick-card-flow-statline span {
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 20px;
+}
+
+.card-quick-flow-hero .quick-card-flow-statline em {
+  font-style: normal;
+  color: #ff8a84;
+  font-size: clamp(18px, 5vw, 24px);
+  font-weight: 900;
+}
+
+.theme-light .card-quick-flow-hero .quick-card-flow-statline span {
+  color: #d4c4a8;
+}
+
+.theme-light .card-quick-flow-hero .quick-card-flow-statline em {
+  color: #a67c00;
+}
+
 .home-today-ready {
   position: relative;
   z-index: 1;

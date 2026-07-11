@@ -269,7 +269,7 @@ export default function HomePage({
             <button
               type="button"
               className="home-today-card-link"
-              onClick={onOpenCardMaker}
+              onClick={() => onOpenCardMaker?.(dashboard.lastLog?.id)}
             >
               인증 카드 만들기 →
             </button>

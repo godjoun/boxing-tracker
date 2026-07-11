@@ -51,6 +51,7 @@ function MainAppShell() {
   const [tutorialSession, setTutorialSession] = useState(0);
   const [gymView, setGymView] = useState("hub");
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
+  const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("fitness-league-theme") || "dark";
@@ -79,6 +80,7 @@ function MainAppShell() {
   const goPage = (page) => {
     if (page !== "profile") {
       setProfileScrollTarget(null);
+      setCardMakerLogId(null);
     }
 
     setCurrentPage(page);
@@ -86,10 +88,12 @@ function MainAppShell() {
 
   const goProfile = () => {
     setProfileScrollTarget(null);
+    setCardMakerLogId(null);
     setCurrentPage("profile");
   };
 
-  const goProfileCardMaker = () => {
+  const goProfileCardMaker = (logId = null) => {
+    setCardMakerLogId(logId || null);
     setProfileScrollTarget("cardMaker");
     setCurrentPage("profile");
   };
@@ -212,6 +216,7 @@ function MainAppShell() {
         {currentPage === "profile" && (
           <ProfilePage
             scrollTarget={profileScrollTarget}
+            cardMakerFocusLogId={cardMakerLogId}
             fighterLevel={fighterLevel}
             onStartTraining={() => goPage("timer")}
           />

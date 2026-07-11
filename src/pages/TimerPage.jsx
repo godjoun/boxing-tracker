@@ -198,6 +198,7 @@ export default function TimerPage({
   );
   const [hasSavedLog, setHasSavedLog] = useState(initialTimerState.hasSavedLog);
   const [completionResult, setCompletionResult] = useState(null);
+  const [completedLogId, setCompletedLogId] = useState(null);
   const [soundMode, setSoundMode] = useState(initialTimerState.soundMode);
 
   const savedLogRef = useRef(initialTimerState.hasSavedLog);
@@ -532,6 +533,7 @@ export default function TimerPage({
     }
 
     setCompletionResult(getCompletionDelta(logs, savedLog));
+    setCompletedLogId(savedLog.id);
     setHasSavedLog(true);
   }, [
     phase,
@@ -556,6 +558,7 @@ export default function TimerPage({
     setHasStartedSession(false);
     setHasSavedLog(false);
     setCompletionResult(null);
+    setCompletedLogId(null);
     savedLogRef.current = false;
   };
 
@@ -753,7 +756,7 @@ export default function TimerPage({
 
   const handleGoProfile = () => {
     if (onGoProfile) {
-      onGoProfile();
+      onGoProfile(completedLogId);
       return;
     }
 

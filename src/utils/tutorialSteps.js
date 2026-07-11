@@ -2,7 +2,7 @@ export const TUTORIAL_TARGETS = {
   homeStart: "home-start",
   navTimer: "nav-timer",
   navLog: "nav-log",
-  navJourney: "nav-journey",
+  navGrowth: "nav-growth",
   navCategory: "nav-category",
 };
 
@@ -45,14 +45,22 @@ export const TUTORIAL_STEPS = [
     placement: "top",
   },
   {
-    id: "nav-log",
+    id: "nav-growth",
     kicker: "GROWTH",
-    title: "기록 · 성장",
-    body: "훈련하면 기록 탭에 라운드가 쌓이고 EXP로 레벨이 올라요. 성장 탭에서 분석·여정·칭호도 확인하세요.",
+    title: "성장 탭",
+    body: "주간 목표, 다음 마일스톤, 칭호·업적을 여기서 확인하세요.",
+    mode: "spotlight",
+    target: TUTORIAL_TARGETS.navGrowth,
+    placement: "top",
+  },
+  {
+    id: "nav-log",
+    kicker: "LOG",
+    title: "기록 탭",
+    body: "훈련하면 기록 탭에 라운드가 쌓이고 EXP로 레벨이 올라요.",
     mode: "spotlight",
     target: TUTORIAL_TARGETS.navLog,
     placement: "top",
-    secondaryTarget: TUTORIAL_TARGETS.navJourney,
   },
   {
     id: "finish",

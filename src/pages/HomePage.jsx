@@ -20,9 +20,17 @@ import {
 const HOME_FEATURES_KEY = "fitness-league-home-features";
 
 function loadSelectedFeatures() {
+  const validIds = new Set(DASHBOARD_SHORTCUT_POOL.map((item) => item.id));
+
   try {
     const saved = JSON.parse(localStorage.getItem(HOME_FEATURES_KEY) || "null");
-    return Array.isArray(saved) ? saved : DEFAULT_HOME_SHORTCUTS;
+
+    if (!Array.isArray(saved)) {
+      return DEFAULT_HOME_SHORTCUTS;
+    }
+
+    const filtered = saved.filter((id) => validIds.has(id));
+    return filtered.length > 0 ? filtered : DEFAULT_HOME_SHORTCUTS;
   } catch {
     return DEFAULT_HOME_SHORTCUTS;
   }
@@ -303,7 +311,7 @@ export default function HomePage({
         ) : nextVeteranPerk ? (
           <p className="home-growth-empty">
             LV.{nextVeteranPerk.level} 베테랑 혜택{" "}
-            <strong>{nextVeteranPerk.label}</strong> 해금 예정 · 여정 탭에서 확인
+            <strong>{nextVeteranPerk.label}</strong> 해금 예정 · 성장 탭에서 확인
           </p>
         ) : null}
 

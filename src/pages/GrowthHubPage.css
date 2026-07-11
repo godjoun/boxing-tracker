@@ -1,0 +1,243 @@
+.growth-hub-header {
+  margin-bottom: 18px;
+}
+
+.growth-hub-title {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.growth-hub-subtitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-empty {
+  border-radius: 22px;
+  padding: 20px;
+  margin-bottom: 14px;
+  background: var(--p-bg-subtle);
+  border: 1px solid var(--p-border-soft);
+  color: var(--p-text);
+}
+
+.growth-hub-empty-kicker {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--p-accent);
+}
+
+.growth-hub-empty-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.growth-hub-empty-text {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-empty-button {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  background: linear-gradient(135deg, #e8c66a, #c49a2e);
+  color: #1f1a12;
+}
+
+.growth-hub-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--p-bg-subtle);
+  border: 1px solid var(--p-border-soft);
+}
+
+.growth-hub-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  text-align: center;
+}
+
+.growth-hub-summary-item span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-summary-item strong {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.growth-hub-exp-hint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-card {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--p-border-soft);
+  background: var(--p-bg-deep);
+  color: var(--p-text);
+  text-align: left;
+}
+
+.growth-hub-card.is-clickable {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.growth-hub-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.growth-hub-kicker {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: var(--p-accent);
+}
+
+.growth-hub-card-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.growth-hub-card-desc {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-card-note {
+  margin: 10px 0 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-card-arrow {
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--p-text-faint);
+}
+
+.growth-hub-goal-target {
+  flex-shrink: 0;
+  min-width: 58px;
+  padding: 8px 12px;
+  border: 1px solid rgba(239, 63, 54, 0.34);
+  border-radius: 999px;
+  background: rgba(239, 63, 54, 0.1);
+  color: #ff8a84;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.growth-hub-progress-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.growth-hub-progress-meta strong {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.growth-hub-progress-meta span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-progress-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--p-bg-inner);
+  overflow: hidden;
+}
+
+.growth-hub-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ef3f36, #ff7043);
+}
+
+.growth-hub-progress-fill.is-complete {
+  background: linear-gradient(90deg, #34d399, #10b981);
+}
+
+.growth-hub-progress-fill.is-gold {
+  background: linear-gradient(90deg, #c49a2e, #e8c66a);
+}
+
+.growth-hub-milestone-name {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.growth-hub-milestone-desc {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-collections {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.growth-hub-collections .journey-card {
+  margin: 0;
+}
+
+.theme-light .growth-hub-goal-target {
+  border-color: rgba(196, 154, 46, 0.34);
+  background: rgba(212, 168, 50, 0.12);
+  color: #8a6a12;
+}
+
+.theme-light .growth-hub-progress-fill.is-complete {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+}

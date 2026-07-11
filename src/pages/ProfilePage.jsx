@@ -2512,15 +2512,6 @@ ${logLines}${commentText}${mediaText}`;
           </p>
         </div>
       </section>
-
-      <section style={styles.sectionCard}>
-        <p style={styles.kicker}>MY JOURNEY</p>
-        <h2 style={styles.sectionTitle}>훈련 여정</h2>
-        <p style={styles.proofSmallText}>
-          칭호 도감, 베테랑 혜택, 업적, 대표 훈련 기록은 하단 탭 <strong>여정</strong>에서 볼 수
-          있습니다.
-        </p>
-      </section>
         </>
       )}
 

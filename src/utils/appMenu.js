@@ -93,18 +93,6 @@ export const DASHBOARD_SHORTCUT_POOL = [
     action: "card-maker",
   },
   {
-    id: "growth",
-    icon: "↗",
-    title: "성장 분석",
-    route: "stats",
-  },
-  {
-    id: "weekly",
-    icon: "W",
-    title: "주간 리포트",
-    route: "weekly",
-  },
-  {
     id: "training-log",
     icon: "R",
     title: "훈련 로그",
@@ -153,9 +141,8 @@ export const DASHBOARD_SHORTCUT_POOL = [
 
 export const DEFAULT_HOME_SHORTCUTS = [
   "fighter-card",
-  "growth",
-  "weekly",
   "training-log",
+  "curriculum",
 ];
 
 export function getDashboardShortcut(id) {

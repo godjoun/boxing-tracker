@@ -5,13 +5,10 @@ import { TrainingProvider, useTraining } from "./store/TrainingContext";
 import HomePage from "./pages/HomePage";
 import LogPage from "./pages/LogPage";
 import TimerPage from "./pages/TimerPage";
-import StatsPage from "./pages/StatsPage";
 import ProfilePage from "./pages/ProfilePage";
 import CategoryPage from "./pages/CategoryPage";
 import GymFinderPage from "./pages/GymFinderPage";
-import WeeklyReportPage from "./pages/WeeklyReportPage";
 import DataBackupPage from "./pages/DataBackupPage";
-import JourneyPage from "./pages/JourneyPage";
 import CurriculumPage from "./pages/CurriculumPage";
 import ComboCreatorPage from "./pages/ComboCreatorPage";
 import StrengthProgramPage from "./pages/StrengthProgramPage";
@@ -203,22 +200,9 @@ function MainAppShell() {
 
         {currentPage === "growth" && (
           <GrowthHubPage
-            onOpenStats={() => goPage("stats")}
-            onOpenWeekly={() => goPage("weekly")}
-            onOpenJourney={() => goPage("journey")}
+            onOpenCurriculum={() => goPage("curriculum")}
             onStartTraining={() => goPage("timer")}
           />
-        )}
-
-        {currentPage === "stats" && (
-          <StatsPage
-            onGoBack={() => goPage("growth")}
-            onGoWeekly={() => goPage("weekly")}
-          />
-        )}
-
-        {currentPage === "weekly" && (
-          <WeeklyReportPage onGoBack={() => goPage("growth")} />
         )}
 
         {currentPage === "backup" && (
@@ -233,17 +217,10 @@ function MainAppShell() {
           />
         )}
 
-        {currentPage === "journey" && (
-          <JourneyPage
-            onGoBack={() => goPage("growth")}
-            onStartTraining={() => goPage("timer")}
-          />
-        )}
-
         {currentPage === "curriculum" && (
           <CurriculumPage
             fighterLevel={fighterLevel}
-            onGoBack={() => goPage("category")}
+            onGoBack={() => goPage("train")}
             onStartSession={goTimerWithSession}
             onOpenComboCreator={() => goPage("combo-creator")}
             onStartTraining={() => goPage("timer")}
@@ -252,7 +229,7 @@ function MainAppShell() {
 
         {currentPage === "strength" && (
           <StrengthProgramPage
-            onGoBack={() => goPage("category")}
+            onGoBack={() => goPage("train")}
             onStartWarmup={goTimerWithLaunch}
           />
         )}
@@ -344,13 +321,8 @@ function MainAppShell() {
 
         <button
           type="button"
-          data-tutorial-target="nav-journey"
-          className={getNavClass(
-            currentPage === "growth" ||
-              currentPage === "journey" ||
-              currentPage === "stats" ||
-              currentPage === "weekly"
-          )}
+          data-tutorial-target="nav-growth"
+          className={getNavClass(currentPage === "growth")}
           onClick={() => goPage("growth")}
         >
           <span className="app-nav-icon" aria-hidden="true">

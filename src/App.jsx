@@ -24,6 +24,7 @@ import { getFighterProgress } from "./utils/fighterProgress";
 import { buildCurriculumTimerLaunch } from "./utils/homeCurriculum";
 import { buildPresetTimerLaunch } from "./utils/timerPresets";
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
+import { recordAppOpen } from "./utils/retentionMetrics";
 import "./App.css";
 
 export default function App() {
@@ -67,6 +68,10 @@ function MainAppShell() {
     if (!isTutorialComplete()) {
       setShowTutorial(true);
     }
+  }, []);
+
+  useEffect(() => {
+    recordAppOpen();
   }, []);
 
   const toggleTheme = () => {
@@ -146,6 +151,8 @@ function MainAppShell() {
             onNavigate={goPage}
             onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
+            onOpenCurriculum={() => goPage("curriculum")}
+            onStartCurriculumSession={goTimerWithSession}
           />
         )}
 

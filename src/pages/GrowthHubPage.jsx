@@ -12,7 +12,7 @@ import {
   writeWeeklyRoundGoal,
 } from "../utils/growthGoals";
 import { getVeteranPerkCollection } from "../utils/veteranPerks";
-import { buildAllTimeStats } from "../utils/trainingStats";
+import { buildAllTimeStats, buildWeeklyReport } from "../utils/trainingStats";
 import "./GrowthHubPage.css";
 import "./JourneyPage.css";
 
@@ -38,6 +38,7 @@ export default function GrowthHubPage({
     curriculum,
     weeklyGoalStatus,
     milestone,
+    weeklyReport,
     titleCollection,
     veteranPerks,
     achievements,
@@ -48,6 +49,7 @@ export default function GrowthHubPage({
       curriculum: getCurriculumProgress(),
       weeklyGoalStatus: getWeeklyGoalStatus(logs, weeklyGoal),
       milestone: getNextGrowthMilestone(logs),
+      weeklyReport: buildWeeklyReport(logs),
       titleCollection: getTitleCollection(getFighterProgress(logs).level),
       veteranPerks: getVeteranPerkCollection(getFighterProgress(logs).level),
       achievements: buildJourneyAchievements(logs),
@@ -156,6 +158,29 @@ export default function GrowthHubPage({
             : "목표 숫자를 눌러 9R · 12R · 15R · 21R 중에서 바꿀 수 있어요."}
         </p>
       </section>
+
+      {!isEmpty && weeklyReport.highlights.length > 0 ? (
+        <section className="growth-hub-card growth-hub-weekly-report">
+          <div className="growth-hub-card-head">
+            <div>
+              <p className="growth-hub-kicker">WEEKLY REPORT</p>
+              <h2 className="growth-hub-card-title">이번 주 한 줄</h2>
+            </div>
+            <span className="growth-hub-weekly-report-label">{weeklyReport.weekLabel}</span>
+          </div>
+
+          <ul className="growth-hub-weekly-report-list">
+            {weeklyReport.highlights.slice(0, 3).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+
+          <p className="growth-hub-card-note">
+            {weeklyReport.totalRounds}R · {weeklyReport.totalSessions}회 ·{" "}
+            {weeklyReport.totalMinutes}분 훈련
+          </p>
+        </section>
+      ) : null}
 
       {milestone ? (
         <section className="growth-hub-card growth-hub-milestone">

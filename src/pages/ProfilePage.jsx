@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import FighterSpecCard from "../components/FighterSpecCard";
-import { getFighterProgress, MAX_FIGHTER_LEVEL, getLogExp } from "../utils/fighterProgress";
+import { getFighterProgress, MAX_FIGHTER_LEVEL } from "../utils/fighterProgress";
 import { getLevelTitle, getNextTitleMilestone } from "../utils/fighterTitles";
 import { isVeteranFilterUnlocked } from "../utils/veteranPerks";
 import { buildWeeklyReport } from "../utils/trainingStats";
@@ -375,11 +375,6 @@ export default function ProfilePage({
   const isLatestLogSelected = latestLog
     ? selectedLogIds.includes(latestLog.id)
     : false;
-
-  const quickFlowLog = useMemo(() => {
-    if (!isQuickCardFlow || selectedLogIds.length !== 1) return null;
-    return logs.find((log) => log.id === selectedLogIds[0]) || null;
-  }, [isQuickCardFlow, selectedLogIds, logs]);
 
   const visibleCardLogs = selectedLogs.slice(0, 3);
   const hiddenCardLogCount = Math.max(0, selectedLogs.length - 3);
@@ -2609,33 +2604,7 @@ ${logLines}${commentText}${mediaText}`;
           </button>
         </div>
 
-        {isQuickCardFlow && quickFlowLog ? (
-          <div className="card-quick-flow-hero" style={styles.quickCardFlowHero}>
-            <p style={styles.quickCardFlowKicker}>방금 훈련 인증</p>
-            <div className="quick-card-flow-statline" style={styles.quickCardFlowStatline}>
-              <strong>{getRounds(quickFlowLog)}R</strong>
-              <span aria-hidden="true">·</span>
-              <em>+{getLogExp(quickFlowLog)} EXP</em>
-            </div>
-            <p style={styles.quickCardFlowCopy}>
-              {quickFlowLog.type} · {getTotalMinutes(quickFlowLog)}분
-            </p>
-            {!cardMedia ? (
-              <button
-                type="button"
-                className="card-quick-flow-photo-cta"
-                style={styles.quickCardFlowPhotoCta}
-                onClick={() => cardMediaInputRef.current?.click()}
-              >
-                훈련 사진 넣고 카드 완성하기
-              </button>
-            ) : (
-              <p style={styles.quickCardFlowReady}>
-                사진이 준비됐어요. 스타일을 고르고 아래에서 저장·공유하세요.
-              </p>
-            )}
-          </div>
-        ) : latestLog && isLatestLogSelected ? (
+        {latestLog && isLatestLogSelected ? (
           <div style={styles.recentTrainingNotice}>
             <span style={styles.recentTrainingBadge}>최근 훈련 선택됨</span>
 

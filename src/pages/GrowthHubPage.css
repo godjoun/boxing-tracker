@@ -222,6 +222,24 @@
   color: var(--p-text-muted);
 }
 
+.growth-hub-weekly-report-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--p-text-muted);
+}
+
+.growth-hub-weekly-report-list {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: var(--p-text-soft);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.growth-hub-weekly-report-list li + li {
+  margin-top: 6px;
+}
+
 .growth-hub-collections {
   display: flex;
   flex-direction: column;

@@ -13,6 +13,8 @@ import {
   buildWeeklyRoundTrend,
   getWeeklyTrendSummary,
 } from "../utils/trainingStats";
+import { getTodaysLessonPreview } from "../utils/dailyLesson";
+import { getFirstWeekChallengeStatus } from "../utils/retentionMetrics";
 
 const HOME_FEATURES_KEY = "fitness-league-home-features";
 
@@ -100,6 +102,8 @@ export default function HomePage({
   onNavigate,
   onNavigateGym,
   onOpenCardMaker,
+  onOpenCurriculum,
+  onStartCurriculumSession,
 }) {
   const { logs = [], profile, weeklyScore } = useTraining();
   const [selectedDate, setSelectedDate] = useState("");
@@ -168,6 +172,12 @@ export default function HomePage({
 
   const trainingBreakdown = useMemo(
     () => buildTrainingBreakdown(logs),
+    [logs]
+  );
+
+  const todaysLesson = useMemo(() => getTodaysLessonPreview(), []);
+  const firstWeekChallenge = useMemo(
+    () => getFirstWeekChallengeStatus(logs),
     [logs]
   );
 
@@ -317,6 +327,101 @@ export default function HomePage({
           </p>
         )}
       </section>
+
+      <section className="home-daily-lesson">
+        <div className="home-daily-lesson-head">
+          <div>
+            <p className="home-daily-lesson-kicker">TODAY&apos;S LESSON</p>
+            <h2 className="home-daily-lesson-title">오늘의 레슨</h2>
+          </div>
+          {todaysLesson.kind === "session" ? (
+            <span className="home-daily-lesson-badge">
+              {todaysLesson.completedCount}/{todaysLesson.totalSessions}
+            </span>
+          ) : null}
+        </div>
+
+        {todaysLesson.kind === "session" ? (
+          <>
+            <div className="home-daily-lesson-meta">
+              {todaysLesson.weekLabel ? (
+                <span>{todaysLesson.weekLabel}</span>
+              ) : null}
+              {todaysLesson.code ? <span>{todaysLesson.code}</span> : null}
+            </div>
+            <strong className="home-daily-lesson-session">{todaysLesson.title}</strong>
+            {todaysLesson.goal ? (
+              <p className="home-daily-lesson-goal">{todaysLesson.goal}</p>
+            ) : null}
+            {todaysLesson.previewDrillText ? (
+              <p className="home-daily-lesson-preview">
+                <em>{todaysLesson.previewDrillName}</em>
+                {todaysLesson.previewDrillName ? " — " : ""}
+                {todaysLesson.previewDrillText}
+              </p>
+            ) : null}
+            <div className="home-daily-lesson-actions">
+              <button
+                type="button"
+                className="home-daily-lesson-primary"
+                onClick={() => onStartCurriculumSession?.(todaysLesson.session)}
+              >
+                {dashboard.trainedToday ? "레슨 세션 시작" : `${todaysLesson.rounds}R 세션 시작`} →
+              </button>
+              <button
+                type="button"
+                className="home-daily-lesson-secondary"
+                onClick={() => onOpenCurriculum?.()}
+              >
+                커리큘럼 보기
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <strong className="home-daily-lesson-session">{todaysLesson.title}</strong>
+            <p className="home-daily-lesson-goal">{todaysLesson.message}</p>
+            <div className="home-daily-lesson-actions">
+              <button
+                type="button"
+                className="home-daily-lesson-primary"
+                onClick={() => onOpenCurriculum?.()}
+              >
+                커리큘럼 다시 보기 →
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+
+      {firstWeekChallenge ? (
+        <section className="home-first-week-challenge" aria-label="첫 주 챌린지">
+          <p className="home-first-week-kicker">FIRST WEEK</p>
+          <div className="home-first-week-stats">
+            <div>
+              <span>훈련 완료</span>
+              <strong>
+                {firstWeekChallenge.timerCompletes}/{firstWeekChallenge.timerTarget}
+              </strong>
+            </div>
+            <div>
+              <span>앱 방문</span>
+              <strong>
+                {firstWeekChallenge.openDays}/{firstWeekChallenge.openTarget}일
+              </strong>
+            </div>
+            <div>
+              <span>남은 기간</span>
+              <strong>D-{firstWeekChallenge.daysLeft}</strong>
+            </div>
+          </div>
+          <p className="home-first-week-copy">
+            {firstWeekChallenge.isTimerComplete
+              ? "첫 주 훈련 목표를 달성했어요."
+              : "운동 안 하는 날에도 레슨을 보고 방문일을 채워 보세요."}
+          </p>
+        </section>
+      ) : null}
 
       <div className="home-cta-row">
         <button
@@ -571,6 +676,13 @@ export default function HomePage({
       </section>
       </details>
 
+      <p className="home-backup-hint">
+        훈련 기록은 이 기기에 저장됩니다.{" "}
+        <button type="button" onClick={() => onNavigate?.("backup")}>
+          데이터 백업
+        </button>
+        으로 JSON 보관을 권장해요.
+      </p>
     </main>
   );
 }

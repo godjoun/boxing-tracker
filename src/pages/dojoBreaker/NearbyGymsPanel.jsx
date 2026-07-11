@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { track } from "@vercel/analytics";
+import GymInquiryModal from "../../components/GymInquiryModal";
 import {
   getGymDataSourceLabel,
   getLocationSourceLabel,
@@ -16,7 +18,13 @@ export default function NearbyGymsPanel({ onGoBack }) {
   const [gyms, setGyms] = useState([]);
   const [position, setPosition] = useState(null);
   const [locationHint, setLocationHint] = useState("");
+  const [inquiryGym, setInquiryGym] = useState(null);
   const apiInfo = getDojoApiInfo();
+
+  function openInquiry(gym) {
+    track("gym_inquiry_open", { gymId: gym.id });
+    setInquiryGym(gym);
+  }
 
   async function loadGyms(options = {}) {
     const {
@@ -197,12 +205,23 @@ export default function NearbyGymsPanel({ onGoBack }) {
                   {gym.tags?.length > 0 && (
                     <p className="gym-result-category">{gym.tags.join(" · ")}</p>
                   )}
+                  <button
+                    type="button"
+                    className="gym-inquiry-button"
+                    onClick={() => openInquiry(gym)}
+                  >
+                    체험 문의
+                  </button>
                 </div>
               </article>
             ))}
           </div>
         )}
       </section>
+
+      {inquiryGym ? (
+        <GymInquiryModal gym={inquiryGym} onClose={() => setInquiryGym(null)} />
+      ) : null}
     </>
   );
 }

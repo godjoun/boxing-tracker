@@ -527,65 +527,6 @@ export const styles = {
     lineHeight: 1.5,
   },
 
-  quickCardFlowHero: {
-    marginBottom: "18px",
-    padding: "18px 16px",
-    borderRadius: "20px",
-    background:
-      "linear-gradient(145deg, var(--p-accent-bg), rgba(196, 154, 46, 0.08))",
-    border: "1px solid var(--p-accent-border)",
-    textAlign: "center",
-  },
-
-  quickCardFlowKicker: {
-    margin: "0 0 10px",
-    color: "var(--p-accent-solid)",
-    fontSize: "11px",
-    fontWeight: 900,
-    letterSpacing: "0.14em",
-  },
-
-  quickCardFlowStatline: {
-    display: "flex",
-    alignItems: "baseline",
-    justifyContent: "center",
-    gap: "8px",
-    marginBottom: "8px",
-    color: "var(--p-text)",
-    fontSize: "28px",
-    fontWeight: 900,
-    lineHeight: 1.1,
-  },
-
-  quickCardFlowStatlineSpan: {},
-
-  quickCardFlowCopy: {
-    margin: "0 0 14px",
-    color: "var(--p-text-soft)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
-  quickCardFlowPhotoCta: {
-    width: "100%",
-    padding: "14px 16px",
-    border: "none",
-    borderRadius: "14px",
-    background: "linear-gradient(135deg, #e8c66a, #c49a2e)",
-    color: "#1f1a12",
-    fontSize: "14px",
-    fontWeight: 900,
-    cursor: "pointer",
-    boxShadow: "0 8px 18px rgba(196, 154, 46, 0.22)",
-  },
-
-  quickCardFlowReady: {
-    margin: 0,
-    color: "var(--p-text-soft)",
-    fontSize: "13px",
-    lineHeight: 1.5,
-  },
-
   selectorSection: {
     marginBottom: "16px",
   },

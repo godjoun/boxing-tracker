@@ -8,9 +8,6 @@ import {
 } from "../utils/appMenu";
 import { isFeatureUnlocked } from "../utils/featureUnlocks";
 import { getFighterProgress, getLogExp } from "../utils/fighterProgress";
-import { getSparringUnlockProgress, SPARRING_UNLOCK_LEVEL } from "../utils/featureUnlocks";
-import { getLevelTitle } from "../utils/fighterTitles";
-import { getNextVeteranPerk } from "../utils/veteranPerks";
 import { getTrainingStreak } from "./profilePage/profileCardUtils";
 import {
   buildWeeklyRoundTrend,
@@ -216,9 +213,6 @@ export default function HomePage({
   const monthTitle = `${now.getFullYear()}. ${String(
     now.getMonth() + 1
   ).padStart(2, "0")}`;
-  const sparringProgress = getSparringUnlockProgress(fighterLevel);
-  const sparringTitle = getLevelTitle(SPARRING_UNLOCK_LEVEL);
-  const nextVeteranPerk = getNextVeteranPerk(fighterLevel);
 
   return (
     <main className="home-page">
@@ -243,10 +237,10 @@ export default function HomePage({
         </button>
       ) : null}
 
-      <section className="home-growth-hero">
+      <section className="home-growth-hero home-today-hero">
         <div className="home-growth-head">
           <div>
-            <p className="home-kicker">성장 현황</p>
+            <p className="home-kicker">TODAY&apos;S FIGHTER</p>
             <h1>{profile?.nickname || "나의 파이터"}</h1>
             <p className="home-growth-title">{dashboard.fighterTitle}</p>
             {dashboard.fighterTitleEn ? (
@@ -260,9 +254,35 @@ export default function HomePage({
           </div>
         </div>
 
-        <div className="home-growth-highlight">
+        {dashboard.lastLog && dashboard.trainedToday ? (
+          <div className="home-today-victory">
+            <p className="home-today-victory-kicker">TODAY</p>
+            <div className="home-today-victory-statline">
+              <strong>{getRounds(dashboard.lastLog)}R</strong>
+              <span>·</span>
+              <em>+{dashboard.lastLogExp} EXP</em>
+            </div>
+            <p className="home-today-victory-copy">
+              {dashboard.lastLog.type} ·{" "}
+              {dashboard.lastLog.minutes || dashboard.lastLog.duration}분
+            </p>
+            <button
+              type="button"
+              className="home-today-card-link"
+              onClick={onOpenCardMaker}
+            >
+              인증 카드 만들기 →
+            </button>
+          </div>
+        ) : (
+          <div className="home-today-ready">
+            <p>오늘 첫 라운드를 시작하면 여기에 오늘의 기록이 표시됩니다.</p>
+          </div>
+        )}
+
+        <div className="home-growth-highlight home-today-metrics">
           <div className="home-growth-main-stat">
-            <span>이번 주 라운드</span>
+            <span>이번 주</span>
             <strong>{dashboard.weeklyRounds}R</strong>
             <em className={`home-growth-trend tone-${dashboard.trendSummary.tone}`}>
               {dashboard.trendSummary.label}
@@ -271,68 +291,29 @@ export default function HomePage({
 
           <div className="home-growth-side-stats">
             <div>
-              <span>이번 주 EXP</span>
-              <strong>{dashboard.weeklyExp}</strong>
+              <span>연속</span>
+              <strong>{dashboard.streakDays}일</strong>
             </div>
             <div>
-              <span>연속 훈련</span>
-              <strong>{dashboard.streakDays}일</strong>
+              <span>누적</span>
+              <strong>{dashboard.totalRounds}R</strong>
             </div>
           </div>
         </div>
 
-        <div className="home-exp-meta">
-          <span>LV. {dashboard.level}</span>
-          <b>
-            {dashboard.isMaxLevel
-              ? `MAX LV.${dashboard.level}`
-              : `${dashboard.currentExp} / ${dashboard.nextLevelExp} EXP`}{" "}
-            · 누적 {dashboard.totalRounds}R
-          </b>
-        </div>
-        <div className="home-exp-bar" aria-label="현재 레벨 경험치">
-          <div style={{ width: `${dashboard.progressPercent}%` }} />
-        </div>
-        <p className="home-exp-copy">
-          {dashboard.isMaxLevel ? (
-            <strong>최대 레벨 달성</strong>
-          ) : (
-            <>
-              다음 레벨까지 <strong>{dashboard.expToNext} EXP</strong>
-            </>
-          )}
-        </p>
-
-        {!sparringProgress.unlocked ? (
-          <p className="home-growth-empty">
-            LV.{sparringProgress.unlockLevel}{" "}
-            <strong>{sparringTitle.ko}</strong> 칭호 달성 시 스파링 상대찾기 해금
-          </p>
-        ) : nextVeteranPerk ? (
-          <p className="home-growth-empty">
-            LV.{nextVeteranPerk.level} 베테랑 혜택{" "}
-            <strong>{nextVeteranPerk.label}</strong> 해금 예정 · 성장 탭에서 확인
-          </p>
-        ) : null}
-
-        {dashboard.lastLog ? (
-          <div className="home-last-growth">
-            <div>
-              <span className="home-last-growth-label">최근 훈련</span>
-              <strong>{dashboard.lastLog.type}</strong>
-              <p>
-                {getRounds(dashboard.lastLog)}R ·{" "}
-                {dashboard.lastLog.minutes || dashboard.lastLog.duration}분 ·{" "}
-                {dashboard.lastLog.date}
-              </p>
+        {!dashboard.isMaxLevel ? (
+          <div className="home-today-progress">
+            <div className="home-exp-meta">
+              <span>다음 레벨까지</span>
+              <b>{dashboard.expToNext} EXP</b>
             </div>
-            <div className="home-last-growth-exp">
-              +{dashboard.lastLogExp} EXP
+            <div className="home-exp-bar" aria-label="현재 레벨 경험치">
+              <div style={{ width: `${dashboard.progressPercent}%` }} />
             </div>
           </div>
         ) : (
-          <p className="home-growth-empty">
-            첫 훈련을 완료하면 여기에 성장 기록이 쌓입니다.
+          <p className="home-exp-copy">
+            <strong>최대 레벨 달성</strong>
           </p>
         )}
       </section>

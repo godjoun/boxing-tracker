@@ -1178,6 +1178,100 @@
   font-weight: 800;
 }
 
+.home-today-victory {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  padding: 18px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.22);
+  text-align: center;
+}
+
+.home-today-victory-kicker {
+  margin: 0 0 6px;
+  color: var(--p-accent);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.home-today-victory-statline {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.home-today-victory-statline strong {
+  font-size: clamp(40px, 12vw, 52px);
+  font-weight: 950;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.home-today-victory-statline span {
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 24px;
+}
+
+.home-today-victory-statline em {
+  font-style: normal;
+  color: #ff8a84;
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 900;
+}
+
+.home-today-victory-copy {
+  margin: 0 0 12px;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-today-card-link {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(239, 63, 54, 0.34);
+  border-radius: 14px;
+  background: rgba(239, 63, 54, 0.12);
+  color: #ffb4ae;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.home-today-ready {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+
+.home-today-ready p {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.home-today-metrics {
+  margin-top: 14px;
+}
+
+.home-today-progress {
+  margin-top: 14px;
+}
+
+.home-today-progress .home-exp-meta {
+  margin-bottom: 8px;
+}
+
 .home-growth-highlight {
   position: relative;
   z-index: 1;
@@ -4996,6 +5090,29 @@
   background: var(--p-hero-bg);
   box-shadow: var(--p-shadow-hero);
   color: var(--p-text);
+}
+
+.theme-light .home-today-victory {
+  border-color: rgba(196, 154, 46, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.theme-light .home-today-victory-statline span {
+  color: #d4c4a8;
+}
+
+.theme-light .home-today-victory-statline em {
+  color: #a67c00;
+}
+
+.theme-light .home-today-card-link {
+  border-color: rgba(196, 154, 46, 0.34);
+  background: rgba(212, 168, 50, 0.12);
+  color: #8a6a12;
+}
+
+.theme-light .home-today-ready {
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .theme-light .home-growth-title {

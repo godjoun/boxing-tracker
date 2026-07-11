@@ -3,10 +3,6 @@ import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import { getCompletionDelta } from "../utils/fighterProgress";
 import {
-  SPARRING_UNLOCK_LEVEL,
-  isSparringUnlocked,
-} from "../utils/featureUnlocks";
-import {
   getCurriculumPhaseFocus,
   markCurriculumSessionComplete,
 } from "../utils/homeCurriculum";
@@ -805,7 +801,9 @@ export default function TimerPage({
 
   return (
     <div
-      className={`timer-page${isFocusMode ? " timer-page-focus" : ""}`}
+      className={`timer-page${isFocusMode ? " timer-page-focus" : ""}${
+        isComplete ? " timer-page-complete" : ""
+      }`}
       style={styles.page}
     >
       {isSetupMode ? (
@@ -899,9 +897,11 @@ export default function TimerPage({
           </div>
         )}
 
-        <div className={isFocusMode ? "timer-focus-time" : ""} style={timeTextStyle}>
-          {formatTime(remainingTime)}
-        </div>
+        {phase !== "done" ? (
+          <div className={isFocusMode ? "timer-focus-time" : ""} style={timeTextStyle}>
+            {formatTime(remainingTime)}
+          </div>
+        ) : null}
 
         {curriculumDrills.length > 0 && phase !== "done" ? (
           <CurriculumTimerPanel
@@ -941,125 +941,74 @@ export default function TimerPage({
         ) : null}
 
         {phase === "done" && (
-          <div style={styles.doneBox}>
-            <div style={styles.completeTitle}>훈련 완료</div>
+          <div className="timer-complete-hero">
+            <p className="timer-complete-kicker">WORKOUT COMPLETE</p>
+            <h2 className="timer-complete-title">오늘도 끝까지 버텼다</h2>
 
-            <p style={styles.savedText}>
-              운동 기록에 자동 저장됐습니다.
-            </p>
-
-            {completionResult && (
-              <div style={styles.growthResult}>
-                {completionResult.didLevelUp && (
-                  <div style={styles.levelUpBadge}>LEVEL UP!</div>
-                )}
-
-                <div style={styles.growthResultGrid}>
-                  <div style={styles.growthResultItem}>
-                    <span style={styles.growthResultLabel}>완료 라운드</span>
-                    <strong style={styles.growthResultValue}>{totalRounds}R</strong>
-                  </div>
-                  <div style={styles.growthResultItem}>
-                    <span style={styles.growthResultLabel}>이번 주</span>
-                    <strong style={styles.growthResultValue}>
-                      {completionResult.weeklyRounds}R
-                    </strong>
-                    {completionResult.weeklyRoundsAdded > 0 ? (
-                      <span style={styles.growthResultSub}>
-                        +{completionResult.weeklyRoundsAdded}R
-                      </span>
-                    ) : null}
-                  </div>
-                  <div style={styles.growthResultItem}>
-                    <span style={styles.growthResultLabel}>훈련 시간</span>
-                    <strong style={styles.growthResultValue}>
-                      {totalWorkMinutes}분
-                    </strong>
-                  </div>
-                  <div style={styles.growthResultItem}>
-                    <span style={styles.growthResultLabel}>획득 경험치</span>
-                    <strong style={styles.growthExpValue}>
-                      +{completionResult.gainedExp} EXP
-                    </strong>
-                  </div>
+            {completionResult ? (
+              <>
+                <div className="timer-complete-statline">
+                  <strong>{totalRounds}R</strong>
+                  <span>·</span>
+                  <em>+{completionResult.gainedExp} EXP</em>
                 </div>
 
-                <div style={styles.levelProgressHeader}>
-                  <strong style={styles.levelText}>
-                    {completionResult.levelLabel}
-                  </strong>
-                  <span style={styles.levelProgressText}>
-                    {completionResult.isMaxLevel
-                      ? "MAX LEVEL"
-                      : `${completionResult.currentLevelExp} / ${completionResult.nextLevelExp} EXP`}
-                  </span>
-                </div>
-                <div style={styles.levelProgressTrack}>
-                  <div
-                    style={{
-                      ...styles.levelProgressFill,
-                      width: `${completionResult.currentLevelExp}%`,
-                    }}
-                  />
-                </div>
-                <p style={styles.nextLevelText}>
-                  {completionResult.isMaxLevel
-                    ? "최대 레벨에 도달했습니다"
-                    : `다음 레벨까지 ${completionResult.expToNextLevel} EXP`}
+                <p className="timer-complete-sub">
+                  이번 주 {completionResult.weeklyRounds}R
+                  {completionResult.weeklyRoundsAdded > 0
+                    ? ` · +${completionResult.weeklyRoundsAdded}R`
+                    : ""}{" "}
+                  · {totalWorkMinutes}분
                 </p>
 
-                {completionResult.didLevelUp && completionResult.newTitle ? (
-                  <div style={styles.unlockNotice}>
-                    <span style={styles.unlockNoticeLabel}>
-                      NEW TITLE · 새 칭호
+                {completionResult.didLevelUp ? (
+                  <div className="timer-complete-levelup">LEVEL UP</div>
+                ) : null}
+
+                <div className="timer-complete-level">
+                  <div className="timer-complete-level-head">
+                    <strong>{completionResult.levelLabel}</strong>
+                    <span>
+                      {completionResult.isMaxLevel
+                        ? "MAX LEVEL"
+                        : `${completionResult.currentLevelExp} / ${completionResult.nextLevelExp} EXP`}
                     </span>
-                    <p style={styles.unlockNoticeTitle}>
-                      {completionResult.newTitle.ko}
-                    </p>
-                    <p style={styles.unlockNoticeItem}>
-                      {completionResult.newTitle.en}
-                    </p>
-                    <p style={styles.unlockNoticeFlavor}>
-                      {completionResult.newTitle.flavor}
-                    </p>
-                    {completionResult.currentLevel === SPARRING_UNLOCK_LEVEL &&
-                    isSparringUnlocked(completionResult.currentLevel) ? (
-                      <p style={styles.unlockNoticeSub}>
-                        스파링 상대찾기 이용 가능
-                      </p>
-                    ) : null}
+                  </div>
+                  <div className="timer-complete-level-track" aria-hidden="true">
+                    <div
+                      style={{ width: `${completionResult.progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {completionResult.didLevelUp && completionResult.newTitle ? (
+                  <div className="timer-complete-unlock">
+                    <span>NEW TITLE</span>
+                    <strong>{completionResult.newTitle.ko}</strong>
+                    <small>{completionResult.newTitle.en}</small>
                   </div>
                 ) : null}
-              </div>
+              </>
+            ) : (
+              <p className="timer-complete-sub">운동 기록에 자동 저장됐습니다.</p>
             )}
 
             <button
               type="button"
-              style={styles.goLogButton}
+              className="timer-complete-card-cta"
               onClick={handleGoProfile}
             >
-              파이터 카드 만들기
+              인증 카드 만들기
             </button>
 
-            <button
-              type="button"
-              style={styles.homeResultButton}
-              onClick={() => {
-                if (onGoHome) onGoHome();
-              }}
-            >
-              홈에서 성장 확인
-            </button>
-
-            <button
-              type="button"
-              style={styles.textResultButton}
-              onClick={() => {
-                if (onGoLog) onGoLog();
-              }}
-            >
-              기록 보러가기
-            </button>
+            <div className="timer-complete-links">
+              <button type="button" onClick={() => onGoHome?.()}>
+                홈으로
+              </button>
+              <button type="button" onClick={() => onGoLog?.()}>
+                기록 보기
+              </button>
+            </div>
           </div>
         )}
 

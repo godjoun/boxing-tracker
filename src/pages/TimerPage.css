@@ -7,23 +7,231 @@
   flex-direction: column;
 }
 
-.timer-page-setup .timer-setup-hero {
-  order: 1;
-}
-
 .timer-page-setup .timer-setup-config {
   order: 2;
 }
 
-.timer-page-setup .timer-setup-card {
-  order: 3;
-  background: var(--p-bg-panel) !important;
-  border: 1px solid var(--p-border-strong) !important;
+.timer-setup-hero {
+  order: 1;
+  margin-bottom: 14px;
+  padding: 18px 16px;
+  border: 1px solid var(--p-border);
+  border-radius: 20px;
+  background: var(--p-hero-bg);
   box-shadow: var(--p-shadow-hero);
 }
 
-.timer-page-setup .timer-setup-preview {
-  margin-top: 4px;
+.timer-setup-kicker {
+  margin: 0 0 6px;
+  color: var(--p-accent);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.timer-setup-title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+}
+
+.timer-setup-subtitle {
+  margin: 0 0 12px;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.timer-setup-panel {
+  padding: 16px;
+  border: 1px solid var(--p-border-strong);
+  border-radius: 22px;
+  background: var(--p-bg-panel);
+  box-shadow: var(--p-shadow-hero);
+}
+
+.timer-setup-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.timer-setup-panel-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.timer-setup-panel-head span {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.timer-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.timer-preset-chip {
+  min-height: 58px;
+  padding: 10px 8px;
+  border: 1px solid var(--p-border);
+  border-radius: 16px;
+  background: var(--p-bg-inner);
+  color: var(--p-text);
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  place-items: center;
+  text-align: center;
+}
+
+.timer-preset-chip strong {
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.timer-preset-chip small {
+  color: var(--p-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.timer-preset-chip.is-active {
+  border-color: rgba(239, 63, 54, 0.34);
+  background: rgba(239, 63, 54, 0.12);
+}
+
+.timer-preset-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.timer-setup-summary {
+  margin: 12px 0 0;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.timer-setup-preview-time {
+  margin: 10px 0 14px;
+  font-size: clamp(42px, 12vw, 54px);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-align: center;
+  line-height: 1;
+}
+
+.timer-setup-adjust {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 18px;
+  background: var(--p-bg-inner);
+}
+
+.timer-setup-field {
+  display: grid;
+  gap: 6px;
+}
+
+.timer-setup-field span {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.timer-setup-field input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--p-border);
+  border-radius: 12px;
+  background: var(--p-input-bg);
+  color: var(--p-text);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.timer-setup-field-group {
+  display: grid;
+  gap: 8px;
+}
+
+.timer-setup-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.timer-setup-field-head span {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.timer-setup-field-head strong {
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.timer-setup-step-row,
+.timer-setup-quick-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.timer-setup-quick-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.timer-setup-step-row button,
+.timer-setup-quick-row button {
+  min-height: 40px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 12px;
+  background: var(--p-bg-panel);
+  color: var(--p-text);
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.timer-setup-quick-row button.is-active {
+  border-color: rgba(239, 63, 54, 0.34);
+  background: rgba(239, 63, 54, 0.12);
+  color: var(--p-accent);
+}
+
+.timer-setup-start {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 14px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ef3f36, #d92f27);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 14px 30px rgba(239, 63, 54, 0.24);
+}
+
+.timer-setup-start:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .timer-page-focus {
@@ -136,10 +344,6 @@
 
 .timer-sound-details-body {
   padding: 0 12px 12px;
-}
-
-.timer-setup-hero {
-  margin-bottom: 14px;
 }
 
 .timer-setup-hero h1 {
@@ -346,75 +550,9 @@
   background: linear-gradient(90deg, #c49a2e, #e8c66a);
 }
 
-.timer-interval-card {
-  background: var(--p-bg-panel);
-  border: 1px solid var(--p-border);
-  border-radius: 20px;
-  padding: 16px;
-  margin-bottom: 14px;
-}
-
-.timer-interval-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.timer-interval-kicker {
-  margin: 0 0 4px;
-  color: var(--p-accent);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-}
-
-.timer-interval-head h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 950;
-  letter-spacing: -0.03em;
-}
-
-.timer-interval-head > span {
-  color: var(--p-text-muted);
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.timer-interval-preset {
-  width: 100%;
-  border: 1px solid var(--p-border);
-  border-radius: 16px;
-  padding: 14px;
-  background: var(--p-bg-inner);
-  color: var(--p-text);
-  text-align: left;
-  cursor: pointer;
-  display: grid;
-  gap: 6px;
-}
-
-.timer-interval-preset strong {
-  font-size: 15px;
-  font-weight: 950;
-}
-
-.timer-interval-preset span {
-  color: var(--p-text-muted);
-  font-size: 12px;
-  line-height: 1.45;
-  font-weight: 700;
-}
-
-.timer-interval-preset.is-active {
-  border-color: rgba(239, 63, 54, 0.34);
-  background: rgba(239, 63, 54, 0.12);
-}
-
-.timer-interval-preset:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.theme-light .timer-preset-chip.is-active,
+.theme-light .timer-setup-quick-row button.is-active {
+  border-color: rgba(196, 154, 46, 0.34);
+  background: rgba(212, 168, 50, 0.14);
+  color: #a67c00;
 }

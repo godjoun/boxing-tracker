@@ -77,6 +77,8 @@ const MATCH_PRESETS = [
   },
 ];
 
+const SETUP_PRESETS = [INTERVAL_TIMER_PRESET, ...MATCH_PRESETS];
+
 const PREP_SECONDS = 10;
 
 const SOUND_OPTIONS = [
@@ -120,6 +122,22 @@ const formatDurationLabel = (seconds) => {
 
   return `${sec}초`;
 };
+
+function getSetupSummary({
+  isIntervalMode,
+  totalRounds,
+  workSecondsSetting,
+  restSecondsSetting,
+  totalSessionSeconds,
+}) {
+  const countLabel = isIntervalMode ? `${totalRounds}세트` : `${totalRounds}R`;
+
+  return `${countLabel} · 운동 ${formatDurationLabel(
+    workSecondsSetting
+  )} / 휴식 ${formatDurationLabel(
+    restSecondsSetting
+  )} · 전체 ${formatDurationLabel(totalSessionSeconds)}`;
+}
 
 const clampSeconds = (value, min, max) => {
   const number = Number(value);
@@ -215,6 +233,24 @@ export default function TimerPage({
   const totalSessionSeconds =
     totalWorkSeconds + Math.max(totalRounds - 1, 0) * restSecondsSetting;
   const totalWorkMinutes = Math.max(1, Math.round(totalWorkSeconds / 60));
+
+  const setupSummary = useMemo(
+    () =>
+      getSetupSummary({
+        isIntervalMode,
+        totalRounds,
+        workSecondsSetting,
+        restSecondsSetting,
+        totalSessionSeconds,
+      }),
+    [
+      isIntervalMode,
+      totalRounds,
+      workSecondsSetting,
+      restSecondsSetting,
+      totalSessionSeconds,
+    ]
+  );
 
   const routineTitle = curriculumRoutineTitle
     ? curriculumRoutineTitle
@@ -816,14 +852,11 @@ export default function TimerPage({
       style={styles.page}
     >
       {isSetupMode ? (
-        <section className="timer-setup-hero" style={styles.heroCard}>
-          <div style={styles.kicker}>라운드 타이머</div>
-
-          <h1 style={styles.title}>오늘 몇 라운드 버틸까요?</h1>
-
-          <p style={styles.subtitle}>
-            1R = 운동 1세트. 라운드를 고르고 시작하면 자동으로 기록되고 EXP가
-            쌓입니다.
+        <section className="timer-setup-hero">
+          <p className="timer-setup-kicker">TIMER</p>
+          <h1 className="timer-setup-title">타이머</h1>
+          <p className="timer-setup-subtitle">
+            프리셋을 고르고 바로 시작하세요. 완료 시 EXP가 자동 기록됩니다.
           </p>
 
           <details className="timer-sound-details">
@@ -875,10 +908,131 @@ export default function TimerPage({
         </section>
       ) : null}
 
+      {isSetupMode ? (
+        <div className="timer-setup-config">
+          <section className="timer-setup-panel">
+            <div className="timer-setup-panel-head">
+              <h2>훈련 선택</h2>
+              <span>{isIntervalMode ? "인터벌" : "라운드"}</span>
+            </div>
+
+            <div className="timer-preset-grid">
+              {SETUP_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  className={`timer-preset-chip${
+                    selectedPresetId === preset.id ? " is-active" : ""
+                  }`}
+                  onClick={() => applyPreset(preset)}
+                  disabled={isRunning}
+                >
+                  <strong>{preset.title}</strong>
+                  <small>
+                    {preset.id === INTERVAL_TIMER_PRESET.id
+                      ? "30/15초"
+                      : "3분/30초"}
+                  </small>
+                </button>
+              ))}
+            </div>
+
+            <p className="timer-setup-summary">{setupSummary}</p>
+
+            <div className="timer-setup-preview-time" aria-hidden="true">
+              {formatTime(workSecondsSetting)}
+            </div>
+
+            <div className="timer-setup-adjust">
+              <label className="timer-setup-field">
+                <span>{isIntervalMode ? "세트" : "라운드"}</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={totalRounds}
+                  onChange={(event) => handleTotalRoundsChange(event.target.value)}
+                  disabled={isRunning}
+                />
+              </label>
+
+              <div className="timer-setup-field-group">
+                <div className="timer-setup-field-head">
+                  <span>운동</span>
+                  <strong>{formatTime(workSecondsSetting)}</strong>
+                </div>
+                <div className="timer-setup-step-row">
+                  <button
+                    type="button"
+                    onClick={() => handleWorkSecondsChange(-10)}
+                    disabled={isRunning}
+                  >
+                    -10
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleWorkSecondsChange(10)}
+                    disabled={isRunning}
+                  >
+                    +10
+                  </button>
+                </div>
+              </div>
+
+              <div className="timer-setup-field-group">
+                <div className="timer-setup-field-head">
+                  <span>휴식</span>
+                  <strong>{formatTime(restSecondsSetting)}</strong>
+                </div>
+                <div className="timer-setup-quick-row">
+                  {[15, 30, 45, 60].map((seconds) => (
+                    <button
+                      key={seconds}
+                      type="button"
+                      className={
+                        restSecondsSetting === seconds ? "is-active" : undefined
+                      }
+                      onClick={() => handleRestQuickSelect(seconds)}
+                      disabled={isRunning}
+                    >
+                      {seconds}초
+                    </button>
+                  ))}
+                </div>
+                <div className="timer-setup-step-row">
+                  <button
+                    type="button"
+                    onClick={() => handleRestSecondsChange(-5)}
+                    disabled={isRunning}
+                  >
+                    -5
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRestSecondsChange(5)}
+                    disabled={isRunning}
+                  >
+                    +5
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="timer-setup-start"
+              onClick={handleStart}
+              disabled={isRunning}
+            >
+              시작
+            </button>
+          </section>
+        </div>
+      ) : null}
+
+      {!isSetupMode ? (
       <section
-        className={`${isFocusMode ? "timer-focus-card" : ""}${
-          isSetupMode ? " timer-setup-card timer-setup-preview" : ""
-        }`.trim()}
+        className={isFocusMode ? "timer-focus-card" : ""}
         style={timerCardStyle}
         onClick={isFocusMode ? handleTimerSurfaceTap : undefined}
       >
@@ -1076,223 +1230,6 @@ export default function TimerPage({
         </div>
         )}
       </section>
-
-      {isSetupMode ? (
-      <div className="timer-setup-config">
-      <section className="timer-interval-card">
-        <div className="timer-interval-head">
-          <div>
-            <p className="timer-interval-kicker">INTERVAL</p>
-            <h2>인터벌 훈련</h2>
-          </div>
-          <span>30초 / 15초</span>
-        </div>
-
-        <button
-          type="button"
-          className={`timer-interval-preset${
-            selectedPresetId === INTERVAL_TIMER_PRESET.id ? " is-active" : ""
-          }`}
-          onClick={() => applyPreset(INTERVAL_TIMER_PRESET)}
-          disabled={isRunning}
-        >
-          <strong>30초 · 15초 · 12세트</strong>
-          <span>{INTERVAL_TIMER_PRESET.description}</span>
-        </button>
-      </section>
-
-      <section style={styles.routineCard}>
-        <div style={styles.cardHeaderRow}>
-          <h2 style={styles.cardTitle}>경기식 라운드 선택</h2>
-          <span style={styles.cardHint}>3분 / 30초</span>
-        </div>
-
-        <div style={styles.routineButtonGrid}>
-          {MATCH_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              style={{
-                ...styles.routineButton,
-                ...(selectedPresetId === preset.id
-                  ? styles.activeRoutineButton
-                  : {}),
-              }}
-              onClick={() => applyPreset(preset)}
-              disabled={isRunning}
-            >
-              <strong>{preset.title}</strong>
-            </button>
-          ))}
-        </div>
-
-        <div style={styles.selectedRoutineBox}>
-          <div style={styles.selectedRoutineTitle}>
-            {selectedPreset ? selectedPreset.title : "직접 설정 루틴"}
-          </div>
-
-          <p style={styles.selectedRoutineDescription}>
-            {selectedPreset
-              ? selectedPreset.description
-              : "아래 설정값으로 직접 타이머를 진행합니다."}
-          </p>
-
-          <div style={styles.roundPreviewGrid}>
-            <div>
-              <span>운동</span>
-              <strong>{formatDurationLabel(workSecondsSetting)}</strong>
-            </div>
-
-            <div>
-              <span>휴식</span>
-              <strong>{formatDurationLabel(restSecondsSetting)}</strong>
-            </div>
-
-            <div>
-              <span>준비</span>
-              <strong>
-                {isCurriculumSession
-                  ? formatTimerDurationLabel(activePrepSeconds)
-                  : `${PREP_SECONDS}초`}
-              </strong>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section style={styles.settingCard}>
-        <div style={styles.cardHeaderRow}>
-          <h2 style={styles.cardTitle}>직접 설정</h2>
-          <span style={styles.cardHint}>버튼으로 조절</span>
-        </div>
-
-        <label style={styles.label}>
-          총 라운드
-          <input
-            style={styles.input}
-            type="number"
-            min="1"
-            max="20"
-            value={totalRounds}
-            onChange={(event) => handleTotalRoundsChange(event.target.value)}
-            disabled={isRunning}
-          />
-        </label>
-
-        <div style={styles.settingGroup}>
-          <div style={styles.settingLabelRow}>
-            <span style={styles.settingLabel}>운동 시간</span>
-            <strong style={styles.timeDisplay}>
-              {formatTime(workSecondsSetting)}
-            </strong>
-          </div>
-
-          <div style={styles.timeButtonRow}>
-            <button
-              type="button"
-              style={styles.timeAdjustButton}
-              onClick={() => handleWorkSecondsChange(-10)}
-              disabled={isRunning}
-            >
-              -10초
-            </button>
-
-            <button
-              type="button"
-              style={styles.timeAdjustButton}
-              onClick={() => handleWorkSecondsChange(-1)}
-              disabled={isRunning}
-            >
-              -1초
-            </button>
-
-            <button
-              type="button"
-              style={styles.timeAdjustButton}
-              onClick={() => handleWorkSecondsChange(1)}
-              disabled={isRunning}
-            >
-              +1초
-            </button>
-
-            <button
-              type="button"
-              style={styles.timeAdjustButton}
-              onClick={() => handleWorkSecondsChange(10)}
-              disabled={isRunning}
-            >
-              +10초
-            </button>
-          </div>
-        </div>
-
-        <div style={styles.settingGroup}>
-          <div style={styles.settingLabelRow}>
-            <span style={styles.settingLabel}>휴식 시간</span>
-            <strong style={styles.timeDisplay}>
-              {formatTime(restSecondsSetting)}
-            </strong>
-          </div>
-
-          <div style={styles.quickButtonRow}>
-            {[30, 45, 60].map((seconds) => (
-              <button
-                key={seconds}
-                type="button"
-                style={{
-                  ...styles.quickSelectButton,
-                  ...(restSecondsSetting === seconds
-                    ? styles.activeQuickSelectButton
-                    : {}),
-                }}
-                onClick={() => handleRestQuickSelect(seconds)}
-                disabled={isRunning}
-              >
-                {formatDurationLabel(seconds)}
-              </button>
-            ))}
-          </div>
-
-          <div style={styles.timeButtonRow}>
-            <button
-              type="button"
-              style={styles.timeAdjustButton}
-              onClick={() => handleRestSecondsChange(-10)}
-              disabled={isRunning}
-            >
-              -10초
-            </button>
-
-            <button
-              type="button"
-              style={styles.timeAdjustButton}
-              onClick={() => handleRestSecondsChange(-1)}
-              disabled={isRunning}
-            >
-              -1초
-            </button>
-
-            <button
-              type="button"
-              style={styles.timeAdjustButton}
-              onClick={() => handleRestSecondsChange(1)}
-              disabled={isRunning}
-            >
-              +1초
-            </button>
-
-            <button
-              type="button"
-              style={styles.timeAdjustButton}
-              onClick={() => handleRestSecondsChange(10)}
-              disabled={isRunning}
-            >
-              +10초
-            </button>
-          </div>
-        </div>
-      </section>
-      </div>
       ) : null}
     </div>
   );

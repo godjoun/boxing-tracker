@@ -183,6 +183,9 @@ export default function HomePage({
   );
 
   const topTrainingType = trainingBreakdown[0]?.type || null;
+  const todayKey = getTodayKey();
+  const todayRounds = dashboard.trainingByDate[todayKey]?.rounds || 0;
+  const nickname = profile?.nickname || "나의 파이터";
 
   function handleCalendarSelect(dateKey) {
     setSelectedDate((current) => (current === dateKey ? "" : dateKey));
@@ -248,212 +251,323 @@ export default function HomePage({
         </button>
       ) : null}
 
-      <section className="home-growth-hero home-today-hero">
-        <div className="home-growth-head">
-          <div>
-            <p className="home-kicker">TODAY&apos;S FIGHTER</p>
-            <h1>{profile?.nickname || "나의 파이터"}</h1>
-            <p className="home-growth-title">{dashboard.fighterTitle}</p>
-            {dashboard.fighterTitleEn ? (
-              <p className="home-growth-title-en">{dashboard.fighterTitleEn}</p>
-            ) : null}
+      <section className="home-status" aria-label="이번 주 현황">
+        <div className="home-status-hello">
+          <div className="home-status-avatar" aria-hidden={!profile?.photo}>
+            {profile?.photo ? (
+              <img src={profile.photo} alt="" />
+            ) : (
+              <span>{nickname.slice(0, 1)}</span>
+            )}
           </div>
-          <div className="home-growth-lv">
-            <span>LV</span>
-            <strong>{dashboard.level}</strong>
-            <small>{dashboard.careerStageKo || "일반인"}</small>
-          </div>
-        </div>
-
-        {dashboard.lastLog && dashboard.trainedToday ? (
-          <div className="home-today-victory">
-            <p className="home-today-victory-kicker">TODAY</p>
-            <div className="home-today-victory-statline">
-              <strong>{getRounds(dashboard.lastLog)}R</strong>
-              <span>·</span>
-              <em>+{dashboard.lastLogExp} EXP</em>
-            </div>
-            <p className="home-today-victory-copy">
-              {dashboard.lastLog.type} ·{" "}
-              {dashboard.lastLog.minutes || dashboard.lastLog.duration}분
+          <div className="home-status-hello-copy">
+            <p className="home-status-name">{nickname}</p>
+            <p className="home-status-meta">
+              LV.{dashboard.level} · {dashboard.fighterTitle}
             </p>
-            <button
-              type="button"
-              className="home-today-card-link"
-              onClick={() => onOpenCardMaker?.(dashboard.lastLog?.id)}
-            >
-              인증 카드 만들기 →
-            </button>
-          </div>
-        ) : (
-          <div className="home-today-ready">
-            <p>오늘 첫 라운드를 시작하면 여기에 오늘의 기록이 표시됩니다.</p>
-          </div>
-        )}
-
-        <div className="home-growth-highlight home-today-metrics">
-          <div className="home-growth-main-stat">
-            <span>이번 주</span>
-            <strong>{dashboard.weeklyRounds}R</strong>
-            <em className={`home-growth-trend tone-${dashboard.trendSummary.tone}`}>
-              {dashboard.trendSummary.label}
-            </em>
-          </div>
-
-          <div className="home-growth-side-stats">
-            <div>
-              <span>연속</span>
-              <strong>{dashboard.streakDays}일</strong>
-            </div>
-            <div>
-              <span>누적</span>
-              <strong>{dashboard.totalRounds}R</strong>
-            </div>
           </div>
         </div>
+
+        <div className="home-status-amount">
+          <span className="home-status-label">이번 주</span>
+          <p className="home-status-number">
+            <strong>{dashboard.weeklyRounds}</strong>
+            <em>R</em>
+          </p>
+        </div>
+
+        <p className="home-status-sub">
+          {dashboard.trainedToday
+            ? `오늘 ${todayRounds}R 완료`
+            : "오늘 아직 훈련 없음"}
+          {dashboard.streakDays > 0
+            ? ` · 연속 ${dashboard.streakDays}일`
+            : ""}
+          {dashboard.isMaxLevel
+            ? " · MAX"
+            : ` · 다음 LV까지 ${dashboard.expToNext} EXP`}
+        </p>
 
         {!dashboard.isMaxLevel ? (
-          <div className="home-today-progress">
-            <div className="home-exp-meta">
-              <span>다음 레벨까지</span>
-              <b>{dashboard.expToNext} EXP</b>
-            </div>
-            <div className="home-exp-bar" aria-label="현재 레벨 경험치">
-              <div style={{ width: `${dashboard.progressPercent}%` }} />
-            </div>
+          <div
+            className="home-status-bar"
+            aria-label="현재 레벨 경험치"
+          >
+            <div style={{ width: `${dashboard.progressPercent}%` }} />
           </div>
-        ) : (
-          <p className="home-exp-copy">
-            <strong>최대 레벨 달성</strong>
-          </p>
-        )}
+        ) : null}
       </section>
 
-      <section className="home-daily-lesson">
-        <div className="home-daily-lesson-head">
-          <div>
-            <p className="home-daily-lesson-kicker">TODAY&apos;S LESSON</p>
-            <h2 className="home-daily-lesson-title">오늘의 레슨</h2>
-          </div>
-          {todaysLesson.kind === "session" ? (
-            <span className="home-daily-lesson-badge">
-              {todaysLesson.completedCount}/{todaysLesson.totalSessions}
-            </span>
-          ) : null}
+      <section className="home-center-dash" aria-label="대시보드">
+        <div className="home-center-dash-head">
+          <p className="home-center-dash-label">대시보드</p>
+          <button
+            type="button"
+            className={`home-center-dash-edit${
+              isEditingDashboard ? " is-active" : ""
+            }`}
+            onClick={() => setIsEditingDashboard((current) => !current)}
+          >
+            {isEditingDashboard ? "완료" : "편집"}
+          </button>
         </div>
+
+        <div className="home-center-dash-stats">
+          <div>
+            <span>오늘</span>
+            <strong>{todayRounds}R</strong>
+          </div>
+          <div>
+            <span>연속</span>
+            <strong>{dashboard.streakDays}일</strong>
+          </div>
+          <div>
+            <span>누적</span>
+            <strong>{dashboard.totalRounds}R</strong>
+          </div>
+        </div>
+
+        {visibleFeatures.length === 0 ? (
+          <button
+            type="button"
+            className="home-center-dash-empty"
+            onClick={() => setIsEditingDashboard(true)}
+          >
+            바로가기 추가
+          </button>
+        ) : (
+          <div className="home-center-dash-grid">
+            {visibleFeatures.map((feature) => {
+              const locked =
+                feature.featureId &&
+                !isFeatureUnlocked(feature.featureId, fighterLevel);
+
+              return (
+                <button
+                  type="button"
+                  className="home-center-dash-item"
+                  key={feature.id}
+                  onClick={() => openFeature(feature)}
+                  disabled={locked}
+                >
+                  <span aria-hidden="true">{feature.icon}</span>
+                  <strong>{feature.title}</strong>
+                  {locked ? <em>잠김</em> : null}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {isEditingDashboard ? (
+          <div className="home-center-dash-editor">
+            <p>홈에 둘 바로가기를 고르세요.</p>
+            <div className="home-center-dash-editor-grid">
+              {DASHBOARD_SHORTCUT_POOL.map((feature) => {
+                const selected = selectedFeatures.includes(feature.id);
+                const locked =
+                  feature.featureId &&
+                  !isFeatureUnlocked(feature.featureId, fighterLevel);
+
+                return (
+                  <button
+                    type="button"
+                    className={`home-center-dash-pick${
+                      selected ? " is-selected" : ""
+                    }${locked ? " is-locked" : ""}`}
+                    key={feature.id}
+                    onClick={() => toggleDashboardFeature(feature.id)}
+                  >
+                    <span aria-hidden="true">{feature.icon}</span>
+                    <strong>{feature.title}</strong>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="home-today-task" aria-label="오늘 할 일">
+        <p className="home-today-task-label">오늘 할 일</p>
 
         {todaysLesson.kind === "session" ? (
           <>
-            <div className="home-daily-lesson-meta">
-              {todaysLesson.weekLabel ? (
-                <span>{todaysLesson.weekLabel}</span>
-              ) : null}
-              {todaysLesson.code ? <span>{todaysLesson.code}</span> : null}
-            </div>
-            <strong className="home-daily-lesson-session">{todaysLesson.title}</strong>
+            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
             {todaysLesson.goal ? (
-              <p className="home-daily-lesson-goal">{todaysLesson.goal}</p>
-            ) : null}
-            {todaysLesson.previewDrillText ? (
-              <p className="home-daily-lesson-preview">
-                <em>{todaysLesson.previewDrillName}</em>
-                {todaysLesson.previewDrillName ? " — " : ""}
-                {todaysLesson.previewDrillText}
+              <p className="home-today-task-copy">{todaysLesson.goal}</p>
+            ) : (
+              <p className="home-today-task-copy">
+                레슨을 읽고 짧게 따라 해 보세요.
+              </p>
+            )}
+            {todaysLesson.weekLabel || todaysLesson.code ? (
+              <p className="home-today-task-meta">
+                {[todaysLesson.weekLabel, todaysLesson.code]
+                  .filter(Boolean)
+                  .join(" · ")}
+                {todaysLesson.totalSessions
+                  ? ` · ${todaysLesson.completedCount}/${todaysLesson.totalSessions}`
+                  : ""}
               </p>
             ) : null}
-            <div className="home-daily-lesson-actions">
-              <div className="home-daily-lesson-actions-row">
-                <button
-                  type="button"
-                  className="home-daily-lesson-secondary"
-                  onClick={() => onReadLesson?.(todaysLesson.session)}
-                >
-                  레슨 읽기
-                </button>
-                <button
-                  type="button"
-                  className="home-daily-lesson-primary"
-                  onClick={() => onStartCurriculumSession?.(todaysLesson.session)}
-                >
-                  {dashboard.trainedToday ? "훈련 시작" : `${todaysLesson.rounds}R 훈련`}
-                </button>
-              </div>
+
+            <button
+              type="button"
+              className="home-today-task-primary"
+              onClick={() => onReadLesson?.(todaysLesson.session)}
+            >
+              레슨 읽기
+            </button>
+
+            <div className="home-today-task-links">
               <button
                 type="button"
-                className="home-daily-lesson-link"
+                className="home-today-task-link"
+                data-tutorial-target="home-start"
+                onClick={() =>
+                  onStartCurriculumSession?.(todaysLesson.session)
+                }
+              >
+                {dashboard.trainedToday
+                  ? "이어서 훈련"
+                  : `${todaysLesson.rounds || 3}R 훈련`}
+              </button>
+              <button
+                type="button"
+                className="home-today-task-link"
+                onClick={onOpenTimer}
+              >
+                3R 바로 시작
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
+            <p className="home-today-task-copy">
+              {todaysLesson.message || "오늘은 짧게 몸을 풀어 보세요."}
+            </p>
+            <button
+              type="button"
+              className="home-today-task-primary"
+              data-tutorial-target="home-start"
+              onClick={onOpenTimer}
+            >
+              {dashboard.trainedToday ? "훈련 이어가기" : "3R 바로 시작"}
+            </button>
+            <div className="home-today-task-links">
+              <button
+                type="button"
+                className="home-today-task-link"
                 onClick={() => onOpenCurriculum?.()}
               >
                 배움 전체 보기
               </button>
             </div>
           </>
-        ) : (
-          <>
-            <strong className="home-daily-lesson-session">{todaysLesson.title}</strong>
-            <p className="home-daily-lesson-goal">{todaysLesson.message}</p>
-            <div className="home-daily-lesson-actions">
-              <button
-                type="button"
-                className="home-daily-lesson-primary"
-                onClick={() => onOpenCurriculum?.()}
-              >
-                커리큘럼 다시 보기 →
-              </button>
-            </div>
-          </>
         )}
       </section>
 
-      {firstWeekChallenge ? (
-        <section className="home-first-week-challenge" aria-label="첫 주 챌린지">
-          <p className="home-first-week-kicker">FIRST WEEK</p>
-          <div className="home-first-week-stats">
-            <div>
-              <span>훈련 완료</span>
-              <strong>
-                {firstWeekChallenge.timerCompletes}/{firstWeekChallenge.timerTarget}
+      <details className="home-collapsible home-status-details">
+        <summary className="home-collapsible-summary">
+          <span className="home-section-label">내 현황</span>
+          <strong>
+            누적 {dashboard.totalRounds}R · {dashboard.trendSummary.label}
+          </strong>
+        </summary>
+
+        <div className="home-status-details-body">
+          {dashboard.lastLog && dashboard.trainedToday ? (
+            <div className="home-today-victory">
+              <p className="home-today-victory-kicker">오늘 기록</p>
+              <div className="home-today-victory-statline">
+                <strong>{getRounds(dashboard.lastLog)}R</strong>
+                <span>·</span>
+                <em>+{dashboard.lastLogExp} EXP</em>
+              </div>
+              <p className="home-today-victory-copy">
+                {dashboard.lastLog.type} ·{" "}
+                {dashboard.lastLog.minutes || dashboard.lastLog.duration}분
+              </p>
+              <button
+                type="button"
+                className="home-today-card-link"
+                onClick={() => onOpenCardMaker?.(dashboard.lastLog?.id)}
+              >
+                인증 카드 만들기
+              </button>
+            </div>
+          ) : (
+            <p className="home-today-ready-inline">
+              오늘 첫 라운드를 하면 기록이 여기에 쌓입니다.
+            </p>
+          )}
+
+          <div className="home-growth-highlight home-today-metrics">
+            <div className="home-growth-main-stat">
+              <span>이번 주 추세</span>
+              <strong className={`home-growth-trend tone-${dashboard.trendSummary.tone}`}>
+                {dashboard.trendSummary.label}
               </strong>
             </div>
-            <div>
-              <span>앱 방문</span>
-              <strong>
-                {firstWeekChallenge.openDays}/{firstWeekChallenge.openTarget}일
-              </strong>
-            </div>
-            <div>
-              <span>남은 기간</span>
-              <strong>D-{firstWeekChallenge.daysLeft}</strong>
+            <div className="home-growth-side-stats">
+              <div>
+                <span>주간 EXP</span>
+                <strong>{weeklyScore}</strong>
+              </div>
+              <div>
+                <span>칭호</span>
+                <strong>{dashboard.fighterTitle}</strong>
+              </div>
             </div>
           </div>
-          <p className="home-first-week-copy">
-            {firstWeekChallenge.isTimerComplete
-              ? "첫 주 훈련 목표를 달성했어요."
-              : "운동 안 하는 날에도 레슨을 보고 방문일을 채워 보세요."}
-          </p>
-        </section>
-      ) : null}
 
-      <div className="home-cta-row">
-        <button
-          type="button"
-          className="home-main-button"
-          data-tutorial-target="home-start"
-          onClick={onOpenTimer}
-        >
-          <span>
-            {dashboard.trainedToday ? "훈련 이어가기" : "3R 바로 시작"}
-          </span>
-          <b>→</b>
-        </button>
+          {firstWeekChallenge ? (
+            <div className="home-first-week-challenge" aria-label="첫 주 챌린지">
+              <p className="home-first-week-kicker">첫 주</p>
+              <div className="home-first-week-stats">
+                <div>
+                  <span>훈련</span>
+                  <strong>
+                    {firstWeekChallenge.timerCompletes}/
+                    {firstWeekChallenge.timerTarget}
+                  </strong>
+                </div>
+                <div>
+                  <span>방문</span>
+                  <strong>
+                    {firstWeekChallenge.openDays}/
+                    {firstWeekChallenge.openTarget}일
+                  </strong>
+                </div>
+                <div>
+                  <span>남은 날</span>
+                  <strong>D-{firstWeekChallenge.daysLeft}</strong>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
-        <button
-          type="button"
-          className="home-secondary-button"
-          onClick={onStartTraining}
-        >
-          레벨업 메뉴에서 더 보기
-        </button>
-      </div>
+          <button
+            type="button"
+            className="home-secondary-button"
+            onClick={onStartTraining}
+          >
+            레벨업 메뉴에서 더 보기
+          </button>
+
+          {todaysLesson.kind === "session" ? (
+            <button
+              type="button"
+              className="home-today-task-link home-today-task-link-block"
+              onClick={() => onOpenCurriculum?.()}
+            >
+              배움 전체 보기
+            </button>
+          ) : null}
+        </div>
+      </details>
 
       {dashboard.weeklyTrend.length > 0 ? (
         <details className="home-collapsible">
@@ -522,89 +636,6 @@ export default function HomePage({
             ))}
           </div>
         )}
-      </section>
-      </details>
-
-      <details className="home-collapsible">
-        <summary className="home-collapsible-summary">
-          <span className="home-section-label">빠른 메뉴</span>
-          <strong>나의 파이터 대시보드</strong>
-        </summary>
-      <section className="home-features home-quick-dashboard">
-        <div className="home-section-heading">
-          <div>
-            <h2>나의 파이터 대시보드</h2>
-          </div>
-          <button
-            className={`dashboard-edit-button ${
-              isEditingDashboard ? "active" : ""
-            }`}
-            onClick={() => setIsEditingDashboard((current) => !current)}
-          >
-            {isEditingDashboard ? "완료" : "편집"}
-          </button>
-        </div>
-
-        {visibleFeatures.length === 0 ? (
-          <button
-            className="dashboard-empty"
-            onClick={() => setIsEditingDashboard(true)}
-          >
-            홈에 표시할 기능을 선택하세요 <span>+</span>
-          </button>
-        ) : (
-          <div className="dashboard-quick-grid">
-            {visibleFeatures.map((feature) => {
-              const locked =
-                feature.featureId &&
-                !isFeatureUnlocked(feature.featureId, fighterLevel);
-
-              return (
-                <button
-                  className="dashboard-quick-item"
-                  key={feature.id}
-                  onClick={() => openFeature(feature)}
-                  disabled={locked}
-                >
-                  <span className="dashboard-quick-icon">{feature.icon}</span>
-                  <strong>{feature.title}</strong>
-                  {locked ? <em>잠김</em> : null}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {isEditingDashboard ? (
-          <div className="dashboard-editor">
-            <div className="dashboard-editor-copy">
-              <strong>홈 기능 선택</strong>
-              <span>자주 쓰는 기능만 대시보드에 표시됩니다.</span>
-            </div>
-            <div className="dashboard-editor-grid">
-              {DASHBOARD_SHORTCUT_POOL.map((feature) => {
-                const selected = selectedFeatures.includes(feature.id);
-                const locked =
-                  feature.featureId &&
-                  !isFeatureUnlocked(feature.featureId, fighterLevel);
-
-                return (
-                  <button
-                    className={`${selected ? "selected" : ""}${
-                      locked ? " is-locked" : ""
-                    }`}
-                    key={feature.id}
-                    onClick={() => toggleDashboardFeature(feature.id)}
-                  >
-                    <span>{feature.icon}</span>
-                    <strong>{feature.title}</strong>
-                    <i>{selected ? "" : "+"}</i>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
       </section>
       </details>
 

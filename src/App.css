@@ -345,6 +345,177 @@
   color: #181716;
 }
 
+.gym-page-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: calc(100dvh - var(--app-nav-total) - 40px);
+}
+
+.gym-hub-header {
+  padding: 4px 2px 0;
+}
+
+.gym-hub-header h1 {
+  margin: 10px 0 0;
+  font-size: 32px;
+  letter-spacing: -0.05em;
+  font-weight: 900;
+}
+
+.gym-hub-header p {
+  margin: 8px 0 0;
+  color: #756f69;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.gym-hub-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gym-hub-status span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.gym-hub-status .is-on {
+  background: #fff0ed;
+  color: #df3c33;
+}
+
+.gym-hub-status .is-locked {
+  background: #f4f2ef;
+  color: #8a837a;
+}
+
+.gym-hub-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.gym-hub-action {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-height: 112px;
+  padding: 20px 18px;
+  border: 1px solid #ffd9d4;
+  border-radius: 22px;
+  background:
+    linear-gradient(160deg, #fff 0%, #fff7f5 100%);
+  color: #24211f;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(48, 38, 30, 0.05);
+}
+
+.gym-hub-action strong {
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.gym-hub-action span {
+  color: #756f69;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.gym-hub-action.is-locked {
+  border-color: #eeeae6;
+  background: #faf9f7;
+}
+
+.gym-hub-action.is-locked strong {
+  color: #4a4642;
+}
+
+.gym-hub-action.is-locked span {
+  color: #b8860b;
+}
+
+.gym-search-header {
+  padding: 0 2px;
+}
+
+.gym-search-header h1 {
+  margin: 10px 0 0;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+  font-weight: 900;
+}
+
+.gym-search-context {
+  margin: 8px 0 0;
+  color: #8b857f;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.gym-search-bar {
+  position: sticky;
+  top: calc(var(--app-safe-top) + 8px);
+  z-index: 8;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid #eeeae6;
+  border-radius: 18px;
+  background: rgba(250, 249, 247, 0.96);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(48, 38, 30, 0.06);
+}
+
+.gym-search-gps,
+.gym-refresh-button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e9e4df;
+  border-radius: 12px;
+  background: #fff;
+  color: #69635e;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gym-search-gps.is-active {
+  border-color: rgba(223, 60, 51, 0.35);
+  background: #fff0ed;
+  color: #df3c33;
+}
+
+.gym-search-presets {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gym-search-presets::-webkit-scrollbar {
+  display: none;
+}
+
+.gym-search-presets .gym-preset-chip {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 .gym-hero {
   position: relative;
   overflow: hidden;
@@ -1482,6 +1653,22 @@
 .home-daily-lesson-actions {
   display: grid;
   gap: 8px;
+}
+
+.home-daily-lesson-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.home-daily-lesson-link {
+  border: none;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 4px 0;
 }
 
 .home-daily-lesson-primary,
@@ -3268,6 +3455,60 @@
 
 .theme-dark .gym-page {
   color: #fff;
+}
+
+.theme-dark .gym-hub-header p,
+.theme-dark .gym-search-context {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.theme-dark .gym-hub-status .is-on {
+  background: rgba(255, 55, 55, 0.14);
+  color: #ff7a6a;
+}
+
+.theme-dark .gym-hub-status .is-locked {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-dark .gym-hub-action {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(160deg, #1c1c1f 0%, #141416 100%);
+  color: #fff;
+  box-shadow: none;
+}
+
+.theme-dark .gym-hub-action span {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.theme-dark .gym-hub-action.is-locked {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.theme-dark .gym-hub-action.is-locked span {
+  color: #e0b24a;
+}
+
+.theme-dark .gym-search-bar {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(18, 18, 20, 0.94);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.theme-dark .gym-search-gps,
+.theme-dark .gym-refresh-button {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.theme-dark .gym-search-gps.is-active {
+  border-color: rgba(255, 90, 80, 0.4);
+  background: rgba(255, 55, 55, 0.14);
+  color: #ff7a6a;
 }
 
 .theme-dark .gym-hero,

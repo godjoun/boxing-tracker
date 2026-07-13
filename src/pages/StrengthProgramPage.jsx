@@ -1,4 +1,8 @@
 import { useMemo, useState } from "react";
+import ComposerShell, {
+  ComposerDockPrimary,
+  ComposerSegmentTabs,
+} from "../components/ComposerShell";
 import {
   buildStrengthWarmupLaunch,
   getTodayStrengthDay,
@@ -14,66 +18,48 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
   const activeDay =
     STRENGTH_WEEK.find((day) => day.id === activeDayId) || todayPlan;
 
+  const dayTabs = STRENGTH_WEEK.map((day) => ({
+    id: day.id,
+    label: day.shortDay,
+  }));
+
   return (
-    <main className="strength-page">
-      <header className="strength-hero">
+    <ComposerShell
+      className="strength-page"
+      back={
         <button className="category-back" type="button" onClick={onGoBack}>
-          <span aria-hidden="true">←</span>
-          더보기
+          ← 뒤로
         </button>
-        <div className="strength-hero-copy">
-          <p>STRENGTH CAMP</p>
-          <h1>훈련법 추천</h1>
-          <span>복싱 몸강화 · 요일별 현실 루틴</span>
-        </div>
-      </header>
-
-      <section className="strength-card strength-warmup-card">
-        <div className="strength-card-head">
-          <p>필수 워밍업</p>
-          <h2>{STRENGTH_WARMUP.title}</h2>
-        </div>
-        <p className="strength-warmup-desc">{STRENGTH_WARMUP.description}</p>
-        <div className="strength-warmup-meta">
-          <span>줄넘기 3분</span>
-          <span>{STRENGTH_WARMUP.rounds}라운드</span>
-          <span>휴식 {STRENGTH_WARMUP.restSeconds}초</span>
-        </div>
-        <button
-          type="button"
-          className="strength-warmup-button"
+      }
+      kicker="CONDITIONING"
+      title="몸 강화"
+      summary={
+        <>
+          <span className="composer-meta-label">오늘 추천</span>
+          <strong>
+            {todayPlan.day} · {todayPlan.theme}
+          </strong>
+          <p>{todayPlan.focus} · 복싱을 위한 컨디셔닝 루틴입니다</p>
+          <p className="strength-summary-warmup">
+            시작 전 워밍업 · {STRENGTH_WARMUP.title}
+          </p>
+        </>
+      }
+      segments={
+        <ComposerSegmentTabs
+          tabs={dayTabs}
+          activeId={activeDayId}
+          onChange={setActiveDayId}
+          ariaLabel="요일 선택"
+        />
+      }
+      dock={
+        <ComposerDockPrimary
+          label="줄넘기 워밍업 시작"
           onClick={() => onStartWarmup?.(buildStrengthWarmupLaunch())}
-        >
-          줄넘기 타이머 시작
-        </button>
-      </section>
-
-      <section className="strength-today-card">
-        <span>오늘 추천</span>
-        <strong>
-          {todayPlan.day} · {todayPlan.theme}
-        </strong>
-        <small>{todayPlan.focus}</small>
-      </section>
-
-      <div className="strength-day-chips" role="tablist" aria-label="요일 선택">
-        {STRENGTH_WEEK.map((day) => (
-          <button
-            key={day.id}
-            type="button"
-            role="tab"
-            aria-selected={activeDayId === day.id}
-            className={`strength-day-chip tone-${day.tone}${
-              activeDayId === day.id ? " is-active" : ""
-            }${todayPlan.id === day.id ? " is-today" : ""}`}
-            onClick={() => setActiveDayId(day.id)}
-          >
-            <em>{day.shortDay}</em>
-            <span>{day.theme.split(" ")[0]}</span>
-          </button>
-        ))}
-      </div>
-
+        />
+      }
+    >
       <article className={`strength-day-panel tone-${activeDay.tone}`}>
         <header className="strength-day-head">
           <div>
@@ -84,7 +70,10 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
         </header>
 
         {activeDay.blocks.map((block) => (
-          <section className="strength-block" key={`${activeDay.id}-${block.title}`}>
+          <section
+            className="strength-block"
+            key={`${activeDay.id}-${block.title}`}
+          >
             <div className="strength-block-head">
               <h3>{block.title}</h3>
               {block.prescription ? <em>{block.prescription}</em> : null}
@@ -106,8 +95,8 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
 
       <section className="strength-card strength-tips-card">
         <div className="strength-card-head">
-          <p>CAMP TIPS</p>
-          <h2>캠프 루틴 소화 팁</h2>
+          <p>TIPS</p>
+          <h2>캠프 루틴 팁</h2>
         </div>
         <div className="strength-tips-list">
           {STRENGTH_TIPS.map((tip) => (
@@ -118,6 +107,6 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
           ))}
         </div>
       </section>
-    </main>
+    </ComposerShell>
   );
 }

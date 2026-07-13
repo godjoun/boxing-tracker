@@ -25,6 +25,7 @@ import { buildCurriculumTimerLaunch } from "./utils/homeCurriculum";
 import { buildPresetTimerLaunch } from "./utils/timerPresets";
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
 import { recordAppOpen } from "./utils/retentionMetrics";
+import { isDevMode } from "./utils/devMode";
 import "./App.css";
 
 export default function App() {
@@ -46,7 +47,7 @@ function AppFlow() {
 }
 
 function MainAppShell() {
-  const { logs, profile } = useTraining();
+  const { logs, profile, grantFighterLevel } = useTraining();
   const [currentPage, setCurrentPage] = useState("home");
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialSession, setTutorialSession] = useState(0);
@@ -73,6 +74,14 @@ function MainAppShell() {
   useEffect(() => {
     recordAppOpen();
   }, []);
+
+  useEffect(() => {
+    if (!isDevMode() || !grantFighterLevel) return;
+
+    if (getFighterProgress(logs).level < 10) {
+      grantFighterLevel(10);
+    }
+  }, [grantFighterLevel, logs]);
 
   const toggleTheme = () => {
     setTheme((currentTheme) => {
@@ -121,6 +130,22 @@ function MainAppShell() {
     setCurrentPage("timer");
   };
 
+  const [curriculumFocus, setCurriculumFocus] = useState(null);
+
+  const goReadLesson = (session) => {
+    if (!session?.id) return;
+
+    track("lesson_read_start", {
+      sessionId: session.id,
+    });
+    setCurriculumFocus({ sessionId: session.id, openDrills: true });
+    setCurrentPage("curriculum");
+  };
+
+  const clearCurriculumFocus = () => {
+    setCurriculumFocus(null);
+  };
+
   const clearTimerLaunch = () => {
     setTimerLaunch(null);
   };
@@ -153,6 +178,7 @@ function MainAppShell() {
             onOpenCardMaker={goProfileCardMaker}
             onOpenCurriculum={() => goPage("curriculum")}
             onStartCurriculumSession={goTimerWithSession}
+            onReadLesson={goReadLesson}
           />
         )}
 
@@ -232,6 +258,10 @@ function MainAppShell() {
         {currentPage === "curriculum" && (
           <CurriculumPage
             fighterLevel={fighterLevel}
+            focusSessionId={curriculumFocus?.sessionId || null}
+            focusOpenDrills={Boolean(curriculumFocus?.openDrills)}
+            focusOpenVideo={Boolean(curriculumFocus?.openVideo)}
+            onFocusConsumed={clearCurriculumFocus}
             onGoBack={() => goPage("train")}
             onStartSession={goTimerWithSession}
             onOpenComboCreator={() => goPage("combo-creator")}

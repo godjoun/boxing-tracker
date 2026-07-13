@@ -1,9 +1,29 @@
 .curriculum-page {
-  width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 56px 18px 132px;
   color: #fff;
+}
+
+.curriculum-page.composer-shell {
+  max-width: 720px;
+}
+
+.curriculum-hero-compact {
+  margin: 0;
+  padding: 0;
+}
+
+.curriculum-hero-compact .curriculum-intro {
+  margin: 0;
+}
+
+.composer-meta-label {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.theme-light .composer-meta-label {
+  color: #8a7d6b;
 }
 
 .curriculum-back {

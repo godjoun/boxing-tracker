@@ -5,26 +5,6 @@ import { getLevelTitle } from "../utils/fighterTitles";
 import NearbyGymsPanel from "./dojoBreaker/NearbyGymsPanel";
 import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
-const FEATURES = [
-  {
-    id: "gyms",
-    icon: "M",
-    eyebrow: "NEARBY GYMS",
-    title: "주변 체육관 찾기",
-    description: "자체 데이터 기반 체육관 검색",
-    accent: "red",
-  },
-  {
-    id: "sparring",
-    icon: "S",
-    eyebrow: "SPARRING MATCH",
-    title: "스파링 상대 찾기",
-    description: "체급·경력 기반 매칭",
-    accent: "orange",
-    featureId: "sparring",
-  },
-];
-
 export default function GymFinderPage({
   initialView = "hub",
   fighterLevel = 1,
@@ -33,6 +13,7 @@ export default function GymFinderPage({
 }) {
   const [view, setView] = useState(initialView);
   const sparringLocked = !isSparringUnlocked(fighterLevel);
+  const sparringLevel = getUnlockLevel("sparring");
 
   useEffect(() => {
     setView(initialView);
@@ -60,7 +41,7 @@ export default function GymFinderPage({
 
   if (view === "gyms") {
     return (
-      <main className="gym-page">
+      <main className="gym-page gym-page-sub">
         <NearbyGymsPanel onGoBack={() => setView("hub")} />
       </main>
     );
@@ -68,54 +49,54 @@ export default function GymFinderPage({
 
   if (view === "sparring") {
     return (
-      <main className="gym-page">
+      <main className="gym-page gym-page-sub">
         <SparringPartnerPanel onGoBack={() => setView("hub")} />
       </main>
     );
   }
 
   return (
-    <main className="gym-page">
-      <header className="gym-hero">
+    <main className="gym-page gym-page-hub">
+      <header className="gym-hub-header">
         <button className="category-back" type="button" onClick={onGoBack}>
-          <span>←</span> 더보기
+          ← 뒤로
         </button>
-        <div className="gym-hero-copy">
-          <p>DOJO BREAKER</p>
-          <h1>도장깨기</h1>
-          <span>체육관은 바로 이용하고, 스파링은 성장 후 열립니다.</span>
-        </div>
+        <h1>도장</h1>
+        <p>근처 체육관을 찾거나, 레벨이 되면 스파링 상대를 고르세요.</p>
       </header>
 
-      <section className="dojo-feature-grid">
-        {FEATURES.map((feature) => {
-          const locked =
-            feature.featureId === "sparring" && sparringLocked;
+      <div className="gym-hub-status" aria-label="이용 가능 기능">
+        <span className="is-on">체육관 · 바로 가능</span>
+        <span className={sparringLocked ? "is-locked" : "is-on"}>
+          스파링 ·{" "}
+          {sparringLocked
+            ? `LV.${sparringLevel} ${getLevelTitle(sparringLevel).ko}`
+            : "열림"}
+        </span>
+      </div>
 
-          return (
-            <button
-              className={`dojo-feature-card accent-${feature.accent}${
-                locked ? " is-locked" : ""
-              }`}
-              key={feature.id}
-              type="button"
-              onClick={() => openFeature(feature.id)}
-            >
-              <span className="dojo-feature-icon" aria-hidden="true">
-                {feature.icon}
-              </span>
-              <p>{feature.eyebrow}</p>
-              <strong>{feature.title}</strong>
-              <small>
-                {locked
-                  ? `LV.${getUnlockLevel("sparring")} ${getLevelTitle(getUnlockLevel("sparring")).ko} 칭호`
-                  : feature.description}
-              </small>
-              <i aria-hidden="true">{locked ? "🔒" : "→"}</i>
-            </button>
-          );
-        })}
-      </section>
+      <div className="gym-hub-actions">
+        <button
+          type="button"
+          className="gym-hub-action"
+          onClick={() => openFeature("gyms")}
+        >
+          <strong>주변 체육관</strong>
+          <span>거리순으로 찾고 체험 문의</span>
+        </button>
+        <button
+          type="button"
+          className={`gym-hub-action${sparringLocked ? " is-locked" : ""}`}
+          onClick={() => openFeature("sparring")}
+        >
+          <strong>스파링 상대</strong>
+          <span>
+            {sparringLocked
+              ? `LV.${sparringLevel} 해금`
+              : "체급·경력으로 매칭"}
+          </span>
+        </button>
+      </div>
     </main>
   );
 }

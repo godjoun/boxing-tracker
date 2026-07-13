@@ -24,9 +24,11 @@ import {
 } from "../utils/dataBackup";
 import { needsOnboarding, validateBodySpecs } from "../utils/bodySpecs";
 import {
+  applyLevelBoost,
   DEV_DEFAULT_PROFILE,
   DEV_USER_ID,
   getDevUserId,
+  isDevMode,
 } from "../utils/devMode";
 import { getFighterProgress } from "../utils/fighterProgress";
 import { syncListingFromProfile } from "../utils/sparringPartners";
@@ -211,6 +213,7 @@ function getFinalRounds(logLike) {
 function getRecordSourceLabel(source) {
   if (source === "timer") return "자동 기록";
   if (source === "manual") return "수동 기록";
+  if (source === "dev") return "개발";
   return "기록";
 }
 
@@ -516,6 +519,26 @@ export function TrainingProvider({
     return restoreBackupFromPayload(payload, options);
   }
 
+  function grantFighterLevel(targetLevel = 10) {
+    if (!isDevMode()) {
+      return { ok: false, reason: "dev-only" };
+    }
+
+    let granted = false;
+
+    setLogs((prevLogs) => {
+      const nextLogs = applyLevelBoost(prevLogs, targetLevel);
+      granted = nextLogs !== prevLogs;
+      return nextLogs;
+    });
+
+    return {
+      ok: true,
+      granted,
+      level: getFighterProgress(applyLevelBoost(logs, targetLevel)).level,
+    };
+  }
+
   const value = {
     userId,
     logs,
@@ -537,6 +560,7 @@ export function TrainingProvider({
     buildBackupPayload,
     restoreBackupFromPayload,
     restoreBackupFromText,
+    grantFighterLevel: isDevMode() ? grantFighterLevel : undefined,
 
     weeklyLogs,
     weeklyScore,

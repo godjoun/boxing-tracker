@@ -104,6 +104,7 @@ export default function HomePage({
   onOpenCardMaker,
   onOpenCurriculum,
   onStartCurriculumSession,
+  onReadLesson,
 }) {
   const { logs = [], profile, weeklyScore } = useTraining();
   const [selectedDate, setSelectedDate] = useState("");
@@ -361,19 +362,28 @@ export default function HomePage({
               </p>
             ) : null}
             <div className="home-daily-lesson-actions">
+              <div className="home-daily-lesson-actions-row">
+                <button
+                  type="button"
+                  className="home-daily-lesson-secondary"
+                  onClick={() => onReadLesson?.(todaysLesson.session)}
+                >
+                  레슨 읽기
+                </button>
+                <button
+                  type="button"
+                  className="home-daily-lesson-primary"
+                  onClick={() => onStartCurriculumSession?.(todaysLesson.session)}
+                >
+                  {dashboard.trainedToday ? "훈련 시작" : `${todaysLesson.rounds}R 훈련`}
+                </button>
+              </div>
               <button
                 type="button"
-                className="home-daily-lesson-primary"
-                onClick={() => onStartCurriculumSession?.(todaysLesson.session)}
-              >
-                {dashboard.trainedToday ? "레슨 세션 시작" : `${todaysLesson.rounds}R 세션 시작`} →
-              </button>
-              <button
-                type="button"
-                className="home-daily-lesson-secondary"
+                className="home-daily-lesson-link"
                 onClick={() => onOpenCurriculum?.()}
               >
-                커리큘럼 보기
+                배움 전체 보기
               </button>
             </div>
           </>

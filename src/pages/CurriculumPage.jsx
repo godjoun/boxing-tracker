@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getAllCurriculumSessions,
   getCurriculumProgress,
@@ -30,6 +30,10 @@ import { resolveSessionTimerConfig } from "../utils/curriculumTimerSync";
 import SessionDrillGuide from "../components/SessionDrillGuide";
 import LessonVideoPlayer from "../components/LessonVideoPlayer";
 import { getLessonBySessionId } from "../utils/lessonCatalog";
+import ComposerShell, {
+  ComposerDockPrimary,
+  ComposerSegmentTabs,
+} from "../components/ComposerShell";
 import "./CurriculumPage.css";
 
 const CURRICULUM_TABS = [
@@ -132,6 +136,10 @@ function WeekProgressRing({ percent }) {
 
 export default function CurriculumPage({
   fighterLevel = 1,
+  focusSessionId = null,
+  focusOpenDrills = false,
+  focusOpenVideo = false,
+  onFocusConsumed,
   onGoBack,
   onStartSession,
   onOpenComboCreator,
@@ -174,6 +182,49 @@ export default function CurriculumPage({
 
   const sessions = useMemo(() => getAllCurriculumSessions(), []);
   const weekOverviews = useMemo(() => getCurriculumWeekOverviews(), [progress]);
+
+  useEffect(() => {
+    if (!focusSessionId) return;
+
+    const session = sessions.find((item) => item.id === focusSessionId);
+    if (!session) {
+      onFocusConsumed?.();
+      return;
+    }
+
+    const isTodaySession = recommended?.id === focusSessionId;
+
+    setActiveTab(isTodaySession ? "today" : "program");
+    setOpenWeekId(session.weekId);
+
+    if (focusOpenDrills) {
+      setExpandedDrillId(focusSessionId);
+    }
+
+    if (focusOpenVideo) {
+      setExpandedVideoId(focusSessionId);
+    }
+
+    requestAnimationFrame(() => {
+      const scrollTarget = isTodaySession
+        ? document.getElementById("curriculum-today")
+        : document.getElementById(`curriculum-week-${session.weekId}`);
+
+      scrollTarget?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+      onFocusConsumed?.();
+    });
+  }, [
+    focusSessionId,
+    focusOpenDrills,
+    focusOpenVideo,
+    sessions,
+    recommended?.id,
+    onFocusConsumed,
+  ]);
+
   const comboUnlocked = isComboCreatorUnlocked(fighterLevel);
   const comboUnlock = useMemo(
     () => getComboCreatorUnlockProgress(fighterLevel),
@@ -280,13 +331,53 @@ export default function CurriculumPage({
   }
 
   return (
-    <main className="curriculum-page">
-      <header className="curriculum-hero">
+    <ComposerShell
+      className="curriculum-page"
+      back={
         <button className="curriculum-back" type="button" onClick={onGoBack}>
-          <span aria-hidden="true">←</span> 레벨업
+          ← 뒤로
         </button>
-        <p className="curriculum-kicker">LEARN</p>
-        <h1>배움</h1>
+      }
+      kicker="LEARN"
+      title="배움"
+      summary={
+        <>
+          <span className="composer-meta-label">진행</span>
+          <strong>
+            {progress.completedCount}/{progress.totalSessions} 세션 ·{" "}
+            {progress.progressPercent}%
+          </strong>
+          <p>
+            {recommendedAdjusted
+              ? `다음 · ${recommended.title} · ${recommendedAdjusted.rounds}R`
+              : progress.isComplete
+                ? "4주 프로그램을 모두 마쳤습니다."
+                : "세션을 완료하면 진행률이 올라갑니다."}
+          </p>
+          <div className="curriculum-progress-bar" aria-hidden="true">
+            <div style={{ width: `${progress.progressPercent}%` }} />
+          </div>
+        </>
+      }
+      segments={
+        <ComposerSegmentTabs
+          tabs={CURRICULUM_TABS}
+          activeId={activeTab}
+          onChange={setActiveTab}
+          ariaLabel="배움 메뉴"
+        />
+      }
+      dock={
+        recommendedAdjusted ? (
+          <ComposerDockPrimary
+            label={`${recommendedAdjusted.rounds}R 훈련 시작`}
+            onClick={() => handleStartSession(recommended)}
+          />
+        ) : null
+      }
+      hideDock={!recommendedAdjusted}
+    >
+      <header className="curriculum-hero curriculum-hero-compact">
         <p className="curriculum-intro">
           {activeTab === "today"
             ? "오늘 할 세션만 빠르게 시작하세요."
@@ -294,124 +385,108 @@ export default function CurriculumPage({
         </p>
       </header>
 
-      <div
-        className="curriculum-tabs"
-        role="tablist"
-        aria-label="배움 메뉴"
-      >
-        {CURRICULUM_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={`curriculum-tab${activeTab === tab.id ? " is-active" : ""}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       {activeTab === "today" ? (
         <>
-      <section className="curriculum-card curriculum-progress-card">
-        <div className="curriculum-progress-head">
-          <div>
-            <span>전체 진행률</span>
-            <strong>
-              {progress.completedCount}/{progress.totalSessions} 세션
-            </strong>
-          </div>
-          <b>{progress.progressPercent}%</b>
-        </div>
-        <div className="curriculum-progress-bar" aria-hidden="true">
-          <div style={{ width: `${progress.progressPercent}%` }} />
-        </div>
-        <p className="curriculum-progress-note">
-          {progress.isComplete
-            ? "4주 프로그램을 모두 마쳤습니다."
-            : "세션 완료 시 자동 체크 · 4주 · 12세션"}
-        </p>
-      </section>
+          {recommendedAdjusted ? (
+            <section
+              className="curriculum-card curriculum-today-card"
+              id="curriculum-today"
+            >
+              <p className="curriculum-section-label">TODAY</p>
+              <h2>오늘 추천 세션</h2>
+              <div className="curriculum-today-body">
+                <div>
+                  <span>
+                    {recommended.weekLabel} · {recommended.code}
+                  </span>
+                  <strong>{recommended.title}</strong>
+                  <p>{recommended.goal}</p>
+                  {recommendedTimerConfig ? (
+                    <p className="curriculum-session-schedule">
+                      {recommendedTimerConfig.scheduleSummary}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <div className="curriculum-today-meta">
+                <span>{recommendedAdjusted.rounds}R</span>
+                <span>
+                  라운드 {Math.round(recommendedAdjusted.workSeconds / 60)}분
+                </span>
+                <span>휴식 {recommendedAdjusted.restSeconds}초</span>
+                {settings.intensityId !== "normal" ||
+                settings.sessionOverrides[recommended.id] ? (
+                  <span className="curriculum-adjusted-badge">조정됨</span>
+                ) : null}
+              </div>
 
-      {recommendedAdjusted ? (
-        <section className="curriculum-card curriculum-today-card">
-          <p className="curriculum-section-label">TODAY</p>
-          <h2>오늘 추천 세션</h2>
-          <div className="curriculum-today-body">
-            <div>
-              <span>
-                {recommended.weekLabel} · {recommended.code}
-              </span>
-              <strong>{recommended.title}</strong>
-              <p>{recommended.goal}</p>
-              {recommendedTimerConfig ? (
-                <p className="curriculum-session-schedule">
-                  {recommendedTimerConfig.scheduleSummary}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="curriculum-today-meta">
-            <span>{recommendedAdjusted.rounds}R</span>
-            <span>라운드 {Math.round(recommendedAdjusted.workSeconds / 60)}분</span>
-            <span>휴식 {recommendedAdjusted.restSeconds}초</span>
-            {settings.intensityId !== "normal" ||
-            settings.sessionOverrides[recommended.id] ? (
-              <span className="curriculum-adjusted-badge">조정됨</span>
-            ) : null}
-          </div>
+              <div className="curriculum-today-lesson">
+                <button
+                  type="button"
+                  className="curriculum-drill-toggle"
+                  onClick={() =>
+                    setExpandedDrillId((current) =>
+                      current === recommended.id ? null : recommended.id
+                    )
+                  }
+                  aria-expanded={expandedDrillId === recommended.id}
+                >
+                  {expandedDrillId === recommended.id
+                    ? "레슨 접기"
+                    : "① 레슨·드릴 보기"}
+                </button>
+                {expandedDrillId === recommended.id && recommendedTimerConfig ? (
+                  <SessionDrillGuide
+                    syncedDrills={recommendedTimerConfig.syncedDrills}
+                    totalRounds={recommendedAdjusted.rounds}
+                    workSeconds={recommendedAdjusted.workSeconds}
+                  />
+                ) : null}
 
-          {recommendedLesson ? (
-            <div className="curriculum-today-lesson">
-              <button
-                type="button"
-                className="curriculum-drill-toggle"
-                onClick={() =>
-                  setExpandedVideoId((current) =>
-                    current === recommended.id ? null : recommended.id
-                  )
-                }
-                aria-expanded={expandedVideoId === recommended.id}
-              >
-                {expandedVideoId === recommended.id
-                  ? "영상 접기"
-                  : recommendedLesson.hasVideo
-                    ? "① 영상 보기"
-                    : "① 영상 (준비 중)"}
-              </button>
-              {expandedVideoId === recommended.id ? (
-                <LessonVideoPlayer
-                  videoUrl={recommendedLesson.videoUrl}
-                  title={recommendedLesson.title}
-                />
-              ) : null}
-            </div>
+                {recommendedLesson?.hasVideo ? (
+                  <>
+                    <button
+                      type="button"
+                      className="curriculum-drill-toggle curriculum-today-video-toggle"
+                      onClick={() =>
+                        setExpandedVideoId((current) =>
+                          current === recommended.id ? null : recommended.id
+                        )
+                      }
+                      aria-expanded={expandedVideoId === recommended.id}
+                    >
+                      {expandedVideoId === recommended.id
+                        ? "영상 접기"
+                        : "영상 보기 (선택)"}
+                    </button>
+                    {expandedVideoId === recommended.id ? (
+                      <LessonVideoPlayer
+                        videoUrl={recommendedLesson.videoUrl}
+                        title={recommendedLesson.title}
+                      />
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+            </section>
           ) : null}
 
-          <button
-            type="button"
-            className="curriculum-cta curriculum-today-start"
-            onClick={() => handleStartSession(recommended)}
-          >
-            ② 타이머 훈련 시작
-          </button>
-        </section>
-      ) : null}
-
-      {progress.isComplete ? (
-        <section className="curriculum-card curriculum-graduate-card">
-          <p className="curriculum-section-label">{CURRICULUM_GRADUATION.badge}</p>
-          <h2>{CURRICULUM_GRADUATION.title}</h2>
-          <p className="curriculum-settings-note">{CURRICULUM_GRADUATION.message}</p>
-          <ul className="curriculum-graduate-list">
-            {CURRICULUM_GRADUATION.nextSteps.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+          {progress.isComplete ? (
+            <section className="curriculum-card curriculum-graduate-card">
+              <p className="curriculum-section-label">
+                {CURRICULUM_GRADUATION.badge}
+              </p>
+              <h2>{CURRICULUM_GRADUATION.title}</h2>
+              <p className="curriculum-settings-note">
+                {CURRICULUM_GRADUATION.message}
+              </p>
+              <ul className="curriculum-graduate-list">
+                {CURRICULUM_GRADUATION.nextSteps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </>
       ) : null}
 
@@ -561,7 +636,7 @@ export default function CurriculumPage({
                           }
                           aria-expanded={drillsOpen}
                         >
-                          {drillsOpen ? "드릴 접기" : "드릴"}
+                          {drillsOpen ? "레슨 접기" : "① 레슨·드릴"}
                         </button>
                       </div>
 
@@ -845,14 +920,14 @@ export default function CurriculumPage({
       ) : null}
 
       {activeTab === "today" || activeTab === "program" ? (
-      <button
-        type="button"
-        className="curriculum-refresh"
-        onClick={refreshProgress}
-      >
-        진행 상태 새로고침
-      </button>
+        <button
+          type="button"
+          className="curriculum-refresh"
+          onClick={refreshProgress}
+        >
+          진행 상태 새로고침
+        </button>
       ) : null}
-    </main>
+    </ComposerShell>
   );
 }

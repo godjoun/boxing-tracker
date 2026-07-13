@@ -3,8 +3,19 @@
 }
 
 .timer-page-setup {
-  display: flex;
-  flex-direction: column;
+  display: block;
+}
+
+.timer-composer-preview {
+  margin: 0 !important;
+  color: #f5d98b !important;
+  font-size: 28px !important;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.timer-setup-panel-plain {
+  margin: 0;
 }
 
 .timer-page-setup .timer-setup-config {

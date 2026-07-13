@@ -36,6 +36,10 @@ import {
 } from "../utils/timerPagePersistence";
 import { styles } from "./TimerPage.styles";
 import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
+import ComposerShell, {
+  ComposerDockPrimary,
+  ComposerSegmentTabs,
+} from "../components/ComposerShell";
 import {
   INTERVAL_TIMER_PRESET,
   getTimerPresetById,
@@ -849,100 +853,45 @@ export default function TimerPage({
       className={`timer-page${isSetupMode ? " timer-page-setup" : ""}${
         isFocusMode ? " timer-page-focus" : ""
       }${isComplete ? " timer-page-complete" : ""}`}
-      style={styles.page}
+      style={isSetupMode ? undefined : styles.page}
     >
       {isSetupMode ? (
-        <section className="timer-setup-hero">
-          <p className="timer-setup-kicker">TIMER</p>
-          <h1 className="timer-setup-title">타이머</h1>
-          <p className="timer-setup-subtitle">
-            프리셋을 고르고 바로 시작하세요. 완료 시 EXP가 자동 기록됩니다.
-          </p>
-
-          <details className="timer-sound-details">
-            <summary>
-              알림음 ·{" "}
-              {SOUND_OPTIONS.find((option) => option.id === soundMode)?.label}
-            </summary>
-            <div className="timer-sound-details-body" style={styles.soundBox}>
-              <div style={styles.soundOptionGrid}>
-                {SOUND_OPTIONS.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    style={{
-                      ...styles.soundOptionButton,
-                      ...(soundMode === option.id
-                        ? styles.activeSoundOptionButton
-                        : {}),
-                    }}
-                    onClick={() => {
-                      setSoundMode(option.id);
-                      if (option.id === "mute") {
-                        stopTimerAudioSession();
-                        return;
-                      }
-                      previewTimerBeep(option.id);
-                    }}
-                  >
-                    <strong style={styles.soundOptionLabel}>{option.label}</strong>
-                    <span style={styles.soundOptionDescription}>
-                      {option.description}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {supportsHeadphoneTimerAudio() ? (
-                <div style={styles.headsetTip}>
-                  <strong style={styles.headsetTipTitle}>
-                    에어팟 · 블루투스 이어폰
-                  </strong>
-                  <span style={styles.headsetTipCopy}>
-                    시작 후 이어폰으로 라운드 알림음이 재생됩니다.
-                  </span>
-                </div>
-              ) : null}
-            </div>
-          </details>
-        </section>
-      ) : null}
-
-      {isSetupMode ? (
-        <div className="timer-setup-config">
-          <section className="timer-setup-panel">
-            <div className="timer-setup-panel-head">
-              <h2>훈련 선택</h2>
-              <span>{isIntervalMode ? "인터벌" : "라운드"}</span>
-            </div>
-
-            <div className="timer-preset-grid">
-              {SETUP_PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  type="button"
-                  className={`timer-preset-chip${
-                    selectedPresetId === preset.id ? " is-active" : ""
-                  }`}
-                  onClick={() => applyPreset(preset)}
-                  disabled={isRunning}
-                >
-                  <strong>{preset.title}</strong>
-                  <small>
-                    {preset.id === INTERVAL_TIMER_PRESET.id
-                      ? "30/15초"
-                      : "3분/30초"}
-                  </small>
-                </button>
-              ))}
-            </div>
-
-            <p className="timer-setup-summary">{setupSummary}</p>
-
-            <div className="timer-setup-preview-time" aria-hidden="true">
-              {formatTime(workSecondsSetting)}
-            </div>
-
+        <ComposerShell
+          className="timer-composer"
+          kicker="TIMER"
+          title="타이머"
+          summary={
+            <>
+              <span className="composer-meta-label">
+                {isIntervalMode ? "인터벌" : "라운드"}
+              </span>
+              <strong>{setupSummary}</strong>
+              <p className="timer-composer-preview">{formatTime(workSecondsSetting)}</p>
+            </>
+          }
+          segments={
+            <ComposerSegmentTabs
+              tabs={SETUP_PRESETS.map((preset) => ({
+                id: preset.id,
+                label: preset.title,
+              }))}
+              activeId={selectedPresetId}
+              onChange={(presetId) => {
+                const preset = SETUP_PRESETS.find((item) => item.id === presetId);
+                if (preset) applyPreset(preset);
+              }}
+              ariaLabel="타이머 프리셋"
+            />
+          }
+          dock={
+            <ComposerDockPrimary
+              label="시작"
+              onClick={handleStart}
+              disabled={isRunning}
+            />
+          }
+        >
+          <section className="timer-setup-panel timer-setup-panel-plain">
             <div className="timer-setup-adjust">
               <label className="timer-setup-field">
                 <span>{isIntervalMode ? "세트" : "라운드"}</span>
@@ -1018,16 +967,55 @@ export default function TimerPage({
               </div>
             </div>
 
-            <button
-              type="button"
-              className="timer-setup-start"
-              onClick={handleStart}
-              disabled={isRunning}
-            >
-              시작
-            </button>
+            <details className="timer-sound-details">
+              <summary>
+                알림음 ·{" "}
+                {SOUND_OPTIONS.find((option) => option.id === soundMode)?.label}
+              </summary>
+              <div className="timer-sound-details-body" style={styles.soundBox}>
+                <div style={styles.soundOptionGrid}>
+                  {SOUND_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      style={{
+                        ...styles.soundOptionButton,
+                        ...(soundMode === option.id
+                          ? styles.activeSoundOptionButton
+                          : {}),
+                      }}
+                      onClick={() => {
+                        setSoundMode(option.id);
+                        if (option.id === "mute") {
+                          stopTimerAudioSession();
+                          return;
+                        }
+                        previewTimerBeep(option.id);
+                      }}
+                    >
+                      <strong style={styles.soundOptionLabel}>
+                        {option.label}
+                      </strong>
+                      <span style={styles.soundOptionDescription}>
+                        {option.description}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {supportsHeadphoneTimerAudio() ? (
+                  <div style={styles.headsetTip}>
+                    <strong style={styles.headsetTipTitle}>
+                      에어팟 · 블루투스 이어폰
+                    </strong>
+                    <span style={styles.headsetTipCopy}>
+                      시작 후 이어폰으로 라운드 알림음이 재생됩니다.
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            </details>
           </section>
-        </div>
+        </ComposerShell>
       ) : null}
 
       {!isSetupMode ? (

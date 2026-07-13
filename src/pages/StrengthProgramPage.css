@@ -1,39 +1,23 @@
 .strength-page {
-  width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 20px 16px 132px;
   color: var(--p-text);
 }
 
-.strength-hero {
-  margin-bottom: 14px;
+.strength-summary-warmup {
+  margin: 0 !important;
+  color: #ef3f36 !important;
+  font-size: 11px !important;
+  font-weight: 800;
 }
 
-.strength-hero-copy {
-  margin-top: 14px;
-}
-
-.strength-hero-copy p {
-  margin: 0 0 6px;
-  color: #ef3f36;
+.composer-meta-label {
+  color: rgba(255, 255, 255, 0.42);
   font-size: 10px;
   font-weight: 900;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
 }
 
-.strength-hero-copy h1 {
-  margin: 0;
-  font-size: 26px;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
-}
-
-.strength-hero-copy > span {
-  display: block;
-  margin-top: 8px;
-  color: var(--p-text-muted);
-  font-size: 13px;
+.theme-light .composer-meta-label {
+  color: #8a7d6b;
 }
 
 .strength-card,

@@ -1,0 +1,193 @@
+.composer-shell {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 14px 16px var(--app-nav-total);
+  color: inherit;
+}
+
+.composer-meta-label {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.theme-light .composer-meta-label {
+  color: #8a7d6b;
+}
+
+.composer-shell.has-dock {
+  padding-bottom: calc(var(--app-nav-total) + 88px);
+}
+
+.composer-shell-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.composer-shell-heading {
+  min-width: 0;
+}
+
+.composer-shell-kicker {
+  margin: 0 0 2px;
+  color: #e8c66a;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.composer-shell-title {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.composer-shell-summary {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.composer-shell-summary strong {
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.composer-shell-summary p,
+.composer-shell-summary span {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.composer-shell-segments {
+  margin-bottom: 12px;
+}
+
+.composer-segment-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.composer-segment-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.composer-segment-tab.is-active {
+  background: rgba(232, 198, 106, 0.14);
+  color: #f5d98b;
+}
+
+.composer-segment-tab em {
+  min-width: 16px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.composer-shell-workspace {
+  display: grid;
+  gap: 12px;
+}
+
+.composer-shell-dock {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--app-nav-total) + 4px);
+  z-index: 20;
+  width: min(640px, calc(100% - 24px));
+  transform: translateX(-50%);
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(14, 14, 14, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.composer-dock-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.composer-dock-row:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
+.composer-dock-primary {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e8c66a, #c49a2e);
+  color: #1f1a12;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.composer-dock-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.theme-light .composer-shell-summary,
+.theme-light .composer-segment-tabs {
+  background: #f7f3ea;
+  border-color: rgba(196, 154, 46, 0.16);
+}
+
+.theme-light .composer-shell-summary p,
+.theme-light .composer-shell-summary span,
+.theme-light .composer-segment-tab {
+  color: #6b6254;
+}
+
+.theme-light .composer-segment-tab.is-active {
+  background: #fff8e8;
+  color: #9a7420;
+}
+
+.theme-light .composer-shell-dock {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(196, 154, 46, 0.2);
+  box-shadow: 0 10px 24px rgba(79, 58, 18, 0.12);
+}
+
+.theme-light .composer-shell-kicker {
+  color: #9a7420;
+}

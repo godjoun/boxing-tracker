@@ -6,7 +6,13 @@ import {
   SPARRING_UNLOCK_LEVEL,
   isSparringUnlocked,
 } from "../utils/featureUnlocks";
-import { calculateLogScore, CONDITION_OPTIONS } from "../utils/trainingStats";
+import {
+  calculateLogScore,
+  CONDITION_OPTIONS,
+  getLogRounds,
+  isThisWeek,
+} from "../utils/trainingStats";
+import { getLogExp } from "../utils/fighterProgress";
 import "./LogPage.css";
 
 const CUSTOM_EXERCISE_VALUE = "직접 입력";
@@ -127,6 +133,15 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
   const [showAdvancedWrite, setShowAdvancedWrite] = useState(false);
   const [historyLimit, setHistoryLimit] = useState(5);
 
+  const weekSummary = useMemo(() => {
+    const weekLogs = logs.filter((log) => isThisWeek(log.date));
+    return {
+      count: weekLogs.length,
+      rounds: weekLogs.reduce((sum, log) => sum + getLogRounds(log), 0),
+      exp: weekLogs.reduce((sum, log) => sum + getLogExp(log), 0),
+    };
+  }, [logs]);
+
   const previewScore = calculatePreviewScore(
     form.minutes,
     form.difficulty,
@@ -165,7 +180,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
   }
 
   function handleSubmit(event) {
-    event.preventDefault();
+    event?.preventDefault?.();
 
     const finalExerciseName = getFinalExerciseName(form);
 
@@ -310,13 +325,24 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
   }
 
   return (
-    <main className="log-page">
+    <main className={`log-page${logView === "write" ? " has-write-dock" : ""}`}>
       <div className="log-container">
         <header className="log-hero">
-          <h1 className="log-title">훈련 기록</h1>
-          <p className="log-subtitle">
-            타이머로 저장된 기록은 자동으로 남고, 여기서 직접 추가할 수 있어요.
-          </p>
+          <h1 className="log-title">기록</h1>
+          <div className="log-week-strip" aria-label="이번 주 요약">
+            <div>
+              <span>이번 주</span>
+              <strong>{weekSummary.count}회</strong>
+            </div>
+            <div>
+              <span>라운드</span>
+              <strong>{weekSummary.rounds}R</strong>
+            </div>
+            <div>
+              <span>EXP</span>
+              <strong>{weekSummary.exp}</strong>
+            </div>
+          </div>
         </header>
 
         <div className="log-view-tabs" role="tablist">
@@ -327,7 +353,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
             className={`log-view-tab${logView === "write" ? " is-active" : ""}`}
             onClick={() => setLogView("write")}
           >
-            오늘 기록하기
+            쓰기
           </button>
           <button
             type="button"
@@ -339,7 +365,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
               setHistoryLimit(5);
             }}
           >
-            지난 기록{logs.length > 0 ? ` (${logs.length})` : ""}
+            목록{logs.length > 0 ? ` · ${logs.length}` : ""}
           </button>
         </div>
 
@@ -446,13 +472,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
         ) : null}
 
         <section className="log-card log-form-card">
-          <div className="log-section-head">
-            <h2>직접 작성</h2>
-          </div>
-
           <form onSubmit={handleSubmit}>
             <div className="log-form-block">
-              <p className="log-form-block-title">기본</p>
+              <p className="log-form-block-title">오늘 훈련</p>
 
               <div className="log-field">
                 <label className="log-label">운동 종류</label>
@@ -601,29 +623,31 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
                 </div>
               </>
             ) : null}
-
-            <div className="log-preview">
-              <div className="log-preview-copy">
-                <p className="log-preview-label">예상 획득 EXP</p>
-                <p className="log-preview-note">
-                  라운드 · 분 · 난이도 기준 · 하루 최대 {dailyScoreLimit} EXP
-                </p>
-              </div>
-              <strong className="log-preview-score">+{previewScore}</strong>
-            </div>
-
-            <button type="submit" className="log-submit">
-              기록 저장
-            </button>
           </form>
         </section>
           </>
         )}
 
+        {logView === "write" ? (
+          <div className="log-write-dock">
+            <div className="log-write-dock-exp">
+              <span>하루 최대 {dailyScoreLimit}</span>
+              <strong>+{previewScore}</strong>
+            </div>
+            <button
+              type="button"
+              className="log-submit"
+              onClick={handleSubmit}
+            >
+              저장
+            </button>
+          </div>
+        ) : null}
+
         {logView === "history" && (
         <section className="log-card log-recent-card">
           <div className="log-recent-head">
-            <h2>최근 기록</h2>
+            <h2>최근</h2>
 
             {logs.length > 0 && (
               <button
@@ -637,9 +661,18 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
           </div>
 
           {logs.length === 0 ? (
-            <p className="log-empty">
-              아직 기록이 없어요. 오늘 훈련 하나만 등록해 보세요.
-            </p>
+            <div className="log-empty-state">
+              <p className="log-empty">
+                아직 기록이 없어요. 오늘 훈련 하나만 등록해 보세요.
+              </p>
+              <button
+                type="button"
+                className="log-empty-cta"
+                onClick={() => setLogView("write")}
+              >
+                기록 쓰기
+              </button>
+            </div>
           ) : (
             <div className="log-list">
               {logs.slice(0, historyLimit).map((log) => {

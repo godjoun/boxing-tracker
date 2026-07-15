@@ -3,6 +3,8 @@
   --app-nav-bottom: max(10px, env(safe-area-inset-bottom, 10px));
   --app-nav-total: calc(var(--app-nav-height) + var(--app-nav-bottom) + 12px);
   --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-top-chrome: 56px;
+  --app-top-total: calc(max(var(--app-safe-top), 12px) + var(--app-top-chrome));
   min-height: 100dvh;
   padding-bottom: var(--app-nav-total);
 }
@@ -107,7 +109,7 @@
   max-width: 720px;
   margin: 0 auto;
   padding:
-    max(56px, calc(var(--app-safe-top) + 48px))
+    var(--app-top-total)
     18px
     24px;
   color: var(--p-text);
@@ -115,7 +117,7 @@
 
 /* KakaoPay-style readability: one number, one task, air */
 .home-status {
-  padding: 8px 4px 4px;
+  padding: 6px 4px 8px;
 }
 
 .home-status-hello {
@@ -123,6 +125,7 @@
   align-items: center;
   gap: 14px;
   margin-bottom: 28px;
+  padding-right: 48px;
 }
 
 .home-status-avatar {
@@ -599,7 +602,7 @@
   max-width: 720px;
   margin: 0 auto;
   padding:
-    max(20px, calc(var(--app-safe-top) + 12px))
+    var(--app-top-total)
     16px
     24px;
   box-sizing: border-box;
@@ -820,7 +823,7 @@
   max-width: 720px;
   margin: 0 auto;
   padding:
-    max(56px, calc(var(--app-safe-top) + 48px))
+    var(--app-top-total)
     18px
     24px;
   color: #181716;
@@ -3401,7 +3404,7 @@
   max-width: 720px;
   margin: 0 auto;
   padding:
-    max(20px, calc(var(--app-safe-top) + 12px))
+    var(--app-top-total)
     16px
     24px;
   color: var(--p-text);
@@ -4740,12 +4743,13 @@
 
   .home-page,
   .gym-page {
-    padding-top: max(52px, calc(var(--app-safe-top) + 44px));
+    padding-top: var(--app-top-total);
     padding-bottom: 16px;
   }
 
-  .hub-page {
-    padding-top: max(16px, calc(var(--app-safe-top) + 10px));
+  .hub-page,
+  .category-page {
+    padding-top: var(--app-top-total);
   }
 
   .fighter-overview {
@@ -5156,7 +5160,7 @@
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding: 56px 18px 132px;
+  padding: var(--app-top-total) 18px 132px;
   color: #181716;
 }
 
@@ -5382,7 +5386,12 @@
 }
 
 .backup-page {
-  padding: 18px 16px 28px;
+  padding: var(--app-top-total) 16px 28px;
+}
+
+.profile-page {
+  padding-top: var(--app-top-total) !important;
+  box-sizing: border-box;
 }
 
 .backup-panel {

@@ -2,7 +2,10 @@
   width: 100%;
   max-width: 640px;
   margin: 0 auto;
-  padding: 14px 16px calc(var(--app-nav-total) + 88px);
+  padding:
+    var(--app-top-total)
+    16px
+    calc(var(--app-nav-total) + 88px);
   color: #fff;
 }
 

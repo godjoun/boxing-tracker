@@ -1,6 +1,9 @@
 .log-page {
   min-height: 100vh;
-  padding: 20px 16px calc(var(--app-nav-total) + 16px);
+  padding:
+    var(--app-top-total)
+    16px
+    calc(var(--app-nav-total) + 16px);
   color: #fff;
   background: #0d0d0e;
 }

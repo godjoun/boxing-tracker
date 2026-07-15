@@ -2,7 +2,7 @@
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding: 56px 18px 132px;
+  padding: var(--app-top-total) 18px 132px;
   color: var(--p-text);
 }
 

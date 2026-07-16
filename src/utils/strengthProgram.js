@@ -16,7 +16,7 @@ export const STRENGTH_WARMUP = {
 export const STRENGTH_TIPS = [
   {
     title: "수분 섭취",
-    body: "땀이 많이 나는 루틴입니다. 운동 중 물·이온음료를 최소 1L 이상 마시세요.",
+    body: "땀이 많이 나는 루틴입니다. 갈증 날 때 소량씩 자주 마시십시오.",
   },
   {
     title: "속도가 생명",
@@ -172,9 +172,9 @@ export const STRENGTH_WEEK = [
         title: "복서 맷집",
         items: [
           {
-            name: "넥 익스텐션 (목 운동)",
-            prescription: "좌·우·전·후 각 20회",
-            note: "손으로 이마를 밀며 목 힘으로 버티기",
+            name: "넥 익스텐션 (목 운동, 선택)",
+            prescription: "가볍게 각 10~15회",
+            note: "손으로 가볍게 저항만 주고, 목을 세게 밀지 마십시오. 불편하면 생략",
           },
           {
             name: "행잉 레그레이즈 (또는 레그레이즈)",

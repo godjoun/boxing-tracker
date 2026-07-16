@@ -61,7 +61,7 @@ export const HOME_CURRICULUM = {
               name: "가드 유지 섀도우",
               duration: "라운드당",
               description:
-                "양손은 꼬리뼈 높이, 팔꿈치는 옆구리에 붙이고 턱을 숙인 채 앞뒤로만 이동하십시오. 거울이 있으면 옆모습으로 확인하세요",
+                "양손은 볼·관자놀이 높이, 팔꿈치는 옆구리에 붙이고 턱을 숙인 채 앞뒤로만 이동하십시오. 거울이 있으면 옆모습으로 확인하세요",
             },
           ],
         },
@@ -82,7 +82,7 @@ export const HOME_CURRICULUM = {
             {
               name: "싱글 잽",
               duration: "라운드당",
-              description: "한 발 뻗고 바로 가드로 복귀하되, 힘은 70%만 쓰십시오",
+              description: "앞손을 뻗고 바로 가드로 복귀하되, 힘은 70%만 쓰십시오",
             },
             {
               name: "더블 잽",
@@ -142,7 +142,8 @@ export const HOME_CURRICULUM = {
             {
               name: "1-2 콤보",
               duration: "라운드당",
-              description: "잽 후 어깨를 회전하며 크로스를 치고, 호흡은 라운드 끝에 고르십시오",
+              description:
+                "잽 후 어깨와 골반을 회전하며 크로스를 치고, 라운드 내내 호흡을 고르게 유지하십시오",
               combos: ["J-C", "1-2"],
             },
             {
@@ -169,7 +170,8 @@ export const HOME_CURRICULUM = {
             {
               name: "리드 훅",
               duration: "라운드당",
-              description: "짧게 치고, 팔꿈치는 수평으로 유지하십시오",
+              description:
+                "짧게 치고, 팔꿈치는 몸 옆에 두며 수평에 가깝게 유지하십시오",
             },
             {
               name: "1-2-훅",
@@ -225,17 +227,19 @@ export const HOME_CURRICULUM = {
             {
               name: "넥 모빌리티",
               duration: "3분",
-              description: "천천히 좌우로 슬립하고, 과도한 움직임은 삼가십시오",
+              description:
+                "상대 펀치를 상상하고 머리를 한쪽으로 살짝 빼 보십시오. 목만 크게 흔들지 마십시오",
             },
             {
               name: "슬립 + 카운터 잽",
               duration: "라운드당",
-              description: "피한 뒤 한 발만 반격하십시오",
+              description: "피한 뒤 카운터 잽 한 방만 치십시오",
             },
             {
               name: "숄더 롤",
               duration: "2분",
-              description: "가드를 유지한 채 어깨만 굴리십시오",
+              description:
+                "가드를 유지한 채 어깨와 상체를 함께 굴려 펀치 라인을 피하는 느낌으로 연습하십시오",
             },
           ],
         },
@@ -282,7 +286,8 @@ export const HOME_CURRICULUM = {
             {
               name: "패리 후 1-2",
               duration: "라운드당",
-              description: "살짝 밀어내고 바로 반격하십시오",
+              description:
+                "손바닥으로 가상의 스트레이트를 살짝 밀어내는 느낌으로 연습하십시오",
               combos: ["J-C", "1-2"],
             },
             {

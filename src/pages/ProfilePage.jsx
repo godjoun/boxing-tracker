@@ -91,7 +91,6 @@ export default function ProfilePage({
   const selectedFilterRef = useRef("levelup");
   const [filterIntensity, setFilterIntensity] = useState(75);
   const [photoScale, setPhotoScale] = useState(100);
-  const [copied, setCopied] = useState(false);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showComment, setShowComment] = useState(true);
   const [customTrainingTitle, setCustomTrainingTitle] = useState("");
@@ -2207,54 +2206,6 @@ export default function ProfilePage({
     }
   }
 
-  async function handleCopyTrainingCardText() {
-    if (selectedLogs.length === 0) {
-      alert("먼저 운동을 하나 이상 선택해줘.");
-      return;
-    }
-
-    const logLines = selectedLogs
-      .map((log, index) => {
-        const title = getCardLogTitle(log, index);
-        const trainingInfo = `${getRounds(log)}R · ${
-          log.minutes || log.duration
-        }min`;
-
-        return title ? `${title}\n${trainingInfo}` : trainingInfo;
-      })
-      .join("\n\n");
-
-    const commentText = showComment
-      ? `
-
-COMMENT
-${mainComment}`
-      : "";
-
-    const mediaText =
-      cardMediaType === "video" ? "\n\nMEDIA\nVideo training card preview" : "";
-
-    const text =
-      cardStyle === "poster"
-        ? `[FIGHTER POSTER]
-${posterTextLines.join("\n")}${commentText}${mediaText}`
-        : `[TRAINING CARD]
-${profile.nickname || "나"} · ${profileStats.levelLabel}
-
-${logLines}${commentText}${mediaText}`;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 1200);
-    } catch {
-      alert("복사에 실패했어. 브라우저 권한 문제일 수 있어.");
-    }
-  }
-
   useEffect(() => {
     setExportPreview(null);
 
@@ -2525,11 +2476,11 @@ ${logLines}${commentText}${mediaText}`;
         onClick={scrollToCardMaker}
       >
         <span style={styles.cardStudioEntryKicker}>NAMEPLATE · CARD MAKER</span>
-        <strong style={styles.cardStudioEntryTitle}>훈련 인증 카드 만들기</strong>
+        <strong style={styles.cardStudioEntryTitle}>명패 공유하기</strong>
         <span style={styles.cardStudioEntryDesc}>
           사진과 필터로 나만의 파이터 카드·포스터를 만들어 저장하고 공유하세요.
         </span>
-        <span style={styles.cardStudioEntryCta}>카드 만들기 열기 →</span>
+        <span style={styles.cardStudioEntryCta}>명패 공유 열기 →</span>
       </button>
 
       <section style={styles.sectionCard}>
@@ -2568,7 +2519,7 @@ ${logLines}${commentText}${mediaText}`;
 
       <section ref={cardMakerRef} style={styles.cardMakerSection}>
         <p style={styles.kicker}>NAMEPLATE · CARD MAKER</p>
-        <h2 style={styles.sectionTitle}>훈련 인증 카드 만들기</h2>
+        <h2 style={styles.sectionTitle}>명패 공유하기</h2>
 
         <p style={styles.cardMakerNameplateNote}>
           명패 스펙 {profileStats.levelLabel} · 이번 주 {profileStats.weeklyRounds}R ·
@@ -3447,14 +3398,6 @@ ${logLines}${commentText}${mediaText}`;
                 : isCardImagePreparing
                 ? "사진 준비 중..."
                 : cardSaveLabel}
-            </button>
-
-            <button
-              type="button"
-              style={styles.copyButton}
-              onClick={handleCopyTrainingCardText}
-            >
-              {copied ? "공유 문구 복사 완료!" : "공유 문구 복사하기"}
             </button>
 
             <p style={styles.shareHint}>

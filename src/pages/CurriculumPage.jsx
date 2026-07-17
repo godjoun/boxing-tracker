@@ -30,6 +30,7 @@ import { resolveSessionTimerConfig } from "../utils/curriculumTimerSync";
 import SessionDrillGuide from "../components/SessionDrillGuide";
 import LessonVideoPlayer from "../components/LessonVideoPlayer";
 import { getLessonBySessionId } from "../utils/lessonCatalog";
+import { getTechniqueCatalog } from "../utils/techniqueCatalog";
 import ComposerShell, {
   ComposerDockPrimary,
   ComposerSegmentTabs,
@@ -38,6 +39,7 @@ import "./CurriculumPage.css";
 
 const CURRICULUM_TABS = [
   { id: "today", label: "오늘" },
+  { id: "techniques", label: "기술" },
   { id: "program", label: "4주 코스" },
 ];
 
@@ -182,6 +184,8 @@ export default function CurriculumPage({
 
   const sessions = useMemo(() => getAllCurriculumSessions(), []);
   const weekOverviews = useMemo(() => getCurriculumWeekOverviews(), [progress]);
+  const techniqueCatalog = useMemo(() => getTechniqueCatalog(), [progress]);
+  const [openCategoryId, setOpenCategoryId] = useState(null);
 
   useEffect(() => {
     if (!focusSessionId) return;
@@ -339,7 +343,7 @@ export default function CurriculumPage({
         </button>
       }
       kicker="LEARN"
-      title="배움"
+      title="커리큘럼"
       summary={
         <>
           <span className="composer-meta-label">진행</span>
@@ -364,7 +368,7 @@ export default function CurriculumPage({
           tabs={CURRICULUM_TABS}
           activeId={activeTab}
           onChange={setActiveTab}
-          ariaLabel="배움 메뉴"
+          ariaLabel="커리큘럼 메뉴"
         />
       }
       dock={
@@ -381,7 +385,9 @@ export default function CurriculumPage({
         <p className="curriculum-intro">
           {activeTab === "today"
             ? "오늘 할 세션만 빠르게 시작하세요."
-            : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
+            : activeTab === "techniques"
+              ? "기술별로 골라 배우고 바로 훈련까지 이어가세요."
+              : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
         </p>
       </header>
 
@@ -487,6 +493,100 @@ export default function CurriculumPage({
               </ul>
             </section>
           ) : null}
+        </>
+      ) : null}
+
+      {activeTab === "techniques" ? (
+        <>
+          {recommendedAdjusted ? (
+            <button
+              type="button"
+              className="technique-continue-card"
+              onClick={() => handleStartSession(recommended)}
+            >
+              <span className="technique-continue-kicker">CONTINUE · 4주 코스</span>
+              <strong className="technique-continue-title">
+                {recommended.title}
+              </strong>
+              <span className="technique-continue-meta">
+                {recommended.weekLabel} · {recommended.code} ·{" "}
+                {recommendedAdjusted.rounds}R
+              </span>
+              <span className="technique-continue-cta">이어서 훈련 →</span>
+            </button>
+          ) : null}
+
+          <p className="technique-catalog-label">기술별 배우기</p>
+          <div className="technique-catalog-grid">
+            {techniqueCatalog.map((category) => {
+              const isOpen = openCategoryId === category.id;
+
+              return (
+                <div
+                  className={`technique-cat-wrap${isOpen ? " is-open" : ""}`}
+                  key={category.id}
+                >
+                  <button
+                    type="button"
+                    className={`technique-cat-card accent-${category.accent}`}
+                    onClick={() =>
+                      setOpenCategoryId((current) =>
+                        current === category.id ? null : category.id
+                      )
+                    }
+                    aria-expanded={isOpen}
+                  >
+                    <span className="technique-cat-icon" aria-hidden="true">
+                      {category.icon}
+                    </span>
+                    <span className="technique-cat-en">{category.en}</span>
+                    <strong className="technique-cat-title">
+                      {category.title}
+                    </strong>
+                    <span className="technique-cat-desc">
+                      {category.description}
+                    </span>
+                    <span className="technique-cat-foot">
+                      <span>
+                        {category.completedCount}/{category.sessionCount} 완료
+                      </span>
+                      <span aria-hidden="true">{isOpen ? "▲" : "▼"}</span>
+                    </span>
+                  </button>
+
+                  {isOpen ? (
+                    <div className="technique-cat-sessions">
+                      {category.sessions.map((session) => {
+                        const adjusted = applyTrainingSettings(session, settings);
+                        return (
+                          <div
+                            className="technique-session-row"
+                            key={session.id}
+                          >
+                            <div className="technique-session-copy">
+                              <span>
+                                {session.weekLabel} · {session.code}
+                                {session.completed ? " · 완료" : ""}
+                              </span>
+                              <strong>{session.title}</strong>
+                              <p>{session.goal}</p>
+                            </div>
+                            <button
+                              type="button"
+                              className="technique-session-start"
+                              onClick={() => handleStartSession(session)}
+                            >
+                              {adjusted.rounds}R 시작
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
         </>
       ) : null}
 

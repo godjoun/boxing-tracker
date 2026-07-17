@@ -22,7 +22,10 @@ import { needsOnboarding } from "./utils/bodySpecs";
 import { isTutorialComplete } from "./utils/tutorial";
 import { getFighterProgress } from "./utils/fighterProgress";
 import { buildCurriculumTimerLaunch } from "./utils/homeCurriculum";
-import { buildPresetTimerLaunch } from "./utils/timerPresets";
+import {
+  buildPresetTimerLaunch,
+  getTimerPresetById,
+} from "./utils/timerPresets";
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
 import { recordAppOpen } from "./utils/retentionMetrics";
 import { isDevMode } from "./utils/devMode";
@@ -130,6 +133,10 @@ function MainAppShell() {
     setCurrentPage("timer");
   };
 
+  const goDefaultTimer = () => {
+    goTimerWithLaunch(buildPresetTimerLaunch(getTimerPresetById("match3")));
+  };
+
   const [curriculumFocus, setCurriculumFocus] = useState(null);
 
   const goReadLesson = (session) => {
@@ -172,12 +179,12 @@ function MainAppShell() {
             fighterLevel={fighterLevel}
             timerSummary={timerSummary}
             onStartTraining={() => goPage("train")}
-            onOpenTimer={() => goPage("timer")}
+            onOpenTimer={goDefaultTimer}
+            onGoProfile={goProfile}
             onNavigate={goPage}
             onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
             onOpenCurriculum={() => goPage("curriculum")}
-            onStartCurriculumSession={goTimerWithSession}
             onReadLesson={goReadLesson}
           />
         )}

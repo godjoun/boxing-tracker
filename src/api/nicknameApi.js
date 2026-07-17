@@ -60,6 +60,34 @@ function isMissingTableError(error) {
   );
 }
 
+function isRemoteUnavailableError(error) {
+  if (isMissingTableError(error)) {
+    return true;
+  }
+
+  const message = String(error?.message || error || "").toLowerCase();
+  const code = String(error?.code || "");
+  const status = Number(error?.status || error?.statusCode || 0);
+
+  return (
+    code === "ENOTFOUND" ||
+    code === "ECONNREFUSED" ||
+    code === "ETIMEDOUT" ||
+    code === "Failed to fetch" ||
+    status === 0 ||
+    status === 401 ||
+    status === 403 ||
+    status === 404 ||
+    status >= 500 ||
+    message.includes("failed to fetch") ||
+    message.includes("network") ||
+    message.includes("fetch") ||
+    message.includes("jwt") ||
+    message.includes("invalid api key") ||
+    message.includes("invalid api")
+  );
+}
+
 async function checkRemoteNickname(nickname) {
   const supabase = getSupabase();
 
@@ -67,30 +95,39 @@ async function checkRemoteNickname(nickname) {
     return null;
   }
 
-  // 전체 테이블을 읽지 않고, 사용 가능 여부(boolean)만 반환하는 RPC 사용
-  const { data, error } = await supabase.rpc("check_nickname_available", {
-    p_nickname: nickname,
-  });
+  try {
+    // 전체 테이블을 읽지 않고, 사용 가능 여부(boolean)만 반환하는 RPC 사용
+    const { data, error } = await supabase.rpc("check_nickname_available", {
+      p_nickname: nickname,
+    });
 
-  if (error) {
-    if (isMissingTableError(error)) {
+    if (error) {
+      if (isRemoteUnavailableError(error)) {
+        return null;
+      }
+
+      throw error;
+    }
+
+    if (data === false) {
+      return {
+        available: false,
+        message: "이미 사용 중인 이름입니다.",
+      };
+    }
+
+    return {
+      available: true,
+      message: "사용 가능한 이름입니다.",
+    };
+  } catch (error) {
+    // 로컬 우선: 서버가 죽거나 키가 잘못돼도 온보딩을 막지 않는다.
+    if (isRemoteUnavailableError(error)) {
       return null;
     }
 
     throw error;
   }
-
-  if (data === false) {
-    return {
-      available: false,
-      message: "이미 사용 중인 이름입니다.",
-    };
-  }
-
-  return {
-    available: true,
-    message: "사용 가능한 이름입니다.",
-  };
 }
 
 export async function checkNicknameAvailability(nickname, userId) {
@@ -105,7 +142,14 @@ export async function checkNicknameAvailability(nickname, userId) {
     };
   }
 
-  const remoteResult = await checkRemoteNickname(trimmed);
+  let remoteResult = null;
+
+  try {
+    remoteResult = await checkRemoteNickname(trimmed);
+  } catch (error) {
+    console.warn("닉네임 원격 확인 실패, 로컬 확인으로 진행:", error);
+    remoteResult = null;
+  }
 
   if (remoteResult) {
     return {
@@ -117,7 +161,7 @@ export async function checkNicknameAvailability(nickname, userId) {
   return {
     available: true,
     nickname: trimmed,
-    message: "사용 가능한 이름입니다.",
+    message: "사용 가능한 이름입니다. (이 기기 기준)",
   };
 }
 
@@ -135,16 +179,24 @@ export async function registerNickname(nickname, userId) {
     return trimmed;
   }
 
-  const { error } = await supabase.from("fighter_nicknames").upsert(
-    {
-      user_id: userId,
-      nickname: trimmed,
-    },
-    { onConflict: "user_id" },
-  );
+  try {
+    const { error } = await supabase.from("fighter_nicknames").upsert(
+      {
+        user_id: userId,
+        nickname: trimmed,
+      },
+      { onConflict: "user_id" },
+    );
 
-  if (error && !isMissingTableError(error)) {
-    throw error;
+    if (error && !isRemoteUnavailableError(error)) {
+      throw error;
+    }
+  } catch (error) {
+    if (!isRemoteUnavailableError(error)) {
+      throw error;
+    }
+
+    console.warn("닉네임 원격 등록 실패, 로컬만 저장:", error);
   }
 
   return trimmed;

@@ -10,6 +10,7 @@ import { suggestWeightClass } from "../data/proBoxingWeightClasses";
 
 export default function OnboardingSetupPage() {
   const { profile, userId, completeOnboarding } = useTraining();
+  const [showWelcome, setShowWelcome] = useState(true);
   const [weightClassTouched, setWeightClassTouched] = useState(false);
   const [form, setForm] = useState({
     nickname: profile.nickname === "나" ? "" : profile.nickname || "",
@@ -42,6 +43,10 @@ export default function OnboardingSetupPage() {
       setVerifiedNickname("");
       setNicknameNotice("");
     }
+  }
+
+  function handleWelcomeNext() {
+    setShowWelcome(false);
   }
 
   async function handleNicknameCheck() {
@@ -109,15 +114,61 @@ export default function OnboardingSetupPage() {
   const nicknameIsVerified =
     verifiedNickname === form.nickname.trim() && verifiedNickname.length > 0;
 
+  if (showWelcome) {
+    return (
+      <div className="onboarding-page onboarding-page--street">
+        <section className="onboarding-street" aria-label="환영">
+          <div className="onboarding-street-bg" aria-hidden="true">
+            <span className="onboarding-street-noise" />
+            <span className="onboarding-street-slash" />
+            <span className="onboarding-street-grid" />
+          </div>
+
+          <header className="onboarding-street-top">
+            <p className="onboarding-street-brand">ROUND ON</p>
+            <p className="onboarding-street-stamp">EST. CAREER</p>
+          </header>
+
+          <div className="onboarding-street-body">
+            <p className="onboarding-street-eyebrow">NO GYM. NO EXCUSE.</p>
+            <h1 className="onboarding-street-title">
+              I RULE
+              <br />
+              THE ROUND.
+            </h1>
+            <p className="onboarding-street-ko">
+              쫓지 않는다.
+              <br />
+              라운드로 증명한다.
+            </p>
+            <p className="onboarding-street-copy">NEXT LEGEND? ME.</p>
+          </div>
+
+          <footer className="onboarding-street-footer">
+            <p className="onboarding-street-meta">
+              LIFE GOES ON. SO DOES THE FIGHT.
+            </p>
+            <button
+              type="button"
+              className="onboarding-street-cta"
+              onClick={handleWelcomeNext}
+            >
+              내 이름 올리기
+            </button>
+          </footer>
+        </section>
+      </div>
+    );
+  }
+
   return (
-    <div className="onboarding-page">
+    <div className="onboarding-page onboarding-page--setup">
       <div className="onboarding-card">
         <header className="onboarding-hero">
-          <p>MY FIGHTER</p>
-          <h1>주인공 만들기</h1>
-          <span>
-            훈련할수록 주인공이 성장합니다. 이름과 스펙을 정하면 명패에
-            표시됩니다.
+          <p className="home-brand-name">ROUND ON</p>
+          <h1 className="onboarding-welcome-title">주인공 카드 만들기</h1>
+          <span className="onboarding-hero-note">
+            링네임과 스펙을 정하면 홈 화면에서 이어집니다.
           </span>
         </header>
 
@@ -152,8 +203,7 @@ export default function OnboardingSetupPage() {
               </p>
             ) : (
               <p className="onboarding-inline-note">
-                제출 시 이름을 자동으로 확인합니다. 네트워크가 없어도 이 기기에서
-                진행할 수 있어요.
+                제출 시 이름을 자동으로 확인합니다.
               </p>
             )}
           </div>
@@ -255,10 +305,10 @@ export default function OnboardingSetupPage() {
 
           <button
             type="submit"
-            className="login-submit onboarding-submit"
+            className="home-brand-primary onboarding-submit"
             disabled={submitting}
           >
-            {submitting ? "저장 중..." : "주인공으로 시작"}
+            {submitting ? "저장 중..." : "라운드 시작하기"}
           </button>
         </form>
       </div>

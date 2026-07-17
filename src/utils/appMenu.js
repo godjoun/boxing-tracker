@@ -101,7 +101,7 @@ export const DASHBOARD_SHORTCUT_POOL = [
   {
     id: "curriculum",
     icon: "C",
-    title: "배움",
+    title: "커리큘럼",
     route: "curriculum",
   },
   {

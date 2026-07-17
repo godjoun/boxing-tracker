@@ -175,7 +175,7 @@ export default function FighterSpecCard({
             className="fighter-nameplate-cta"
             onClick={onOpenCardMaker}
           >
-            훈련 카드 만들기
+            명패 공유하기
           </button>
         ) : null}
       </div>

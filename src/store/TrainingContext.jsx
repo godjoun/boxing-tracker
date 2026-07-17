@@ -22,27 +22,44 @@ import {
   parseBackupFileText,
   validateBackupPayload,
 } from "../utils/dataBackup";
-import { needsOnboarding, validateBodySpecs } from "../utils/bodySpecs";
+import { validateBodySpecs } from "../utils/bodySpecs";
 import {
   applyLevelBoost,
-  DEV_DEFAULT_PROFILE,
-  DEV_USER_ID,
   getDevUserId,
   isDevMode,
 } from "../utils/devMode";
 import { getFighterProgress } from "../utils/fighterProgress";
 import { syncListingFromProfile } from "../utils/sparringPartners";
 import { registerNickname } from "../api/nicknameApi";
+import { resetTutorial } from "../utils/tutorial";
 
 const TrainingContext = createContext(null);
 
 export const GUEST_USER_ID = "local-user";
+
+/** ROUND ON 온보딩을 처음부터 다시 보기 위한 1회성 리셋 플래그 */
+const FRESH_ONBOARDING_FLAG = "fitness-league-fresh-onboarding-v1";
 
 const LEGACY_STORAGE_KEYS = {
   logs: "fitness-league-logs",
   feed: "fitness-league-feed",
   mode: "fitness-league-mode",
   profile: "fitness-league-profile",
+};
+
+const DEFAULT_PROFILE = {
+  nickname: "나",
+  bio: "아직 초보지만 링에 계속 올라가는 중",
+  photo: "",
+  heightCm: null,
+  weightKg: null,
+  reachCm: null,
+  weightClass: "라이트급",
+  experience: "1년차",
+  sparringStyle: "미디엄",
+  area: "",
+  contact: "",
+  onboardingComplete: false,
 };
 
 function getStorageKeys(userId) {
@@ -78,30 +95,38 @@ function migrateLegacyStorage(userId) {
   });
 }
 
-function resolveDevProfile(profile) {
-  if (!getDevUserId() || !needsOnboarding(profile)) {
-    return profile;
-  }
+function applyFreshOnboardingReset(userId) {
+  try {
+    if (localStorage.getItem(FRESH_ONBOARDING_FLAG) === "1") {
+      return;
+    }
 
-  return sanitizeProfileForStorage({
-    ...profile,
-    ...DEV_DEFAULT_PROFILE,
-  });
+    const keys = getStorageKeys(userId);
+    localStorage.setItem(
+      keys.profile,
+      JSON.stringify({
+        ...DEFAULT_PROFILE,
+        onboardingComplete: false,
+      }),
+    );
+    resetTutorial();
+    localStorage.setItem(FRESH_ONBOARDING_FLAG, "1");
+  } catch {
+    // ignore storage failures
+  }
 }
 
 function loadUserState(userId) {
   migrateLegacyStorage(userId);
+  applyFreshOnboardingReset(userId);
 
   const keys = getStorageKeys(userId);
   const savedProfile = loadStorage(keys.profile, DEFAULT_PROFILE);
-  const profile = resolveDevProfile({
+  const profile = {
     ...DEFAULT_PROFILE,
     ...sanitizeProfileForStorage(savedProfile),
-  });
-
-  if (userId === DEV_USER_ID && needsOnboarding(savedProfile)) {
-    localStorage.setItem(keys.profile, JSON.stringify(profile));
-  }
+    onboardingComplete: savedProfile?.onboardingComplete === true,
+  };
 
   return {
     logs: normalizeLogScores(loadStorage(keys.logs, [])),
@@ -112,21 +137,6 @@ function loadUserState(userId) {
 }
 
 const DAILY_SCORE_LIMIT = 120;
-
-const DEFAULT_PROFILE = {
-  nickname: "나",
-  bio: "아직 초보지만 링에 계속 올라가는 중",
-  photo: "",
-  heightCm: null,
-  weightKg: null,
-  reachCm: null,
-  weightClass: "라이트급",
-  experience: "1년차",
-  sparringStyle: "미디엄",
-  area: "",
-  contact: "",
-  onboardingComplete: false,
-};
 
 const DIFFICULTY_LABEL = {
   easy: "가볍게",

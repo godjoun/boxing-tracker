@@ -68,7 +68,7 @@ export default function TrainingHubPage({
     {
       id: "curriculum",
       icon: "C",
-      title: "배움",
+      title: "커리큘럼",
       description: "4주 코스 · 영상+훈련",
       onClick: onOpenCurriculum,
       locked: false,

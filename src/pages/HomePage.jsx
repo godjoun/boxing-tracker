@@ -99,11 +99,11 @@ export default function HomePage({
   timerSummary = null,
   onStartTraining,
   onOpenTimer,
+  onGoProfile,
   onNavigate,
   onNavigateGym,
   onOpenCardMaker,
   onOpenCurriculum,
-  onStartCurriculumSession,
   onReadLesson,
 }) {
   const { logs = [], profile, weeklyScore } = useTraining();
@@ -251,51 +251,53 @@ export default function HomePage({
         </button>
       ) : null}
 
-      <section className="home-status" aria-label="이번 주 현황">
-        <div className="home-status-hello">
-          <div className="home-status-avatar" aria-hidden={!profile?.photo}>
-            {profile?.photo ? (
-              <img src={profile.photo} alt="" />
-            ) : (
-              <span>{nickname.slice(0, 1)}</span>
-            )}
+      <section className="home-brand" aria-label="브랜드 소개">
+        <div className="home-brand-hero">
+          <div className="home-brand-top">
+            <div
+              className="home-brand-avatar"
+              aria-hidden={!profile?.photo}
+            >
+              {profile?.photo ? (
+                <img src={profile.photo} alt="" />
+              ) : (
+                <span>{nickname.slice(0, 1)}</span>
+              )}
+            </div>
+            <div className="home-brand-identity">
+              <p className="home-brand-name">ROUND ON</p>
+              <p className="home-brand-meta">
+                {nickname} · LV.{dashboard.level} · {dashboard.fighterTitle}
+              </p>
+            </div>
           </div>
-          <div className="home-status-hello-copy">
-            <p className="home-status-name">{nickname}</p>
-            <p className="home-status-meta">
-              LV.{dashboard.level} · {dashboard.fighterTitle}
-            </p>
-          </div>
-        </div>
 
-        <div className="home-status-amount">
-          <span className="home-status-label">이번 주</span>
-          <p className="home-status-number">
-            <strong>{dashboard.weeklyRounds}</strong>
-            <em>R</em>
+          <h1 className="home-brand-title">I RULE THE ROUND.</h1>
+          <p className="home-brand-copy">
+            EVERY BELL. EVERY ROUND. MINE.
+          </p>
+          <p className="home-brand-line">
+            LIFE GOES ON. SO DOES THE FIGHT.
           </p>
         </div>
 
-        <p className="home-status-sub">
-          {dashboard.trainedToday
-            ? `오늘 ${todayRounds}R 완료`
-            : "오늘 아직 훈련 없음"}
-          {dashboard.streakDays > 0
-            ? ` · 연속 ${dashboard.streakDays}일`
-            : ""}
-          {dashboard.isMaxLevel
-            ? " · MAX"
-            : ` · 다음 LV까지 ${dashboard.expToNext} EXP`}
-        </p>
-
-        {!dashboard.isMaxLevel ? (
-          <div
-            className="home-status-bar"
-            aria-label="현재 레벨 경험치"
+        <div className="home-brand-actions">
+          <button
+            type="button"
+            className="home-brand-primary"
+            data-tutorial-target="home-start"
+            onClick={onOpenTimer}
           >
-            <div style={{ width: `${dashboard.progressPercent}%` }} />
-          </div>
-        ) : null}
+            오늘 훈련 시작
+          </button>
+          <button
+            type="button"
+            className="home-brand-secondary"
+            onClick={onGoProfile}
+          >
+            내 복서 프로필 보기
+          </button>
+        </div>
       </section>
 
       <section className="home-center-dash" aria-label="대시보드">
@@ -425,20 +427,9 @@ export default function HomePage({
                 type="button"
                 className="home-today-task-link"
                 data-tutorial-target="home-start"
-                onClick={() =>
-                  onStartCurriculumSession?.(todaysLesson.session)
-                }
-              >
-                {dashboard.trainedToday
-                  ? "이어서 훈련"
-                  : `${todaysLesson.rounds || 3}R 훈련`}
-              </button>
-              <button
-                type="button"
-                className="home-today-task-link"
                 onClick={onOpenTimer}
               >
-                3R 바로 시작
+                타이머
               </button>
             </div>
           </>
@@ -462,7 +453,7 @@ export default function HomePage({
                 className="home-today-task-link"
                 onClick={() => onOpenCurriculum?.()}
               >
-                배움 전체 보기
+                커리큘럼 전체 보기
               </button>
             </div>
           </>
@@ -563,7 +554,7 @@ export default function HomePage({
               className="home-today-task-link home-today-task-link-block"
               onClick={() => onOpenCurriculum?.()}
             >
-              배움 전체 보기
+              커리큘럼 전체 보기
             </button>
           ) : null}
         </div>

@@ -16,7 +16,7 @@ export const DEV_DEFAULT_PROFILE = {
   weightClass: "라이트급",
   experience: "1년차",
   area: "로컬",
-  onboardingComplete: true,
+  onboardingComplete: false,
 };
 
 export function isDevMode() {

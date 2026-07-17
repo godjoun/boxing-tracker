@@ -378,143 +378,125 @@
   justify-content: center;
 }
 
-.timer-complete-hero {
+/* 완료 화면 = 영화 스틸컷 (담담 톤) */
+.timer-complete-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(193, 160, 90, 0.12) !important;
+  border-radius: 22px;
+  background:
+    radial-gradient(130% 100% at 50% 0%, rgba(124, 47, 47, 0.14), transparent 58%),
+    linear-gradient(180deg, #16130f 0%, #0e0c0a 100%) !important;
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.5) !important;
+}
+
+.timer-still {
   position: relative;
   z-index: 1;
-  margin-top: 8px;
-  padding: 8px 4px 4px;
+  padding: 30px 18px 20px;
   text-align: center;
 }
 
-.timer-complete-kicker {
-  margin: 0 0 8px;
-  color: var(--p-accent);
+.timer-still-kicker {
+  margin: 0 0 22px;
+  color: rgba(193, 160, 90, 0.92);
   font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.16em;
+  font-weight: 800;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
 }
 
-.timer-complete-title {
-  margin: 0 0 18px;
-  font-size: 24px;
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 1.2;
-}
-
-.timer-complete-statline {
+.timer-still-headline {
   display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 20px;
 }
 
-.timer-complete-statline strong {
-  font-size: clamp(48px, 14vw, 64px);
+.timer-still-rounds {
+  font-size: clamp(66px, 22vw, 92px);
   font-weight: 950;
   letter-spacing: -0.06em;
-  line-height: 1;
+  line-height: 0.92;
+  color: #f6f1ea;
 }
 
-.timer-complete-statline span {
-  color: var(--p-text-faint);
-  font-size: 28px;
+.timer-still-duration {
+  font-size: clamp(26px, 9vw, 38px);
   font-weight: 300;
+  letter-spacing: 0.02em;
+  color: rgba(246, 241, 234, 0.5);
+  font-variant-numeric: tabular-nums;
 }
 
-.timer-complete-statline em {
-  font-style: normal;
-  color: #ff8a84;
-  font-size: clamp(24px, 7vw, 32px);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-}
-
-.timer-complete-sub {
-  margin: 0 0 18px;
-  color: var(--p-text-muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.timer-complete-levelup {
-  display: inline-block;
-  margin-bottom: 14px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #ef3f36, #ff7043);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-}
-
-.timer-complete-level {
-  margin-bottom: 16px;
-  padding: 14px;
-  border: 1px solid var(--p-border-soft);
-  border-radius: 16px;
-  background: var(--p-bg-subtle);
-  text-align: left;
-}
-
-.timer-complete-level-head {
+.timer-still-meta {
   display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 26px;
+  color: rgba(246, 241, 234, 0.6);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-still-meta-dot {
+  opacity: 0.4;
+}
+
+.timer-still-place {
+  color: rgba(193, 160, 90, 0.88);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.timer-still-slogan {
+  margin: 0 0 26px;
+  color: #efe9e0;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.timer-still-streak {
+  margin: -12px 0 20px;
+  color: rgba(246, 241, 234, 0.72);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.timer-still-trace {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 5px;
+  margin-bottom: 24px;
+}
+
+.timer-still-bell {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #c9a865;
+}
+
+.timer-still-hours {
+  color: rgba(246, 241, 234, 0.42);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.timer-still-chapter {
+  margin: -8px 0 22px;
+  color: rgba(193, 160, 90, 0.92);
   font-size: 12px;
   font-weight: 800;
-}
-
-.timer-complete-level-head span {
-  color: var(--p-text-muted);
-}
-
-.timer-complete-level-track {
-  height: 7px;
-  border-radius: 999px;
-  background: var(--p-bg-inner);
-  overflow: hidden;
-}
-
-.timer-complete-level-track div {
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #ef3f36, #ff7043);
-}
-
-.timer-complete-unlock {
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border: 1px solid rgba(239, 63, 54, 0.28);
-  border-radius: 14px;
-  background: rgba(239, 63, 54, 0.08);
-}
-
-.timer-complete-unlock span {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--p-accent);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-}
-
-.timer-complete-unlock strong {
-  display: block;
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.timer-complete-unlock small {
-  display: block;
-  margin-top: 2px;
-  color: var(--p-text-muted);
-  font-size: 11px;
-  font-weight: 700;
   letter-spacing: 0.06em;
 }
 
@@ -522,15 +504,16 @@
   width: 100%;
   min-height: 54px;
   margin-bottom: 10px;
-  border: none;
+  border: 1px solid rgba(193, 160, 90, 0.28);
   border-radius: 16px;
-  background: linear-gradient(135deg, #ef3f36, #d92f27);
-  color: #fff;
+  background: linear-gradient(135deg, #b23b2e, #8f2f27);
+  color: #f3e6d6;
   font-size: 16px;
   font-weight: 900;
+  letter-spacing: 0.01em;
   cursor: pointer;
   touch-action: manipulation;
-  box-shadow: 0 14px 30px rgba(239, 63, 54, 0.28);
+  box-shadow: 0 14px 30px rgba(124, 47, 47, 0.32);
 }
 
 .timer-complete-links {
@@ -548,17 +531,9 @@
   cursor: pointer;
 }
 
-.theme-light .timer-complete-statline em {
-  color: #c49a2e;
-}
-
-.theme-light .timer-complete-levelup {
-  background: linear-gradient(135deg, #c49a2e, #e8c66a);
-  color: #1f1a12;
-}
-
-.theme-light .timer-complete-level-track div {
-  background: linear-gradient(90deg, #c49a2e, #e8c66a);
+/* 완료 포스터는 라이트 테마에서도 시네마틱 다크 유지 */
+.timer-complete-card .timer-complete-links button {
+  color: rgba(246, 241, 234, 0.55);
 }
 
 .theme-light .timer-preset-chip.is-active,

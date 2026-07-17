@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import FighterSpecCard from "../components/FighterSpecCard";
-import { getFighterProgress, MAX_FIGHTER_LEVEL } from "../utils/fighterProgress";
-import { getLevelTitle, getNextTitleMilestone } from "../utils/fighterTitles";
+import { getFighterProgress } from "../utils/fighterProgress";
 import { isVeteranFilterUnlocked } from "../utils/veteranPerks";
 import { buildWeeklyReport } from "../utils/trainingStats";
 import { validateBodySpecFields } from "../utils/bodySpecs";
@@ -386,9 +385,6 @@ export default function ProfilePage({
     return sum + getTotalMinutes(log);
   }, 0);
 
-  const levelUpDisplayName = String(
-    profile.nickname || nickname || "JOUN"
-  ).trim().toUpperCase();
   const levelUpDisplayLevel =
     String(levelUpLevel || "")
       .replace(/[^0-9]/g, "")
@@ -435,23 +431,6 @@ export default function ProfilePage({
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
-  const growthPreview = useMemo(() => {
-    const isMax = profileStats.isMaxLevel;
-    const nextTitle = !isMax ? getNextTitleMilestone(profileStats.level) : null;
-
-    return {
-      isMax,
-      nextTitle,
-      xpToNext: profileStats.xpToNextLevel,
-      progressPercent: profileStats.progressPercent,
-      currentTitleEn:
-        profileStats.fighterTitleEn || profileStats.fighterTitle || "FIGHTER",
-    };
-  }, [profileStats]);
-
-  const levelUpProgressPercent = growthPreview.progressPercent;
-  const levelUpNextExp = growthPreview.xpToNext;
-
   const levelUpTheme = getPosterCanvasTheme(selectedFilter);
   const levelUpAccent = levelUpTheme.accent;
   const levelUpAccentSoft = levelUpTheme.accentSoft;
@@ -730,6 +709,45 @@ export default function ProfilePage({
     ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
   }
 
+  async function drawProfileAvatarToCanvas(ctx, x, y, size, accent) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+    ctx.fillRect(x, y, size, size);
+
+    if (profile.photo) {
+      try {
+        const avatar = await loadCanvasImage(profile.photo);
+        drawCoverImage(ctx, avatar, x, y, size, size, 100);
+      } catch (error) {
+        console.warn("프로필 사진 캔버스 로드 실패:", error);
+      }
+    }
+
+    if (!profile.photo) {
+      ctx.fillStyle = accent;
+      ctx.font = `950 ${Math.round(size * 0.42)}px Arial Black, Arial, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(
+        String(profile.nickname || "R").trim().slice(0, 1).toUpperCase(),
+        x + size / 2,
+        y + size / 2 + 2
+      );
+    }
+
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(x + size / 2, y + size / 2, size / 2 - 2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawTextFit(ctx, text, x, y, maxWidth, options = {}) {
     const {
       size = 80,
@@ -866,19 +884,6 @@ export default function ProfilePage({
       };
     }
 
-    if (filterId === "dark") {
-      return {
-        bgA: "#111111",
-        bgB: "#020202",
-        bgC: "#000000",
-        accent: "#f2f2f2",
-        accentSoft: "rgba(255, 255, 255, 0.18)",
-        overlayTop: "rgba(0, 0, 0, 0.42)",
-        overlayMid: "rgba(0, 0, 0, 0.18)",
-        overlayBottom: "rgba(0, 0, 0, 0.9)",
-      };
-    }
-
     if (filterId === "gold") {
       return {
         bgA: "#2b1a00",
@@ -907,7 +912,7 @@ export default function ProfilePage({
 
     if (filterId === "mono") {
       return {
-        bgA: "#2b2b2b",
+        bgA: "#333333",
         bgB: "#050505",
         bgC: "#111111",
         accent: "#ffffff",
@@ -1029,6 +1034,53 @@ export default function ProfilePage({
     topGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = topGlow;
     ctx.fillRect(0, 0, width, height);
+  }
+
+  function drawNoPhotoCardArt(ctx, width, height, theme) {
+    ctx.save();
+
+    const diagonal = ctx.createLinearGradient(0, 0, width, height);
+    diagonal.addColorStop(0, "rgba(255, 255, 255, 0)");
+    diagonal.addColorStop(0.46, theme.accentSoft);
+    diagonal.addColorStop(0.54, "rgba(255, 255, 255, 0.04)");
+    diagonal.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = diagonal;
+    ctx.beginPath();
+    ctx.moveTo(width * 0.44, 0);
+    ctx.lineTo(width * 0.76, 0);
+    ctx.lineTo(width * 0.46, height);
+    ctx.lineTo(width * 0.14, height);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = theme.accentSoft;
+    ctx.lineWidth = Math.max(2, width * 0.003);
+    ctx.globalAlpha = 0.72;
+    [0.2, 0.32, 0.44].forEach((ratio) => {
+      ctx.beginPath();
+      ctx.arc(
+        width * 0.82,
+        height * 0.22,
+        width * ratio,
+        0,
+        Math.PI * 2
+      );
+      ctx.stroke();
+    });
+
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `950 ${Math.round(width * 0.72)}px Impact, Arial Black, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("R", width * 0.7, height * 0.48);
+
+    ctx.globalAlpha = 0.14;
+    ctx.font = `900 ${Math.round(width * 0.052)}px Arial Black, Arial, sans-serif`;
+    ctx.letterSpacing = `${Math.round(width * 0.012)}px`;
+    ctx.fillText("ROUND ON", width * 0.5, height * 0.16);
+
+    ctx.restore();
   }
 
   function drawPosterOverlay(ctx, width, height, theme) {
@@ -1254,6 +1306,10 @@ export default function ProfilePage({
       } catch (error) {
         console.warn("포스터 사진 캔버스 로드 실패:", error);
       }
+    }
+
+    if (!hasPosterPhoto) {
+      drawNoPhotoCardArt(ctx, width, height, theme);
     }
   
     const globalShade = ctx.createLinearGradient(0, 0, 0, height);
@@ -1628,6 +1684,10 @@ export default function ProfilePage({
           bottomInset: 0,
         });
 
+        if (!hasPhoto) {
+          drawNoPhotoCardArt(ctx, width, height, theme);
+        }
+
         if (!isSocialExport) {
           drawPosterOverlay(ctx, width, height, theme);
         }
@@ -1745,232 +1805,188 @@ export default function ProfilePage({
       });
     } else {
       const accent = theme.accent || "#d6a234";
-      const cardPadding = 58;
+      const left = 70;
 
-      const sideShade = ctx.createLinearGradient(0, 0, width * 0.75, 0);
-      sideShade.addColorStop(0, "rgba(0, 0, 0, 0.76)");
-      sideShade.addColorStop(0.58, "rgba(0, 0, 0, 0.42)");
-      sideShade.addColorStop(1, "rgba(0, 0, 0, 0)");
+      const sideShade = ctx.createLinearGradient(0, 0, width, 0);
+      sideShade.addColorStop(0, "rgba(0, 0, 0, 0.82)");
+      sideShade.addColorStop(0.62, "rgba(0, 0, 0, 0.34)");
+      sideShade.addColorStop(1, "rgba(0, 0, 0, 0.08)");
       ctx.fillStyle = sideShade;
       ctx.fillRect(0, 0, width, height);
 
-      ctx.save();
-      ctx.strokeStyle = "rgba(214, 162, 52, 0.7)";
-      ctx.lineWidth = 4;
-      roundRect(ctx, 34, 34, width - 68, height - 68, 42);
-      ctx.stroke();
-      ctx.restore();
-
-      ctx.save();
-      ctx.fillStyle = "rgba(0, 0, 0, 0.36)";
-      roundRect(ctx, 78, 74, 112, 112, 28);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(214, 162, 52, 0.78)";
-      ctx.lineWidth = 4;
-      ctx.stroke();
-      drawTextFit(ctx, "ID", 134, 94, 78, {
-        size: 56,
-        minSize: 42,
+      drawTextFit(ctx, "ROUND ON", left, 66, 430, {
+        size: 50,
+        minSize: 36,
         weight: 950,
         family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "#ffffff",
+        baseline: "top",
+        shadow: false,
+      });
+
+      drawTextFit(ctx, "TRAINING RESULT", width - left, 79, 300, {
+        size: 25,
+        minSize: 18,
+        weight: 900,
+        family: "Arial Black, Arial, sans-serif",
+        align: "right",
         color: accent,
-        strokeWidth: 2,
         baseline: "top",
-      });
-      ctx.restore();
-
-      drawTextFit(ctx, "PERSONAL TRAINING ID", 210, 108, 520, {
-        size: 32,
-        minSize: 22,
-        weight: 950,
-        family: "Arial Black, Arial, sans-serif",
-        align: "left",
-        color: "rgba(255, 255, 255, 0.92)",
-        strokeWidth: 3,
-        baseline: "top",
+        shadow: false,
       });
 
-      drawTextFit(ctx, levelUpDisplayName, cardPadding, 210, 720, {
-        size: 154,
-        minSize: 72,
-        weight: 950,
-        family: "Impact, Arial Black, Arial, sans-serif",
-        align: "left",
-        color: "#ffffff",
-        strokeWidth: 8,
-        baseline: "top",
-      });
+      await drawProfileAvatarToCanvas(ctx, left, 168, 106, accent);
 
-      drawTextFit(ctx, "LEVEL", cardPadding, 420, 240, {
-        size: 44,
-        minSize: 30,
+      drawTextFit(ctx, profile.nickname || "나의 파이터", 204, 180, 600, {
+        size: 40,
+        minSize: 25,
         weight: 950,
         family: "Arial Black, Arial, sans-serif",
         align: "left",
         color: "#ffffff",
-        strokeWidth: 4,
-        baseline: "top",
-      });
-
-      drawTextFit(ctx, levelUpDisplayLevel, cardPadding, 470, 420, {
-        size: 210,
-        minSize: 110,
-        weight: 950,
-        family: "Impact, Arial Black, Arial, sans-serif",
-        align: "left",
-        color: accent,
-        strokeWidth: 8,
-        baseline: "top",
-      });
-
-      ctx.save();
-      ctx.fillStyle = accent;
-      ctx.fillRect(cardPadding, 744, 300, 6);
-      ctx.restore();
-
-      drawWrappedText(ctx, levelUpDisplaySlogan, cardPadding, 790, 620, {
-        size: 64,
-        weight: 950,
-        family: "Impact, Arial Black, Arial, sans-serif",
-        lineHeight: 72,
-        maxLines: 2,
-        color: "#ffffff",
-        align: "left",
-      });
-
-      const statY = 1096;
-      const statW = 292;
-      const statH = 178;
-      const statGap = 34;
-      const statItems = [
-        ["W", `${profileStats.weeklyRounds}`, "ROUNDS", "THIS WEEK"],
-        ["T", `${profileStats.totalRounds}`, "ROUNDS", "TOTAL"],
-        ["S", `${levelUpStreakDays || 1}`, "STREAK", "DAYS"],
-      ];
-
-      statItems.forEach(([icon, value, labelA, labelB], index) => {
-        const x = 68 + index * (statW + statGap);
-        ctx.fillStyle = "rgba(0, 0, 0, 0.48)";
-        roundRect(ctx, x, statY, statW, statH, 26);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(214, 162, 52, 0.62)";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        drawTextFit(ctx, icon, x + 32, statY + 38, 58, {
-          size: 42,
-          minSize: 32,
-          weight: 950,
-          align: "left",
-          color: accent,
-          baseline: "top",
-          shadow: false,
-        });
-
-        drawTextFit(ctx, value, x + statW - 34, statY + 36, statW - 112, {
-          size: 56,
-          minSize: 32,
-          weight: 950,
-          family: "Arial Black, Arial, sans-serif",
-          align: "right",
-          color: "#ffffff",
-          strokeWidth: 4,
-          baseline: "top",
-        });
-
-        drawTextFit(ctx, labelA, x + statW - 34, statY + 98, statW - 80, {
-          size: 27,
-          minSize: 20,
-          weight: 950,
-          family: "Arial Black, Arial, sans-serif",
-          align: "right",
-          color: accent,
-          baseline: "top",
-          shadow: false,
-        });
-
-        drawTextFit(ctx, labelB, x + statW - 34, statY + 130, statW - 80, {
-          size: 24,
-          minSize: 18,
-          weight: 950,
-          family: "Arial Black, Arial, sans-serif",
-          align: "right",
-          color: "#ffffff",
-          baseline: "top",
-          shadow: false,
-        });
-      });
-
-      const tierX = 68;
-      const tierY = 1350;
-      const tierW = width - 136;
-      const tierH = 176;
-      ctx.fillStyle = "rgba(0, 0, 0, 0.66)";
-      roundRect(ctx, tierX, tierY, tierW, tierH, 28);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(214, 162, 52, 0.7)";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      drawTextFit(ctx, "NEXT LEVEL:", tierX + 36, tierY + 34, 280, {
-        size: 36,
-        minSize: 24,
-        weight: 950,
-        family: "Arial Black, Arial, sans-serif",
-        align: "left",
-        color: "rgba(255, 255, 255, 0.86)",
         baseline: "top",
         shadow: false,
       });
 
       drawTextFit(
         ctx,
-        growthPreview.isMax
-          ? "MAX"
-          : growthPreview.nextTitle?.en || growthPreview.currentTitleEn,
-        tierX + 330,
-        tierY + 26,
-        330,
+        `${profileStats.levelLabel} · ${
+          profileStats.fighterTitleEn || "FIGHTER"
+        }`,
+        204,
+        232,
+        650,
         {
-        size: 76,
-        minSize: 44,
+          size: 25,
+          minSize: 18,
+          weight: 850,
+          family: "Arial, sans-serif",
+          align: "left",
+          color: accent,
+          baseline: "top",
+          shadow: false,
+        }
+      );
+
+      drawTextFit(ctx, primaryCardTitle.toUpperCase(), left, 350, 690, {
+        size: 68,
+        minSize: 38,
+        weight: 950,
+        family: "Impact, Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "#ffffff",
+        baseline: "top",
+      });
+
+      drawTextFit(ctx, `LV.${levelUpDisplayLevel}`, 790, 366, 220, {
+        size: 36,
+        minSize: 24,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "right",
+        color: accent,
+        baseline: "top",
+        shadow: false,
+      });
+
+      drawTextFit(ctx, "ROUNDS COMPLETED", left, 475, 500, {
+        size: 29,
+        minSize: 22,
+        weight: 900,
+        family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "rgba(255, 255, 255, 0.55)",
+        baseline: "top",
+        shadow: false,
+      });
+
+      drawTextFit(ctx, `+${cardTotalRounds}R`, left, 525, 650, {
+        size: 200,
+        minSize: 110,
         weight: 950,
         family: "Impact, Arial Black, Arial, sans-serif",
         align: "left",
         color: accent,
-        strokeWidth: 4,
+        baseline: "top",
+      });
+
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      drawTextFit(ctx, "↑", 960, 455, 350, {
+        size: 420,
+        minSize: 260,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "right",
+        color: accent,
+        baseline: "top",
+        shadow: false,
+      });
+      ctx.restore();
+
+      const detailItems = [
+        ["TRAINING TIME", `${cardTotalMinutes} MIN`],
+        ["CAREER ROUNDS", `${profileStats.totalRounds} R`],
+      ];
+
+      detailItems.forEach(([label, value], index) => {
+        const y = 880 + index * 150;
+        drawTextFit(ctx, label, left, y, 360, {
+          size: 26,
+          minSize: 20,
+          weight: 850,
+          family: "Arial, sans-serif",
+          align: "left",
+          color: "rgba(255, 255, 255, 0.48)",
+          baseline: "top",
+          shadow: false,
+        });
+        drawTextFit(ctx, value, left, y + 40, 470, {
+          size: 55,
+          minSize: 34,
+          weight: 950,
+          family: "Arial Black, Arial, sans-serif",
+          align: "left",
+          color: "#ffffff",
+          baseline: "top",
+        });
+      });
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
+      roundRect(ctx, left, 1325, width - left * 2, 190, 28);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      drawTextFit(ctx, levelUpDisplaySlogan, left + 34, 1360, 650, {
+        size: 42,
+        minSize: 26,
+        weight: 950,
+        family: "Arial Black, Arial, sans-serif",
+        align: "left",
+        color: "#ffffff",
         baseline: "top",
       });
 
       drawTextFit(
         ctx,
-        growthPreview.isMax ? "LV.100" : `${levelUpNextExp || 0} EXP`,
-        tierX + tierW - 42,
-        tierY + 36,
-        220,
+        `${levelUpStreakDays || 1} DAY STREAK`,
+        width - left - 34,
+        1430,
+        300,
         {
-        size: 56,
-        minSize: 34,
-        weight: 950,
-        family: "Arial Black, Arial, sans-serif",
-        align: "right",
-        color: accent,
-        strokeWidth: 4,
-        baseline: "top",
-      });
-
-      ctx.save();
-      const barX = tierX + 36;
-      const barY = tierY + 122;
-      const barW = tierW - 72;
-      const barH = 28;
-      ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-      roundRect(ctx, barX, barY, barW, barH, 14);
-      ctx.fill();
-      ctx.fillStyle = accent;
-      roundRect(ctx, barX, barY, barW * (levelUpProgressPercent / 100), barH, 14);
-      ctx.fill();
-      ctx.restore();
+          size: 28,
+          minSize: 20,
+          weight: 900,
+          family: "Arial Black, Arial, sans-serif",
+          align: "right",
+          color: accent,
+          baseline: "top",
+          shadow: false,
+        }
+      );
     }
 
     return canvas.toDataURL("image/png", 1);
@@ -2477,7 +2493,7 @@ export default function ProfilePage({
         <span style={styles.cardStudioEntryKicker}>NAMEPLATE · CARD MAKER</span>
         <strong style={styles.cardStudioEntryTitle}>명패 공유하기</strong>
         <span style={styles.cardStudioEntryDesc}>
-          사진과 필터로 나만의 파이터 카드·포스터를 만들어 저장하고 공유하세요.
+          사진 없이도 기록·레벨·라운드만으로 멋진 카드를 만들 수 있어요.
         </span>
         <span style={styles.cardStudioEntryCta}>명패 공유 열기 →</span>
       </button>
@@ -2550,7 +2566,7 @@ export default function ProfilePage({
               ...(studioTab === "design" ? styles.studioTabActive : {}),
             }}
           >
-            2) 사진·필터·저장
+            2) 디자인·저장
           </button>
         </div>
 
@@ -2564,8 +2580,8 @@ export default function ProfilePage({
               <p style={styles.recentTrainingText}>
                 {getRounds(latestLog)}R ·{" "}
                 {latestLog.minutes || latestLog.duration}min 훈련이 카드에
-                자동 선택됐어요. 이제 사진이나 영상을 넣고 인증 카드로
-                저장해보세요.
+                자동 선택됐어요. 사진 없이 바로 저장하거나 원하는 사진을
+                추가해보세요.
               </p>
             </div>
           </div>
@@ -2627,10 +2643,10 @@ export default function ProfilePage({
               <>
             <div style={styles.cardPhotoBox}>
               <div>
-                <p style={styles.cardMakerLabel}>2. 카드 사진/영상 선택</p>
+                <p style={styles.cardMakerLabel}>2. 카드 배경 선택 (선택)</p>
                 <p style={styles.cardMakerHelp}>
-                  오늘 훈련한 사진이나 영상을 넣어줘. 사진 카드는 이미지로
-                  저장할 수 있고, 영상은 지금은 카드 안에서 미리보기만 가능해.
+                  사진이 없어도 ROUND ON 그래픽 카드로 바로 저장할 수 있어요.
+                  원할 때만 훈련 사진이나 영상을 추가하세요.
                 </p>
               </div>
 
@@ -2648,7 +2664,7 @@ export default function ProfilePage({
                   style={styles.photoButton}
                   onClick={() => cardMediaInputRef.current?.click()}
                 >
-                  훈련 사진/영상 넣기
+                  사진/영상 추가하기
                 </button>
 
                 {cardMedia && (
@@ -3089,7 +3105,21 @@ export default function ProfilePage({
                   />
                 )}
 
-                {!cardMedia && <div style={styles.trainingCardDefaultBg} />}
+                {!cardMedia ? (
+                  <div
+                    className={`training-card-no-photo is-${cardStyle}`}
+                    style={styles.trainingCardDefaultBg}
+                    aria-hidden="true"
+                  >
+                    <span className="training-card-no-photo-brand">
+                      ROUND ON
+                    </span>
+                    <span className="training-card-no-photo-mark">R</span>
+                    <span className="training-card-no-photo-ring ring-one" />
+                    <span className="training-card-no-photo-ring ring-two" />
+                    <span className="training-card-no-photo-slash" />
+                  </div>
+                ) : null}
 
                 <div
                   style={{
@@ -3104,106 +3134,87 @@ export default function ProfilePage({
                 />
 
                 {cardStyle === "basic" ? (
-                    <div
-                      style={{
-                        ...styles.levelUpCardTextLayer,
-                        border: `1px solid ${levelUpAccentSoft}`,
-                        boxShadow: `inset 0 0 32px ${levelUpAccentSoft}`,
-                      }}
-                    >
-                    <div style={styles.levelUpHeader}>
-                    <div
-                          style={{
-                            ...styles.levelUpBadge,
-                            color: levelUpAccent,
-                            border: `1px solid ${levelUpAccent}`,
-                            boxShadow: `0 0 24px ${levelUpAccentSoft}`,
-                          }}
-                        >
-                          ID
-                        </div>
-                      <span>PERSONAL TRAINING ID</span>
-                    </div>
-
-                    <div style={styles.levelUpMainBlock}>
-                      <h2 style={styles.levelUpName}>{levelUpDisplayName}</h2>
-
-                      <span style={styles.levelUpLabel}>LEVEL</span>
-                      <strong
+                  <div
+                    className="level-up-performance-card"
                     style={{
-                      ...styles.levelUpNumber,
-                      color: levelUpAccent,
-                      textShadow: `0 5px 20px rgba(0, 0, 0, 0.98), 0 0 24px ${levelUpAccentSoft}`,
+                      borderColor: levelUpAccentSoft,
+                      boxShadow: `inset 0 0 32px ${levelUpAccentSoft}`,
                     }}
                   >
-                    {levelUpDisplayLevel}
-                  </strong>
-
-                  <p
-                      style={{
-                        ...styles.levelUpSlogan,
-                        borderTop: `2px solid ${levelUpAccent}`,
-                      }}
-                    >
-                      {levelUpDisplaySlogan}
-                    </p>
+                    <div className="level-up-performance-brand">
+                      <strong>ROUND ON</strong>
+                      <span>TRAINING RESULT</span>
                     </div>
 
-                    <div style={styles.levelUpBottomBlock}>
-                      <div style={styles.levelUpStatsRow}>
-                        <div style={styles.levelUpStatBox}>
-                          <strong>{profileStats.weeklyRounds}</strong>
-                          <span>ROUNDS</span>
-                          <small>THIS WEEK</small>
-                        </div>
+                    <div className="level-up-performance-profile">
+                      <div
+                        className="level-up-card-avatar"
+                        style={{
+                          borderColor: levelUpAccent,
+                          boxShadow: `0 0 24px ${levelUpAccentSoft}`,
+                        }}
+                      >
+                        {profile.photo ? (
+                          <img src={profile.photo} alt="" />
+                        ) : (
+                          <span style={{ color: levelUpAccent }}>
+                            {(profile.nickname || "R").slice(0, 1)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="level-up-card-identity">
+                        <span>{profile.nickname || "나의 파이터"}</span>
+                        <small style={{ color: levelUpAccent }}>
+                          {profileStats.levelLabel} ·{" "}
+                          {profileStats.fighterTitleEn || "FIGHTER"}
+                        </small>
+                      </div>
+                    </div>
 
-                        <div style={styles.levelUpStatBox}>
-                          <strong>{profileStats.totalRounds}</strong>
-                          <span>ROUNDS</span>
-                          <small>TOTAL</small>
-                        </div>
+                    <div className="level-up-performance-main">
+                      <div className="level-up-performance-title-row">
+                        <h2>{primaryCardTitle}</h2>
+                        <span style={{ color: levelUpAccent }}>
+                          LV.{levelUpDisplayLevel}
+                        </span>
+                      </div>
 
-                        <div style={styles.levelUpStatBox}>
-                          <strong>{levelUpStreakDays || 1}</strong>
-                          <span>STREAK</span>
-                          <small>DAYS</small>
+                      <p className="level-up-performance-label">
+                        ROUNDS COMPLETED
+                      </p>
+                      <strong
+                        className="level-up-performance-value"
+                        style={{
+                          color: levelUpAccent,
+                          textShadow: `0 0 26px ${levelUpAccentSoft}`,
+                        }}
+                      >
+                        +{cardTotalRounds}R
+                      </strong>
+
+                      <div className="level-up-performance-details">
+                        <div>
+                          <span>TRAINING TIME</span>
+                          <strong>{cardTotalMinutes} MIN</strong>
+                        </div>
+                        <div>
+                          <span>CAREER ROUNDS</span>
+                          <strong>{profileStats.totalRounds} R</strong>
                         </div>
                       </div>
 
                       <div
-                        style={{
-                          ...styles.levelUpTierBox,
-                          border: `1px solid ${levelUpAccent}`,
-                          boxShadow: `0 12px 26px rgba(0, 0, 0, 0.28), 0 0 18px ${levelUpAccentSoft}`,
-                        }}
+                        className="level-up-performance-arrow"
+                        style={{ color: levelUpAccent }}
+                        aria-hidden="true"
                       >
-                        <div>
-                        <strong style={{ ...styles.levelUpTierName, color: levelUpAccent }}>
-                          {growthPreview.isMax
-                            ? "MAX LEVEL"
-                            : growthPreview.nextTitle?.en ||
-                              growthPreview.currentTitleEn}
-                        </strong>
-                          
-                        </div>
-
-                        <strong style={{ ...styles.levelUpXpText, color: levelUpAccent }}>
-                          {growthPreview.isMax
-                            ? "LV.100"
-                            : `${levelUpNextExp || 0} EXP`}
-                        </strong>
-
-                        <div style={styles.levelUpProgressTrack}>
-                        <div
-                          style={{
-                            ...styles.levelUpProgressFill,
-                            width: `${levelUpProgressPercent}%`,
-                            background: `linear-gradient(90deg, ${levelUpAccent}, #ffffff)`,
-                            boxShadow: `0 0 16px ${levelUpAccentSoft}`,
-                          }}
-                        />
-                        </div>
+                        ↑
                       </div>
+                    </div>
+
+                    <div className="level-up-performance-footer">
+                      <span>{levelUpDisplaySlogan}</span>
+                      <strong>{levelUpStreakDays || 1} DAY STREAK</strong>
                     </div>
                   </div>
                 ) : cardStyle === "poster" ? (

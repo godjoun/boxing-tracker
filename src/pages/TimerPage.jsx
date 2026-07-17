@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
-import { getCompletionDelta } from "../utils/fighterProgress";
+import {
+  getCompletionDelta,
+  getTotalMinutesFromLogs,
+  getTotalRoundsFromLogs,
+} from "../utils/fighterProgress";
+import { getTrainingStreak } from "./profilePage/profileCardUtils";
 import {
   getCurriculumPhaseFocus,
   markCurriculumSessionComplete,
@@ -158,7 +163,7 @@ export default function TimerPage({
   onGoHome,
   onGoProfile,
 }) {
-  const { addLog, logs } = useTraining();
+  const { addLog, logs, profile } = useTraining();
   const initialTimerState = readInitialTimerState();
 
   const [selectedPresetId, setSelectedPresetId] = useState(
@@ -224,6 +229,7 @@ export default function TimerPage({
   const [hasSavedLog, setHasSavedLog] = useState(initialTimerState.hasSavedLog);
   const [completionResult, setCompletionResult] = useState(null);
   const [completedLogId, setCompletedLogId] = useState(null);
+  const [completedAt, setCompletedAt] = useState(null);
   const [soundMode, setSoundMode] = useState(initialTimerState.soundMode);
 
   const savedLogRef = useRef(initialTimerState.hasSavedLog);
@@ -577,6 +583,7 @@ export default function TimerPage({
 
     setCompletionResult(getCompletionDelta(logs, savedLog));
     setCompletedLogId(savedLog.id);
+    setCompletedAt(new Date());
     setHasSavedLog(true);
   }, [
     phase,
@@ -602,6 +609,7 @@ export default function TimerPage({
     setHasSavedLog(false);
     setCompletionResult(null);
     setCompletedLogId(null);
+    setCompletedAt(null);
     savedLogRef.current = false;
   };
 
@@ -815,6 +823,28 @@ export default function TimerPage({
   const isFocusMode = hasStartedSession && !isComplete;
   const isSetupMode = !hasStartedSession && !isComplete;
 
+  const completedMoment = completedAt || new Date();
+  const completedDateLabel = `${completedMoment.getFullYear()}.${String(
+    completedMoment.getMonth() + 1
+  ).padStart(2, "0")}.${String(completedMoment.getDate()).padStart(2, "0")}`;
+  const completedTimeLabel = `${String(completedMoment.getHours()).padStart(
+    2,
+    "0"
+  )}:${String(completedMoment.getMinutes()).padStart(2, "0")}`;
+
+  const stillCountLabel = isIntervalMode
+    ? `${totalRounds}세트`
+    : `${totalRounds}R`;
+  const cumulativeRounds =
+    completionResult?.totalRounds ?? getTotalRoundsFromLogs(logs);
+  const cumulativeMinutes = getTotalMinutesFromLogs(logs);
+  const cumulativeTimeLabel =
+    cumulativeMinutes >= 60
+      ? `${Math.floor(cumulativeMinutes / 60)}시간`
+      : `${cumulativeMinutes}분`;
+  const stillPlace = (profile?.area || "").trim();
+  const trainingStreak = getTrainingStreak(logs);
+
   function handleTimerSurfaceTap() {
     if (!isFocusMode) return;
 
@@ -1020,7 +1050,13 @@ export default function TimerPage({
 
       {!isSetupMode ? (
       <section
-        className={isFocusMode ? "timer-focus-card" : ""}
+        className={
+          isFocusMode
+            ? "timer-focus-card"
+            : isComplete
+              ? "timer-complete-card"
+              : ""
+        }
         style={timerCardStyle}
         onClick={isFocusMode ? handleTimerSurfaceTap : undefined}
       >
@@ -1028,18 +1064,22 @@ export default function TimerPage({
           <p className="timer-focus-hint">더블 탭 · 일시정지 / 재개</p>
         ) : null}
 
-        <div style={styles.timerTopRow}>
-          <span style={{ ...styles.phaseBadge, ...getPhaseBadgeStyle() }}>
-            {getPhaseText()}
-          </span>
+        {!isComplete ? (
+          <div style={styles.timerTopRow}>
+            <span style={{ ...styles.phaseBadge, ...getPhaseBadgeStyle() }}>
+              {getPhaseText()}
+            </span>
 
-          <span
-            className={isFocusMode ? "timer-focus-round" : ""}
-            style={styles.roundText}
-          >
-            {phase === "done" ? "완료" : isIntervalMode ? `${currentRound} / ${totalRounds} 세트` : `${currentRound} / ${totalRounds} R`}
-          </span>
-        </div>
+            <span
+              className={isFocusMode ? "timer-focus-round" : ""}
+              style={styles.roundText}
+            >
+              {isIntervalMode
+                ? `${currentRound} / ${totalRounds} 세트`
+                : `${currentRound} / ${totalRounds} R`}
+            </span>
+          </div>
+        ) : null}
 
         {phase !== "done" && (
           <div
@@ -1098,57 +1138,47 @@ export default function TimerPage({
         ) : null}
 
         {phase === "done" && (
-          <div className="timer-complete-hero">
-            <p className="timer-complete-kicker">WORKOUT COMPLETE</p>
-            <h2 className="timer-complete-title">오늘도 끝까지 버텼다</h2>
+          <div className="timer-still">
+            <p className="timer-still-kicker">ROUND COMPLETE</p>
 
-            {completionResult ? (
-              <>
-                <div className="timer-complete-statline">
-                  <strong>{isIntervalMode ? `${totalRounds}세트` : `${totalRounds}R`}</strong>
-                  <span>·</span>
-                  <em>+{completionResult.gainedExp} EXP</em>
-                </div>
+            <div className="timer-still-headline">
+              <span className="timer-still-rounds">{stillCountLabel}</span>
+              <span className="timer-still-duration">
+                {formatTime(totalWorkSeconds)}
+              </span>
+            </div>
 
-                <p className="timer-complete-sub">
-                  이번 주 {completionResult.weeklyRounds}R
-                  {completionResult.weeklyRoundsAdded > 0
-                    ? ` · +${completionResult.weeklyRoundsAdded}R`
-                    : ""}{" "}
-                  · {totalWorkMinutes}분
-                </p>
+            <div className="timer-still-meta">
+              <span>{completedDateLabel}</span>
+              <span className="timer-still-meta-dot" aria-hidden="true">
+                ·
+              </span>
+              <span>{completedTimeLabel}</span>
+              {stillPlace ? (
+                <span className="timer-still-place">{stillPlace}.</span>
+              ) : null}
+            </div>
 
-                {completionResult.didLevelUp ? (
-                  <div className="timer-complete-levelup">LEVEL UP</div>
-                ) : null}
+            {trainingStreak >= 2 ? (
+              <p className="timer-still-streak">{trainingStreak}일 연속</p>
+            ) : null}
 
-                <div className="timer-complete-level">
-                  <div className="timer-complete-level-head">
-                    <strong>{completionResult.levelLabel}</strong>
-                    <span>
-                      {completionResult.isMaxLevel
-                        ? "MAX LEVEL"
-                        : `${completionResult.currentLevelExp} / ${completionResult.nextLevelExp} EXP`}
-                    </span>
-                  </div>
-                  <div className="timer-complete-level-track" aria-hidden="true">
-                    <div
-                      style={{ width: `${completionResult.progressPercent}%` }}
-                    />
-                  </div>
-                </div>
+            <p className="timer-still-slogan">오늘도 벨은 울렸다.</p>
 
-                {completionResult.didLevelUp && completionResult.newTitle ? (
-                  <div className="timer-complete-unlock">
-                    <span>NEW TITLE</span>
-                    <strong>{completionResult.newTitle.ko}</strong>
-                    <small>{completionResult.newTitle.en}</small>
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <p className="timer-complete-sub">운동 기록에 자동 저장됐습니다.</p>
-            )}
+            <div className="timer-still-trace">
+              <strong className="timer-still-bell">
+                {cumulativeRounds}번째 벨.
+              </strong>
+              <span className="timer-still-hours">
+                링 위에서 {cumulativeTimeLabel}
+              </span>
+            </div>
+
+            {completionResult?.didLevelUp && completionResult.newTitle ? (
+              <p className="timer-still-chapter">
+                새 이름 · {completionResult.newTitle.ko}
+              </p>
+            ) : null}
 
             <button
               type="button"
@@ -1159,6 +1189,9 @@ export default function TimerPage({
             </button>
 
             <div className="timer-complete-links">
+              <button type="button" onClick={handleStart}>
+                다시 시작
+              </button>
               <button type="button" onClick={() => onGoHome?.()}>
                 홈으로
               </button>
@@ -1196,15 +1229,11 @@ export default function TimerPage({
               종료
             </button>
           </div>
-        ) : (
+        ) : isComplete ? null : (
         <div style={styles.buttonRow}>
           {!isRunning ? (
             <button type="button" style={styles.startButton} onClick={handleStart}>
-              {phase === "done"
-                ? "다시 시작"
-                : hasStartedSession
-                ? "계속"
-                : "시작"}
+              {hasStartedSession ? "계속" : "시작"}
             </button>
           ) : (
             <button type="button" style={styles.pauseButton} onClick={handlePause}>

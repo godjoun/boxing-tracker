@@ -20,15 +20,9 @@ export const CARD_FILTERS = [
     group: "기본",
   },
   {
-    id: "dark",
-    name: "DARK GYM",
-    description: "어두운 체육관 톤",
-    group: "기본",
-  },
-  {
     id: "mono",
-    name: "MONO",
-    description: "클래식 흑백",
+    name: "STREET MONO",
+    description: "거친 흑백 스트릿 톤",
     group: "기본",
   },
   {
@@ -99,14 +93,6 @@ const IMAGE_FILTER_PROFILES = {
     hueRotate: [0, 18],
     grayscale: [0, 0],
     tint: { r: 0.97, g: 0.99, b: 1.05 },
-  },
-  dark: {
-    contrast: [1.02, 1.12],
-    saturate: [1, 0.86],
-    sepia: [0, 0.03],
-    brightness: [1, 0.9],
-    hueRotate: [0, 0],
-    grayscale: [0, 0],
   },
   mono: {
     contrast: [1.02, 1.16],
@@ -314,10 +300,6 @@ export function getCardBackground(filterId) {
     return "radial-gradient(circle at 82% 10%, rgba(255, 255, 255, 0.18), transparent 35%), linear-gradient(145deg, #202020, #050505)";
   }
 
-  if (filterId === "dark") {
-    return "radial-gradient(circle at 82% 10%, rgba(255, 255, 255, 0.1), transparent 35%), linear-gradient(145deg, #151515, #000000)";
-  }
-
   return "radial-gradient(circle at 82% 10%, rgba(255, 51, 51, 0.46), transparent 35%), linear-gradient(145deg, #250909, #050505)";
 }
 
@@ -362,10 +344,6 @@ export function getOverlayStyle(filterId, intensity) {
 
   if (filterId === "mono") {
     return `linear-gradient(180deg, rgba(255, 255, 255, ${0.02 + 0.05 * strength}), rgba(0, 0, 0, ${0.4 + 0.18 * strength}))`;
-  }
-
-  if (filterId === "dark") {
-    return `linear-gradient(180deg, rgba(0, 0, 0, ${0.1 + 0.1 * strength}), rgba(0, 0, 0, ${0.48 + 0.2 * strength}))`;
   }
 
   return `linear-gradient(180deg, rgba(255, 35, 35, ${0.04 + 0.08 * strength}), rgba(0, 0, 0, ${0.4 + 0.18 * strength}))`;

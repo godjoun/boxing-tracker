@@ -10,14 +10,14 @@
 }
 
 .composer-meta-label {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--p-text-faint);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.1em;
 }
 
 .theme-light .composer-meta-label {
-  color: #8a7d6b;
+  color: var(--p-text-faint);
 }
 
 .composer-shell.has-dock {
@@ -37,7 +37,7 @@
 
 .composer-shell-kicker {
   margin: 0 0 2px;
-  color: #e8c66a;
+  color: var(--p-brass);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -56,8 +56,8 @@
   padding: 12px;
   margin-bottom: 12px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--p-bg-subtle);
+  border: 1px solid var(--p-border-soft);
 }
 
 .composer-shell-summary strong {
@@ -68,7 +68,7 @@
 
 .composer-shell-summary p,
 .composer-shell-summary span {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -84,8 +84,8 @@
   gap: 4px;
   padding: 4px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--p-bg-inner);
+  border: 1px solid var(--p-border-soft);
 }
 
 .composer-segment-tab {
@@ -98,22 +98,22 @@
   border: none;
   border-radius: 9px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--p-text-muted);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
 }
 
 .composer-segment-tab.is-active {
-  background: rgba(232, 198, 106, 0.14);
-  color: #f5d98b;
+  background: var(--p-accent-bg);
+  color: var(--p-accent-soft);
 }
 
 .composer-segment-tab em {
   min-width: 16px;
   padding: 1px 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--p-bg-inner);
   font-size: 10px;
   font-style: normal;
   font-weight: 800;
@@ -133,8 +133,8 @@
   transform: translateX(-50%);
   padding: 10px;
   border-radius: 18px;
-  background: rgba(14, 14, 14, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--p-bg-deep);
+  border: 1px solid var(--p-border-strong);
   backdrop-filter: blur(12px);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
 }
@@ -156,11 +156,21 @@
   padding: 12px 14px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #e8c66a, #c49a2e);
-  color: #1f1a12;
+  background: #8a2e2e;
+  color: #f5f1e8;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.composer-dock-primary:hover {
+  background: #742525;
+}
+
+.composer-dock-primary:active {
+  background: #5f1e1e;
+  transform: translateY(1px);
 }
 
 .composer-dock-primary:disabled {
@@ -170,27 +180,27 @@
 
 .theme-light .composer-shell-summary,
 .theme-light .composer-segment-tabs {
-  background: #f7f3ea;
-  border-color: rgba(196, 154, 46, 0.16);
+  background: var(--p-bg-subtle);
+  border-color: var(--p-border-soft);
 }
 
 .theme-light .composer-shell-summary p,
 .theme-light .composer-shell-summary span,
 .theme-light .composer-segment-tab {
-  color: #6b6254;
+  color: var(--p-text-muted);
 }
 
 .theme-light .composer-segment-tab.is-active {
-  background: #fff8e8;
-  color: #9a7420;
+  background: rgba(138, 46, 46, 0.1);
+  color: #742525;
 }
 
 .theme-light .composer-shell-dock {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(196, 154, 46, 0.2);
+  background: var(--p-bg-panel);
+  border-color: var(--p-border-strong);
   box-shadow: 0 10px 24px rgba(79, 58, 18, 0.12);
 }
 
 .theme-light .composer-shell-kicker {
-  color: #9a7420;
+  color: var(--p-brass);
 }

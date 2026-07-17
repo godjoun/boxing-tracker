@@ -53,8 +53,18 @@
   font-size: 15px;
   font-weight: 900;
   cursor: pointer;
-  background: linear-gradient(135deg, #e8c66a, #c49a2e);
-  color: #1f1a12;
+  background: #8a2e2e;
+  color: #f5f1e8;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.growth-hub-empty-button:hover {
+  background: #742525;
+}
+
+.growth-hub-empty-button:active {
+  background: #5f1e1e;
+  transform: translateY(1px);
 }
 
 .growth-hub-summary {
@@ -159,10 +169,10 @@
   flex-shrink: 0;
   min-width: 58px;
   padding: 8px 12px;
-  border: 1px solid rgba(239, 63, 54, 0.34);
+  border: 1px solid rgba(138, 46, 46, 0.34);
   border-radius: 999px;
-  background: rgba(239, 63, 54, 0.1);
-  color: #ff8a84;
+  background: rgba(138, 46, 46, 0.12);
+  color: #cf8b8b;
   font-size: 14px;
   font-weight: 900;
   cursor: pointer;
@@ -197,15 +207,15 @@
 .growth-hub-progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #ef3f36, #ff7043);
+  background: #aaa095;
 }
 
 .growth-hub-progress-fill.is-complete {
-  background: linear-gradient(90deg, #34d399, #10b981);
+  background: linear-gradient(90deg, #7d9d84, #9db99f);
 }
 
 .growth-hub-progress-fill.is-gold {
-  background: linear-gradient(90deg, #c49a2e, #e8c66a);
+  background: linear-gradient(90deg, var(--p-brass), var(--p-brass-soft));
 }
 
 .growth-hub-milestone-name {

@@ -4,7 +4,7 @@
 
 .strength-summary-warmup {
   margin: 0 !important;
-  color: #ef3f36 !important;
+  color: var(--p-brass, #c1a05a) !important;
   font-size: 11px !important;
   font-weight: 800;
 }
@@ -34,7 +34,7 @@
 
 .strength-card-head p {
   margin: 0 0 4px;
-  color: #ef3f36;
+  color: var(--p-brass, #c1a05a);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -74,11 +74,21 @@
   padding: 12px 14px;
   border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, #ef3f36, #d92f27);
-  color: #fff;
+  background: #8a2e2e;
+  color: #f5f1e8;
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.strength-warmup-button:hover {
+  background: #742525;
+}
+
+.strength-warmup-button:active {
+  background: #5f1e1e;
+  transform: translateY(1px);
 }
 
 .strength-today-card {
@@ -92,7 +102,7 @@
 }
 
 .strength-today-card > span {
-  color: #e8c66a;
+  color: var(--p-brass-soft);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -143,14 +153,14 @@
 }
 
 .strength-day-chip.is-active {
-  border-color: rgba(239, 63, 54, 0.34);
-  background: rgba(239, 63, 54, 0.12);
+  border-color: rgba(138, 46, 46, 0.34);
+  background: rgba(138, 46, 46, 0.12);
   color: var(--p-text);
 }
 
 .strength-day-chip.tone-blue.is-active {
-  border-color: rgba(96, 165, 250, 0.4);
-  background: rgba(96, 165, 250, 0.16);
+  border-color: rgba(109, 138, 160, 0.4);
+  background: rgba(109, 138, 160, 0.16);
   color: var(--p-text);
 }
 
@@ -164,11 +174,11 @@
 }
 
 .strength-day-panel.tone-red {
-  border-color: rgba(239, 63, 54, 0.18);
+  border-color: rgba(138, 46, 46, 0.18);
 }
 
 .strength-day-panel.tone-blue {
-  border-color: rgba(96, 165, 250, 0.18);
+  border-color: rgba(109, 138, 160, 0.18);
 }
 
 .strength-day-head p {
@@ -253,7 +263,7 @@
 
 .strength-exercise-top span {
   flex-shrink: 0;
-  color: #e8c66a;
+  color: var(--p-brass-soft);
   font-size: 11px;
   font-weight: 900;
   white-space: nowrap;
@@ -305,15 +315,15 @@
 }
 
 .theme-light .strength-day-chip.is-active {
-  color: #9f1239;
-  background: rgba(239, 63, 54, 0.1);
-  border-color: rgba(239, 63, 54, 0.28);
+  color: #742525;
+  background: rgba(138, 46, 46, 0.1);
+  border-color: rgba(138, 46, 46, 0.28);
 }
 
 .theme-light .strength-day-chip.tone-blue.is-active {
-  color: #1d4ed8;
-  background: rgba(96, 165, 250, 0.14);
-  border-color: rgba(59, 130, 246, 0.32);
+  color: #45606f;
+  background: rgba(109, 138, 160, 0.14);
+  border-color: rgba(109, 138, 160, 0.32);
 }
 
 .theme-light .strength-day-chip em,

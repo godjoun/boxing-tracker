@@ -923,6 +923,20 @@ export default function ProfilePage({
       };
     }
 
+    if (filterId === "relentless") {
+      return {
+        bgA: "#34363a",
+        bgB: "#030303",
+        bgC: "#111214",
+        accent: "#f4f1ea",
+        accentSoft: "rgba(255, 255, 255, 0.2)",
+        overlayTop: "rgba(0, 0, 0, 0.34)",
+        overlayMid: "rgba(0, 0, 0, 0.2)",
+        overlayBottom: "rgba(0, 0, 0, 0.96)",
+        spotlight: true,
+      };
+    }
+
     if (filterId === "chrome") {
       return {
         bgA: "#3a3a3a",
@@ -1104,6 +1118,23 @@ export default function ProfilePage({
     lowerGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = lowerGlow;
     ctx.fillRect(0, 0, width, height);
+
+    if (theme.spotlight) {
+      const vignette = ctx.createRadialGradient(
+        width * 0.5,
+        height * 0.3,
+        width * 0.08,
+        width * 0.5,
+        height * 0.3,
+        width * 0.78
+      );
+      vignette.addColorStop(0, "rgba(255, 255, 255, 0.1)");
+      vignette.addColorStop(0.28, "rgba(255, 255, 255, 0)");
+      vignette.addColorStop(0.62, "rgba(0, 0, 0, 0.18)");
+      vignette.addColorStop(1, "rgba(0, 0, 0, 0.72)");
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, width, height);
+    }
   }
 
   function drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto, natural = false) {

@@ -30,7 +30,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(212, 168, 50, 0.16);
-  color: #e8c66a;
+  color: var(--p-brass-soft);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -89,30 +89,30 @@
 }
 
 .curriculum-timer-focus.is-rest {
-  border-color: rgba(96, 165, 250, 0.28);
-  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(109, 138, 160, 0.28);
+  background: rgba(109, 138, 160, 0.12);
 }
 
 .curriculum-timer-focus.is-prep {
-  border-color: rgba(52, 211, 153, 0.28);
-  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(125, 157, 132, 0.28);
+  background: rgba(125, 157, 132, 0.1);
 }
 
 .curriculum-timer-focus-label {
   display: block;
   margin-bottom: 6px;
-  color: #e8c66a;
+  color: var(--p-brass-soft);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.1em;
 }
 
 .curriculum-timer-focus.is-rest .curriculum-timer-focus-label {
-  color: #93c5fd;
+  color: #9db6c8;
 }
 
 .curriculum-timer-focus.is-prep .curriculum-timer-focus-label {
-  color: #6ee7b7;
+  color: #a3c0a9;
 }
 
 .curriculum-timer-focus strong {
@@ -239,7 +239,7 @@
 
 .curriculum-timer-drill-dot.is-active {
   width: 18px;
-  background: #e8c66a;
+  background: var(--p-brass);
 }
 
 .curriculum-timer-drill-progress em {
@@ -280,9 +280,9 @@
 }
 
 .curriculum-timer-end {
-  border: 1px solid rgba(239, 63, 54, 0.28);
+  border: 1px solid var(--p-accent-border);
   background: transparent;
-  color: #ef3f36;
+  color: var(--p-accent-soft);
 }
 
 .curriculum-timer-drill-list {

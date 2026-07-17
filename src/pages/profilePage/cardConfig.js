@@ -26,6 +26,12 @@ export const CARD_FILTERS = [
     group: "기본",
   },
   {
+    id: "relentless",
+    name: "RELENTLESS",
+    description: "역광과 비네트가 강한 영화 포스터 톤",
+    group: "기본",
+  },
+  {
     id: "semipro",
     name: "SEMI-PRO GOLD",
     description: "세미프로 링 골드",
@@ -101,6 +107,15 @@ const IMAGE_FILTER_PROFILES = {
     brightness: [1, 0.95],
     hueRotate: [0, 0],
     grayscale: [0.1, 1],
+  },
+  relentless: {
+    contrast: [1.12, 1.46],
+    saturate: [0.35, 0],
+    sepia: [0.01, 0.06],
+    brightness: [0.98, 0.84],
+    hueRotate: [0, 0],
+    grayscale: [0.72, 1],
+    tint: { r: 1.01, g: 1, b: 0.98 },
   },
   semipro: {
     contrast: [1.03, 1.14],
@@ -300,6 +315,10 @@ export function getCardBackground(filterId) {
     return "radial-gradient(circle at 82% 10%, rgba(255, 255, 255, 0.18), transparent 35%), linear-gradient(145deg, #202020, #050505)";
   }
 
+  if (filterId === "relentless") {
+    return "radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.32), transparent 24%), linear-gradient(180deg, #303236 0%, #111214 48%, #020202 100%)";
+  }
+
   return "radial-gradient(circle at 82% 10%, rgba(255, 51, 51, 0.46), transparent 35%), linear-gradient(145deg, #250909, #050505)";
 }
 
@@ -344,6 +363,10 @@ export function getOverlayStyle(filterId, intensity) {
 
   if (filterId === "mono") {
     return `linear-gradient(180deg, rgba(255, 255, 255, ${0.02 + 0.05 * strength}), rgba(0, 0, 0, ${0.4 + 0.18 * strength}))`;
+  }
+
+  if (filterId === "relentless") {
+    return `radial-gradient(ellipse at 50% 28%, rgba(255, 255, 255, ${0.08 + 0.14 * strength}) 0%, transparent 30%), radial-gradient(ellipse at center, transparent 32%, rgba(0, 0, 0, ${0.4 + 0.32 * strength}) 100%), linear-gradient(180deg, rgba(0, 0, 0, ${0.08 + 0.08 * strength}), rgba(0, 0, 0, ${0.62 + 0.22 * strength}))`;
   }
 
   return `linear-gradient(180deg, rgba(255, 35, 35, ${0.04 + 0.08 * strength}), rgba(0, 0, 0, ${0.4 + 0.18 * strength}))`;

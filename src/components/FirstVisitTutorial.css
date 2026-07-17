@@ -17,7 +17,7 @@
   z-index: 221;
   border-radius: 18px;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72);
-  outline: 2px solid rgba(255, 85, 85, 0.95);
+  outline: 2px solid rgba(177, 91, 91, 0.95);
   outline-offset: 0;
   animation: tutorial-spotlight-pulse 1.6s ease-in-out infinite;
   pointer-events: none;
@@ -37,17 +37,17 @@
 @keyframes tutorial-spotlight-pulse {
   0%,
   100% {
-    outline-color: rgba(255, 85, 85, 0.95);
+    outline-color: rgba(177, 91, 91, 0.95);
     box-shadow:
       0 0 0 9999px rgba(0, 0, 0, 0.72),
-      0 0 0 0 rgba(255, 85, 85, 0.35);
+      0 0 0 0 rgba(138, 46, 46, 0.35);
   }
 
   50% {
-    outline-color: rgba(255, 123, 114, 1);
+    outline-color: rgba(207, 139, 139, 1);
     box-shadow:
       0 0 0 9999px rgba(0, 0, 0, 0.72),
-      0 0 0 8px rgba(255, 85, 85, 0.18);
+      0 0 0 8px rgba(138, 46, 46, 0.18);
   }
 }
 

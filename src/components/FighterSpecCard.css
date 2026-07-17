@@ -6,10 +6,10 @@
   position: relative;
   overflow: hidden;
   padding: 18px 16px 16px;
-  border: 1px solid rgba(239, 63, 54, 0.28);
+  border: 1px solid rgba(138, 46, 46, 0.28);
   border-radius: 22px;
   background:
-    radial-gradient(circle at 100% 0%, rgba(239, 63, 54, 0.18), transparent 42%),
+    radial-gradient(circle at 100% 0%, rgba(138, 46, 46, 0.18), transparent 42%),
     linear-gradient(160deg, #1a1a1d 0%, #0a0a0c 100%);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
 }
@@ -20,7 +20,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #ef3f36, #ff8a65, #ef3f36);
+  background: linear-gradient(90deg, transparent, #c1a05a, transparent);
 }
 
 .fighter-nameplate-top {
@@ -119,9 +119,9 @@
 }
 
 .fighter-nameplate-photo-action.is-primary {
-  border-color: rgba(239, 63, 54, 0.42);
-  background: rgba(239, 63, 54, 0.14);
-  color: #ffb4ae;
+  border-color: rgba(138, 46, 46, 0.42);
+  background: rgba(138, 46, 46, 0.16);
+  color: #e0aaaa;
 }
 
 .fighter-nameplate-edit {
@@ -142,7 +142,7 @@
 }
 
 .fighter-nameplate-edit .profile-edit-toggle-action {
-  color: #ff8a84;
+  color: #cf8b8b;
 }
 
 .fighter-nameplate-edit .profile-edit-content {
@@ -151,7 +151,7 @@
 
 .fighter-nameplate-kicker {
   margin: 0 0 4px;
-  color: #ef3f36;
+  color: var(--p-brass, #c1a05a);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -193,8 +193,8 @@
   min-width: 58px;
   padding: 8px 10px;
   border-radius: 14px;
-  border: 1px solid rgba(239, 63, 54, 0.42);
-  background: rgba(239, 63, 54, 0.12);
+  border: 1px solid rgba(193, 160, 90, 0.28);
+  background: rgba(193, 160, 90, 0.08);
   text-align: center;
 }
 
@@ -209,7 +209,7 @@
 .fighter-nameplate-badge strong {
   display: block;
   margin-top: 2px;
-  color: #ef3f36;
+  color: #c9b990;
   font-size: 22px;
   font-weight: 900;
   line-height: 1;
@@ -280,7 +280,7 @@
 .fighter-nameplate-bar div {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #ef3f36, #ff7043);
+  background: #aaa095;
 }
 
 .fighter-nameplate-exp-note {
@@ -321,7 +321,7 @@
 .fighter-nameplate-stat small {
   display: block;
   margin-top: 2px;
-  color: rgba(124, 255, 124, 0.72);
+  color: rgba(125, 157, 132, 0.82);
   font-size: 9px;
   font-weight: 700;
 }
@@ -330,16 +330,22 @@
   width: 100%;
   margin-top: 14px;
   padding: 13px 16px;
-  border: 1px solid rgba(239, 63, 54, 0.5);
+  border: 1px solid rgba(138, 46, 46, 0.5);
   border-radius: 14px;
-  background: rgba(239, 63, 54, 0.14);
-  color: #ffffff;
+  background: #8a2e2e;
+  color: #f5f1e8;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.fighter-nameplate-cta:hover {
+  background: #742525;
 }
 
 .fighter-nameplate-cta:active {
+  background: #5f1e1e;
   transform: scale(0.99);
 }
 
@@ -382,7 +388,7 @@
 
 .fighter-nameplate-frame.tier-champion-gold .fighter-nameplate-accent,
 .fighter-nameplate-frame.tier-goat .fighter-nameplate-accent {
-  background: linear-gradient(90deg, #ffd84a, #fff0b0, #ef3f36, #ffd84a);
+  background: linear-gradient(90deg, #ffd84a, #fff0b0, #8a2e2e, #ffd84a);
 }
 
 .fighter-nameplate-frame.tier-goat {
@@ -480,9 +486,9 @@
 }
 
 .theme-light .fighter-nameplate-photo-action.is-primary {
-  border-color: rgba(196, 154, 46, 0.34);
-  background: rgba(212, 168, 50, 0.14);
-  color: #8a6a12;
+  border-color: rgba(138, 46, 46, 0.28);
+  background: rgba(138, 46, 46, 0.1);
+  color: #742525;
 }
 
 .theme-light .fighter-nameplate-edit {
@@ -499,7 +505,7 @@
 }
 
 .theme-light .fighter-nameplate-edit .profile-edit-toggle-action {
-  color: #a67c00;
+  color: #742525;
 }
 
 .theme-light .fighter-nameplate-edit .profile-edit-content {
@@ -544,7 +550,7 @@
 }
 
 .theme-light .fighter-nameplate-cta {
-  border-color: rgba(196, 154, 46, 0.38);
-  background: linear-gradient(135deg, rgba(232, 198, 106, 0.28), rgba(196, 154, 46, 0.16));
-  color: #1f1a12;
+  border-color: #8a2e2e;
+  background: #8a2e2e;
+  color: #f5f1e8;
 }

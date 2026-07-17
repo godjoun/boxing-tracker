@@ -164,13 +164,13 @@ export const styles = {
   },
 
   restBadge: {
-    backgroundColor: "#2b65ff",
-    color: "#ffffff",
+    backgroundColor: "#6d8aa0",
+    color: "#0e1519",
   },
 
   doneBadge: {
-    backgroundColor: "#25d366",
-    color: "#06150b",
+    backgroundColor: "#7d9d84",
+    color: "#0d1710",
   },
 
   roundText: {
@@ -398,8 +398,8 @@ export const styles = {
 
   goLogButton: {
     width: "100%",
-    backgroundColor: "var(--p-surface)",
-    color: "var(--p-on-surface)",
+    backgroundColor: "var(--p-accent)",
+    color: "var(--p-on-accent)",
     border: "none",
     borderRadius: "14px",
     padding: "13px 16px",
@@ -709,16 +709,16 @@ export const styles = {
     marginTop: "10px",
     padding: "12px 14px",
     borderRadius: "12px",
-    border: "1px solid rgba(239, 63, 54, 0.28)",
+    border: "1px solid var(--p-accent-border)",
     background: "transparent",
-    color: "#ef3f36",
+    color: "var(--p-accent-soft)",
     fontSize: "13px",
     fontWeight: 800,
     cursor: "pointer",
   },
 
   curriculumGuideKicker: {
-    color: "var(--p-accent)",
+    color: "var(--p-brass)",
     fontSize: "10px",
     fontWeight: 900,
     letterSpacing: "0.12em",

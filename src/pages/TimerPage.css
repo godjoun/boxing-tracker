@@ -114,8 +114,8 @@
 }
 
 .timer-preset-chip.is-active {
-  border-color: rgba(239, 63, 54, 0.34);
-  background: rgba(239, 63, 54, 0.12);
+  border-color: rgba(138, 46, 46, 0.34);
+  background: rgba(138, 46, 46, 0.12);
 }
 
 .timer-preset-chip:disabled {
@@ -221,8 +221,8 @@
 }
 
 .timer-setup-quick-row button.is-active {
-  border-color: rgba(239, 63, 54, 0.34);
-  background: rgba(239, 63, 54, 0.12);
+  border-color: rgba(138, 46, 46, 0.34);
+  background: rgba(138, 46, 46, 0.12);
   color: var(--p-accent);
 }
 
@@ -232,12 +232,22 @@
   margin-top: 14px;
   border: none;
   border-radius: 16px;
-  background: linear-gradient(135deg, #ef3f36, #d92f27);
-  color: #fff;
+  background: #8a2e2e;
+  color: #f5f1e8;
   font-size: 16px;
   font-weight: 950;
   cursor: pointer;
-  box-shadow: 0 14px 30px rgba(239, 63, 54, 0.24);
+  box-shadow: 0 14px 30px rgba(70, 18, 18, 0.28);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.timer-setup-start:hover {
+  background: #742525;
+}
+
+.timer-setup-start:active {
+  background: #5f1e1e;
+  transform: translateY(1px);
 }
 
 .timer-setup-start:disabled {
@@ -251,7 +261,7 @@
   min-height: calc(100dvh - var(--app-nav-total, 86px));
   padding-bottom: 24px;
   background:
-    radial-gradient(circle at 50% 0%, rgba(239, 63, 54, 0.12), transparent 42%),
+    radial-gradient(circle at 50% 0%, rgba(138, 46, 46, 0.1), transparent 42%),
     var(--p-bg-subtle);
 }
 
@@ -314,9 +324,9 @@
 }
 
 .timer-focus-stop {
-  border: 2px solid rgba(239, 63, 54, 0.35);
+  border: 2px solid rgba(138, 46, 46, 0.35);
   background: transparent;
-  color: #ef3f36;
+  color: #cf8b8b;
 }
 
 .timer-sound-details {
@@ -506,14 +516,24 @@
   margin-bottom: 10px;
   border: 1px solid rgba(193, 160, 90, 0.28);
   border-radius: 16px;
-  background: linear-gradient(135deg, #b23b2e, #8f2f27);
-  color: #f3e6d6;
+  background: #8a2e2e;
+  color: #f5f1e8;
   font-size: 16px;
   font-weight: 900;
   letter-spacing: 0.01em;
   cursor: pointer;
   touch-action: manipulation;
-  box-shadow: 0 14px 30px rgba(124, 47, 47, 0.32);
+  box-shadow: 0 14px 30px rgba(70, 18, 18, 0.32);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.timer-complete-card-cta:hover {
+  background: #742525;
+}
+
+.timer-complete-card-cta:active {
+  background: #5f1e1e;
+  transform: translateY(1px);
 }
 
 .timer-complete-links {
@@ -538,7 +558,7 @@
 
 .theme-light .timer-preset-chip.is-active,
 .theme-light .timer-setup-quick-row button.is-active {
-  border-color: rgba(196, 154, 46, 0.34);
-  background: rgba(212, 168, 50, 0.14);
-  color: #a67c00;
+  border-color: rgba(138, 46, 46, 0.28);
+  background: rgba(138, 46, 46, 0.1);
+  color: #742525;
 }

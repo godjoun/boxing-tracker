@@ -39,17 +39,43 @@ export default function App() {
   );
 }
 
-function AppFlow() {
-  const { profile } = useTraining();
+function useAppTheme() {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("fitness-league-theme") || "dark";
+  });
 
-  if (needsOnboarding(profile)) {
-    return <OnboardingSetupPage />;
-  }
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+  }, [theme]);
 
-  return <MainAppShell />;
+  const toggleTheme = () => {
+    setTheme((currentTheme) => {
+      const nextTheme = currentTheme === "light" ? "dark" : "light";
+      localStorage.setItem("fitness-league-theme", nextTheme);
+      return nextTheme;
+    });
+  };
+
+  return { theme, toggleTheme };
 }
 
-function MainAppShell() {
+function AppFlow() {
+  const { profile } = useTraining();
+  const { theme, toggleTheme } = useAppTheme();
+
+  if (needsOnboarding(profile)) {
+    return (
+      <div className={`app-shell theme-${theme}`}>
+        <OnboardingSetupPage />
+      </div>
+    );
+  }
+
+  return <MainAppShell theme={theme} toggleTheme={toggleTheme} />;
+}
+
+function MainAppShell({ theme, toggleTheme }) {
   const { logs, profile, grantFighterLevel } = useTraining();
   const [currentPage, setCurrentPage] = useState("home");
   const [showTutorial, setShowTutorial] = useState(false);
@@ -58,9 +84,6 @@ function MainAppShell() {
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("fitness-league-theme") || "dark";
-  });
   const isDark = theme === "dark";
   const fighterLevel = useMemo(
     () => getFighterProgress(logs).level,
@@ -85,14 +108,6 @@ function MainAppShell() {
       grantFighterLevel(10);
     }
   }, [grantFighterLevel, logs]);
-
-  const toggleTheme = () => {
-    setTheme((currentTheme) => {
-      const nextTheme = currentTheme === "light" ? "dark" : "light";
-      localStorage.setItem("fitness-league-theme", nextTheme);
-      return nextTheme;
-    });
-  };
 
   const goPage = (page) => {
     if (page !== "profile") {

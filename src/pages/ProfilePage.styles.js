@@ -25,7 +25,7 @@ export const styles = {
 
   kicker: {
     margin: "0 0 10px",
-    color: "var(--p-accent)",
+    color: "var(--p-brass)",
     fontSize: "12px",
     fontWeight: 900,
     letterSpacing: "0.16em",
@@ -141,8 +141,8 @@ export const styles = {
     border: "none",
     borderRadius: "16px",
     padding: "13px 14px",
-    background: "var(--p-surface)",
-    color: "var(--p-on-surface)",
+    background: "var(--p-accent)",
+    color: "var(--p-on-accent)",
     fontSize: "14px",
     fontWeight: 900,
     cursor: "pointer",
@@ -269,7 +269,7 @@ export const styles = {
 
   profileEditSectionTitle: {
     margin: "0 0 14px",
-    color: "var(--p-accent)",
+    color: "var(--p-brass)",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.14em",
@@ -318,14 +318,14 @@ export const styles = {
 
   profileSaveError: {
     margin: "0 0 12px",
-    color: "var(--p-accent-soft)",
+    color: "#cf8b8b",
     fontSize: "13px",
     lineHeight: 1.5,
   },
 
   sectionDividerLabel: {
     margin: "18px 0 0",
-    color: "var(--p-accent)",
+    color: "var(--p-brass)",
     fontSize: "12px",
     fontWeight: 900,
     letterSpacing: "0.16em",
@@ -427,7 +427,7 @@ export const styles = {
     fontSize: "12px",
     fontWeight: 800,
     letterSpacing: "0.04em",
-    color: "var(--p-accent)",
+    color: "var(--p-brass)",
   },
 
   cardStudioEntryTitle: {
@@ -488,17 +488,17 @@ export const styles = {
   },
 
   studioTabActive: {
-    background: "linear-gradient(135deg, #e8c66a, #c49a2e)",
-    color: "#1f1a12",
-    boxShadow: "0 8px 18px rgba(196, 154, 46, 0.22)",
+    background: "var(--p-accent-solid)",
+    color: "var(--p-on-accent)",
+    boxShadow: "var(--p-shadow-accent)",
   },
 
   recentTrainingNotice: {
     marginBottom: "16px",
     padding: "15px",
     borderRadius: "18px",
-    background: "var(--p-accent-bg)",
-    border: "1px solid var(--p-accent-border)",
+    background: "var(--p-brass-bg)",
+    border: "1px solid var(--p-brass-border)",
   },
 
   recentTrainingBadge: {
@@ -506,8 +506,8 @@ export const styles = {
     marginBottom: "9px",
     padding: "6px 9px",
     borderRadius: "999px",
-    background: "var(--p-accent-solid)",
-    color: "var(--p-on-accent)",
+    background: "var(--p-brass)",
+    color: "#17120c",
     fontSize: "11px",
     fontWeight: 900,
   },
@@ -690,9 +690,9 @@ export const styles = {
   },
 
   activeFilterButton: {
-    background: "#d6a234",
-    border: "1px solid #d6a234",
-    color: "var(--p-on-surface)",
+    background: "var(--p-accent-bg)",
+    border: "1px solid var(--p-accent-border)",
+    color: "var(--p-accent-soft)",
   },
 
   filterChipTitle: {
@@ -1388,7 +1388,7 @@ export const styles = {
   posterToggleCheckbox: {
     width: "15px",
     height: "15px",
-    accentColor: "#ff3333",
+    accentColor: "#8a2e2e",
     margin: 0,
   },
 
@@ -1556,8 +1556,8 @@ export const styles = {
     border: "none",
     borderRadius: "16px",
     padding: "15px",
-    background: "var(--p-surface)",
-    color: "var(--p-on-surface)",
+    background: "var(--p-accent-solid)",
+    color: "var(--p-on-accent)",
     fontSize: "15px",
     fontWeight: 900,
     cursor: "pointer",
@@ -1577,7 +1577,7 @@ export const styles = {
     borderRadius: "16px",
     padding: "15px",
     background: "var(--p-accent-solid)",
-    color: "var(--p-text)",
+    color: "var(--p-on-accent)",
     fontSize: "15px",
     fontWeight: 900,
     cursor: "pointer",
@@ -1634,8 +1634,8 @@ export const styles = {
     border: "none",
     borderRadius: "14px",
     padding: "12px",
-    background: "var(--p-surface)",
-    color: "var(--p-on-surface)",
+    background: "var(--p-accent-solid)",
+    color: "var(--p-on-accent)",
     fontSize: "13px",
     fontWeight: 950,
     cursor: "pointer",

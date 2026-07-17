@@ -23,7 +23,7 @@ function RoundRing({ currentRound, totalRounds }) {
           cy="27"
           r={radius}
           fill="none"
-          stroke="#e8c66a"
+          stroke="var(--p-brass)"
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={circumference}

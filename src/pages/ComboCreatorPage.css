@@ -6,7 +6,7 @@
     var(--app-top-total)
     16px
     calc(var(--app-nav-total) + 88px);
-  color: #fff;
+  color: var(--p-text);
 }
 
 .combo-creator-hero {
@@ -20,7 +20,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--p-text-muted);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -37,8 +37,8 @@
   gap: 10px;
   padding: 12px;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--p-bg-subtle);
+  border: 1px solid var(--p-border-soft);
 }
 
 .combo-timeline-top {
@@ -49,7 +49,7 @@
 }
 
 .combo-timeline-code {
-  color: #f5d98b;
+  color: var(--p-brass);
   font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -62,7 +62,7 @@
 
 .combo-timeline-empty {
   margin: 0;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--p-text-faint);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -82,19 +82,19 @@
   border: 1px solid rgba(232, 198, 106, 0.22);
   border-radius: 10px;
   background: rgba(232, 198, 106, 0.1);
-  color: #fff;
+  color: var(--p-text);
   cursor: pointer;
 }
 
 .combo-chip em {
-  color: #f5d98b;
+  color: var(--p-brass);
   font-size: 11px;
   font-style: normal;
   font-weight: 900;
 }
 
 .combo-chip b {
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--p-text-muted);
   font-size: 9px;
   font-weight: 700;
 }
@@ -171,10 +171,10 @@
 .combo-dock-name {
   width: 100%;
   padding: 11px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--p-border-strong);
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.22);
-  color: #fff;
+  background: var(--p-input-bg);
+  color: var(--p-text);
   font-size: 14px;
 }
 
@@ -199,10 +199,10 @@
 .combo-group-filter {
   flex: 0 0 auto;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--p-border-strong);
   border-radius: 999px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--p-text-muted);
   font-size: 12px;
   font-weight: 800;
   white-space: nowrap;
@@ -210,9 +210,9 @@
 }
 
 .combo-group-filter.is-active {
-  border-color: rgba(232, 198, 106, 0.55);
-  background: rgba(232, 198, 106, 0.12);
-  color: #f5d98b;
+  border-color: var(--p-accent-border);
+  background: var(--p-accent-bg);
+  color: var(--p-accent-soft);
 }
 
 .combo-creator-grid {
@@ -228,10 +228,10 @@
   gap: 4px;
   min-height: 54px;
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--p-border-strong);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff;
+  background: var(--p-bg-subtle);
+  color: var(--p-text);
   cursor: pointer;
 }
 
@@ -241,7 +241,7 @@
 }
 
 .combo-creator-move span {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--p-text-faint);
   font-size: 10px;
   font-weight: 900;
 }
@@ -257,8 +257,8 @@
 
 .combo-creator-primary {
   border: none;
-  background: linear-gradient(135deg, #e8c66a, #c49a2e);
-  color: #1f1a12;
+  background: #8a2e2e;
+  color: #f5f1e8;
 }
 
 .combo-creator-primary:disabled {
@@ -339,7 +339,7 @@
 .combo-dock-save input {
   width: 15px;
   height: 15px;
-  accent-color: #e8c66a;
+  accent-color: var(--p-brass);
 }
 
 .combo-dock-start {
@@ -564,9 +564,9 @@
 .theme-light .combo-source-tab.is-active,
 .theme-light .combo-group-filter.is-active,
 .theme-light .combo-round-chip.is-active {
-  background: #fff8e8;
-  border-color: rgba(196, 154, 46, 0.45);
-  color: #9a7420;
+  background: rgba(138, 46, 46, 0.1);
+  border-color: rgba(138, 46, 46, 0.28);
+  color: #742525;
 }
 
 .theme-light .combo-chip {
@@ -599,6 +599,6 @@
 }
 
 .theme-light .combo-fav-btn.is-on {
-  background: #fff8e8;
-  color: #9a7420;
+  background: rgba(138, 46, 46, 0.1);
+  color: #742525;
 }

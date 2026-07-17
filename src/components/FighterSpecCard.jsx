@@ -9,7 +9,6 @@ export default function FighterSpecCard({
   titleBadge,
   careerStageKo,
   streakDays = 0,
-  onOpenCardMaker,
   onUploadPhoto,
   onRemovePhoto,
   children,
@@ -169,15 +168,6 @@ export default function FighterSpecCard({
           </div>
         </div>
 
-        {onOpenCardMaker ? (
-          <button
-            type="button"
-            className="fighter-nameplate-cta"
-            onClick={onOpenCardMaker}
-          >
-            명패 공유하기
-          </button>
-        ) : null}
       </div>
     </section>
   );

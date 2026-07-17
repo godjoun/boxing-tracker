@@ -2269,7 +2269,6 @@ export default function ProfilePage({
         titleBadge={profileStats.fighterTitleEn}
         careerStageKo={profileStats.careerStageKo}
         streakDays={levelUpStreakDays}
-        onOpenCardMaker={scrollToCardMaker}
         onUploadPhoto={() => fileInputRef.current?.click()}
         onRemovePhoto={handleRemovePhoto}
       >

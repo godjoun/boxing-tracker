@@ -549,6 +549,35 @@ export function TrainingProvider({
     };
   }
 
+  /** 온보딩·튜토리얼만 다시. 훈련 기록은 유지 */
+  function restartOnboarding() {
+    resetTutorial();
+    setProfile((prevProfile) =>
+      sanitizeProfileForStorage({
+        ...prevProfile,
+        onboardingComplete: false,
+        updatedAt: new Date().toISOString(),
+      })
+    );
+
+    return { ok: true, clearedData: false };
+  }
+
+  /** 새 사용자용: 기록·피드·프로필을 비우고 온보딩부터 */
+  function resetAppForNewUser() {
+    resetTutorial();
+    setLogs([]);
+    setFeed([]);
+    setMode("solo");
+    setProfile({
+      ...DEFAULT_PROFILE,
+      onboardingComplete: false,
+      updatedAt: new Date().toISOString(),
+    });
+
+    return { ok: true, clearedData: true };
+  }
+
   const value = {
     userId,
     logs,
@@ -561,6 +590,8 @@ export function TrainingProvider({
     updateProfilePhoto,
     removeProfilePhoto,
     completeOnboarding,
+    restartOnboarding,
+    resetAppForNewUser,
 
     addLog,
     updateLog,

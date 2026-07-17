@@ -6,7 +6,13 @@ import {
 } from "../utils/dataBackup";
 
 export default function DataBackupPage({ onGoBack }) {
-  const { logs, buildBackupPayload, restoreBackupFromText } = useTraining();
+  const {
+    logs,
+    buildBackupPayload,
+    restoreBackupFromText,
+    restartOnboarding,
+    resetAppForNewUser,
+  } = useTraining();
   const fileInputRef = useRef(null);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -51,7 +57,7 @@ export default function DataBackupPage({ onGoBack }) {
       const normalizedMode = mode.trim().toLowerCase();
 
       if (normalizedMode !== "replace" && normalizedMode !== "merge") {
-        throw new Error('replace 또는 merge만 입력할 수 있습니다.');
+        throw new Error("replace 또는 merge만 입력할 수 있습니다.");
       }
 
       if (normalizedMode === "replace" && hasExisting) {
@@ -74,6 +80,38 @@ export default function DataBackupPage({ onGoBack }) {
     } catch (importError) {
       setError(importError.message || "백업 파일을 가져오지 못했습니다.");
     }
+  }
+
+  function handleRestartOnboarding() {
+    setError("");
+    setStatus("");
+
+    const confirmed = window.confirm(
+      "온보딩부터 다시 시작할까요?\n\n파이터 이름·신체 정보를 다시 입력합니다.\n훈련 기록은 그대로 남습니다."
+    );
+
+    if (!confirmed) return;
+
+    restartOnboarding();
+  }
+
+  function handleResetApp() {
+    setError("");
+    setStatus("");
+
+    const first = window.confirm(
+      "앱을 처음 상태로 초기화할까요?\n\n이 기기의 훈련 기록·프로필·피드가 모두 삭제되고\n온보딩부터 다시 시작합니다.\n\n다른 사람이 이 폰에서 써볼 때 쓰면 됩니다."
+    );
+
+    if (!first) return;
+
+    const second = window.confirm(
+      "정말 삭제할까요? 이 작업은 되돌릴 수 없습니다.\n\n필요하면 먼저 JSON 백업을 저장하세요."
+    );
+
+    if (!second) return;
+
+    resetAppForNewUser();
   }
 
   return (
@@ -128,12 +166,43 @@ export default function DataBackupPage({ onGoBack }) {
       {status && <p className="backup-status success">{status}</p>}
       {error && <p className="backup-status error">{error}</p>}
 
+      <section className="backup-panel">
+        <p className="home-section-label">RESET</p>
+        <h2>온보딩 · 초기화</h2>
+        <p className="backup-text">
+          다른 사람이 이 기기에서 써보거나, 온보딩을 다시 보고 싶을 때
+          사용하세요. 새 폰·새 브라우저에서는 자동으로 온보딩부터 시작합니다.
+        </p>
+        <button
+          type="button"
+          className="backup-secondary-button"
+          onClick={handleRestartOnboarding}
+        >
+          온보딩부터 다시 시작
+        </button>
+        <p className="backup-meta">기록은 유지 · 이름·신체 정보만 다시 입력</p>
+        <button
+          type="button"
+          className="backup-danger-button"
+          onClick={handleResetApp}
+        >
+          앱 데이터 전체 초기화
+        </button>
+        <p className="backup-meta">
+          기록·프로필 삭제 후 완전 처음 상태 · 베타 테스트용
+        </p>
+      </section>
+
       <section className="backup-panel subtle">
         <p className="home-section-label">TIP</p>
         <ul className="backup-tip-list">
           <li>폰을 바꾸기 전에 백업 파일을 저장해 두세요.</li>
           <li>merge는 같은 id 기록은 덮어쓰고, 새 기록만 추가합니다.</li>
           <li>replace는 현재 기기 데이터를 백업 내용으로 완전히 교체합니다.</li>
+          <li>
+            친구 폰에서 링크만 열면 그 기기는 비어 있어서 바로 온보딩이
+            나옵니다.
+          </li>
         </ul>
       </section>
     </main>

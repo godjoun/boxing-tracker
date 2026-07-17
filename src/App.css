@@ -5818,7 +5818,8 @@
 }
 
 .backup-primary-button,
-.backup-secondary-button {
+.backup-secondary-button,
+.backup-danger-button {
   margin-top: 16px;
   width: 100%;
   min-height: 48px;
@@ -5830,14 +5831,20 @@
 }
 
 .backup-primary-button {
-  background: #ef3f36;
-  color: #fff;
+  background: #8a2e2e;
+  color: #f5f1e8;
 }
 
 .backup-secondary-button {
   background: #f4f2ef;
   color: #171717;
   border: 1px solid #e7e2dc;
+}
+
+.backup-danger-button {
+  border: 1px solid rgba(138, 46, 46, 0.35);
+  background: rgba(138, 46, 46, 0.1);
+  color: #8a2e2e;
 }
 
 .backup-status {
@@ -6031,9 +6038,15 @@
 }
 
 .theme-dark .backup-secondary-button {
-  background: rgba(255,255,255,.06);
+  background: #000000;
   color: #fff;
   border-color: rgba(255,255,255,.1);
+}
+
+.theme-dark .backup-danger-button {
+  background: rgba(138, 46, 46, 0.16);
+  color: #cf8b8b;
+  border-color: rgba(138, 46, 46, 0.4);
 }
 
 .theme-dark .backup-status.success {

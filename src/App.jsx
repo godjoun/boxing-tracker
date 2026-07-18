@@ -357,7 +357,7 @@ function MainAppShell({ theme, toggleTheme }) {
           <span className="app-nav-icon" aria-hidden="true">
             ↑
           </span>
-          <span className="app-nav-label">레벨업</span>
+          <span className="app-nav-label">훈련</span>
         </button>
 
         <button

@@ -1585,11 +1585,20 @@
 }
 
 .technique-catalog-label {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   color: rgba(255, 255, 255, 0.5);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.12em;
+}
+
+.technique-catalog-help {
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
 }
 
 .technique-catalog-grid {
@@ -1744,6 +1753,10 @@
 
 .theme-light .technique-catalog-label {
   color: #8a7d6b;
+}
+
+.theme-light .technique-catalog-help {
+  color: #6b6254;
 }
 
 .theme-light .technique-cat-card {

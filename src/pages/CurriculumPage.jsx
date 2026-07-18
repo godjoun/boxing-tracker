@@ -386,7 +386,7 @@ export default function CurriculumPage({
           {activeTab === "today"
             ? "오늘 할 세션만 빠르게 시작하세요."
             : activeTab === "techniques"
-              ? "기술별로 골라 배우고 바로 훈련까지 이어가세요."
+              ? "4주 코스를 기술별로 모아 둔 목록입니다. 새 수업이 아니라 같은 세션의 다른 보기예요."
               : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
         </p>
       </header>
@@ -516,7 +516,10 @@ export default function CurriculumPage({
             </button>
           ) : null}
 
-          <p className="technique-catalog-label">기술별 배우기</p>
+          <p className="technique-catalog-label">기술별 모아보기</p>
+          <p className="technique-catalog-help">
+            아래 항목을 열면 4주 코스의 해당 DAY로 이동합니다.
+          </p>
           <div className="technique-catalog-grid">
             {techniqueCatalog.map((category) => {
               const isOpen = openCategoryId === category.id;

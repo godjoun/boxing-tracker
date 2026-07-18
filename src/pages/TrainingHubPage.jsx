@@ -37,22 +37,22 @@ export default function TrainingHubPage({
     {
       icon: "1",
       title: "훈련을 끝까지 완료하기",
-      description: "타이머를 완료하면 자동으로 기록되고 EXP가 쌓여요.",
+      description: "타이머를 완료하면 라운드가 자동으로 기록에 남아요.",
     },
     {
       icon: "2",
-      title: "기록 탭에서 직접 작성하기",
-      description: "타이머 없이 운동했다면 기록 탭에서 수동으로 남겨도 EXP를 받아요.",
+      title: "기록 탭에서 직접 남기기",
+      description: "타이머 없이 운동했다면 기록 탭에서 수동으로 남겨도 됩니다.",
     },
     {
       icon: "3",
       title: "라운드·시간을 채우기",
-      description: "1R = 10 EXP, 1분 = 0.5 EXP. 오래, 많이 버틸수록 빨리 올라가요.",
+      description: "많이, 오래 버틸수록 성장 흔적이 선명해져요.",
     },
     {
       icon: "4",
-      title: "스파링·고난이도에 보너스",
-      description: "스파링 기록은 추가 EXP가 있고, 난이도가 높을수록 배율이 커져요.",
+      title: "명패로 증명하기",
+      description: "완료한 라운드는 명패 카드로 남겨 두고 공유할 수 있어요.",
     },
   ];
 
@@ -88,9 +88,9 @@ export default function TrainingHubPage({
   return (
     <main className="hub-page levelup-page">
       <header className="levelup-header">
-        <h1 className="levelup-title">레벨업</h1>
+        <h1 className="levelup-title">훈련</h1>
         <p className="levelup-subtitle">
-          타이머로 훈련하고 EXP를 쌓아 레벨을 올려보세요.
+          타이머로 라운드를 남기고, 오늘의 훈련을 이어가세요.
         </p>
       </header>
 
@@ -103,7 +103,7 @@ export default function TrainingHubPage({
             <p className="levelup-timer-kicker">ROUND TIMER</p>
             <h2 className="levelup-timer-title">라운드 타이머</h2>
             <span className="levelup-timer-desc">
-              1R = 운동 1세트 · 완료 시 EXP 자동 기록
+              1R = 운동 1세트 · 완료 시 기록에 자동 저장
             </span>
           </div>
         </div>

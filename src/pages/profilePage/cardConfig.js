@@ -373,14 +373,15 @@ export function getOverlayStyle(filterId, intensity) {
 }
 
 export function getCardPreviewOverlay(cardStyle, filterId, intensity) {
-  if (cardStyle === "social") {
-    const tint = getOverlayStyle(filterId, intensity * 0.92);
-    return `${tint}, linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.12) 45%, rgba(0, 0, 0, 0.28))`;
+  // LEVEL UP(바이비트형) 카드는 사진에 levelup 필터만 쓰고,
+  // 테마 오버레이를 여러 겹 쌓지 않는다.
+  if (cardStyle === "basic") {
+    return "linear-gradient(90deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.42) 42%, rgba(0, 0, 0, 0.12) 72%, rgba(0, 0, 0, 0.04) 100%)";
   }
 
-  if (cardStyle === "poster") {
-    const tint = getOverlayStyle(filterId, intensity * 0.72);
-    return `${tint}, radial-gradient(circle at center, transparent 46%, rgba(0, 0, 0, 0.28))`;
+  // STORY / POSTER는 사진 위 검정 그라데이션을 쓰지 않는다.
+  if (cardStyle === "social" || cardStyle === "poster") {
+    return "none";
   }
 
   return getOverlayStyle(filterId, intensity);

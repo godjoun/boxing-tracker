@@ -210,6 +210,10 @@ export default function TimerPage({
   const isIntervalMode = selectedPresetId === INTERVAL_TIMER_PRESET.id;
 
   const [totalRounds, setTotalRounds] = useState(initialTimerState.totalRounds);
+  const [roundsDraft, setRoundsDraft] = useState(
+    String(initialTimerState.totalRounds)
+  );
+  const roundsInputFocusedRef = useRef(false);
   const [workSecondsSetting, setWorkSecondsSetting] = useState(
     initialTimerState.workSecondsSetting
   );
@@ -311,6 +315,12 @@ export default function TimerPage({
   }, []);
 
   useTimerSessionListener(applyPersistedState);
+
+  useEffect(() => {
+    // 입력 중에 totalRounds가 바뀌면 빈 칸/작성 중이던 값이 도로 덮인다.
+    if (roundsInputFocusedRef.current) return;
+    setRoundsDraft(String(totalRounds));
+  }, [totalRounds]);
 
   function clearCurriculumContext() {
     setCurriculumSessionId(null);
@@ -613,6 +623,48 @@ export default function TimerPage({
     savedLogRef.current = false;
   };
 
+  function getCompletedRoundsSoFar() {
+    if (!hasStartedSession) return 0;
+    if (phase === "prep") return 0;
+    if (phase === "work") return Math.max(0, currentRound - 1);
+    if (phase === "rest") return currentRound;
+    if (phase === "cooldown" || phase === "done") return totalRounds;
+    return 0;
+  }
+
+  function savePartialSession(completedRounds) {
+    if (savedLogRef.current || hasSavedLog) return null;
+
+    const safeRounds = Math.max(1, Math.min(completedRounds, totalRounds));
+    const minutesPerRound = Math.max(1, Math.round(workSecondsSetting / 60));
+    const minutes = safeRounds * minutesPerRound;
+
+    savedLogRef.current = true;
+
+    const savedLog = addLog({
+      type: curriculumLogType || `${safeRounds}R 라운드 훈련`,
+      minutes,
+      duration: minutes,
+      rounds: safeRounds,
+      totalRounds: safeRounds,
+      completedRounds: safeRounds,
+      difficulty: "normal",
+      source: "timer",
+      memo: `${routineTitle} · ${safeRounds}/${totalRounds}라운드 기록 / 운동 ${formatDurationLabel(
+        workSecondsSetting
+      )} / 휴식 ${formatDurationLabel(restSecondsSetting)}`,
+      publicComment: curriculumSessionId
+        ? `${routineTitle} · ${safeRounds}라운드까지 기록했다.`
+        : `${safeRounds}R 기록. 오늘은 여기까지 벨을 울렸다.`,
+    });
+
+    setCompletionResult(getCompletionDelta(logs, savedLog));
+    setCompletedLogId(savedLog.id);
+    setCompletedAt(new Date());
+    setHasSavedLog(true);
+    return savedLog;
+  }
+
   const applyLaunchConfig = (config) => {
     if (!config) return;
 
@@ -699,6 +751,29 @@ export default function TimerPage({
   };
 
   const handleReset = () => {
+    const completedRounds = getCompletedRoundsSoFar();
+
+    if (hasStartedSession && phase !== "done" && completedRounds >= 1) {
+      const ok = window.confirm(
+        `지금까지 ${completedRounds}라운드를 기록하고 초기화할까요?`
+      );
+      if (!ok) return;
+
+      setIsRunning(false);
+      savePartialSession(completedRounds);
+      setPhase("done");
+      clearTimerMediaSession();
+      stopTimerAudioSession();
+      return;
+    }
+
+    if (hasStartedSession && phase !== "done") {
+      const ok = window.confirm(
+        "아직 완료한 라운드가 없어요. 타이머를 초기화할까요?"
+      );
+      if (!ok) return;
+    }
+
     resetTimerState();
     clearCurriculumContext();
     clearTimerSession();
@@ -707,9 +782,25 @@ export default function TimerPage({
   };
 
   const handleEndCurriculum = () => {
+    const completedRounds = getCompletedRoundsSoFar();
+
+    if (completedRounds >= 1) {
+      const ok = window.confirm(
+        `지금까지 ${completedRounds}라운드를 기록하고 커리큘럼을 종료할까요?`
+      );
+      if (!ok) return;
+
+      setIsRunning(false);
+      savePartialSession(completedRounds);
+      setPhase("done");
+      clearTimerMediaSession();
+      stopTimerAudioSession();
+      return;
+    }
+
     if (
       !window.confirm(
-        "커리큘럼을 종료할까요? 이번 세션은 완료 처리되지 않습니다."
+        "아직 완료한 라운드가 없어요. 커리큘럼을 종료할까요?"
       )
     ) {
       return;
@@ -723,15 +814,49 @@ export default function TimerPage({
     resetTimerState();
   };
 
-  const handleTotalRoundsChange = (value) => {
-    const number = Number(value);
+  const commitTotalRounds = (rawValue) => {
+    const number = Math.min(20, Math.max(1, Number(rawValue) || 1));
+    setRoundsDraft(String(number));
 
-    if (!number || number < 1) return;
+    if (number === totalRounds) return;
 
     setSelectedPresetId("custom");
     clearCurriculumContext();
     setTotalRounds(number);
     resetTimerState(workSecondsSetting);
+  };
+
+  const handleTotalRoundsChange = (value) => {
+    // 숫자만 허용하되, 전부 지운 빈 문자열은 입력 중에 유지한다.
+    const digitsOnly = String(value ?? "").replace(/\D/g, "");
+
+    if (digitsOnly === "") {
+      setRoundsDraft("");
+      return;
+    }
+
+    setRoundsDraft(digitsOnly);
+
+    const number = Number(digitsOnly);
+    if (!Number.isFinite(number) || number < 1) return;
+
+    const clamped = Math.min(20, number);
+    setSelectedPresetId("custom");
+    clearCurriculumContext();
+    setTotalRounds(clamped);
+    if (clamped !== number) {
+      setRoundsDraft(String(clamped));
+    }
+    resetTimerState(workSecondsSetting);
+  };
+
+  const handleTotalRoundsFocus = () => {
+    roundsInputFocusedRef.current = true;
+  };
+
+  const handleTotalRoundsBlur = () => {
+    roundsInputFocusedRef.current = false;
+    commitTotalRounds(roundsDraft);
   };
 
   const handleWorkSecondsChange = (deltaSeconds) => {
@@ -862,10 +987,32 @@ export default function TimerPage({
   }
 
   function handleFocusStop() {
-    const ok = window.confirm("훈련을 종료하고 타이머를 초기화할까요?");
+    const completedRounds = getCompletedRoundsSoFar();
+
+    if (completedRounds >= 1) {
+      const ok = window.confirm(
+        `지금까지 ${completedRounds}라운드를 기록하고 종료할까요?`
+      );
+      if (!ok) return;
+
+      setIsRunning(false);
+      savePartialSession(completedRounds);
+      setPhase("done");
+      clearTimerMediaSession();
+      stopTimerAudioSession();
+      return;
+    }
+
+    const ok = window.confirm(
+      "아직 완료한 라운드가 없어요. 훈련을 종료할까요?"
+    );
     if (!ok) return;
 
-    handleReset();
+    resetTimerState();
+    clearCurriculumContext();
+    clearTimerSession();
+    clearTimerMediaSession();
+    stopTimerAudioSession();
   }
 
   const timerCardStyle = {
@@ -926,12 +1073,17 @@ export default function TimerPage({
               <label className="timer-setup-field">
                 <span>{isIntervalMode ? "세트" : "라운드"}</span>
                 <input
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={totalRounds}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  enterKeyHint="done"
+                  value={roundsDraft}
+                  onFocus={handleTotalRoundsFocus}
                   onChange={(event) => handleTotalRoundsChange(event.target.value)}
+                  onBlur={handleTotalRoundsBlur}
                   disabled={isRunning}
+                  aria-label={isIntervalMode ? "세트 수" : "라운드 수"}
                 />
               </label>
 

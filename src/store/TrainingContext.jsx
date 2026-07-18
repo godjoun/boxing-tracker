@@ -22,7 +22,7 @@ import {
   parseBackupFileText,
   validateBackupPayload,
 } from "../utils/dataBackup";
-import { validateBodySpecs } from "../utils/bodySpecs";
+import { validateOnboardingSpecs } from "../utils/bodySpecs";
 import {
   applyLevelBoost,
   getDevUserId,
@@ -325,7 +325,7 @@ export function TrainingProvider({
   }
 
   async function completeOnboarding(form) {
-    const specs = validateBodySpecs(form);
+    const specs = validateOnboardingSpecs(form);
     await registerNickname(specs.nickname, userId);
 
     const nextProfile = sanitizeProfileForStorage({

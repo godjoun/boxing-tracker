@@ -305,6 +305,13 @@ export default function ProfilePage({
     preparingExportKeyRef.current = "";
     setExportPreview(null);
     setCardStyle(styleId);
+
+    // LEVEL UP 카드는 사진에 levelup 필터만 적용한다.
+    if (styleId === "basic") {
+      selectedFilterRef.current = "levelup";
+      posterExportRef.current.selectedFilter = "levelup";
+      setSelectedFilter("levelup");
+    }
   }
 
   useEffect(() => {
@@ -316,8 +323,16 @@ export default function ProfilePage({
     if (cardStyle === "poster") {
       posterExportRef.current.showComment = false;
       setShowComment(false);
+      return;
     }
+
+    // 포스터에서 꺼진 뒤 LEVEL UP / STORY로 오면 코멘트 표시를 다시 켠다.
+    posterExportRef.current.showComment = true;
+    setShowComment(true);
   }, [cardStyle]);
+
+  const activePhotoFilterId =
+    cardStyle === "basic" ? "levelup" : selectedFilter;
 
   useEffect(() => {
     selectedFilterRef.current = selectedFilter;
@@ -444,6 +459,10 @@ export default function ProfilePage({
       ? getDisplayComment(firstLogWithComment)
       : "오늘의 훈련을 끝까지 버텼다.";
   }, [selectedLogs]);
+
+  useEffect(() => {
+    posterExportRef.current.mainComment = mainComment;
+  }, [mainComment]);
 
   function getCardLogTitle(log, index) {
     const customTitle = customTrainingTitle.trim();
@@ -628,20 +647,15 @@ export default function ProfilePage({
     }
 
     if (file.type.startsWith("video/")) {
-      clearVideoObjectUrl();
-
-      const videoUrl = URL.createObjectURL(file);
-      videoObjectUrlRef.current = videoUrl;
-
-      posterExportRef.current.cardMedia = videoUrl;
-      posterExportRef.current.cardMediaType = "video";
-      setCardMediaReady(true);
-      setCardMedia(videoUrl);
-      setCardMediaType("video");
+      alert(
+        "지금은 사진만 카드에 넣을 수 있어요. 영상 저장은 준비 중이라 사진으로 올려 주세요."
+      );
+      event.target.value = "";
       return;
     }
 
-    alert("이미지 또는 동영상 파일만 업로드할 수 있어.");
+    alert("이미지 파일만 업로드할 수 있어요.");
+    event.target.value = "";
   }
 
   function handleRemovePhoto() {
@@ -1343,25 +1357,7 @@ export default function ProfilePage({
       drawNoPhotoCardArt(ctx, width, height, theme);
     }
   
-    const globalShade = ctx.createLinearGradient(0, 0, 0, height);
-  
-    globalShade.addColorStop(
-      0,
-      hasPosterPhoto ? "rgba(0, 0, 0, 0.36)" : "rgba(0, 0, 0, 0.08)"
-    );
-    globalShade.addColorStop(
-      0.22,
-      hasPosterPhoto ? "rgba(0, 0, 0, 0.12)" : "rgba(0, 0, 0, 0.02)"
-    );
-    globalShade.addColorStop(
-      0.48,
-      hasPosterPhoto ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.14)"
-    );
-    globalShade.addColorStop(0.66, "rgba(0, 0, 0, 0.5)");
-    globalShade.addColorStop(1, "rgba(0, 0, 0, 0.96)");
-  
-    ctx.fillStyle = globalShade;
-    ctx.fillRect(0, 0, width, height);
+    // POSTER 저장 이미지는 사진 위 검정 그라데이션을 쓰지 않는다.
   
     const topGlow = ctx.createRadialGradient(centerX, 165, 8, centerX, 165, 720);
   
@@ -1671,11 +1667,20 @@ export default function ProfilePage({
 
   async function createTrainingCardCanvasDataUrl(styleIdForExport) {
     const exportSnapshot = posterExportRef.current || {};
-    const exportFilterId =
+    const exportStyleId =
+      styleIdForExport ||
+      exportSnapshot.cardStyle ||
+      cardStyleRef.current ||
+      cardStyle ||
+      "basic";
+    const rawExportFilterId =
       exportSnapshot.selectedFilter ||
       selectedFilterRef.current ||
       selectedFilter ||
       "levelup";
+    // LEVEL UP 카드 저장 시 사진은 levelup 필터만. 테마 색은 선택한 테마를 따른다.
+    const exportPhotoFilterId =
+      exportStyleId === "basic" ? "levelup" : rawExportFilterId;
     const exportFilterIntensity =
       typeof exportSnapshot.filterIntensity === "number"
         ? exportSnapshot.filterIntensity
@@ -1684,10 +1689,16 @@ export default function ProfilePage({
       typeof exportSnapshot.photoScale === "number"
         ? exportSnapshot.photoScale
         : photoScale;
-    const isSocialExport = styleIdForExport === "social";
+    const exportShowComment =
+      typeof exportSnapshot.showComment === "boolean"
+        ? exportSnapshot.showComment
+        : showComment;
+    const exportMainComment =
+      exportSnapshot.mainComment || mainComment;
+    const isSocialExport = exportStyleId === "social";
     const width = 1080;
     const height = isSocialExport ? 1920 : 1600;
-    const theme = getPosterCanvasTheme(exportFilterId);
+    const theme = getPosterCanvasTheme(rawExportFilterId);
     const canvas = document.createElement("canvas");
 
     canvas.width = width;
@@ -1706,7 +1717,7 @@ export default function ProfilePage({
 
         const hasPhoto = await drawCardPhotoToCanvas(ctx, width, height, {
           fit: "cover",
-          filterId: exportFilterId,
+          filterId: exportPhotoFilterId,
           filterIntensityValue: exportFilterIntensity,
           scalePercent: isSocialExport
             ? exportPhotoScale
@@ -1719,31 +1730,7 @@ export default function ProfilePage({
           drawNoPhotoCardArt(ctx, width, height, theme);
         }
 
-        if (!isSocialExport) {
-          drawPosterOverlay(ctx, width, height, theme);
-        }
-
-        if (isSocialExport) {
-          ctx.save();
-          ctx.globalAlpha = 0.74;
-          drawPosterOverlay(ctx, width, height, theme);
-          ctx.restore();
-          drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto, true);
-        }
-        
-    if (!isSocialExport) {
-      const bottomShade = ctx.createLinearGradient(0, height * 0.48, 0, height);
-    
-      bottomShade.addColorStop(0, "rgba(0, 0, 0, 0)");
-      bottomShade.addColorStop(
-        0.45,
-        hasPhoto ? "rgba(0, 0, 0, 0.38)" : "rgba(0, 0, 0, 0.2)"
-      );
-      bottomShade.addColorStop(1, "rgba(0, 0, 0, 0.92)");
-    
-      ctx.fillStyle = bottomShade;
-      ctx.fillRect(0, 0, width, height);
-    }
+        // STORY / LEVEL UP 저장 이미지는 사진 위 검정 그라데이션을 깔지 않는다.
 
     if (isSocialExport) {
       drawTextFit(ctx, "BOXING TRAINING", 64, 72, 520, {
@@ -1782,8 +1769,8 @@ export default function ProfilePage({
         lineHeightRatio: 0.96,
       });
 
-      if (showComment) {
-        drawWrappedText(ctx, mainComment, 70, 1648, 910, {
+      if (exportShowComment) {
+        drawWrappedText(ctx, exportMainComment, 70, 1648, 910, {
           size: 34,
           weight: 850,
           lineHeight: 48,
@@ -1991,6 +1978,17 @@ export default function ProfilePage({
       ctx.lineWidth = 2;
       ctx.stroke();
 
+      if (exportShowComment) {
+        drawWrappedText(ctx, exportMainComment, left, 1248, width - left * 2, {
+          size: 28,
+          weight: 800,
+          lineHeight: 38,
+          maxLines: 2,
+          color: "rgba(255, 255, 255, 0.78)",
+          align: "left",
+        });
+      }
+
       drawTextFit(ctx, levelUpDisplaySlogan, left + 34, 1360, 650, {
         size: 42,
         minSize: 26,
@@ -2191,7 +2189,7 @@ export default function ProfilePage({
   async function handleSaveCardImage() {
     if (cardMediaType === "video") {
       alert(
-        "영상 카드는 다음 단계에서 저장 기능을 붙일게. 지금은 사진 카드만 이미지 저장이 가능해."
+        "지금은 사진만 저장할 수 있어요. 영상을 지우고 사진으로 다시 만들어 주세요."
       );
       return;
     }
@@ -2677,14 +2675,14 @@ export default function ProfilePage({
                 <p style={styles.cardMakerLabel}>2. 카드 배경 선택 (선택)</p>
                 <p style={styles.cardMakerHelp}>
                   사진이 없어도 ROUND ON 그래픽 카드로 바로 저장할 수 있어요.
-                  원할 때만 훈련 사진이나 영상을 추가하세요.
+                  원할 때만 훈련 사진을 추가하세요. (지금은 사진만 저장됩니다.)
                 </p>
               </div>
 
               <input
                 ref={cardMediaInputRef}
                 type="file"
-                accept="image/*,video/*"
+                accept="image/*"
                 onChange={handleCardMediaChange}
                 style={{ display: "none" }}
               />
@@ -2695,7 +2693,7 @@ export default function ProfilePage({
                   style={styles.photoButton}
                   onClick={() => cardMediaInputRef.current?.click()}
                 >
-                  사진/영상 추가하기
+                  사진 추가하기
                 </button>
 
                 {cardMedia && (
@@ -2704,15 +2702,15 @@ export default function ProfilePage({
                     style={styles.darkButton}
                     onClick={handleRemoveCardMedia}
                   >
-                    선택한 사진/영상 지우기
+                    선택한 사진 지우기
                   </button>
                 )}
               </div>
 
               {cardMediaType === "video" && (
                 <p style={styles.videoNotice}>
-                  영상 카드는 현재 미리보기만 가능해. 영상 저장 기능은 다음
-                  단계에서 붙일게.
+                  예전에 고른 영상이 남아 있어요. 지금은 사진만 저장할 수 있으니
+                  지우고 사진으로 바꿔 주세요.
                 </p>
               )}
             </div>
@@ -2742,6 +2740,11 @@ export default function ProfilePage({
 
             <div style={styles.filterSection}>
               <p style={styles.cardMakerLabel}>4. 카드 테마 선택</p>
+              {cardStyle === "basic" ? (
+                <p style={styles.cardMakerHelp}>
+                  LEVEL UP 카드는 사진에 GOLD 필터만 적용돼. 아래 테마는 숫자·강조 색만 바꿔.
+                </p>
+              ) : null}
 
               {CARD_FILTER_GROUPS.map((groupName) => {
                 const groupFilters = CARD_FILTERS.filter(
@@ -2790,7 +2793,7 @@ export default function ProfilePage({
             </div>
 
             <div style={styles.adjustSection}>
-              <p style={styles.cardMakerLabel}>5. 사진/영상 조절</p>
+              <p style={styles.cardMakerLabel}>5. 사진 조절</p>
 
               <label style={styles.rangeLabel}>
                 <span>테마 강도</span>
@@ -2826,13 +2829,16 @@ export default function ProfilePage({
                   checked={showComment}
                   onChange={(event) => updateShowComment(event.target.checked)}
                   style={styles.commentCheckbox}
+                  disabled={cardStyle === "poster"}
                 />
 
                 <span>카드에 코멘트 표시하기</span>
               </label>
 
               <p style={styles.commentToggleHelp}>
-                끄면 카드 이미지와 공유 문구에서 코멘트가 빠져.
+                {cardStyle === "poster"
+                  ? "POSTER는 포스터 문구만 쓰고, 훈련 코멘트는 넣지 않아."
+                  : "끄면 카드 미리보기·저장 이미지에서 훈련 코멘트가 사라져."}
               </p>
 
               {cardStyle === "basic" ? (
@@ -3108,7 +3114,7 @@ export default function ProfilePage({
                     style={{
                       ...styles.trainingCardImage,
                       objectFit: "cover",
-                      filter: getImageFilter(selectedFilter, filterIntensity),
+                      filter: getImageFilter(activePhotoFilterId, filterIntensity),
                       transform:
                         cardStyle === "social"
                           ? `scale(${photoScale / 100})`
@@ -3127,7 +3133,7 @@ export default function ProfilePage({
                     style={{
                       ...styles.trainingCardImage,
                       objectFit: "cover",
-                      filter: getImageFilter(selectedFilter, filterIntensity),
+                      filter: getImageFilter(activePhotoFilterId, filterIntensity),
                       transform:
                         cardStyle === "social"
                           ? `scale(${photoScale / 100})`
@@ -3157,7 +3163,7 @@ export default function ProfilePage({
                     ...styles.trainingCardOverlay,
                     background: getCardPreviewOverlay(
                       cardStyle,
-                      selectedFilter,
+                      activePhotoFilterId,
                       filterIntensity
                     ),
                     mixBlendMode: "normal",
@@ -3242,6 +3248,10 @@ export default function ProfilePage({
                         ↑
                       </div>
                     </div>
+
+                    {showComment ? (
+                      <p className="level-up-performance-comment">{mainComment}</p>
+                    ) : null}
 
                     <div className="level-up-performance-footer">
                       <span>{levelUpDisplaySlogan}</span>
@@ -3433,7 +3443,7 @@ export default function ProfilePage({
               disabled={isSaveCardDisabled}
             >
               {cardMediaType === "video"
-                ? "영상 저장은 다음 단계"
+                ? "사진으로 바꿔 저장"
                 : isSavingImage
                 ? "이미지 저장 중..."
                 : isCardImagePreparing

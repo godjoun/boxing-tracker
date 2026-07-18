@@ -286,23 +286,94 @@ export default function HomePage({
             type="button"
             className="home-brand-primary"
             data-tutorial-target="home-start"
-            onClick={onOpenTimer}
+            onClick={() => {
+              if (todaysLesson.kind === "session") {
+                onReadLesson?.(todaysLesson.session);
+                return;
+              }
+              onOpenTimer?.();
+            }}
           >
-            오늘 훈련 시작
+            {todaysLesson.kind === "session"
+              ? "오늘 레슨 열기"
+              : dashboard.trainedToday
+                ? "오늘 훈련 이어가기"
+                : "오늘 훈련 시작"}
           </button>
           <button
             type="button"
             className="home-brand-secondary"
             onClick={onGoProfile}
           >
-            내 복서 프로필 보기
+            내 명패 보기
           </button>
         </div>
       </section>
 
-      <section className="home-center-dash" aria-label="대시보드">
+      <section className="home-today-task" aria-label="오늘">
+        <p className="home-today-task-label">오늘</p>
+
+        {todaysLesson.kind === "session" ? (
+          <>
+            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
+            {todaysLesson.goal ? (
+              <p className="home-today-task-copy">{todaysLesson.goal}</p>
+            ) : (
+              <p className="home-today-task-copy">
+                레슨을 읽고, 준비되면 타이머로 이어가세요.
+              </p>
+            )}
+            {todaysLesson.weekLabel || todaysLesson.code ? (
+              <p className="home-today-task-meta">
+                {[todaysLesson.weekLabel, todaysLesson.code]
+                  .filter(Boolean)
+                  .join(" · ")}
+                {todaysLesson.totalSessions
+                  ? ` · ${todaysLesson.completedCount}/${todaysLesson.totalSessions}`
+                  : ""}
+              </p>
+            ) : null}
+
+            <div className="home-today-task-links">
+              <button
+                type="button"
+                className="home-today-task-link"
+                onClick={onOpenTimer}
+              >
+                타이머로 훈련
+              </button>
+              <button
+                type="button"
+                className="home-today-task-link"
+                onClick={() => onOpenCurriculum?.()}
+              >
+                커리큘럼 전체
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
+            <p className="home-today-task-copy">
+              {todaysLesson.message ||
+                "짧게라도 라운드를 남기면 오늘의 흔적이 됩니다."}
+            </p>
+            <div className="home-today-task-links">
+              <button
+                type="button"
+                className="home-today-task-link"
+                onClick={() => onOpenCurriculum?.()}
+              >
+                커리큘럼 보기
+              </button>
+            </div>
+          </>
+        )}
+      </section>
+
+      <section className="home-center-dash" aria-label="오늘의 흔적">
         <div className="home-center-dash-head">
-          <p className="home-center-dash-label">대시보드</p>
+          <p className="home-center-dash-label">오늘의 흔적</p>
           <button
             type="button"
             className={`home-center-dash-edit${
@@ -390,76 +461,6 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <section className="home-today-task" aria-label="오늘 할 일">
-        <p className="home-today-task-label">오늘 할 일</p>
-
-        {todaysLesson.kind === "session" ? (
-          <>
-            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
-            {todaysLesson.goal ? (
-              <p className="home-today-task-copy">{todaysLesson.goal}</p>
-            ) : (
-              <p className="home-today-task-copy">
-                레슨을 읽고 짧게 따라 해 보세요.
-              </p>
-            )}
-            {todaysLesson.weekLabel || todaysLesson.code ? (
-              <p className="home-today-task-meta">
-                {[todaysLesson.weekLabel, todaysLesson.code]
-                  .filter(Boolean)
-                  .join(" · ")}
-                {todaysLesson.totalSessions
-                  ? ` · ${todaysLesson.completedCount}/${todaysLesson.totalSessions}`
-                  : ""}
-              </p>
-            ) : null}
-
-            <button
-              type="button"
-              className="home-today-task-primary"
-              onClick={() => onReadLesson?.(todaysLesson.session)}
-            >
-              레슨 읽기
-            </button>
-
-            <div className="home-today-task-links">
-              <button
-                type="button"
-                className="home-today-task-link"
-                data-tutorial-target="home-start"
-                onClick={onOpenTimer}
-              >
-                타이머
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
-            <p className="home-today-task-copy">
-              {todaysLesson.message || "오늘은 짧게 몸을 풀어 보세요."}
-            </p>
-            <button
-              type="button"
-              className="home-today-task-primary"
-              data-tutorial-target="home-start"
-              onClick={onOpenTimer}
-            >
-              {dashboard.trainedToday ? "훈련 이어가기" : "3R 바로 시작"}
-            </button>
-            <div className="home-today-task-links">
-              <button
-                type="button"
-                className="home-today-task-link"
-                onClick={() => onOpenCurriculum?.()}
-              >
-                커리큘럼 전체 보기
-              </button>
-            </div>
-          </>
-        )}
-      </section>
-
       <details className="home-collapsible home-status-details">
         <summary className="home-collapsible-summary">
           <span className="home-section-label">내 현황</span>
@@ -545,7 +546,7 @@ export default function HomePage({
             className="home-secondary-button"
             onClick={onStartTraining}
           >
-            레벨업 메뉴에서 더 보기
+            훈련 메뉴에서 더 보기
           </button>
 
           {todaysLesson.kind === "session" ? (

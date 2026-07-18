@@ -11,14 +11,15 @@ import { suggestWeightClass } from "../data/proBoxingWeightClasses";
 export default function OnboardingSetupPage() {
   const { profile, userId, completeOnboarding } = useTraining();
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showSpecs, setShowSpecs] = useState(false);
   const [weightClassTouched, setWeightClassTouched] = useState(false);
   const [form, setForm] = useState({
     nickname: profile.nickname === "나" ? "" : profile.nickname || "",
     heightCm: profile.heightCm || "",
     weightKg: profile.weightKg || "",
     reachCm: profile.reachCm || "",
-    weightClass: profile.weightClass || "라이트급",
-    experience: profile.experience || "1년차",
+    weightClass: profile.weightClass || "",
+    experience: profile.experience || "초보 (6개월 미만)",
     area: profile.area || "",
   });
   const [submitting, setSubmitting] = useState(false);
@@ -130,7 +131,7 @@ export default function OnboardingSetupPage() {
           </header>
 
           <div className="onboarding-street-body">
-            <p className="onboarding-street-eyebrow">NO GYM. NO EXCUSE.</p>
+            <p className="onboarding-street-eyebrow">YOUR ROUND. YOUR STORY.</p>
             <h1 className="onboarding-street-title">
               I RULE
               <br />
@@ -141,7 +142,9 @@ export default function OnboardingSetupPage() {
               <br />
               라운드로 증명한다.
             </p>
-            <p className="onboarding-street-copy">NEXT LEGEND? ME.</p>
+            <p className="onboarding-street-copy">
+              이름만 올리면 바로 훈련을 시작할 수 있어요.
+            </p>
           </div>
 
           <footer className="onboarding-street-footer">
@@ -166,15 +169,16 @@ export default function OnboardingSetupPage() {
       <div className="onboarding-card">
         <header className="onboarding-hero">
           <p className="home-brand-name">ROUND ON</p>
-          <h1 className="onboarding-welcome-title">주인공 카드 만들기</h1>
+          <h1 className="onboarding-welcome-title">주인공 이름 정하기</h1>
           <span className="onboarding-hero-note">
-            링네임과 스펙을 정하면 홈 화면에서 이어집니다.
+            링네임만 있으면 시작할 수 있어요. 키·체중은 나중에 명패에서 채워도
+            됩니다.
           </span>
         </header>
 
         <form className="onboarding-form" onSubmit={handleSubmit}>
           <div className="onboarding-field">
-            <span>파이터 이름 (링네임)</span>
+            <span>파이터 이름 (링네임) *</span>
             <div className="onboarding-nickname-row">
               <input
                 type="text"
@@ -208,69 +212,6 @@ export default function OnboardingSetupPage() {
             )}
           </div>
 
-          <div className="onboarding-row">
-            <label className="onboarding-field">
-              <span>키 (cm)</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min="120"
-                max="230"
-                value={form.heightCm}
-                onChange={(event) => updateField("heightCm", event.target.value)}
-                placeholder="175"
-                disabled={submitting}
-              />
-            </label>
-
-            <label className="onboarding-field">
-              <span>몸무게 (kg)</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                min="35"
-                max="200"
-                step="0.1"
-                value={form.weightKg}
-                onChange={(event) => updateField("weightKg", event.target.value)}
-                placeholder="70"
-                disabled={submitting}
-              />
-            </label>
-          </div>
-
-          <label className="onboarding-field">
-            <span>팔 길이 · 리치 (cm, 선택)</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min="100"
-              max="250"
-              value={form.reachCm}
-              onChange={(event) => updateField("reachCm", event.target.value)}
-              placeholder="178"
-              disabled={submitting}
-            />
-          </label>
-
-          <label className="onboarding-field">
-            <span>체급</span>
-            <select
-              value={form.weightClass}
-              onChange={(event) => {
-                setWeightClassTouched(true);
-                updateField("weightClass", event.target.value);
-              }}
-              disabled={submitting}
-            >
-              {WEIGHT_CLASSES.map((item) => (
-                <option key={item} value={item}>
-                  {formatWeightClassOption(item)}
-                </option>
-              ))}
-            </select>
-          </label>
-
           <label className="onboarding-field">
             <span>경력</span>
             <select
@@ -288,16 +229,100 @@ export default function OnboardingSetupPage() {
             </select>
           </label>
 
-          <label className="onboarding-field">
-            <span>활동 지역 (선택)</span>
-            <input
-              type="text"
-              value={form.area}
-              onChange={(event) => updateField("area", event.target.value)}
-              placeholder="예: 강남, 홍대"
-              disabled={submitting}
-            />
-          </label>
+          <button
+            type="button"
+            className="onboarding-specs-toggle"
+            onClick={() => setShowSpecs((current) => !current)}
+          >
+            {showSpecs ? "스펙 입력 접기" : "키·체중 입력 (선택)"}
+          </button>
+
+          {showSpecs ? (
+            <div className="onboarding-specs-panel">
+              <p className="onboarding-inline-note">
+                비워 두어도 됩니다. 명패·스파링에서 나중에 수정할 수 있어요.
+              </p>
+
+              <div className="onboarding-row">
+                <label className="onboarding-field">
+                  <span>키 (cm)</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min="120"
+                    max="230"
+                    value={form.heightCm}
+                    onChange={(event) =>
+                      updateField("heightCm", event.target.value)
+                    }
+                    placeholder="선택"
+                    disabled={submitting}
+                  />
+                </label>
+
+                <label className="onboarding-field">
+                  <span>몸무게 (kg)</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="35"
+                    max="200"
+                    step="0.1"
+                    value={form.weightKg}
+                    onChange={(event) =>
+                      updateField("weightKg", event.target.value)
+                    }
+                    placeholder="선택"
+                    disabled={submitting}
+                  />
+                </label>
+              </div>
+
+              <label className="onboarding-field">
+                <span>팔 길이 · 리치 (cm)</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="100"
+                  max="250"
+                  value={form.reachCm}
+                  onChange={(event) => updateField("reachCm", event.target.value)}
+                  placeholder="선택"
+                  disabled={submitting}
+                />
+              </label>
+
+              <label className="onboarding-field">
+                <span>체급</span>
+                <select
+                  value={form.weightClass}
+                  onChange={(event) => {
+                    setWeightClassTouched(true);
+                    updateField("weightClass", event.target.value);
+                  }}
+                  disabled={submitting}
+                >
+                  <option value="">나중에 정하기</option>
+                  {WEIGHT_CLASSES.map((item) => (
+                    <option key={item} value={item}>
+                      {formatWeightClassOption(item)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="onboarding-field">
+                <span>활동 지역</span>
+                <input
+                  type="text"
+                  value={form.area}
+                  onChange={(event) => updateField("area", event.target.value)}
+                  placeholder="예: 강남, 홍대"
+                  disabled={submitting}
+                />
+              </label>
+            </div>
+          ) : null}
 
           {error ? (
             <p className="login-message login-message-error">{error}</p>

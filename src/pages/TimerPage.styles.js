@@ -164,13 +164,13 @@ export const styles = {
   },
 
   restBadge: {
-    backgroundColor: "#6d8aa0",
-    color: "#0e1519",
+    backgroundColor: "#3a3a3e",
+    color: "#e8e8ea",
   },
 
   doneBadge: {
-    backgroundColor: "#7d9d84",
-    color: "#0d1710",
+    backgroundColor: "#5a5a5e",
+    color: "#ffffff",
   },
 
   roundText: {

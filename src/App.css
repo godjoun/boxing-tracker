@@ -79,16 +79,16 @@
   --p-hero-bg: var(--p-ash-card);
   --p-shadow-hero: none;
   --p-shadow-accent: 0 8px 20px rgba(0, 0, 0, 0.3);
-  --p-done-bg: #12190f;
-  --p-done-title: #a3c0a9;
-  --p-done-text: #c7d8c9;
-  --p-growth: #a3c0a9;
-  --p-growth-soft: rgba(125, 157, 132, 0.82);
-  --p-growth-fill: linear-gradient(90deg, #7d9d84, #9db99f);
-  --p-state-done: #a3c0a9;
-  --p-state-done-solid: #7d9d84;
-  --p-state-rest: #9db6c8;
-  --p-state-rest-solid: #6d8aa0;
+  --p-done-bg: #1c1c1e;
+  --p-done-title: #c4c4c8;
+  --p-done-text: #a0a0a5;
+  --p-growth: #c4c4c8;
+  --p-growth-soft: rgba(160, 160, 165, 0.82);
+  --p-growth-fill: linear-gradient(90deg, #8a2e2e, #a34a4a);
+  --p-state-done: #c4c4c8;
+  --p-state-done-solid: #5a5a5e;
+  --p-state-rest: #a0a0a5;
+  --p-state-rest-solid: #3a3a3e;
   --gold: #a0a0a5;
   --gold-dark: #8a2e2e;
   --gold-soft: #c4c4c8;
@@ -4648,8 +4648,8 @@
   display: grid;
   place-items: center;
   border-radius: 16px;
-  background: rgba(193, 160, 90, 0.12);
-  color: var(--p-brass, #c1a05a);
+  background: rgba(138, 46, 46, 0.16);
+  color: #cf8b8b;
   font-size: 22px;
   font-weight: 900;
 }
@@ -4659,7 +4659,7 @@
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.14em;
-  color: var(--p-brass, #c1a05a);
+  color: #cf8b8b;
 }
 
 .levelup-timer-title {
@@ -4746,7 +4746,7 @@
 
 .levelup-box-card-accent {
   background:
-    radial-gradient(circle at 88% 0, rgba(212, 168, 50, 0.14), transparent 38%),
+    radial-gradient(circle at 88% 0, rgba(138, 46, 46, 0.16), transparent 38%),
     var(--p-bg-card);
   border-color: var(--p-border-strong);
   box-shadow: var(--p-shadow-hero);
@@ -4813,7 +4813,7 @@
 .levelup-progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #e8c66a, #c49a2e);
+  background: linear-gradient(90deg, #8a2e2e, #a34a4a);
 }
 
 .levelup-progress-note {
@@ -7958,8 +7958,11 @@
 .theme-dark .curriculum-lesson-card,
 .theme-dark .combo-creator-saved-item,
 .theme-dark .combo-fighter-combo,
-.theme-dark .curriculum-timer-step {
-  background: #000000;
+.theme-dark .curriculum-timer-step,
+.theme-dark .strength-card,
+.theme-dark .strength-day-panel,
+.theme-dark .levelup-box-card {
+  background: #242426;
 }
 
 .theme-dark .home-features .app-menu-board,
@@ -8037,7 +8040,7 @@
   border-color: rgba(138, 46, 46, 0.3);
   background:
     radial-gradient(circle at 100% 0, rgba(138, 46, 46, 0.18), transparent 44%),
-    #000000;
+    #242426;
 }
 
 .theme-dark .timer-complete-card {
@@ -8094,7 +8097,7 @@
 .theme-dark .curriculum-graduate-card {
   background:
     linear-gradient(160deg, rgba(138, 46, 46, 0.16), transparent),
-    #000000;
+    #242426;
 }
 
 .theme-dark .curriculum-timeline::before {

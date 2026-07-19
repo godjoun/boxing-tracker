@@ -112,7 +112,7 @@
 .curriculum-progress-bar div {
   height: 100%;
   border-radius: inherit;
-  background: #aaa095;
+  background: #8a2e2e;
 }
 
 .curriculum-progress-note {
@@ -278,7 +278,7 @@
 .curriculum-roadmap-chip-bar div {
   height: 100%;
   border-radius: inherit;
-  background: #aaa095;
+  background: #8a2e2e;
 }
 
 .curriculum-roadmap-chip.is-active {
@@ -287,11 +287,11 @@
 }
 
 .curriculum-roadmap-chip.is-done {
-  border-color: rgba(125, 157, 132, 0.28);
+  border-color: rgba(160, 160, 165, 0.28);
 }
 
 .curriculum-roadmap-chip.is-done .curriculum-roadmap-chip-bar div {
-  background: linear-gradient(90deg, #7d9d84, #9db99f);
+  background: linear-gradient(90deg, #8a2e2e, #a34a4a);
 }
 
 .curriculum-timeline {
@@ -488,8 +488,8 @@
   margin: 8px 0 0 !important;
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(193, 160, 90, 0.08);
-  color: #c9b990 !important;
+  background: rgba(138, 46, 46, 0.1);
+  color: #cf8b8b !important;
   font-size: 11px !important;
   font-weight: 800;
   line-height: 1.45 !important;
@@ -607,8 +607,8 @@
   margin-bottom: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(232, 198, 106, 0.14);
-  color: var(--p-brass-soft);
+  background: rgba(138, 46, 46, 0.14);
+  color: #cf8b8b;
   font-size: 10px;
   font-weight: 900;
 }
@@ -912,12 +912,12 @@
 }
 
 .curriculum-intensity-chip.is-active {
-  border-color: rgba(212, 168, 50, 0.55);
-  background: rgba(212, 168, 50, 0.12);
+  border-color: rgba(138, 46, 46, 0.55);
+  background: rgba(138, 46, 46, 0.12);
 }
 
 .curriculum-adjusted-badge {
-  background: rgba(212, 168, 50, 0.18) !important;
+  background: rgba(138, 46, 46, 0.18) !important;
   color: var(--p-brass-soft) !important;
 }
 
@@ -1101,10 +1101,10 @@
 }
 
 .curriculum-graduate-card {
-  border-color: rgba(212, 168, 50, 0.38);
+  border-color: rgba(138, 46, 46, 0.38);
   background: linear-gradient(
     160deg,
-    rgba(212, 168, 50, 0.16),
+    rgba(138, 46, 46, 0.16),
     rgba(255, 255, 255, 0.03)
   );
 }
@@ -1145,7 +1145,7 @@
   margin-top: 6px;
   padding: 3px 8px;
   border-radius: 8px;
-  background: rgba(212, 168, 50, 0.14);
+  background: rgba(138, 46, 46, 0.14);
   color: var(--p-brass-soft);
   font-size: 10px;
   font-weight: 900;
@@ -1200,7 +1200,7 @@
 
 .theme-light .curriculum-session.is-next {
   border-color: rgba(196, 154, 46, 0.38);
-  background: rgba(212, 168, 50, 0.1);
+  background: rgba(138, 46, 46, 0.1);
 }
 
 .theme-light .curriculum-progress-bar {
@@ -1208,7 +1208,7 @@
 }
 
 .theme-light .curriculum-progress-bar div {
-  background: linear-gradient(90deg, #c49a2e, #e8c66a);
+  background: linear-gradient(90deg, #8a2e2e, #a34a4a);
 }
 
 .theme-light .curriculum-cta,
@@ -1218,7 +1218,7 @@
 }
 
 .theme-light .curriculum-today-meta span {
-  background: rgba(212, 168, 50, 0.14);
+  background: rgba(138, 46, 46, 0.14);
   color: #a67c00;
 }
 
@@ -1260,7 +1260,7 @@
 
 .theme-light .curriculum-roadmap-chip.is-active,
 .theme-light .curriculum-timeline-week.is-open .curriculum-timeline-week-head {
-  background: rgba(212, 168, 50, 0.1);
+  background: rgba(138, 46, 46, 0.1);
   border-color: rgba(196, 154, 46, 0.34);
 }
 
@@ -1293,7 +1293,7 @@
 }
 
 .theme-light .curriculum-session-meta span {
-  background: rgba(212, 168, 50, 0.1);
+  background: rgba(138, 46, 46, 0.1);
   color: #6b6254;
 }
 
@@ -1310,7 +1310,7 @@
 }
 
 .theme-light .curriculum-session-schedule {
-  background: rgba(212, 168, 50, 0.12);
+  background: rgba(138, 46, 46, 0.12);
   color: #a67c00 !important;
 }
 
@@ -1637,11 +1637,11 @@
 }
 
 .technique-cat-card.accent-gold {
-  border-color: rgba(212, 168, 50, 0.32);
+  border-color: rgba(138, 46, 46, 0.32);
 }
 
 .technique-cat-card.accent-orange {
-  border-color: rgba(193, 160, 90, 0.2);
+  border-color: rgba(138, 46, 46, 0.22);
 }
 
 .technique-cat-icon {

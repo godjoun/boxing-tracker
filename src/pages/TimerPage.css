@@ -8,7 +8,7 @@
 
 .timer-composer-preview {
   margin: 0 !important;
-  color: #f5d98b !important;
+  color: #ffffff !important;
   font-size: 28px !important;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -409,7 +409,7 @@
 
 .timer-still-kicker {
   margin: 0 0 22px;
-  color: rgba(193, 160, 90, 0.92);
+  color: #cf8b8b;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.34em;
@@ -492,7 +492,7 @@
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -0.01em;
-  color: #c9a865;
+  color: #cf8b8b;
 }
 
 .timer-still-hours {

@@ -4,10 +4,10 @@
   border-radius: 22px;
   background: linear-gradient(
     165deg,
-    rgba(212, 168, 50, 0.14) 0%,
+    rgba(138, 46, 46, 0.14) 0%,
     rgba(13, 13, 14, 0.92) 42%
   );
-  border: 1px solid rgba(212, 168, 50, 0.28);
+  border: 1px solid rgba(138, 46, 46, 0.28);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
   text-align: left;
 }
@@ -29,7 +29,7 @@
 .curriculum-timer-badge {
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(212, 168, 50, 0.16);
+  background: rgba(138, 46, 46, 0.16);
   color: var(--p-brass-soft);
   font-size: 10px;
   font-weight: 900;
@@ -89,13 +89,13 @@
 }
 
 .curriculum-timer-focus.is-rest {
-  border-color: rgba(109, 138, 160, 0.28);
-  background: rgba(109, 138, 160, 0.12);
+  border-color: rgba(160, 160, 165, 0.28);
+  background: rgba(160, 160, 165, 0.12);
 }
 
 .curriculum-timer-focus.is-prep {
-  border-color: rgba(125, 157, 132, 0.28);
-  background: rgba(125, 157, 132, 0.1);
+  border-color: rgba(160, 160, 165, 0.28);
+  background: rgba(160, 160, 165, 0.1);
 }
 
 .curriculum-timer-focus-label {
@@ -108,11 +108,11 @@
 }
 
 .curriculum-timer-focus.is-rest .curriculum-timer-focus-label {
-  color: #9db6c8;
+  color: #a0a0a5;
 }
 
 .curriculum-timer-focus.is-prep .curriculum-timer-focus-label {
-  color: #a3c0a9;
+  color: #c4c4c8;
 }
 
 .curriculum-timer-focus strong {
@@ -151,9 +151,9 @@
 .curriculum-timer-combo-chip {
   padding: 5px 10px;
   border-radius: 10px;
-  background: rgba(212, 168, 50, 0.18);
-  border: 1px solid rgba(212, 168, 50, 0.34);
-  color: #f5d98b;
+  background: rgba(138, 46, 46, 0.18);
+  border: 1px solid rgba(138, 46, 46, 0.34);
+  color: #cf8b8b;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -178,8 +178,8 @@
 }
 
 .curriculum-timer-step.is-active {
-  border-color: rgba(212, 168, 50, 0.55);
-  background: rgba(212, 168, 50, 0.14);
+  border-color: rgba(138, 46, 46, 0.55);
+  background: rgba(138, 46, 46, 0.14);
 }
 
 .curriculum-timer-step span {
@@ -234,7 +234,7 @@
 }
 
 .curriculum-timer-drill-dot.is-done {
-  background: rgba(212, 168, 50, 0.45);
+  background: rgba(138, 46, 46, 0.45);
 }
 
 .curriculum-timer-drill-dot.is-active {
@@ -252,7 +252,7 @@
 
 .curriculum-timer-rest-hint {
   margin: 10px 0 0;
-  color: rgba(147, 197, 253, 0.82);
+  color: rgba(160, 160, 165, 0.85);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -301,8 +301,8 @@
 }
 
 .curriculum-timer-drill-item.is-active {
-  border-color: rgba(212, 168, 50, 0.45);
-  background: rgba(212, 168, 50, 0.1);
+  border-color: rgba(138, 46, 46, 0.45);
+  background: rgba(138, 46, 46, 0.1);
 }
 
 .curriculum-timer-drill-item strong {
@@ -330,7 +330,7 @@
 .theme-light .curriculum-timer-panel {
   background: linear-gradient(
     165deg,
-    rgba(212, 168, 50, 0.18) 0%,
+    rgba(138, 46, 46, 0.18) 0%,
     #ffffff 48%
   );
   border-color: rgba(196, 154, 46, 0.28);

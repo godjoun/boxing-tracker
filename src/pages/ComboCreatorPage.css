@@ -79,9 +79,9 @@
   gap: 1px;
   min-width: 46px;
   padding: 7px 9px;
-  border: 1px solid rgba(232, 198, 106, 0.22);
+  border: 1px solid rgba(138, 46, 46, 0.22);
   border-radius: 10px;
-  background: rgba(232, 198, 106, 0.1);
+  background: rgba(138, 46, 46, 0.1);
   color: var(--p-text);
   cursor: pointer;
 }
@@ -142,8 +142,8 @@
 }
 
 .combo-source-tab.is-active {
-  background: rgba(232, 198, 106, 0.14);
-  color: #f5d98b;
+  background: rgba(138, 46, 46, 0.16);
+  color: #cf8b8b;
 }
 
 .combo-source-tab em {
@@ -258,7 +258,7 @@
 .combo-creator-primary {
   border: none;
   background: #8a2e2e;
-  color: #f5f1e8;
+  color: #ffffff;
 }
 
 .combo-creator-primary:disabled {
@@ -267,9 +267,9 @@
 }
 
 .combo-creator-secondary {
-  border: 1px solid rgba(212, 168, 50, 0.34);
-  background: rgba(212, 168, 50, 0.12);
-  color: #f5d98b;
+  border: 1px solid rgba(138, 46, 46, 0.34);
+  background: rgba(138, 46, 46, 0.12);
+  color: #cf8b8b;
 }
 
 .combo-creator-secondary:disabled {
@@ -320,9 +320,9 @@
 }
 
 .combo-round-chip.is-active {
-  border-color: rgba(232, 198, 106, 0.7);
-  background: rgba(232, 198, 106, 0.12);
-  color: #f5d98b;
+  border-color: rgba(138, 46, 46, 0.55);
+  background: rgba(138, 46, 46, 0.14);
+  color: #cf8b8b;
 }
 
 .combo-dock-save {
@@ -390,7 +390,7 @@
 
 .combo-saved-main em,
 .combo-fighter-combo em {
-  color: rgba(232, 198, 106, 0.8);
+  color: rgba(138, 46, 46, 0.8);
   font-size: 11px;
   font-style: normal;
   font-weight: 700;
@@ -467,7 +467,7 @@
 }
 
 .combo-fighter-card-main em {
-  color: rgba(232, 198, 106, 0.8);
+  color: rgba(138, 46, 46, 0.8);
   font-weight: 700;
 }
 
@@ -484,8 +484,8 @@
 }
 
 .combo-fav-btn.is-on {
-  background: rgba(232, 198, 106, 0.16);
-  color: #f5d98b;
+  background: rgba(138, 46, 46, 0.16);
+  color: #cf8b8b;
 }
 
 .combo-fighter-detail {
@@ -504,8 +504,8 @@
   gap: 10px;
   padding: 14px;
   border-radius: 14px;
-  background: rgba(232, 198, 106, 0.08);
-  border: 1px solid rgba(232, 198, 106, 0.18);
+  background: rgba(138, 46, 46, 0.08);
+  border: 1px solid rgba(138, 46, 46, 0.18);
 }
 
 .combo-fighter-hero strong {

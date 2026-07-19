@@ -102,7 +102,7 @@
 }
 
 .log-write-dock-exp strong {
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 18px;
 }
 
@@ -359,7 +359,7 @@
 
 .log-preview-score {
   flex-shrink: 0;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -394,14 +394,14 @@
 .log-reward {
   margin-bottom: 16px;
   padding: 12px 14px;
-  border: 1px solid rgba(193, 160, 90, 0.22);
+  border: 1px solid rgba(138, 46, 46, 0.22);
   border-radius: 12px;
-  background: rgba(193, 160, 90, 0.07);
+  background: rgba(138, 46, 46, 0.07);
 }
 
 .log-reward strong {
   display: block;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 15px;
   font-weight: 800;
 }
@@ -416,7 +416,7 @@
 .log-growth-reward {
   margin-bottom: 16px;
   padding: 16px;
-  border: 1px solid rgba(125, 157, 132, 0.2);
+  border: 1px solid rgba(154, 154, 154, 0.2);
   border-radius: 16px;
   background: rgba(0, 0, 0, 0.28);
 }
@@ -434,7 +434,7 @@
   margin-bottom: 10px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #d6a234;
+  background: #8a2e2e;
   color: #111;
   font-size: 10px;
   font-weight: 900;
@@ -471,14 +471,14 @@
 .log-growth-stat em {
   display: block;
   margin-top: 3px;
-  color: var(--p-state-done, #a3c0a9);
+  color: var(--p-state-done, #9a9a9a);
   font-size: 10px;
   font-weight: 800;
   font-style: normal;
 }
 
 .log-growth-exp {
-  color: var(--p-state-done, #a3c0a9);
+  color: var(--p-state-done, #9a9a9a);
 }
 
 .log-growth-level-head {
@@ -507,7 +507,7 @@
 .log-growth-level-track div {
   height: 100%;
   border-radius: inherit;
-  background: #aaa095;
+  background: #8a2e2e;
 }
 
 .log-growth-level-note {
@@ -580,8 +580,8 @@
   flex-shrink: 0;
   padding: 6px 10px;
   border-radius: 8px;
-  background: rgba(193, 160, 90, 0.14);
-  color: var(--p-brass, #c1a05a);
+  background: rgba(138, 46, 46, 0.14);
+  color: var(--p-brass, #cf8b8b);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
@@ -624,7 +624,7 @@
 .log-progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: #aaa095;
+  background: #8a2e2e;
 }
 
 .log-progress-text {
@@ -766,7 +766,7 @@
 
 .log-item-score {
   margin: 0 0 8px;
-  color: #d8d0c5;
+  color: #9a9a9a;
   font-size: 14px;
   font-weight: 800;
   text-align: right;
@@ -866,14 +866,14 @@
   margin-top: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(193, 160, 90, 0.24);
-  background: rgba(193, 160, 90, 0.08);
+  border: 1px solid rgba(138, 46, 46, 0.24);
+  background: rgba(138, 46, 46, 0.08);
 }
 
 .log-growth-unlocks span {
   display: block;
   margin-bottom: 6px;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -893,7 +893,7 @@
 
 .log-growth-title-en {
   margin: 2px 0 0 !important;
-  color: #c9b990 !important;
+  color: #cf8b8b !important;
   font-size: 11px !important;
   font-weight: 800 !important;
   letter-spacing: 0.08em;
@@ -910,7 +910,7 @@
 .log-growth-title-extra {
   margin: 10px 0 0 !important;
   padding-top: 8px;
-  border-top: 1px solid rgba(193, 160, 90, 0.2);
-  color: #c9b990 !important;
+  border-top: 1px solid rgba(138, 46, 46, 0.2);
+  color: #cf8b8b !important;
   font-size: 12px !important;
 }

@@ -4,7 +4,7 @@
 
 .strength-summary-warmup {
   margin: 0 !important;
-  color: var(--p-brass, #c1a05a) !important;
+  color: var(--p-brass, #cf8b8b) !important;
   font-size: 11px !important;
   font-weight: 800;
 }
@@ -30,7 +30,7 @@
 
 .strength-card-head p {
   margin: 0 0 4px;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.12em;

@@ -507,7 +507,7 @@ export const styles = {
     padding: "6px 9px",
     borderRadius: "999px",
     background: "var(--p-brass)",
-    color: "#17120c",
+    color: "#0a0a0a",
     fontSize: "11px",
     fontWeight: 900,
   },
@@ -736,7 +736,7 @@ export const styles = {
     width: "100%",
     aspectRatio: "16 / 9",
     overflow: "hidden",
-    background: "#121317",
+    background: "#141414",
   },
 
   livePreviewImage: {
@@ -875,7 +875,7 @@ export const styles = {
 
   rangeInput: {
     width: "100%",
-    accentColor: "#d6a234",
+    accentColor: "#8a2e2e",
   },
 
   commentToggle: {
@@ -891,7 +891,7 @@ export const styles = {
   commentCheckbox: {
     width: "18px",
     height: "18px",
-    accentColor: "#d6a234",
+    accentColor: "#8a2e2e",
   },
 
   commentToggleHelp: {
@@ -1049,8 +1049,8 @@ export const styles = {
     padding: "14px",
     borderRadius: "18px",
     background:
-      "linear-gradient(135deg, rgba(214, 162, 52, 0.12), rgba(0, 0, 0, 0.22))",
-    border: "1px solid rgba(214, 162, 52, 0.24)",
+      "linear-gradient(135deg, rgba(138, 46, 46, 0.12), rgba(0, 0, 0, 0.22))",
+    border: "1px solid rgba(138, 46, 46, 0.24)",
   },
 
   levelUpCardTextLayer: {
@@ -1064,11 +1064,11 @@ export const styles = {
     boxSizing: "border-box",
     color: "var(--p-text)",
     textShadow: "0 5px 20px rgba(0, 0, 0, 0.98)",
-    border: "1px solid rgba(214, 162, 52, 0.5)",
+    border: "1px solid rgba(138, 46, 46, 0.5)",
     borderRadius: "30px",
     background:
       "linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.18) 38%, rgba(0, 0, 0, 0.42))",
-    boxShadow: "inset 0 0 32px rgba(214, 162, 52, 0.08)",
+    boxShadow: "inset 0 0 32px rgba(138, 46, 46, 0.08)",
   },
 
   levelUpHeader: {
@@ -1085,15 +1085,15 @@ export const styles = {
     width: "38px",
     height: "38px",
     borderRadius: "13px",
-    border: "1px solid rgba(214, 162, 52, 0.82)",
+    border: "1px solid rgba(138, 46, 46, 0.82)",
     background:
-      "linear-gradient(145deg, rgba(214, 162, 52, 0.18), rgba(0, 0, 0, 0.42))",
+      "linear-gradient(145deg, rgba(138, 46, 46, 0.18), rgba(0, 0, 0, 0.42))",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#d6a234",
+    color: "#8a2e2e",
     fontSize: "18px",
-    boxShadow: "0 0 24px rgba(214, 162, 52, 0.2)",
+    boxShadow: "0 0 24px rgba(138, 46, 46, 0.2)",
   },
 
   levelUpMainBlock: {
@@ -1122,13 +1122,13 @@ export const styles = {
   levelUpNumber: {
     display: "block",
     marginTop: "0px",
-    color: "#d6a234",
+    color: "#8a2e2e",
     fontSize: "104px",
     lineHeight: 0.86,
     fontWeight: 950,
     letterSpacing: "-0.09em",
     textShadow:
-      "0 5px 20px rgba(0, 0, 0, 0.98), 0 0 24px rgba(214, 162, 52, 0.34)",
+      "0 5px 20px rgba(0, 0, 0, 0.98), 0 0 24px rgba(138, 46, 46, 0.34)",
   },
 
   levelUpSlogan: {
@@ -1139,7 +1139,7 @@ export const styles = {
     fontWeight: 950,
     letterSpacing: "-0.035em",
     textTransform: "uppercase",
-    borderTop: "2px solid rgba(214, 162, 52, 0.8)",
+    borderTop: "2px solid rgba(138, 46, 46, 0.8)",
     paddingTop: "12px",
     maxWidth: "300px",
   },
@@ -1161,7 +1161,7 @@ export const styles = {
     padding: "8px 6px",
     borderRadius: "14px",
     background: "rgba(0, 0, 0, 0.5)",
-    border: "1px solid rgba(214, 162, 52, 0.32)",
+    border: "1px solid rgba(138, 46, 46, 0.32)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -1175,7 +1175,7 @@ export const styles = {
   },
 
   levelUpStatIcon: {
-    color: "#d6a234",
+    color: "#8a2e2e",
     fontSize: "16px",
     lineHeight: 1,
     marginBottom: "2px",
@@ -1185,8 +1185,8 @@ export const styles = {
     padding: "13px",
     borderRadius: "17px",
     background:
-      "linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(214, 162, 52, 0.1))",
-    border: "1px solid rgba(214, 162, 52, 0.58)",
+      "linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(138, 46, 46, 0.1))",
+    border: "1px solid rgba(138, 46, 46, 0.58)",
     display: "grid",
     gridTemplateColumns: "1fr auto",
     gap: "9px",
@@ -1204,7 +1204,7 @@ export const styles = {
 
   levelUpTierName: {
     display: "block",
-    color: "#d6a234",
+    color: "#8a2e2e",
     fontSize: "25px",
     lineHeight: 1,
     fontWeight: 950,
@@ -1212,7 +1212,7 @@ export const styles = {
   },
 
   levelUpXpText: {
-    color: "#d6a234",
+    color: "#8a2e2e",
     fontSize: "21px",
     fontWeight: 950,
     whiteSpace: "nowrap",
@@ -1230,8 +1230,8 @@ export const styles = {
   levelUpProgressFill: {
     height: "100%",
     borderRadius: "999px",
-    background: "linear-gradient(90deg, #d6a234, #ffd46a)",
-    boxShadow: "0 0 16px rgba(214, 162, 52, 0.42)",
+    background: "linear-gradient(90deg, #8a2e2e, #a34a4a)",
+    boxShadow: "0 0 16px rgba(138, 46, 46, 0.42)",
   },
 
   socialCardTextLayer: {
@@ -1461,7 +1461,7 @@ export const styles = {
 
   posterSubtitle: {
     margin: "2px 0 0",
-    color: "#ff3333",
+    color: "#8a2e2e",
     fontSize: "clamp(20px, 6.2vw, 38px)",
     lineHeight: 1,
     fontWeight: 950,
@@ -1478,7 +1478,7 @@ export const styles = {
     justifyContent: "center",
     gap: "10px",
     width: "100%",
-    color: "#ff3333",
+    color: "#8a2e2e",
     fontSize: "15px",
   },
 
@@ -1520,7 +1520,7 @@ export const styles = {
   posterMetaText: {
     margin: 0,
     maxWidth: "94%",
-    color: "#ff3333",
+    color: "#8a2e2e",
     fontSize: "9px",
     lineHeight: 1.45,
     fontWeight: 950,

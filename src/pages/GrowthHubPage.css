@@ -220,11 +220,11 @@
 .growth-hub-progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: #aaa095;
+  background: #8a2e2e;
 }
 
 .growth-hub-progress-fill.is-complete {
-  background: linear-gradient(90deg, #7d9d84, #9db99f);
+  background: linear-gradient(90deg, #8a2e2e, #a34a4a);
 }
 
 .growth-hub-progress-fill.is-gold {

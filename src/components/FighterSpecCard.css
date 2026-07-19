@@ -10,7 +10,7 @@
   border-radius: 22px;
   background:
     radial-gradient(circle at 100% 0%, rgba(138, 46, 46, 0.18), transparent 42%),
-    linear-gradient(160deg, #1a1a1d 0%, #0a0a0c 100%);
+    linear-gradient(160deg, #141414 0%, #0a0a0a 100%);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
 }
 
@@ -20,7 +20,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #c1a05a, transparent);
+  background: linear-gradient(90deg, transparent, #cf8b8b, transparent);
 }
 
 .fighter-nameplate-top {
@@ -151,7 +151,7 @@
 
 .fighter-nameplate-kicker {
   margin: 0 0 4px;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -295,7 +295,7 @@
 .fighter-nameplate-bar div {
   height: 100%;
   border-radius: inherit;
-  background: #aaa095;
+  background: #8a2e2e;
 }
 
 .fighter-nameplate-exp-note {
@@ -336,7 +336,7 @@
 .fighter-nameplate-stat small {
   display: block;
   margin-top: 2px;
-  color: rgba(125, 157, 132, 0.82);
+  color: rgba(154, 154, 154, 0.82);
   font-size: 9px;
   font-weight: 700;
 }
@@ -374,49 +374,49 @@
 .fighter-nameplate-veteran-badge {
   padding: 4px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 214, 72, 0.28);
-  background: rgba(255, 214, 72, 0.1);
-  color: #ffd98a;
+  border: 1px solid rgba(138, 46, 46, 0.28);
+  background: rgba(138, 46, 46, 0.1);
+  color: #cf8b8b;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.08em;
 }
 
 .fighter-nameplate-frame.tier-amateur {
-  border-color: rgba(255, 214, 72, 0.22);
+  border-color: rgba(138, 46, 46, 0.22);
 }
 
 .fighter-nameplate-frame.tier-pro {
-  border-color: rgba(255, 180, 72, 0.34);
+  border-color: rgba(138, 46, 46, 0.34);
   box-shadow:
     0 18px 40px rgba(0, 0, 0, 0.38),
-    inset 0 0 0 1px rgba(255, 180, 72, 0.08);
+    inset 0 0 0 1px rgba(138, 46, 46, 0.08);
 }
 
 .fighter-nameplate-frame.tier-champion,
 .fighter-nameplate-frame.tier-champion-gold {
-  border-color: rgba(255, 214, 72, 0.42);
+  border-color: rgba(138, 46, 46, 0.45);
   box-shadow:
     0 18px 40px rgba(0, 0, 0, 0.38),
-    0 0 24px rgba(255, 198, 64, 0.12);
+    0 0 24px rgba(138, 46, 46, 0.14);
 }
 
 .fighter-nameplate-frame.tier-champion-gold .fighter-nameplate-accent,
 .fighter-nameplate-frame.tier-goat .fighter-nameplate-accent {
-  background: linear-gradient(90deg, #ffd84a, #fff0b0, #8a2e2e, #ffd84a);
+  background: linear-gradient(90deg, #8a2e2e, #cf8b8b, #f5f1e8, #8a2e2e);
 }
 
 .fighter-nameplate-frame.tier-goat {
-  border-color: rgba(255, 228, 140, 0.55);
+  border-color: rgba(138, 46, 46, 0.55);
   box-shadow:
     0 18px 40px rgba(0, 0, 0, 0.38),
-    0 0 32px rgba(255, 214, 72, 0.18);
+    0 0 32px rgba(138, 46, 46, 0.2);
 }
 
 .fighter-nameplate-frame.tier-goat .fighter-nameplate-veteran-badge {
-  border-color: rgba(255, 228, 140, 0.45);
-  background: rgba(255, 214, 72, 0.16);
-  color: #fff0b8;
+  border-color: rgba(138, 46, 46, 0.45);
+  background: rgba(138, 46, 46, 0.16);
+  color: #f5f1e8;
 }
 
 @media (max-width: 520px) {

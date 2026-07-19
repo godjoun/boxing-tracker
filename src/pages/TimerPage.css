@@ -392,7 +392,7 @@
 .timer-complete-card {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(193, 160, 90, 0.12) !important;
+  border: 1px solid rgba(138, 46, 46, 0.12) !important;
   border-radius: 22px;
   background:
     radial-gradient(130% 100% at 50% 0%, rgba(124, 47, 47, 0.14), transparent 58%),
@@ -459,7 +459,7 @@
 }
 
 .timer-still-place {
-  color: rgba(193, 160, 90, 0.88);
+  color: rgba(138, 46, 46, 0.88);
   font-weight: 800;
   letter-spacing: 0.04em;
 }
@@ -504,7 +504,7 @@
 
 .timer-still-chapter {
   margin: -8px 0 22px;
-  color: rgba(193, 160, 90, 0.92);
+  color: rgba(138, 46, 46, 0.92);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -514,7 +514,7 @@
   width: 100%;
   min-height: 54px;
   margin-bottom: 10px;
-  border: 1px solid rgba(193, 160, 90, 0.28);
+  border: 1px solid rgba(138, 46, 46, 0.28);
   border-radius: 16px;
   background: #8a2e2e;
   color: #f5f1e8;

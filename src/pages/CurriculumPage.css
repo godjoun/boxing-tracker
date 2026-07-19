@@ -39,7 +39,7 @@
 .curriculum-kicker,
 .curriculum-section-label {
   margin: 0 0 6px;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -244,7 +244,7 @@
 }
 
 .curriculum-roadmap-chip-week {
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -323,7 +323,7 @@
   width: 2px;
   background: linear-gradient(
     180deg,
-    rgba(193, 160, 90, 0.35),
+    rgba(138, 46, 46, 0.35),
     rgba(255, 255, 255, 0.08)
   );
 }
@@ -347,7 +347,7 @@
   position: relative;
   width: 44px;
   height: 44px;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   flex-shrink: 0;
 }
 
@@ -368,7 +368,7 @@
 
 .curriculum-timeline-week-copy span {
   display: block;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -511,7 +511,7 @@
 
 .curriculum-session-status.is-complete {
   background: rgba(125, 157, 132, 0.16);
-  color: var(--p-state-done, #a3c0a9);
+  color: var(--p-state-done, #9a9a9a);
 }
 
 .curriculum-session-meta {
@@ -557,7 +557,7 @@
 }
 
 .curriculum-drill-guide-label {
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -801,7 +801,7 @@
 
 .curriculum-session.is-complete .curriculum-session-badge {
   background: rgba(125, 157, 132, 0.16);
-  color: var(--p-state-done, #a3c0a9);
+  color: var(--p-state-done, #9a9a9a);
 }
 
 .curriculum-drill-list {
@@ -1293,7 +1293,7 @@
   font-style: normal;
   font-size: 11px;
   font-weight: 900;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
 }
 
 .curriculum-lesson-card.has-video em {
@@ -1367,7 +1367,7 @@
 }
 
 .technique-continue-kicker {
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.14em;

@@ -12,7 +12,7 @@
 
 .journey-kicker {
   margin: 0 0 8px;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -75,7 +75,7 @@
 
 .journey-section-label {
   margin: 0 0 4px;
-  color: var(--p-brass, #c1a05a);
+  color: var(--p-brass, #cf8b8b);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -113,7 +113,7 @@
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: var(--p-brass, #c1a05a);
+  background: var(--p-brass, #cf8b8b);
   flex-shrink: 0;
 }
 
@@ -184,7 +184,7 @@
 
 .journey-memory-top span {
   flex-shrink: 0;
-  color: var(--p-state-done, #a3c0a9);
+  color: var(--p-state-done, #9a9a9a);
   font-size: 13px;
   font-weight: 800;
 }
@@ -192,7 +192,7 @@
 .journey-memory-item blockquote {
   margin: 10px 0 0;
   padding-left: 10px;
-  border-left: 2px solid rgba(193, 160, 90, 0.45);
+  border-left: 2px solid rgba(138, 46, 46, 0.45);
   color: var(--p-text-body);
   font-size: 13px;
   line-height: 1.55;
@@ -215,8 +215,8 @@
 }
 
 .journey-achievement.is-unlocked span {
-  background: rgba(125, 157, 132, 0.14);
-  color: var(--p-state-done, #a3c0a9);
+  background: rgba(154, 154, 154, 0.14);
+  color: var(--p-state-done, #9a9a9a);
 }
 
 .journey-achievement strong {
@@ -275,8 +275,8 @@
   margin: 0 0 14px;
   padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(193, 160, 90, 0.08);
-  border: 1px solid rgba(193, 160, 90, 0.2);
+  background: rgba(138, 46, 46, 0.08);
+  border: 1px solid rgba(138, 46, 46, 0.2);
   color: var(--p-text-body);
   font-size: 13px;
   line-height: 1.5;
@@ -352,8 +352,8 @@
 }
 
 .journey-title-item.is-next {
-  border-color: rgba(125, 157, 132, 0.28);
-  background: rgba(125, 157, 132, 0.06);
+  border-color: rgba(154, 154, 154, 0.28);
+  background: rgba(154, 154, 154, 0.06);
 }
 
 .journey-title-badge {
@@ -373,12 +373,12 @@
 }
 
 .journey-title-item.is-unlocked .journey-title-badge {
-  background: rgba(125, 157, 132, 0.16);
-  color: var(--p-state-done, #a3c0a9);
+  background: rgba(154, 154, 154, 0.16);
+  color: var(--p-state-done, #9a9a9a);
 }
 
 .journey-title-item.is-next .journey-title-badge {
-  background: rgba(125, 157, 132, 0.22);
+  background: rgba(154, 154, 154, 0.22);
   color: #b5cdba;
 }
 

@@ -184,6 +184,7 @@ export default function FighterSpecCard({
         <CareerLevelScene
           fighter={fighter}
           streakDays={streakDays}
+          nickname={profile?.nickname}
           onClose={() => setShowCareerScene(false)}
         />
       ) : null}

@@ -3,9 +3,9 @@
   inset: 0;
   z-index: 240;
   display: grid;
-  align-items: end;
+  align-items: start;
   padding:
-    max(18px, env(safe-area-inset-top, 18px))
+    max(64px, calc(env(safe-area-inset-top, 0px) + 56px))
     20px
     max(28px, env(safe-area-inset-bottom, 28px));
   background: #0a0a0a;
@@ -179,8 +179,136 @@
   font-weight: 800;
 }
 
+.career-level-scene-benefits {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  background: #141414;
+}
+
+.career-level-scene-benefits-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.career-level-scene-benefits-head p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.career-level-scene-benefits-head span {
+  color: #9a9a9a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.career-level-scene-benefit-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.career-level-scene-benefit-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #101010;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.career-level-scene-benefit-list strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.career-level-scene-benefit-list p {
+  margin: 4px 0 0;
+  color: #9a9a9a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.career-level-scene-benefit-list em {
+  flex-shrink: 0;
+  color: #cf8b8b;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.career-level-scene-benefits-empty {
+  margin: 0;
+  color: #9a9a9a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.career-level-scene-benefits-next {
+  margin: 12px 0 0;
+  color: rgba(245, 241, 232, 0.7);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.career-level-scene-benefits-next strong {
+  color: #f5f1e8;
+}
+
+.career-level-scene-benefits-next em {
+  margin-left: 8px;
+  color: #cf8b8b;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.career-level-scene-actions {
+  margin-top: 22px;
+}
+
+.career-level-scene-share {
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: #8a2e2e;
+  color: #f5f1e8;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.career-level-scene-share:hover {
+  background: #742525;
+}
+
+.career-level-scene-share:active {
+  background: #5f1e1e;
+  transform: translateY(1px);
+}
+
+.career-level-scene-share-note {
+  margin: 10px 0 0;
+  color: #9a9a9a;
+  font-size: 12px;
+  text-align: center;
+}
+
 @media (min-width: 720px) {
   .career-level-scene {
     align-items: center;
+    padding-top: max(48px, env(safe-area-inset-top, 48px));
   }
 }

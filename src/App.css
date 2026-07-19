@@ -16,7 +16,8 @@
 
 .app-shell.theme-dark {
   background:
-    radial-gradient(circle at 50% -10%, rgba(124, 47, 47, 0.09), transparent 34rem),
+    radial-gradient(ellipse at 50% -8%, rgba(120, 78, 42, 0.22), transparent 42rem),
+    radial-gradient(circle at 85% 20%, rgba(74, 44, 28, 0.35), transparent 28rem),
     var(--p-bg-page);
   color: var(--p-text);
 }
@@ -27,76 +28,74 @@
 }
 
 .app-shell {
+  /* Album dark: black stage + warm brown surfaces, white type locked */
   --p-text: #ffffff;
-  --p-text-strong: rgba(255, 255, 255, 0.92);
-  --p-text-body: rgba(255, 255, 255, 0.75);
-  --p-text-soft: rgba(255, 255, 255, 0.68);
-  --p-text-muted: rgba(255, 255, 255, 0.52);
-  --p-text-faint: rgba(255, 255, 255, 0.42);
-  --p-on-surface: #f5f1e8;
-  --p-on-accent: #f5f1e8;
-  --p-surface: #000000;
-  --p-bg-page: #000000;
-  --p-bg-nav: rgba(0, 0, 0, 0.96);
-  --p-nav-border: rgba(255, 255, 255, 0.08);
-  --p-bg-card: #000000;
-  --p-bg-panel: #000000;
-  --p-bg-deep: #000000;
-  --p-bg-inner: #000000;
-  --p-bg-subtle: #000000;
-  --p-bg-inset: #000000;
-  --p-input-bg: #000000;
-  --p-border: rgba(255, 255, 255, 0.09);
-  --p-border-soft: rgba(255, 255, 255, 0.08);
-  --p-border-strong: rgba(255, 255, 255, 0.12);
-  /* 행동 강조: 낡은 가죽 글러브를 닮은 버건디 */
+  --p-text-strong: #ffffff;
+  --p-text-body: rgba(255, 255, 255, 0.88);
+  --p-text-soft: rgba(255, 255, 255, 0.78);
+  --p-text-muted: rgba(255, 255, 255, 0.62);
+  --p-text-faint: rgba(255, 255, 255, 0.48);
+  --p-on-surface: #ffffff;
+  --p-on-accent: #ffffff;
+  --p-surface: #0c0a08;
+  --p-bg-page: #050403;
+  --p-bg-nav: rgba(5, 4, 3, 0.96);
+  --p-nav-border: rgba(196, 154, 100, 0.14);
+  --p-bg-card: #16110e;
+  --p-bg-panel: #1a1410;
+  --p-bg-deep: #0a0807;
+  --p-bg-inner: #1c1512;
+  --p-bg-subtle: #201814;
+  --p-bg-inset: #241c16;
+  --p-input-bg: #1a1410;
+  --p-border: rgba(196, 154, 100, 0.18);
+  --p-border-soft: rgba(160, 120, 80, 0.14);
+  --p-border-strong: rgba(210, 170, 120, 0.28);
+  /* 행동: 가죽 버건디 유지 */
   --p-accent: #8a2e2e;
   --p-accent-soft: #b15b5b;
   --p-accent-solid: #742525;
-  --p-accent-bg: rgba(138, 46, 46, 0.12);
-  --p-accent-border: rgba(138, 46, 46, 0.3);
-  /* 레벨업 버튼: 공통 accent와 분리해 모드 간 색 혼합 방지 */
+  --p-accent-bg: rgba(138, 46, 46, 0.16);
+  --p-accent-border: rgba(138, 46, 46, 0.36);
   --levelup-action-bg: #8a2e2e;
   --levelup-action-hover: #742525;
   --levelup-action-pressed: #5f1e1e;
-  --levelup-action-text: #f5f1e8;
-  --levelup-action-shadow: 0 10px 24px rgba(70, 18, 18, 0.28);
-  --levelup-button-bg: #000000;
-  --levelup-button-hover: #0a0a0a;
-  --levelup-button-pressed: #000000;
-  --levelup-button-border: rgba(255, 255, 255, 0.1);
-  --levelup-button-text: #f5f1e8;
-  /* 다크 모드 강조: 버건디로 단일화 */
-  --p-brass: #b15b5b;
-  --p-brass-soft: #cf8b8b;
-  --p-brass-bg: rgba(138, 46, 46, 0.14);
-  --p-brass-border: rgba(138, 46, 46, 0.34);
-  /* 포인트 면: 버건디 가죽 */
-  --p-leather: #7c2f2f;
-  --p-ivory: #ffe9dc;
-  --p-ivory-soft: #f4dcd0;
+  --levelup-action-text: #ffffff;
+  --levelup-action-shadow: 0 10px 24px rgba(40, 16, 10, 0.45);
+  --levelup-button-bg: #16110e;
+  --levelup-button-hover: #1c1512;
+  --levelup-button-pressed: #120e0c;
+  --levelup-button-border: rgba(196, 154, 100, 0.22);
+  --levelup-button-text: #ffffff;
+  /* 앨범 하이라이트: 카라멜·브론즈 */
+  --p-brass: #c4a070;
+  --p-brass-soft: #d8b892;
+  --p-brass-bg: rgba(196, 154, 100, 0.12);
+  --p-brass-border: rgba(196, 154, 100, 0.32);
+  --p-leather: #5c3a28;
+  --p-ivory: #f3e6d8;
+  --p-ivory-soft: #e8d5c0;
   --p-hero-bg: radial-gradient(
-      circle at 90% 10%,
-      rgba(124, 47, 47, 0.34),
-      transparent 36%
+      circle at 88% 8%,
+      rgba(140, 92, 52, 0.32),
+      transparent 40%
     ),
-    linear-gradient(145deg, #1c1712, #0a0806);
-  --p-shadow-hero: 0 22px 55px rgba(0, 0, 0, 0.5);
-  --p-shadow-accent: 0 10px 24px rgba(124, 47, 47, 0.28);
+    linear-gradient(155deg, #1c1410 0%, #0c0a08 48%, #050403 100%);
+  --p-shadow-hero: 0 22px 55px rgba(0, 0, 0, 0.55);
+  --p-shadow-accent: 0 10px 24px rgba(70, 36, 20, 0.35);
   --p-done-bg: #12190f;
   --p-done-title: #a3c0a9;
   --p-done-text: #c7d8c9;
   --p-growth: #a3c0a9;
   --p-growth-soft: rgba(125, 157, 132, 0.82);
   --p-growth-fill: linear-gradient(90deg, #7d9d84, #9db99f);
-  /* 상태 표시: 채도를 낮춰 의미만 남김 */
   --p-state-done: #a3c0a9;
   --p-state-done-solid: #7d9d84;
   --p-state-rest: #9db6c8;
   --p-state-rest-solid: #6d8aa0;
-  --gold: #b15b5b;
+  --gold: #c4a070;
   --gold-dark: #8a2e2e;
-  --gold-soft: #cf8b8b;
+  --gold-soft: #d8b892;
 }
 
 .theme-light.app-shell {
@@ -184,14 +183,15 @@
 
 .home-brand-hero {
   padding: 18px 16px 16px;
-  border: 1px solid rgba(193, 160, 90, 0.18);
+  border: 1px solid rgba(196, 154, 100, 0.22);
   border-radius: 24px;
   background:
-    radial-gradient(circle at 100% 0, rgba(124, 47, 47, 0.38), transparent 50%),
-    linear-gradient(145deg, rgba(49, 37, 29, 0.98), rgba(27, 23, 18, 0.98));
+    radial-gradient(circle at 100% 0, rgba(140, 92, 52, 0.36), transparent 52%),
+    linear-gradient(145deg, #1c1410, #0c0a08 70%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.035),
-    0 18px 42px rgba(0, 0, 0, 0.28);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 42px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
 }
 
 .home-brand-top {
@@ -208,9 +208,9 @@
   height: 64px;
   overflow: hidden;
   border-radius: 50%;
-  border: 1px solid rgba(193, 160, 90, 0.42);
-  background: rgba(124, 47, 47, 0.2);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(196, 154, 100, 0.42);
+  background: rgba(92, 58, 40, 0.55);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
 }
 
 .home-brand-avatar img {
@@ -245,6 +245,7 @@
 
 .home-brand-title {
   margin: 0;
+  color: #ffffff;
   font-size: clamp(28px, 8.5vw, 38px);
   line-height: 1.08;
   letter-spacing: 0.02em;
@@ -885,9 +886,9 @@
 }
 
 .theme-dark .home-center-dash {
-  border-color: rgba(255, 255, 255, 0.075);
-  background: #000000;
-  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(196, 154, 100, 0.16);
+  background: #16110e;
+  color: #ffffff;
   box-shadow: none;
 }
 
@@ -895,49 +896,49 @@
 .theme-dark .home-center-dash-edit,
 .theme-dark .home-center-dash-empty,
 .theme-dark .home-center-dash-editor > p {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .theme-dark .home-center-dash-edit.is-active {
-  color: var(--p-accent-soft);
+  color: var(--p-brass-soft);
 }
 
 .theme-dark .home-center-dash-stats > div {
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background: #000000;
+  border: 1px solid rgba(196, 154, 100, 0.14);
+  background: #0c0a08;
 }
 
 .theme-dark .home-center-dash-stats span {
-  color: rgba(255, 255, 255, 0.46);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .theme-dark .home-center-dash-item > span {
-  border: 1px solid rgba(138, 46, 46, 0.38);
-  background: rgba(138, 46, 46, 0.22);
-  color: #cf8b8b;
+  border: 1px solid rgba(196, 154, 100, 0.28);
+  background: rgba(92, 58, 40, 0.45);
+  color: #d8b892;
 }
 
 .theme-dark .home-center-dash-empty {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(196, 154, 100, 0.22);
 }
 
 .theme-dark .home-center-dash-editor {
-  border-top-color: rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(196, 154, 100, 0.14);
 }
 
 .theme-dark .home-center-dash-pick {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: #000000;
+  border-color: rgba(196, 154, 100, 0.16);
+  background: #0c0a08;
 }
 
 .theme-dark .home-center-dash-pick span {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #000000;
+  border: 1px solid rgba(196, 154, 100, 0.16);
+  background: #16110e;
 }
 
 .theme-dark .home-center-dash-pick.is-selected {
-  border-color: rgba(138, 46, 46, 0.3);
-  background: rgba(138, 46, 46, 0.1);
+  border-color: rgba(196, 154, 100, 0.4);
+  background: rgba(92, 58, 40, 0.35);
 }
 
 @media (max-width: 420px) {
@@ -7837,13 +7838,13 @@
 
 .home-growth-hero {
   background:
-    radial-gradient(circle at 90% 0, rgba(138, 46, 46, 0.24), transparent 38%),
-    linear-gradient(145deg, #0b0b0c, #000000 68%);
+    radial-gradient(circle at 90% 0, rgba(140, 92, 52, 0.28), transparent 40%),
+    linear-gradient(145deg, #1c1410, #050403 72%);
 }
 
 .home-growth-lv {
-  border-color: rgba(193, 160, 90, 0.28);
-  background: rgba(193, 160, 90, 0.08);
+  border-color: rgba(196, 154, 100, 0.3);
+  background: rgba(196, 154, 100, 0.1);
 }
 
 .home-today-card-link,
@@ -7855,8 +7856,8 @@
 .app-menu-timer-card > em {
   border-color: #8a2e2e;
   background: #8a2e2e;
-  color: #f5f1e8;
-  box-shadow: 0 10px 24px rgba(70, 18, 18, 0.24);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(40, 16, 10, 0.4);
 }
 
 .home-today-card-link:hover,

@@ -83,7 +83,7 @@ export default function OnboardingSetupPage() {
     const trimmedNickname = form.nickname.trim();
 
     if (!trimmedNickname) {
-      setError("파이터 이름을 입력해 주세요.");
+      setError("링네임을 입력해 주세요.");
       return;
     }
 
@@ -96,7 +96,7 @@ export default function OnboardingSetupPage() {
         if (!result.available) {
           setVerifiedNickname("");
           setNicknameNotice(result.message);
-          setError("다른 파이터 이름을 입력해 주세요.");
+          setError("다른 링네임을 입력해 주세요.");
           return;
         }
 
@@ -178,7 +178,7 @@ export default function OnboardingSetupPage() {
 
         <form className="onboarding-form" onSubmit={handleSubmit}>
           <div className="onboarding-field">
-            <span>파이터 이름 (링네임) *</span>
+            <span>링네임 *</span>
             <div className="onboarding-nickname-row">
               <input
                 type="text"

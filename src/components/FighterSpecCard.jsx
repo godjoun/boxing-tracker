@@ -26,7 +26,7 @@ export default function FighterSpecCard({
   ].filter(Boolean);
 
   return (
-    <section className="fighter-nameplate" aria-label="파이터 명패">
+    <section className="fighter-nameplate" aria-label="명패">
       <div className={`fighter-nameplate-frame tier-${nameplateTier}`}>
         <div className="fighter-nameplate-accent" aria-hidden="true" />
 
@@ -71,7 +71,7 @@ export default function FighterSpecCard({
           )}
 
           <div className="fighter-nameplate-identity">
-            <p className="fighter-nameplate-kicker">MY FIGHTER</p>
+            <p className="fighter-nameplate-kicker">ROUND ON</p>
             <h2 className="fighter-nameplate-name">{profile?.nickname || "나"}</h2>
             <p className="fighter-nameplate-title">{fighter.fighterTitle}</p>
             {fighter.fighterTitleEn ? (

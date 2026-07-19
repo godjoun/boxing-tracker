@@ -109,7 +109,7 @@ function getTooltipStyle(rect, placement) {
 }
 
 export default function FirstVisitTutorial({
-  nickname = "파이터",
+  nickname = "나",
   onStartTimer,
   onOpenCurriculum,
   onEnsurePage,

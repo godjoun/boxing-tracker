@@ -185,7 +185,7 @@ export default function HomePage({
   const topTrainingType = trainingBreakdown[0]?.type || null;
   const todayKey = getTodayKey();
   const todayRounds = dashboard.trainingByDate[todayKey]?.rounds || 0;
-  const nickname = profile?.nickname || "나의 파이터";
+  const nickname = profile?.nickname || "나";
 
   function handleCalendarSelect(dateKey) {
     setSelectedDate((current) => (current === dateKey ? "" : dateKey));

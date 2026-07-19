@@ -87,7 +87,7 @@ export default function DataBackupPage({ onGoBack }) {
     setStatus("");
 
     const confirmed = window.confirm(
-      "온보딩부터 다시 시작할까요?\n\n파이터 이름·신체 정보를 다시 입력합니다.\n훈련 기록은 그대로 남습니다."
+      "온보딩부터 다시 시작할까요?\n\n링네임·신체 정보를 다시 입력합니다.\n훈련 기록은 그대로 남습니다."
     );
 
     if (!confirmed) return;

@@ -10,21 +10,21 @@ export const TIMER_MENU_CARD = {
 export const MENU_GROUPS = [
   {
     id: "fighter",
-    title: "파이터",
+    title: "프로필",
     items: [
       {
         id: "card",
         icon: "◆",
-        title: "파이터 카드",
-        description: "성장 카드",
+        title: "포스터 카드",
+        description: "오늘의 장면",
         action: "card-maker",
         accent: "gold",
       },
       {
         id: "profile",
         icon: "F",
-        title: "MY FIGHTER",
-        description: "명패 · 스펙",
+        title: "명패",
+        description: "스펙 · 사진",
         route: "profile",
         accent: "red",
       },
@@ -97,7 +97,7 @@ export const DASHBOARD_SHORTCUT_POOL = [
   {
     id: "fighter-card",
     icon: "◆",
-    title: "파이터 카드",
+    title: "포스터 카드",
     action: "card-maker",
   },
   {
@@ -121,7 +121,7 @@ export const DASHBOARD_SHORTCUT_POOL = [
   {
     id: "profile",
     icon: "F",
-    title: "MY FIGHTER",
+    title: "명패",
     route: "profile",
   },
   {

@@ -10,11 +10,11 @@ export function validateNicknameFormat(nickname) {
   const trimmed = String(nickname || "").trim();
 
   if (trimmed.length < 2) {
-    throw new Error("파이터 이름은 2자 이상 입력해 주세요.");
+    throw new Error("링네임은 2자 이상 입력해 주세요.");
   }
 
   if (trimmed.length > 12) {
-    throw new Error("파이터 이름은 12자 이하로 입력해 주세요.");
+    throw new Error("링네임은 12자 이하로 입력해 주세요.");
   }
 
   if (!/^[0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ_]+$/.test(trimmed)) {

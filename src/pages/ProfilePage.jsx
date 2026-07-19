@@ -1866,7 +1866,7 @@ export default function ProfilePage({
 
       await drawProfileAvatarToCanvas(ctx, left, 168, 106, accent);
 
-      drawTextFit(ctx, profile.nickname || "나의 파이터", 204, 180, 600, {
+      drawTextFit(ctx, profile.nickname || "나", 204, 180, 600, {
         size: 40,
         minSize: 25,
         weight: 950,
@@ -2155,7 +2155,7 @@ export default function ProfilePage({
       title: "Boxing Training Card",
       text:
         exportStyle === "poster"
-          ? "오늘의 파이터 포스터"
+          ? "오늘의 포스터"
           : exportStyle === "social"
           ? "오늘의 스토리 훈련 카드"
           : "오늘의 레벨업 훈련 카드",
@@ -2374,7 +2374,7 @@ export default function ProfilePage({
                 <input
                   value={nickname}
                   onChange={(event) => setNickname(event.target.value)}
-                  placeholder="예: 조운 파이터"
+                  placeholder="예: 조운"
                   style={styles.input}
                 />
               </label>
@@ -3210,7 +3210,7 @@ export default function ProfilePage({
                         )}
                       </div>
                       <div className="level-up-card-identity">
-                        <span>{profile.nickname || "나의 파이터"}</span>
+                        <span>{profile.nickname || "나"}</span>
                         <small style={{ color: levelUpAccent }}>
                           {profileStats.levelLabel} ·{" "}
                           {profileStats.fighterTitleEn || "FIGHTER"}

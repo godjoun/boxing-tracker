@@ -28,7 +28,7 @@ export function validateOnboardingSpecs(form) {
   const nickname = String(form.nickname || "").trim();
 
   if (!nickname) {
-    throw new Error("파이터 이름을 입력해 주세요.");
+    throw new Error("링네임을 입력해 주세요.");
   }
 
   if (nickname.length < 2 || nickname.length > 12) {
@@ -85,7 +85,7 @@ export function validateBodySpecFields(form) {
   const reachCm = form.reachCm === "" || form.reachCm == null ? null : Number(form.reachCm);
 
   if (!nickname) {
-    throw new Error("파이터 이름을 입력해 주세요.");
+    throw new Error("링네임을 입력해 주세요.");
   }
 
   if (!Number.isFinite(heightCm) || heightCm < 120 || heightCm > 230) {

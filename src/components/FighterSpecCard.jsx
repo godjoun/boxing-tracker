@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { getFighterProgress } from "../utils/fighterProgress";
 import { getNameplateTier, getVeteranBadges } from "../utils/veteranPerks";
+import CareerLevelScene from "./CareerLevelScene";
 import "./FighterSpecCard.css";
 
 export default function FighterSpecCard({
@@ -13,6 +15,7 @@ export default function FighterSpecCard({
   onRemovePhoto,
   children,
 }) {
+  const [showCareerScene, setShowCareerScene] = useState(false);
   const fighter = getFighterProgress(logs);
   const nameplateTier = getNameplateTier(fighter.level);
   const veteranBadges = getVeteranBadges(fighter.level);
@@ -84,11 +87,16 @@ export default function FighterSpecCard({
             ) : null}
           </div>
 
-          <div className="fighter-nameplate-badge">
+          <button
+            type="button"
+            className="fighter-nameplate-badge"
+            onClick={() => setShowCareerScene(true)}
+            aria-label={`레벨 ${fighter.level} 커리어 보기`}
+          >
             <span className="fighter-nameplate-badge-label">LV</span>
             <strong>{fighter.level}</strong>
             <small>{careerStageKo || fighter.careerStageKo || "일반인"}</small>
-          </div>
+          </button>
         </div>
 
         {onUploadPhoto ? (
@@ -171,6 +179,14 @@ export default function FighterSpecCard({
         </div>
 
       </div>
+
+      {showCareerScene ? (
+        <CareerLevelScene
+          fighter={fighter}
+          streakDays={streakDays}
+          onClose={() => setShowCareerScene(false)}
+        />
+      ) : null}
     </section>
   );
 }

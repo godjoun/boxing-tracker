@@ -2296,9 +2296,9 @@
   z-index: 1;
   margin-top: 18px;
   padding: 18px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(142, 142, 147, 0.35);
   border-radius: 16px;
-  background: #111111;
+  background: var(--p-ash-deep, #2a2a2d);
   text-align: center;
   color: #ffffff;
 }

@@ -310,70 +310,9 @@ export default function HomePage({
         </div>
       </section>
 
-      <section className="home-today-task" aria-label="오늘">
-        <p className="home-today-task-label">오늘</p>
-
-        {todaysLesson.kind === "session" ? (
-          <>
-            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
-            {todaysLesson.goal ? (
-              <p className="home-today-task-copy">{todaysLesson.goal}</p>
-            ) : (
-              <p className="home-today-task-copy">
-                레슨을 읽고, 준비되면 타이머로 이어가세요.
-              </p>
-            )}
-            {todaysLesson.weekLabel || todaysLesson.code ? (
-              <p className="home-today-task-meta">
-                {[todaysLesson.weekLabel, todaysLesson.code]
-                  .filter(Boolean)
-                  .join(" · ")}
-                {todaysLesson.totalSessions
-                  ? ` · ${todaysLesson.completedCount}/${todaysLesson.totalSessions}`
-                  : ""}
-              </p>
-            ) : null}
-
-            <div className="home-today-task-links">
-              <button
-                type="button"
-                className="home-today-task-link"
-                onClick={onOpenTimer}
-              >
-                타이머로 훈련
-              </button>
-              <button
-                type="button"
-                className="home-today-task-link"
-                onClick={() => onOpenCurriculum?.()}
-              >
-                커리큘럼 전체
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
-            <p className="home-today-task-copy">
-              {todaysLesson.message ||
-                "짧게라도 라운드를 남기면 오늘의 흔적이 됩니다."}
-            </p>
-            <div className="home-today-task-links">
-              <button
-                type="button"
-                className="home-today-task-link"
-                onClick={() => onOpenCurriculum?.()}
-              >
-                커리큘럼 보기
-              </button>
-            </div>
-          </>
-        )}
-      </section>
-
-      <section className="home-center-dash" aria-label="오늘의 흔적">
+      <section className="home-center-dash" aria-label="대시보드">
         <div className="home-center-dash-head">
-          <p className="home-center-dash-label">오늘의 흔적</p>
+          <p className="home-center-dash-label">대시보드</p>
           <button
             type="button"
             className={`home-center-dash-edit${
@@ -459,6 +398,67 @@ export default function HomePage({
             </div>
           </div>
         ) : null}
+      </section>
+
+      <section className="home-today-task" aria-label="오늘">
+        <p className="home-today-task-label">오늘</p>
+
+        {todaysLesson.kind === "session" ? (
+          <>
+            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
+            {todaysLesson.goal ? (
+              <p className="home-today-task-copy">{todaysLesson.goal}</p>
+            ) : (
+              <p className="home-today-task-copy">
+                레슨을 읽고, 준비되면 타이머로 이어가세요.
+              </p>
+            )}
+            {todaysLesson.weekLabel || todaysLesson.code ? (
+              <p className="home-today-task-meta">
+                {[todaysLesson.weekLabel, todaysLesson.code]
+                  .filter(Boolean)
+                  .join(" · ")}
+                {todaysLesson.totalSessions
+                  ? ` · ${todaysLesson.completedCount}/${todaysLesson.totalSessions}`
+                  : ""}
+              </p>
+            ) : null}
+
+            <div className="home-today-task-links">
+              <button
+                type="button"
+                className="home-today-task-link"
+                onClick={onOpenTimer}
+              >
+                타이머로 훈련
+              </button>
+              <button
+                type="button"
+                className="home-today-task-link"
+                onClick={() => onOpenCurriculum?.()}
+              >
+                커리큘럼 전체
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="home-today-task-title">{todaysLesson.title}</h2>
+            <p className="home-today-task-copy">
+              {todaysLesson.message ||
+                "짧게라도 라운드를 남기면 오늘의 흔적이 됩니다."}
+            </p>
+            <div className="home-today-task-links">
+              <button
+                type="button"
+                className="home-today-task-link"
+                onClick={() => onOpenCurriculum?.()}
+              >
+                커리큘럼 보기
+              </button>
+            </div>
+          </>
+        )}
       </section>
 
       <details className="home-collapsible home-status-details">

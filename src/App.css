@@ -179,9 +179,9 @@
 
 .home-brand-hero {
   padding: 16px 14px 14px;
-  border: 1px solid rgba(142, 142, 147, 0.35);
+  border: 1px solid rgba(160, 160, 165, 0.22);
   border-radius: 16px;
-  background: var(--p-ash-card, #3c3c3f);
+  background: transparent;
   box-shadow: none;
   color: #ffffff;
 }
@@ -342,10 +342,10 @@
   box-shadow: 0 10px 22px rgba(70, 18, 18, 0.16);
 }
 
-/* Dark: ash-gray cards on black stage */
+/* Dark: large frames transparent on black stage */
 .theme-dark .home-brand-hero {
-  border-color: rgba(142, 142, 147, 0.35);
-  background: var(--p-ash-card, #3c3c3f);
+  border-color: rgba(160, 160, 165, 0.22);
+  background: transparent;
   color: #ffffff;
   box-shadow: none;
 }
@@ -504,9 +504,9 @@
 .home-today-task {
   margin-top: 22px;
   padding: 18px 16px;
-  border: 1px solid rgba(142, 142, 147, 0.35);
+  border: 1px solid rgba(160, 160, 165, 0.22);
   border-radius: 16px;
-  background: var(--p-ash-card, #3c3c3f);
+  background: transparent;
 }
 
 .home-today-task-label {
@@ -625,9 +625,9 @@
 .home-center-dash {
   margin-top: 22px;
   padding: 18px 16px 16px;
-  border: 1px solid rgba(142, 142, 147, 0.35);
+  border: 1px solid rgba(160, 160, 165, 0.22);
   border-radius: 16px;
-  background: var(--p-ash-card, #3c3c3f);
+  background: transparent;
   box-shadow: none;
   color: #ffffff;
 }
@@ -863,8 +863,8 @@
 }
 
 .theme-dark .home-center-dash {
-  border-color: rgba(142, 142, 147, 0.35);
-  background: var(--p-ash-card, #3c3c3f);
+  border-color: rgba(160, 160, 165, 0.22);
+  background: transparent;
   color: #ffffff;
   box-shadow: none;
 }
@@ -8053,11 +8053,16 @@
 }
 
 .theme-dark .home-brand-hero,
+.theme-dark .home-center-dash,
+.theme-dark .home-today-task {
+  border-color: rgba(160, 160, 165, 0.22);
+  background: transparent;
+}
+
 .theme-dark .home-brand-avatar,
 .theme-dark .home-brand-primary,
 .theme-dark .home-brand-secondary,
 .theme-dark .home-today-task-primary,
-.theme-dark .home-center-dash,
 .theme-dark .home-daily-lesson,
 .theme-dark .journey-title-next,
 .theme-dark .combo-creator-secondary,

@@ -9,6 +9,11 @@
   padding-bottom: var(--app-nav-total);
 }
 
+.app-shell.is-fullscreen {
+  --app-nav-total: max(12px, env(safe-area-inset-bottom, 12px));
+  padding-bottom: var(--app-nav-total);
+}
+
 .app-shell.theme-dark {
   background:
     radial-gradient(circle at 50% -10%, rgba(124, 47, 47, 0.09), transparent 34rem),
@@ -7107,7 +7112,7 @@
   width: calc(100% - 20px);
   max-width: 720px;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 4px;
   padding: 6px;
   border: 1px solid var(--p-nav-border);

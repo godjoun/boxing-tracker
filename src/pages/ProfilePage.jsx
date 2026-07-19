@@ -38,6 +38,7 @@ export default function ProfilePage({
   cardMakerFocusLogId = null,
   fighterLevel = 1,
   onStartTraining,
+  onStudioModeChange,
 }) {
   const {
     logs,
@@ -61,6 +62,15 @@ export default function ProfilePage({
   const [profileView, setProfileView] = useState(
     scrollTarget === "cardMaker" ? "studio" : "nameplate"
   );
+
+  useEffect(() => {
+    onStudioModeChange?.(profileView === "studio");
+  }, [profileView, onStudioModeChange]);
+
+  useEffect(() => {
+    return () => onStudioModeChange?.(false);
+  }, [onStudioModeChange]);
+
   const [studioTab, setStudioTab] = useState(
     startsInQuickCardFlow ? "design" : "select"
   );

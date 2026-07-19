@@ -25,6 +25,7 @@ const PERK_KIND_LABEL = {
 export default function GrowthHubPage({
   onOpenCurriculum,
   onStartTraining,
+  onGoBack,
 }) {
   const { logs, weeklyScore } = useTraining();
   const [weeklyGoal, setWeeklyGoal] = useState(readWeeklyRoundGoal);
@@ -72,6 +73,15 @@ export default function GrowthHubPage({
 
   return (
     <main className="hub-page growth-hub-page">
+      {onGoBack ? (
+        <button
+          type="button"
+          className="growth-hub-back"
+          onClick={onGoBack}
+        >
+          ← 뒤로
+        </button>
+      ) : null}
       <header className="growth-hub-header">
         <h1 className="growth-hub-title">성장</h1>
         <p className="growth-hub-subtitle">

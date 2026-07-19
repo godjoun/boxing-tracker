@@ -2,7 +2,6 @@ export const TUTORIAL_TARGETS = {
   homeStart: "home-start",
   navTimer: "nav-timer",
   navLog: "nav-log",
-  navGrowth: "nav-growth",
   navCategory: "nav-category",
 };
 
@@ -36,30 +35,21 @@ export const TUTORIAL_STEPS = [
     placement: "top",
   },
   {
-    id: "nav-category",
-    kicker: "MORE",
-    title: "더보기 메뉴",
-    body: "명패·체육관 찾기·데이터 백업이 여기 있습니다. 앱 사용법은 튜토리얼로 다시 볼 수 있어요.",
-    mode: "spotlight",
-    target: TUTORIAL_TARGETS.navCategory,
-    placement: "top",
-  },
-  {
-    id: "nav-growth",
-    kicker: "GROWTH",
-    title: "성장 탭",
-    body: "주간 목표와 지금까지의 라운드 흐름을 여기서 확인하세요.",
-    mode: "spotlight",
-    target: TUTORIAL_TARGETS.navGrowth,
-    placement: "top",
-  },
-  {
     id: "nav-log",
     kicker: "LOG",
     title: "기록 탭",
     body: "완료한 라운드와 메모가 여기에 쌓입니다. 타이머를 쓰면 자동으로 남겨져요.",
     mode: "spotlight",
     target: TUTORIAL_TARGETS.navLog,
+    placement: "top",
+  },
+  {
+    id: "nav-category",
+    kicker: "MORE",
+    title: "더보기 메뉴",
+    body: "성장·체육관·데이터 백업이 여기 있습니다. 부가 화면은 전체로 열립니다.",
+    mode: "spotlight",
+    target: TUTORIAL_TARGETS.navCategory,
     placement: "top",
   },
   {

@@ -28,6 +28,14 @@ export const MENU_GROUPS = [
         route: "profile",
         accent: "red",
       },
+      {
+        id: "growth",
+        icon: "↗",
+        title: "성장",
+        description: "주간 목표 · 마일스톤",
+        route: "growth",
+        accent: "gold",
+      },
     ],
   },
   {

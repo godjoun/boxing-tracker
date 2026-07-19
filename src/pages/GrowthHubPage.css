@@ -2,6 +2,23 @@
   margin-bottom: 18px;
 }
 
+.growth-hub-back {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.theme-light .growth-hub-back {
+  color: #5c5346;
+}
+
 .growth-hub-title {
   margin: 0 0 6px;
   font-size: 26px;

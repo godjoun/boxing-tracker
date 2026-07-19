@@ -161,6 +161,7 @@ export default function TimerPage({
   onLaunchConsumed,
   onGoLog,
   onGoHome,
+  onGoBack,
   onGoProfile,
 }) {
   const { addLog, logs, profile } = useTraining();
@@ -1037,6 +1038,17 @@ export default function TimerPage({
           className="timer-composer"
           kicker="TIMER"
           title="타이머"
+          back={
+            onGoBack ? (
+              <button
+                type="button"
+                className="composer-shell-back"
+                onClick={onGoBack}
+              >
+                ← 훈련
+              </button>
+            ) : null
+          }
           summary={
             <>
               <span className="composer-meta-label">

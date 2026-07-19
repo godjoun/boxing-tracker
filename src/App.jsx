@@ -31,6 +31,17 @@ import { recordAppOpen } from "./utils/retentionMetrics";
 import { isDevMode } from "./utils/devMode";
 import "./App.css";
 
+/** 하단 탭을 숨기고 풀스크린으로 쓰는 부가 화면 (안 B 하이브리드) */
+const FULLSCREEN_PAGES = new Set([
+  "curriculum",
+  "strength",
+  "combo-creator",
+  "gym",
+  "backup",
+  "timer",
+  "growth",
+]);
+
 export default function App() {
   return (
     <TrainingProvider>
@@ -84,12 +95,16 @@ function MainAppShell({ theme, toggleTheme }) {
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
+  const [profileStudioOpen, setProfileStudioOpen] = useState(false);
   const isDark = theme === "dark";
   const fighterLevel = useMemo(
     () => getFighterProgress(logs).level,
     [logs]
   );
   const timerSummary = useBackgroundTimerSession(currentPage);
+  const isFullscreenPage =
+    FULLSCREEN_PAGES.has(currentPage) ||
+    (currentPage === "profile" && profileStudioOpen);
 
   useEffect(() => {
     if (!isTutorialComplete()) {
@@ -113,6 +128,7 @@ function MainAppShell({ theme, toggleTheme }) {
     if (page !== "profile") {
       setProfileScrollTarget(null);
       setCardMakerLogId(null);
+      setProfileStudioOpen(false);
     }
 
     setCurrentPage(page);
@@ -121,6 +137,7 @@ function MainAppShell({ theme, toggleTheme }) {
   const goProfile = () => {
     setProfileScrollTarget(null);
     setCardMakerLogId(null);
+    setProfileStudioOpen(false);
     setCurrentPage("profile");
   };
 
@@ -187,7 +204,11 @@ function MainAppShell({ theme, toggleTheme }) {
   }
 
   return (
-    <div className={`app-shell theme-${theme}`}>
+    <div
+      className={`app-shell theme-${theme}${
+        isFullscreenPage ? " is-fullscreen" : ""
+      }`}
+    >
       <main className="app-main">
         {currentPage === "home" && (
           <HomePage
@@ -245,6 +266,7 @@ function MainAppShell({ theme, toggleTheme }) {
             onLaunchConsumed={clearTimerLaunch}
             onGoLog={() => goPage("log")}
             onGoHome={() => goPage("home")}
+            onGoBack={() => goPage("train")}
             onGoProfile={goProfileCardMaker}
           />
         )}
@@ -261,6 +283,7 @@ function MainAppShell({ theme, toggleTheme }) {
           <GrowthHubPage
             onOpenCurriculum={() => goPage("curriculum")}
             onStartTraining={() => goPage("timer")}
+            onGoBack={() => goPage("category")}
           />
         )}
 
@@ -274,6 +297,7 @@ function MainAppShell({ theme, toggleTheme }) {
             cardMakerFocusLogId={cardMakerLogId}
             fighterLevel={fighterLevel}
             onStartTraining={() => goPage("timer")}
+            onStudioModeChange={setProfileStudioOpen}
           />
         )}
 
@@ -334,82 +358,74 @@ function MainAppShell({ theme, toggleTheme }) {
         />
       ) : null}
 
-      <nav className="app-bottom-nav">
-        <button
-          type="button"
-          className={getNavClass(currentPage === "home")}
-          onClick={() => goPage("home")}
-        >
-          <span className="app-nav-icon" aria-hidden="true">
-            ⌂
-          </span>
-          <span className="app-nav-label">홈</span>
-        </button>
+      {!isFullscreenPage ? (
+        <nav className="app-bottom-nav" aria-label="메인 메뉴">
+          <button
+            type="button"
+            className={getNavClass(currentPage === "home")}
+            onClick={() => goPage("home")}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              ⌂
+            </span>
+            <span className="app-nav-label">홈</span>
+          </button>
 
-        <button
-          type="button"
-          data-tutorial-target="nav-timer"
-          className={getNavClass(
-            currentPage === "train" || currentPage === "timer"
-          )}
-          onClick={() => goPage("train")}
-        >
-          <span className="app-nav-icon" aria-hidden="true">
-            ↑
-          </span>
-          <span className="app-nav-label">훈련</span>
-        </button>
+          <button
+            type="button"
+            data-tutorial-target="nav-timer"
+            className={getNavClass(
+              currentPage === "train" || currentPage === "timer"
+            )}
+            onClick={() => goPage("train")}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              ↑
+            </span>
+            <span className="app-nav-label">훈련</span>
+          </button>
 
-        <button
-          type="button"
-          data-tutorial-target="nav-log"
-          className={getNavClass(currentPage === "log")}
-          onClick={() => goPage("log")}
-        >
-          <span className="app-nav-icon" aria-hidden="true">
-            ☰
-          </span>
-          <span className="app-nav-label">기록</span>
-        </button>
+          <button
+            type="button"
+            data-tutorial-target="nav-log"
+            className={getNavClass(currentPage === "log")}
+            onClick={() => goPage("log")}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              ☰
+            </span>
+            <span className="app-nav-label">기록</span>
+          </button>
 
-        <button
-          type="button"
-          className={getNavClass(currentPage === "profile")}
-          onClick={goProfile}
-        >
-          <span className="app-nav-icon" aria-hidden="true">
-            ▣
-          </span>
-          <span className="app-nav-label">명패</span>
-        </button>
+          <button
+            type="button"
+            className={getNavClass(currentPage === "profile")}
+            onClick={goProfile}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              ▣
+            </span>
+            <span className="app-nav-label">명패</span>
+          </button>
 
-        <button
-          type="button"
-          data-tutorial-target="nav-growth"
-          className={getNavClass(currentPage === "growth")}
-          onClick={() => goPage("growth")}
-        >
-          <span className="app-nav-icon" aria-hidden="true">
-            ↗
-          </span>
-          <span className="app-nav-label">성장</span>
-        </button>
-
-        <button
-          type="button"
-          data-tutorial-target="nav-category"
-          className={getNavClass(currentPage === "category")}
-          onClick={() => goPage("category")}
-        >
-          <span className="app-nav-icon nav-category-icon" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <i />
-          </span>
-          <span className="app-nav-label">더보기</span>
-        </button>
-      </nav>
+          <button
+            type="button"
+            data-tutorial-target="nav-category"
+            className={getNavClass(
+              currentPage === "category" || currentPage === "growth"
+            )}
+            onClick={() => goPage("category")}
+          >
+            <span className="app-nav-icon nav-category-icon" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="app-nav-label">더보기</span>
+          </button>
+        </nav>
+      ) : null}
 
       <Analytics />
     </div>

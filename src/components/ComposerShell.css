@@ -31,6 +31,22 @@
   margin-bottom: 12px;
 }
 
+.composer-shell-back {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.theme-light .composer-shell-back {
+  color: #5c5346;
+}
+
 .composer-shell-heading {
   min-width: 0;
 }

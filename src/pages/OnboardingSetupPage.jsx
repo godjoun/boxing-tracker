@@ -133,14 +133,14 @@ export default function OnboardingSetupPage() {
           <div className="onboarding-street-body">
             <p className="onboarding-street-eyebrow">YOUR ROUND. YOUR STORY.</p>
             <h1 className="onboarding-street-title">
-              I RULE
+              ANOTHER ROUND
               <br />
-              THE ROUND.
+              OF LIFE.
             </h1>
             <p className="onboarding-street-ko">
-              쫓지 않는다.
+              한 라운드씩,
               <br />
-              라운드로 증명한다.
+              인생을 쌓는다.
             </p>
             <p className="onboarding-street-copy">
               이름만 올리면 바로 훈련을 시작할 수 있어요.

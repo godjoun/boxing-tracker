@@ -33,7 +33,7 @@
   padding: 8px 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--p-text);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -113,8 +113,13 @@
 }
 
 .composer-segment-tab.is-active {
-  background: var(--p-accent-bg);
-  color: var(--p-accent-soft);
+  background: #0a0909;
+  color: #ffffff;
+}
+
+.theme-dark .composer-segment-tab.is-active {
+  background: #f5f1e8;
+  color: #0a0909;
 }
 
 .composer-segment-tab em {
@@ -141,9 +146,14 @@
   transform: translateX(-50%);
   padding: 10px;
   border-radius: 18px;
-  background: var(--p-bg-deep);
+  background: var(--p-bg-panel);
   border: 1px solid var(--p-border-strong);
   backdrop-filter: blur(12px);
+  box-shadow: 0 10px 28px rgba(10, 9, 9, 0.12);
+}
+
+.theme-dark .composer-shell-dock {
+  background: rgba(14, 14, 14, 0.94);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
 }
 
@@ -164,8 +174,8 @@
   padding: 12px 14px;
   border: none;
   border-radius: 12px;
-  background: #8a2e2e;
-  color: #f5f1e8;
+  background: #0a0909;
+  color: #ffffff;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -173,12 +183,25 @@
 }
 
 .composer-dock-primary:hover {
-  background: #742525;
+  background: #1a1919;
 }
 
 .composer-dock-primary:active {
-  background: #5f1e1e;
+  background: #000000;
   transform: translateY(1px);
+}
+
+.theme-dark .composer-dock-primary {
+  background: #f5f1e8;
+  color: #0a0909;
+}
+
+.theme-dark .composer-dock-primary:hover {
+  background: #ffffff;
+}
+
+.theme-dark .composer-dock-primary:active {
+  background: #e8e4dc;
 }
 
 .composer-dock-primary:disabled {

@@ -1016,6 +1016,44 @@ export default function TimerPage({
     stopTimerAudioSession();
   }
 
+  function handleLeaveTimer() {
+    if (!onGoBack) return;
+
+    if (isComplete || !hasStartedSession) {
+      onGoBack();
+      return;
+    }
+
+    const completedRounds = getCompletedRoundsSoFar();
+
+    if (completedRounds >= 1) {
+      const ok = window.confirm(
+        `지금까지 ${completedRounds}라운드를 기록하고 나갈까요?`
+      );
+      if (!ok) return;
+
+      setIsRunning(false);
+      savePartialSession(completedRounds);
+      clearTimerMediaSession();
+      stopTimerAudioSession();
+      clearTimerSession();
+      onGoBack();
+      return;
+    }
+
+    const ok = window.confirm(
+      "아직 완료한 라운드가 없어요. 타이머에서 나갈까요?"
+    );
+    if (!ok) return;
+
+    resetTimerState();
+    clearCurriculumContext();
+    clearTimerSession();
+    clearTimerMediaSession();
+    stopTimerAudioSession();
+    onGoBack();
+  }
+
   const timerCardStyle = {
     ...styles.timerCard,
     ...(isFocusMode ? { marginBottom: 0 } : {}),
@@ -1213,6 +1251,18 @@ export default function TimerPage({
       ) : null}
 
       {!isSetupMode ? (
+      <>
+      {onGoBack ? (
+        <div className="timer-running-bar">
+          <button
+            type="button"
+            className="timer-back-button"
+            onClick={handleLeaveTimer}
+          >
+            ← 뒤로
+          </button>
+        </div>
+      ) : null}
       <section
         className={
           isFocusMode
@@ -1411,6 +1461,7 @@ export default function TimerPage({
         </div>
         )}
       </section>
+      </>
       ) : null}
     </div>
   );

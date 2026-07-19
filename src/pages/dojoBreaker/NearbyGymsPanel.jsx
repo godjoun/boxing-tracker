@@ -10,7 +10,7 @@ import {
   searchNearbyGyms,
 } from "../../utils/gymSearch";
 
-export default function NearbyGymsPanel({ onGoBack }) {
+export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [gyms, setGyms] = useState([]);
@@ -78,10 +78,12 @@ export default function NearbyGymsPanel({ onGoBack }) {
 
   return (
     <>
-      <header className="gym-search-header">
-        <button className="category-back" type="button" onClick={onGoBack}>
-          ← 도장
-        </button>
+      <header className={`gym-search-header${embedded ? " is-embedded" : ""}`}>
+        {!embedded && onGoBack ? (
+          <button className="category-back" type="button" onClick={onGoBack}>
+            ← 도장
+          </button>
+        ) : null}
         <h1>주변 체육관</h1>
         <p className="gym-search-context">
           {position

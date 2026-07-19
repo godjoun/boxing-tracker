@@ -508,7 +508,7 @@ export const styles = {
     padding: "6px 9px",
     borderRadius: "999px",
     background: "var(--p-brass)",
-    color: "#0a0a0a",
+    color: "var(--p-on-accent)",
     fontSize: "11px",
     fontWeight: 900,
   },

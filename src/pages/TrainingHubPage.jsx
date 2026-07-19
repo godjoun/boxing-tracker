@@ -1,9 +1,5 @@
 import { useMemo } from "react";
 import { useTraining } from "../store/TrainingContext";
-import {
-  getCurriculumProgress,
-  getRecommendedSession,
-} from "../utils/homeCurriculum";
 import { getFighterProgress } from "../utils/fighterProgress";
 import {
   isComboCreatorUnlocked,
@@ -13,7 +9,6 @@ import { MATCH_TIMER_PRESETS } from "../utils/timerPresets";
 
 export default function TrainingHubPage({
   fighterLevel = 1,
-  onStartSession,
   onStartPreset,
   onOpenTimer,
   onOpenCurriculum,
@@ -22,14 +17,7 @@ export default function TrainingHubPage({
 }) {
   const { logs } = useTraining();
 
-  const { progress, recommended, fighter } = useMemo(() => {
-    const curriculumProgress = getCurriculumProgress();
-    return {
-      progress: curriculumProgress,
-      recommended: getRecommendedSession(curriculumProgress),
-      fighter: getFighterProgress(logs),
-    };
-  }, [logs]);
+  const fighter = useMemo(() => getFighterProgress(logs), [logs]);
 
   const comboUnlocked = isComboCreatorUnlocked(fighterLevel);
 
@@ -160,63 +148,6 @@ export default function TrainingHubPage({
               ? "최고 레벨에 도달했어요."
               : `${fighter.currentLevelExp} / ${fighter.nextLevelExp} EXP`}
           </p>
-        </section>
-
-        <section className="levelup-box-card levelup-box-card-accent">
-          <p className="levelup-box-kicker">TODAY&apos;S SESSION</p>
-          <h3 className="levelup-box-title">오늘의 추천 훈련</h3>
-
-          {recommended ? (
-            <>
-              <div className="levelup-recommend-meta">
-                {recommended.weekLabel ? (
-                  <span className="levelup-badge">{recommended.weekLabel}</span>
-                ) : null}
-                {recommended.code ? (
-                  <span className="levelup-badge-muted">{recommended.code}</span>
-                ) : null}
-              </div>
-
-              <p className="levelup-recommend-name">{recommended.title}</p>
-              {recommended.goal ? (
-                <p className="levelup-recommend-goal">{recommended.goal}</p>
-              ) : null}
-
-              <div className="levelup-curriculum-progress">
-                <div className="levelup-progress-track">
-                  <div
-                    className="levelup-progress-fill"
-                    style={{ width: `${progress.progressPercent}%` }}
-                  />
-                </div>
-                <span className="levelup-progress-count">
-                  {progress.completedCount}/{progress.totalSessions}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className="levelup-box-cta"
-                onClick={() => onStartSession?.(recommended)}
-              >
-                오늘 세션 시작 →
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="levelup-recommend-name">커리큘럼 완주 🎉</p>
-              <p className="levelup-recommend-goal">
-                모든 세션을 마쳤어요. 원하는 세션을 다시 골라 훈련하세요.
-              </p>
-              <button
-                type="button"
-                className="levelup-box-cta"
-                onClick={onOpenCurriculum}
-              >
-                커리큘럼 다시 보기 →
-              </button>
-            </>
-          )}
         </section>
 
         <section className="levelup-box-card">

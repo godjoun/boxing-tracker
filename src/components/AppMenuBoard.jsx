@@ -140,7 +140,7 @@ export default function AppMenuBoard({
         <div className="app-menu-unlock">
           <span>스파링 해금</span>
           <p>
-            LV.{sparringProgress.unlockLevel}{" "}
+            도장 → 스파링 탭 · LV.{sparringProgress.unlockLevel}{" "}
             <strong>{sparringTitle.ko}</strong> · {sparringProgress.levelsToGo}
             레벨 남음
           </p>

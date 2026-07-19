@@ -2,13 +2,35 @@
   color: var(--p-text);
 }
 
+.timer-running-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.timer-back-button {
+  min-height: 40px;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: var(--p-text);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.timer-back-button:active {
+  opacity: 0.7;
+}
+
 .timer-page-setup {
   display: block;
 }
 
 .timer-composer-preview {
   margin: 0 !important;
-  color: #ffffff !important;
+  color: var(--p-text-strong) !important;
   font-size: 28px !important;
   font-weight: 900;
   letter-spacing: 0.04em;

@@ -28,7 +28,7 @@ const DEFAULT_FORM = {
   active: false,
 };
 
-export default function SparringPartnerPanel({ onGoBack }) {
+export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
   const { profile, userId, logs } = useTraining();
   const fighterLevel = useMemo(() => getFighterProgress(logs).level, [logs]);
   const profileDefaults = buildListingFromProfile(profile, {
@@ -157,9 +157,15 @@ export default function SparringPartnerPanel({ onGoBack }) {
 
   return (
     <>
-      <button className="category-back dojo-sub-back" type="button" onClick={onGoBack}>
-        <span>←</span> 도장깨기
-      </button>
+      {!embedded && onGoBack ? (
+        <button
+          className="category-back dojo-sub-back"
+          type="button"
+          onClick={onGoBack}
+        >
+          <span>←</span> 도장
+        </button>
+      ) : null}
 
       <section className="gym-panel sparring-register-panel">
         <div className="gym-panel-heading">

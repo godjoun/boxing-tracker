@@ -70,21 +70,11 @@ const SHORTCUTS = {
   gyms: {
     id: "gyms",
     icon: "M",
-    title: "주변 체육관",
-    description: "체육관 찾기",
+    title: "도장",
+    description: "체육관 · 스파링",
     route: "gym",
     gymView: "gyms",
-    accent: "red",
-  },
-  sparring: {
-    id: "sparring",
-    icon: "S",
-    title: "스파링 찾기",
-    description: "체급 · 경력 매칭",
-    route: "gym",
-    gymView: "sparring",
-    accent: "orange",
-    featureId: "sparring",
+    accent: "slate",
   },
   backup: {
     id: "backup",
@@ -120,7 +110,7 @@ export const MENU_GROUPS = [
   {
     id: "outside",
     title: "바깥",
-    items: [SHORTCUTS.gyms, SHORTCUTS.sparring],
+    items: [SHORTCUTS.gyms],
   },
   {
     id: "tools",
@@ -144,7 +134,6 @@ export const DASHBOARD_SHORTCUT_POOL = [
   SHORTCUTS.profile,
   SHORTCUTS.growth,
   SHORTCUTS.gyms,
-  SHORTCUTS.sparring,
   SHORTCUTS.backup,
 ];
 

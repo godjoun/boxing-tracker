@@ -5,98 +5,90 @@ import { getLevelTitle } from "../utils/fighterTitles";
 import NearbyGymsPanel from "./dojoBreaker/NearbyGymsPanel";
 import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
+function resolveTab(view) {
+  if (view === "sparring" || view === "sparring-lock") return "sparring";
+  return "gyms";
+}
+
 export default function GymFinderPage({
-  initialView = "hub",
+  initialView = "gyms",
   fighterLevel = 1,
   onGoBack,
   onStartTraining,
 }) {
-  const [view, setView] = useState(initialView);
+  const [tab, setTab] = useState(() => resolveTab(initialView));
   const sparringLocked = !isSparringUnlocked(fighterLevel);
   const sparringLevel = getUnlockLevel("sparring");
 
   useEffect(() => {
-    setView(initialView);
+    setTab(resolveTab(initialView));
   }, [initialView]);
 
-  function openFeature(featureId) {
-    if (featureId === "sparring" && sparringLocked) {
-      setView("sparring-lock");
-      return;
-    }
-
-    setView(featureId);
+  function openTab(nextTab) {
+    setTab(nextTab);
   }
 
-  if (view === "sparring-lock" || (view === "sparring" && sparringLocked)) {
-    return (
-      <FeatureLockScreen
-        featureId="sparring"
-        currentLevel={fighterLevel}
-        onBack={() => setView("hub")}
-        onStartTraining={onStartTraining}
-      />
-    );
-  }
-
-  if (view === "gyms") {
-    return (
-      <main className="gym-page gym-page-sub">
-        <NearbyGymsPanel onGoBack={() => setView("hub")} />
-      </main>
-    );
-  }
-
-  if (view === "sparring") {
-    return (
-      <main className="gym-page gym-page-sub">
-        <SparringPartnerPanel onGoBack={() => setView("hub")} />
-      </main>
-    );
-  }
+  const showSparringLock = tab === "sparring" && sparringLocked;
 
   return (
-    <main className="gym-page gym-page-hub">
-      <header className="gym-hub-header">
+    <main className="gym-page gym-page-unified">
+      <header className="gym-unified-header">
         <button className="category-back" type="button" onClick={onGoBack}>
           ← 뒤로
         </button>
-        <h1>도장</h1>
-        <p>근처 체육관을 찾거나, 레벨이 되면 스파링 상대를 고르세요.</p>
+        <div className="gym-unified-heading">
+          <p className="gym-unified-kicker">DOJO</p>
+          <h1>도장</h1>
+          <p>근처 체육관과 스파링을 한곳에서 찾으세요.</p>
+        </div>
       </header>
 
-      <div className="gym-hub-status" aria-label="이용 가능 기능">
-        <span className="is-on">체육관 · 바로 가능</span>
-        <span className={sparringLocked ? "is-locked" : "is-on"}>
-          스파링 ·{" "}
-          {sparringLocked
-            ? `LV.${sparringLevel} ${getLevelTitle(sparringLevel).ko}`
-            : "열림"}
-        </span>
+      <nav className="gym-unified-tabs" aria-label="도장 메뉴">
+        <button
+          type="button"
+          className={`gym-unified-tab${tab === "gyms" ? " is-active" : ""}`}
+          onClick={() => openTab("gyms")}
+        >
+          체육관
+        </button>
+        <button
+          type="button"
+          className={`gym-unified-tab${tab === "sparring" ? " is-active" : ""}`}
+          onClick={() => openTab("sparring")}
+          aria-disabled={sparringLocked}
+        >
+          스파링
+          {sparringLocked ? (
+            <em>LV.{sparringLevel}</em>
+          ) : null}
+        </button>
+      </nav>
+
+      <div className="gym-unified-body">
+        {showSparringLock ? (
+          <FeatureLockScreen
+            featureId="sparring"
+            currentLevel={fighterLevel}
+            onBack={() => openTab("gyms")}
+            onStartTraining={onStartTraining}
+          />
+        ) : null}
+
+        {!showSparringLock && tab === "gyms" ? (
+          <NearbyGymsPanel embedded />
+        ) : null}
+
+        {!showSparringLock && tab === "sparring" ? (
+          <SparringPartnerPanel embedded />
+        ) : null}
       </div>
 
-      <div className="gym-hub-actions">
-        <button
-          type="button"
-          className="gym-hub-action"
-          onClick={() => openFeature("gyms")}
-        >
-          <strong>주변 체육관</strong>
-          <span>거리순으로 찾고 체험 문의</span>
-        </button>
-        <button
-          type="button"
-          className={`gym-hub-action${sparringLocked ? " is-locked" : ""}`}
-          onClick={() => openFeature("sparring")}
-        >
-          <strong>스파링 상대</strong>
-          <span>
-            {sparringLocked
-              ? `LV.${sparringLevel} 해금`
-              : "체급·경력으로 매칭"}
-          </span>
-        </button>
-      </div>
+      {sparringLocked && tab === "gyms" ? (
+        <p className="gym-unified-unlock-hint">
+          스파링은 LV.{sparringLevel} {getLevelTitle(sparringLevel).ko}에서
+          열립니다.
+        </p>
+      ) : null}
     </main>
   );
 }

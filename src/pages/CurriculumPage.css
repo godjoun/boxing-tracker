@@ -108,7 +108,11 @@
 .curriculum-progress-bar div {
   height: 100%;
   border-radius: inherit;
-  background: #8a2e2e;
+  background: #0a0909;
+}
+
+.theme-dark .curriculum-progress-bar div {
+  background: #f5f1e8;
 }
 
 .curriculum-progress-note {
@@ -164,25 +168,43 @@
 .curriculum-session-button {
   border: none;
   border-radius: 14px;
-  background: #8a2e2e;
-  color: #f5f1e8;
+  background: #0a0909;
+  color: #ffffff;
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
   transition: background-color 160ms ease, transform 160ms ease;
 }
 
+.theme-dark .curriculum-cta,
+.theme-dark .curriculum-session-button {
+  background: #f5f1e8;
+  color: #0a0909;
+}
+
 .curriculum-cta:hover,
 .curriculum-session-button:hover,
 .technique-session-start:hover {
-  background: #742525;
+  background: #1a1919;
+}
+
+.theme-dark .curriculum-cta:hover,
+.theme-dark .curriculum-session-button:hover,
+.theme-dark .technique-session-start:hover {
+  background: #ffffff;
 }
 
 .curriculum-cta:active,
 .curriculum-session-button:active,
 .technique-session-start:active {
-  background: #5f1e1e;
+  background: #000000;
   transform: translateY(1px);
+}
+
+.theme-dark .curriculum-cta:active,
+.theme-dark .curriculum-session-button:active,
+.theme-dark .technique-session-start:active {
+  background: #e8e4dc;
 }
 
 .curriculum-cta {
@@ -274,12 +296,21 @@
 .curriculum-roadmap-chip-bar div {
   height: 100%;
   border-radius: inherit;
-  background: #8a2e2e;
+  background: #0a0909;
+}
+
+.theme-dark .curriculum-roadmap-chip-bar div {
+  background: #f5f1e8;
 }
 
 .curriculum-roadmap-chip.is-active {
-  border-color: rgba(138, 46, 46, 0.45);
-  background: rgba(138, 46, 46, 0.1);
+  border-color: #0a0909;
+  background: rgba(10, 9, 9, 0.06);
+}
+
+.theme-dark .curriculum-roadmap-chip.is-active {
+  border-color: rgba(245, 241, 232, 0.45);
+  background: rgba(245, 241, 232, 0.1);
 }
 
 .curriculum-roadmap-chip.is-done {
@@ -287,7 +318,11 @@
 }
 
 .curriculum-roadmap-chip.is-done .curriculum-roadmap-chip-bar div {
-  background: linear-gradient(90deg, #8a2e2e, #a34a4a);
+  background: #0a0909;
+}
+
+.theme-dark .curriculum-roadmap-chip.is-done .curriculum-roadmap-chip-bar div {
+  background: #f5f1e8;
 }
 
 .curriculum-timeline {
@@ -1164,19 +1199,31 @@
 
 .curriculum-tab {
   min-height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--p-border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.62);
+  background: var(--p-bg-subtle);
+  color: var(--p-text-muted);
   font-size: 14px;
   font-weight: 900;
   cursor: pointer;
 }
 
 .curriculum-tab.is-active {
-  border-color: rgba(138, 46, 46, 0.34);
-  background: rgba(138, 46, 46, 0.14);
-  color: #fff;
+  border-color: #0a0909;
+  background: #0a0909;
+  color: #ffffff;
+}
+
+.theme-dark .curriculum-tab {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.theme-dark .curriculum-tab.is-active {
+  border-color: #f5f1e8;
+  background: #f5f1e8;
+  color: #0a0909;
 }
 
 .curriculum-today-start {
@@ -1357,17 +1404,23 @@
   margin-bottom: 18px;
   padding: 18px 16px;
   text-align: left;
-  border: 1px solid rgba(138, 46, 46, 0.4);
+  border: 1px solid var(--p-border);
   border-radius: 20px;
-  background:
-    radial-gradient(circle at 100% 0, rgba(138, 46, 46, 0.28), transparent 55%),
-    linear-gradient(150deg, #0b0b0c, #000000);
-  color: #fff;
+  background: var(--p-bg-subtle);
+  color: var(--p-text);
   cursor: pointer;
 }
 
+.theme-dark .technique-continue-card {
+  border-color: rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 255, 255, 0.06), transparent 55%),
+    #1a1214;
+  color: #f5f1e8;
+}
+
 .technique-continue-kicker {
-  color: var(--p-brass, #cf8b8b);
+  color: var(--p-text-muted);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.14em;
@@ -1377,24 +1430,25 @@
   font-size: 22px;
   font-weight: 950;
   letter-spacing: -0.03em;
+  color: inherit;
 }
 
 .technique-continue-meta {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--p-text-muted);
   font-size: 12px;
   font-weight: 700;
 }
 
 .technique-continue-cta {
   margin-top: 8px;
-  color: #cf8b8b;
+  color: var(--p-text);
   font-size: 13px;
   font-weight: 900;
 }
 
 .technique-catalog-label {
   margin: 0 0 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--p-text-faint);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -1402,7 +1456,7 @@
 
 .technique-catalog-help {
   margin: 0 0 14px;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--p-text-muted);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.45;
@@ -1426,30 +1480,30 @@
   min-height: 150px;
   padding: 16px 14px;
   text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--p-border);
   border-radius: 18px;
+  background: var(--p-bg-subtle);
+  color: var(--p-text);
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.theme-dark .technique-cat-card {
+  border-color: rgba(255, 255, 255, 0.1);
   background:
     radial-gradient(circle at 100% 0, rgba(255, 255, 255, 0.06), transparent 60%),
     rgba(255, 255, 255, 0.04);
-  color: #fff;
-  cursor: pointer;
-  transition: transform 140ms ease, border-color 140ms ease;
+  color: #f5f1e8;
 }
 
 .technique-cat-card:active {
   transform: scale(0.985);
 }
 
-.technique-cat-card.accent-red {
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.technique-cat-card.accent-gold {
-  border-color: rgba(138, 46, 46, 0.32);
-}
-
+.technique-cat-card.accent-red,
+.technique-cat-card.accent-gold,
 .technique-cat-card.accent-orange {
-  border-color: rgba(138, 46, 46, 0.22);
+  border-color: var(--p-border);
 }
 
 .technique-cat-icon {
@@ -1459,7 +1513,7 @@
 
 .technique-cat-en {
   margin-top: 6px;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--p-text-faint);
   font-size: 9px;
   font-weight: 900;
   letter-spacing: 0.14em;
@@ -1472,7 +1526,7 @@
 }
 
 .technique-cat-desc {
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--p-text-muted);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -1483,7 +1537,7 @@
   justify-content: space-between;
   margin-top: auto;
   padding-top: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--p-text-muted);
   font-size: 11px;
   font-weight: 800;
 }
@@ -1499,8 +1553,14 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--p-border-soft);
   border-radius: 14px;
+  background: var(--p-card-lift);
+  color: var(--p-text);
+}
+
+.theme-dark .technique-session-row {
+  border-color: rgba(255, 255, 255, 0.08);
   background: rgba(0, 0, 0, 0.22);
 }
 
@@ -1510,7 +1570,7 @@
 }
 
 .technique-session-copy span {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--p-text-faint);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -1521,11 +1581,12 @@
   margin: 2px 0;
   font-size: 15px;
   font-weight: 900;
+  color: inherit;
 }
 
 .technique-session-copy p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -1535,11 +1596,16 @@
   padding: 10px 14px;
   border: 0;
   border-radius: 12px;
-  background: #8a2e2e;
-  color: #f5f1e8;
+  background: #0a0909;
+  color: #ffffff;
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
+}
+
+.theme-dark .technique-session-start {
+  background: #f5f1e8;
+  color: #0a0909;
 }
 
 .technique-session-start:active {

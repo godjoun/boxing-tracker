@@ -38,7 +38,6 @@ import ComposerShell, {
 import "./CurriculumPage.css";
 
 const CURRICULUM_TABS = [
-  { id: "today", label: "오늘" },
   { id: "techniques", label: "기술" },
   { id: "program", label: "4주 코스" },
 ];
@@ -155,7 +154,7 @@ export default function CurriculumPage({
   const [sessionDrafts, setSessionDrafts] = useState({});
   const [expandedDrillId, setExpandedDrillId] = useState(null);
   const [expandedVideoId, setExpandedVideoId] = useState(null);
-  const [activeTab, setActiveTab] = useState("today");
+  const [activeTab, setActiveTab] = useState("techniques");
   const [openWeekId, setOpenWeekId] = useState(() => {
     const next = getRecommendedSession(progress);
     return next?.weekId || HOME_CURRICULUM.weeks[0]?.id || null;
@@ -169,17 +168,6 @@ export default function CurriculumPage({
   const recommendedAdjusted = useMemo(
     () => (recommended ? applyTrainingSettings(recommended, settings) : null),
     [recommended, settings]
-  );
-
-  const recommendedTimerConfig = useMemo(
-    () =>
-      recommendedAdjusted ? resolveSessionTimerConfig(recommendedAdjusted) : null,
-    [recommendedAdjusted]
-  );
-
-  const recommendedLesson = useMemo(
-    () => (recommended ? getLessonBySessionId(recommended.id) : null),
-    [recommended]
   );
 
   const sessions = useMemo(() => getAllCurriculumSessions(), []);
@@ -198,7 +186,7 @@ export default function CurriculumPage({
 
     const isTodaySession = recommended?.id === focusSessionId;
 
-    setActiveTab(isTodaySession ? "today" : "program");
+    setActiveTab(isTodaySession ? "techniques" : "program");
     setOpenWeekId(session.weekId);
 
     if (focusOpenDrills) {
@@ -211,7 +199,7 @@ export default function CurriculumPage({
 
     requestAnimationFrame(() => {
       const scrollTarget = isTodaySession
-        ? document.getElementById("curriculum-today")
+        ? document.querySelector(".technique-continue-card")
         : document.getElementById(`curriculum-week-${session.weekId}`);
 
       scrollTarget?.scrollIntoView({
@@ -383,118 +371,11 @@ export default function CurriculumPage({
     >
       <header className="curriculum-hero curriculum-hero-compact">
         <p className="curriculum-intro">
-          {activeTab === "today"
-            ? "오늘 할 세션만 빠르게 시작하세요."
-            : activeTab === "techniques"
-              ? "4주 코스를 기술별로 모아 둔 목록입니다. 새 수업이 아니라 같은 세션의 다른 보기예요."
-              : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
+          {activeTab === "techniques"
+            ? "4주 코스를 기술별로 모아 둔 목록입니다. 새 수업이 아니라 같은 세션의 다른 보기예요."
+            : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
         </p>
       </header>
-
-      {activeTab === "today" ? (
-        <>
-          {recommendedAdjusted ? (
-            <section
-              className="curriculum-card curriculum-today-card"
-              id="curriculum-today"
-            >
-              <p className="curriculum-section-label">TODAY</p>
-              <h2>오늘 추천 세션</h2>
-              <div className="curriculum-today-body">
-                <div>
-                  <span>
-                    {recommended.weekLabel} · {recommended.code}
-                  </span>
-                  <strong>{recommended.title}</strong>
-                  <p>{recommended.goal}</p>
-                  {recommendedTimerConfig ? (
-                    <p className="curriculum-session-schedule">
-                      {recommendedTimerConfig.scheduleSummary}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="curriculum-today-meta">
-                <span>{recommendedAdjusted.rounds}R</span>
-                <span>
-                  라운드 {Math.round(recommendedAdjusted.workSeconds / 60)}분
-                </span>
-                <span>휴식 {recommendedAdjusted.restSeconds}초</span>
-                {settings.intensityId !== "normal" ||
-                settings.sessionOverrides[recommended.id] ? (
-                  <span className="curriculum-adjusted-badge">조정됨</span>
-                ) : null}
-              </div>
-
-              <div className="curriculum-today-lesson">
-                <button
-                  type="button"
-                  className="curriculum-drill-toggle"
-                  onClick={() =>
-                    setExpandedDrillId((current) =>
-                      current === recommended.id ? null : recommended.id
-                    )
-                  }
-                  aria-expanded={expandedDrillId === recommended.id}
-                >
-                  {expandedDrillId === recommended.id
-                    ? "레슨 접기"
-                    : "① 레슨·드릴 보기"}
-                </button>
-                {expandedDrillId === recommended.id && recommendedTimerConfig ? (
-                  <SessionDrillGuide
-                    syncedDrills={recommendedTimerConfig.syncedDrills}
-                    totalRounds={recommendedAdjusted.rounds}
-                    workSeconds={recommendedAdjusted.workSeconds}
-                  />
-                ) : null}
-
-                {recommendedLesson?.hasVideo ? (
-                  <>
-                    <button
-                      type="button"
-                      className="curriculum-drill-toggle curriculum-today-video-toggle"
-                      onClick={() =>
-                        setExpandedVideoId((current) =>
-                          current === recommended.id ? null : recommended.id
-                        )
-                      }
-                      aria-expanded={expandedVideoId === recommended.id}
-                    >
-                      {expandedVideoId === recommended.id
-                        ? "영상 접기"
-                        : "영상 보기 (선택)"}
-                    </button>
-                    {expandedVideoId === recommended.id ? (
-                      <LessonVideoPlayer
-                        videoUrl={recommendedLesson.videoUrl}
-                        title={recommendedLesson.title}
-                      />
-                    ) : null}
-                  </>
-                ) : null}
-              </div>
-            </section>
-          ) : null}
-
-          {progress.isComplete ? (
-            <section className="curriculum-card curriculum-graduate-card">
-              <p className="curriculum-section-label">
-                {CURRICULUM_GRADUATION.badge}
-              </p>
-              <h2>{CURRICULUM_GRADUATION.title}</h2>
-              <p className="curriculum-settings-note">
-                {CURRICULUM_GRADUATION.message}
-              </p>
-              <ul className="curriculum-graduate-list">
-                {CURRICULUM_GRADUATION.nextSteps.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-        </>
-      ) : null}
 
       {activeTab === "techniques" ? (
         <>
@@ -1022,7 +903,7 @@ export default function CurriculumPage({
         </>
       ) : null}
 
-      {activeTab === "today" || activeTab === "program" ? (
+      {activeTab === "program" ? (
         <button
           type="button"
           className="curriculum-refresh"

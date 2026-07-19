@@ -16,6 +16,8 @@ export default function AppMenuBoard({
   onNavigateGym,
   onOpenCardMaker,
   onReplayTutorial,
+  theme = "dark",
+  onToggleTheme,
 }) {
   const sparringProgress = getSparringUnlockProgress(fighterLevel);
   const sparringTitle = getLevelTitle(SPARRING_UNLOCK_LEVEL);
@@ -86,6 +88,36 @@ export default function AppMenuBoard({
             <h2>{group.title}</h2>
             <div className="app-menu-grid">
               {group.items.map((item) => renderTile(item))}
+              {group.id === "tools" && onToggleTheme ? (
+                <button
+                  type="button"
+                  className="app-menu-tile accent-slate"
+                  onClick={onToggleTheme}
+                >
+                  <span className="app-menu-tile-icon" aria-hidden="true">
+                    {theme === "dark" ? "☀" : "☾"}
+                  </span>
+                  <strong>{theme === "dark" ? "라이트 모드" : "다크 모드"}</strong>
+                  <small>
+                    {theme === "dark"
+                      ? "밝은 화면으로 전환"
+                      : "오일 블랙 화면으로 전환"}
+                  </small>
+                </button>
+              ) : null}
+              {group.id === "tools" && onReplayTutorial ? (
+                <button
+                  type="button"
+                  className="app-menu-tile accent-slate"
+                  onClick={onReplayTutorial}
+                >
+                  <span className="app-menu-tile-icon" aria-hidden="true">
+                    ?
+                  </span>
+                  <strong>튜토리얼</strong>
+                  <small>앱 사용법 다시 보기</small>
+                </button>
+              ) : null}
               {group.id === "more" && onReplayTutorial ? (
                 <button
                   type="button"

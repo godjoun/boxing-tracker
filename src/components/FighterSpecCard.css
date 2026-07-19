@@ -6,12 +6,11 @@
   position: relative;
   overflow: hidden;
   padding: 18px 16px 16px;
-  border: 1px solid rgba(138, 46, 46, 0.28);
+  border: 1px solid var(--p-border);
   border-radius: 22px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(138, 46, 46, 0.18), transparent 42%),
-    linear-gradient(160deg, #1a1214 0%, #0a0909 100%);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
+  background: var(--p-card);
+  box-shadow: none;
+  color: var(--p-text);
 }
 
 .fighter-nameplate-accent {
@@ -20,7 +19,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #cf8b8b, transparent);
+  background: linear-gradient(90deg, transparent, #8a2e2e, transparent);
 }
 
 .fighter-nameplate-top {
@@ -36,8 +35,8 @@
   height: 80px;
   border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--p-border);
+  background: var(--p-card-lift);
 }
 
 .fighter-nameplate-photo-btn {
@@ -65,7 +64,7 @@
   gap: 2px;
   width: 100%;
   height: 100%;
-  color: rgba(255, 255, 255, 0.28);
+  color: #a34a4a;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -74,13 +73,13 @@
 .fighter-nameplate-photo-empty em {
   font-style: normal;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.42);
+  color: #8a2e2e;
 }
 
 .fighter-nameplate-photo-empty strong {
   font-size: 18px;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.55);
+  color: #8a2e2e;
   line-height: 1;
 }
 
@@ -90,8 +89,8 @@
   right: 0;
   bottom: 0;
   padding: 4px 0;
-  background: rgba(0, 0, 0, 0.62);
-  color: #fff;
+  background: rgba(138, 46, 46, 0.88);
+  color: #f5f1e8;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -108,10 +107,10 @@
 .fighter-nameplate-photo-action {
   min-height: 34px;
   padding: 7px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--p-border);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.22);
-  color: rgba(255, 255, 255, 0.78);
+  background: var(--p-card-lift);
+  color: var(--p-text);
   font-size: 11px;
   font-weight: 800;
   cursor: pointer;
@@ -120,38 +119,46 @@
 
 .fighter-nameplate-photo-action.is-primary {
   border-color: rgba(138, 46, 46, 0.42);
-  background: rgba(138, 46, 46, 0.16);
-  color: #e0aaaa;
+  background: #8a2e2e;
+  color: #f5f1e8;
 }
 
-.fighter-nameplate-edit {
-  margin-top: 12px;
-  margin-bottom: 4px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.22);
-  overflow: hidden;
+.fighter-nameplate-editor {
+  margin-top: 18px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(138, 46, 46, 0.16);
 }
 
-.fighter-nameplate-edit .profile-edit-toggle {
-  color: #fff;
+.fighter-nameplate-editor .profile-edit-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 2px 10px;
+  border: none;
+  background: transparent;
+  color: var(--p-text, #0a0909);
+  cursor: pointer;
+  text-align: left;
 }
 
-.fighter-nameplate-edit .profile-edit-toggle-hint {
-  color: rgba(255, 255, 255, 0.48);
+.fighter-nameplate-editor .profile-edit-content {
+  border-top: 1px solid rgba(138, 46, 46, 0.12);
+  padding-top: 4px;
 }
 
-.fighter-nameplate-edit .profile-edit-toggle-action {
-  color: #cf8b8b;
+.fighter-nameplate-editor .profile-edit-section-title {
+  color: #8a2e2e;
 }
 
-.fighter-nameplate-edit .profile-edit-content {
-  border-top-color: rgba(255, 255, 255, 0.08);
+.fighter-nameplate-editor label {
+  color: #8a2e2e;
 }
 
 .fighter-nameplate-kicker {
   margin: 0 0 4px;
-  color: var(--p-brass, #cf8b8b);
+  color: #8a2e2e;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.14em;
@@ -159,6 +166,7 @@
 
 .fighter-nameplate-name {
   margin: 0;
+  color: var(--p-text, #0a0909);
   font-size: 22px;
   font-weight: 900;
   letter-spacing: -0.03em;
@@ -167,7 +175,7 @@
 
 .fighter-nameplate-title {
   margin: 4px 0 0;
-  color: #fff;
+  color: var(--p-text, #0a0909);
   font-size: 15px;
   font-weight: 900;
   letter-spacing: -0.02em;
@@ -175,7 +183,7 @@
 
 .fighter-nameplate-title-en {
   margin: 2px 0 0;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--p-text-muted, #6b5e56);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -183,7 +191,7 @@
 
 .fighter-nameplate-bio {
   margin: 6px 0 0;
-  color: rgba(255, 255, 255, 0.44);
+  color: var(--p-text-muted, #6b5e56);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -193,8 +201,8 @@
   min-width: 58px;
   padding: 8px 10px;
   border-radius: 14px;
-  border: 1px solid rgba(138, 46, 46, 0.4);
-  background: rgba(138, 46, 46, 0.14);
+  border: 1px solid var(--p-border-strong);
+  background: var(--p-card-lift);
   text-align: center;
   cursor: pointer;
   color: inherit;
@@ -205,8 +213,8 @@
 }
 
 .fighter-nameplate-badge:hover {
-  border-color: rgba(138, 46, 46, 0.55);
-  background: rgba(138, 46, 46, 0.2);
+  border-color: rgba(138, 46, 46, 0.5);
+  background: rgba(138, 46, 46, 0.06);
 }
 
 .fighter-nameplate-badge:active {
@@ -215,7 +223,7 @@
 
 .fighter-nameplate-badge-label {
   display: block;
-  color: rgba(245, 241, 232, 0.5);
+  color: #8a2e2e;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -224,7 +232,7 @@
 .fighter-nameplate-badge strong {
   display: block;
   margin-top: 2px;
-  color: #f5f1e8;
+  color: var(--p-text, #0a0909);
   font-size: 22px;
   font-weight: 900;
   line-height: 1;
@@ -233,7 +241,7 @@
 .fighter-nameplate-badge small {
   display: block;
   margin-top: 4px;
-  color: #cf8b8b;
+  color: #8a2e2e;
   font-size: 9px;
   font-weight: 700;
 }
@@ -251,14 +259,15 @@
   gap: 5px;
   padding: 5px 9px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.24);
+  border: 1px solid var(--p-border-soft);
+  background: var(--p-card-lift);
+  color: var(--p-text);
   font-size: 11px;
   font-weight: 700;
 }
 
 .fighter-nameplate-spec em {
-  color: rgba(255, 255, 255, 0.38);
+  color: #8a2e2e;
   font-style: normal;
   font-size: 10px;
   font-weight: 600;
@@ -266,7 +275,7 @@
 
 .fighter-nameplate-spec-empty {
   margin: 14px 0 0;
-  color: rgba(255, 255, 255, 0.36);
+  color: var(--p-text-muted, #6b5e56);
   font-size: 11px;
 }
 
@@ -280,7 +289,7 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 6px;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--p-text-muted, #6b5e56);
   font-size: 11px;
   font-weight: 700;
 }
@@ -288,7 +297,7 @@
 .fighter-nameplate-bar {
   height: 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(138, 46, 46, 0.12);
   overflow: hidden;
 }
 
@@ -300,7 +309,7 @@
 
 .fighter-nameplate-exp-note {
   margin: 6px 0 0;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--p-text-muted, #6b5e56);
   font-size: 10px;
 }
 
@@ -313,15 +322,16 @@
 
 .fighter-nameplate-stat {
   padding: 10px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--p-border-soft);
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--p-card-lift);
   text-align: center;
+  color: var(--p-text);
 }
 
 .fighter-nameplate-stat span {
   display: block;
-  color: rgba(255, 255, 255, 0.38);
+  color: #8a2e2e;
   font-size: 10px;
   font-weight: 600;
 }
@@ -329,6 +339,7 @@
 .fighter-nameplate-stat strong {
   display: block;
   margin-top: 4px;
+  color: var(--p-text, #0a0909);
   font-size: 15px;
   font-weight: 900;
 }
@@ -336,7 +347,7 @@
 .fighter-nameplate-stat small {
   display: block;
   margin-top: 2px;
-  color: rgba(184, 169, 154, 0.82);
+  color: #a34a4a;
   font-size: 9px;
   font-weight: 700;
 }
@@ -375,8 +386,8 @@
   padding: 4px 8px;
   border-radius: 999px;
   border: 1px solid rgba(138, 46, 46, 0.28);
-  background: rgba(138, 46, 46, 0.1);
-  color: #cf8b8b;
+  background: rgba(138, 46, 46, 0.08);
+  color: #8a2e2e;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -388,35 +399,27 @@
 
 .fighter-nameplate-frame.tier-pro {
   border-color: rgba(138, 46, 46, 0.34);
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.38),
-    inset 0 0 0 1px rgba(138, 46, 46, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(138, 46, 46, 0.06);
 }
 
 .fighter-nameplate-frame.tier-champion,
 .fighter-nameplate-frame.tier-champion-gold {
-  border-color: rgba(138, 46, 46, 0.45);
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.38),
-    0 0 24px rgba(138, 46, 46, 0.14);
+  border-color: rgba(138, 46, 46, 0.42);
 }
 
 .fighter-nameplate-frame.tier-champion-gold .fighter-nameplate-accent,
 .fighter-nameplate-frame.tier-goat .fighter-nameplate-accent {
-  background: linear-gradient(90deg, #8a2e2e, #cf8b8b, #f5f1e8, #8a2e2e);
+  background: linear-gradient(90deg, #8a2e2e, #a34a4a, #8a2e2e);
 }
 
 .fighter-nameplate-frame.tier-goat {
-  border-color: rgba(138, 46, 46, 0.55);
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.38),
-    0 0 32px rgba(138, 46, 46, 0.2);
+  border-color: rgba(138, 46, 46, 0.5);
 }
 
 .fighter-nameplate-frame.tier-goat .fighter-nameplate-veteran-badge {
-  border-color: rgba(138, 46, 46, 0.45);
-  background: rgba(138, 46, 46, 0.16);
-  color: #f5f1e8;
+  border-color: rgba(138, 46, 46, 0.4);
+  background: rgba(138, 46, 46, 0.12);
+  color: #8a2e2e;
 }
 
 @media (max-width: 520px) {

@@ -21,8 +21,8 @@ const SHORTCUTS = {
   "training-log": {
     id: "training-log",
     icon: "R",
-    title: "훈련 로그",
-    description: "기록 · 캘린더",
+    title: "기록",
+    description: "로그 · 캘린더",
     route: "log",
     accent: "slate",
   },
@@ -98,6 +98,11 @@ const SHORTCUTS = {
 
 export const MENU_GROUPS = [
   {
+    id: "trace",
+    title: "흔적",
+    items: [SHORTCUTS["training-log"]],
+  },
+  {
     id: "train",
     title: "훈련",
     items: [
@@ -105,7 +110,6 @@ export const MENU_GROUPS = [
       SHORTCUTS.curriculum,
       SHORTCUTS.strength,
       SHORTCUTS["combo-creator"],
-      SHORTCUTS["training-log"],
     ],
   },
   {
@@ -114,13 +118,13 @@ export const MENU_GROUPS = [
     items: [SHORTCUTS["fighter-card"], SHORTCUTS.profile, SHORTCUTS.growth],
   },
   {
-    id: "match",
-    title: "매칭",
+    id: "outside",
+    title: "바깥",
     items: [SHORTCUTS.gyms, SHORTCUTS.sparring],
   },
   {
-    id: "more",
-    title: "설정",
+    id: "tools",
+    title: "도구",
     items: [SHORTCUTS.backup],
   },
 ];

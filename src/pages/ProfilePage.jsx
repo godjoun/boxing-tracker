@@ -184,15 +184,40 @@ export default function ProfilePage({
   const profileSpecSummary = useMemo(() => {
     const parts = [];
 
-    if (profile.heightCm) parts.push(`${profile.heightCm}cm`);
-    if (profile.weightKg) parts.push(`${profile.weightKg}kg`);
-    if (profile.reachCm) parts.push(`리치 ${profile.reachCm}cm`);
-    if (profile.weightClass) parts.push(profile.weightClass);
-    if (profile.experience) parts.push(profile.experience);
-    if (profile.area) parts.push(profile.area);
+    if (heightCm || profile.heightCm) {
+      parts.push(`${heightCm || profile.heightCm}cm`);
+    }
+    if (weightKg || profile.weightKg) {
+      parts.push(`${weightKg || profile.weightKg}kg`);
+    }
+    if (reachCm || profile.reachCm) {
+      parts.push(`리치 ${reachCm || profile.reachCm}cm`);
+    }
+    if (weightClass || profile.weightClass) {
+      parts.push(weightClass || profile.weightClass);
+    }
+    if (experience || profile.experience) {
+      parts.push(experience || profile.experience);
+    }
+    if (area || profile.area) {
+      parts.push(area || profile.area);
+    }
 
     return parts.join(" · ");
-  }, [profile]);
+  }, [
+    heightCm,
+    weightKg,
+    reachCm,
+    weightClass,
+    experience,
+    area,
+    profile.heightCm,
+    profile.weightKg,
+    profile.reachCm,
+    profile.weightClass,
+    profile.experience,
+    profile.area,
+  ]);
 
   const profileStats = useMemo(() => {
     const totalLogs = logs.length;
@@ -2318,7 +2343,17 @@ export default function ProfilePage({
       {profileView === "nameplate" && (
         <>
       <FighterSpecCard
-        profile={profile}
+        profile={{
+          ...profile,
+          nickname,
+          bio,
+          heightCm: heightCm || profile.heightCm,
+          weightKg: weightKg || profile.weightKg,
+          reachCm: reachCm || profile.reachCm,
+          weightClass: weightClass || profile.weightClass,
+          experience: experience || profile.experience,
+          area: area || profile.area,
+        }}
         logs={logs}
         weeklyScore={weeklyScore}
         titleBadge={profileStats.fighterTitleEn}
@@ -2326,6 +2361,7 @@ export default function ProfilePage({
         streakDays={levelUpStreakDays}
         onUploadPhoto={() => fileInputRef.current?.click()}
         onRemovePhoto={handleRemovePhoto}
+        showSpecChips={!isProfileEditOpen}
       >
         <input
           ref={fileInputRef}
@@ -2350,7 +2386,8 @@ export default function ProfilePage({
             >
               {isProfileEditOpen
                 ? "닉네임, 소개, 키·체중·체급 등을 수정할 수 있어요."
-                : profileSpecSummary || "탭해서 프로필과 신체 스펙을 수정하세요."}
+                : profileSpecSummary ||
+                  "탭해서 프로필과 신체 스펙을 수정하세요."}
             </span>
           </div>
           <span
@@ -2362,12 +2399,14 @@ export default function ProfilePage({
         </button>
 
         {isProfileEditOpen ? (
-          <div
-            className="profile-edit-content"
-            style={styles.profileEditContent}
-          >
+          <div className="profile-edit-content" style={styles.profileEditContent}>
             <div style={styles.profileEditSection}>
-              <p style={styles.profileEditSectionTitle}>PROFILE</p>
+              <p
+                className="profile-edit-section-title"
+                style={styles.profileEditSectionTitle}
+              >
+                PROFILE
+              </p>
 
               <label style={styles.fieldLabel}>
                 닉네임
@@ -2391,9 +2430,17 @@ export default function ProfilePage({
             </div>
 
             <div style={styles.profileEditSection}>
-              <p style={styles.profileEditSectionTitle}>BODY SPECS</p>
+              <p
+                className="profile-edit-section-title"
+                style={styles.profileEditSectionTitle}
+              >
+                BODY SPECS
+              </p>
 
-              <div className="profile-body-specs-grid" style={styles.bodySpecsGrid}>
+              <div
+                className="profile-body-specs-grid"
+                style={styles.bodySpecsGrid}
+              >
                 <label style={styles.fieldLabel}>
                   키 (cm)
                   <input

@@ -29,6 +29,11 @@ import {
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
 import { recordAppOpen } from "./utils/retentionMetrics";
 import { isDevMode } from "./utils/devMode";
+import {
+  applyDocumentTheme,
+  getStoredTheme,
+  setStoredTheme,
+} from "./utils/theme";
 import "./App.css";
 
 /** 하단 탭을 숨기고 풀스크린으로 쓰는 부가 화면 (안 B 하이브리드) */
@@ -52,24 +57,32 @@ export default function App() {
 
 function AppFlow() {
   const { profile } = useTraining();
+  const [theme, setTheme] = useState(getStoredTheme);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = "dark";
-    document.documentElement.style.colorScheme = "dark";
-  }, []);
+    applyDocumentTheme(theme);
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((current) => {
+      const next = current === "dark" ? "light" : "dark";
+      setStoredTheme(next);
+      return next;
+    });
+  }
 
   if (needsOnboarding(profile)) {
     return (
-      <div className="app-shell theme-dark">
+      <div className={`app-shell theme-${theme}`}>
         <OnboardingSetupPage />
       </div>
     );
   }
 
-  return <MainAppShell />;
+  return <MainAppShell theme={theme} onToggleTheme={toggleTheme} />;
 }
 
-function MainAppShell() {
+function MainAppShell({ theme, onToggleTheme }) {
   const { logs, profile, grantFighterLevel } = useTraining();
   const [currentPage, setCurrentPage] = useState("home");
   const [showTutorial, setShowTutorial] = useState(false);
@@ -187,7 +200,7 @@ function MainAppShell() {
 
   return (
     <div
-      className={`app-shell theme-dark${
+      className={`app-shell theme-${theme}${
         isFullscreenPage ? " is-fullscreen" : ""
       }`}
     >
@@ -215,6 +228,8 @@ function MainAppShell() {
             onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
             onReplayTutorial={openTutorial}
+            theme={theme}
+            onToggleTheme={onToggleTheme}
           />
         )}
 
@@ -360,18 +375,7 @@ function MainAppShell() {
 
           <button
             type="button"
-            data-tutorial-target="nav-log"
-            className={getNavClass(currentPage === "log")}
-            onClick={() => goPage("log")}
-          >
-            <span className="app-nav-icon" aria-hidden="true">
-              ☰
-            </span>
-            <span className="app-nav-label">기록</span>
-          </button>
-
-          <button
-            type="button"
+            data-tutorial-target="nav-profile"
             className={getNavClass(currentPage === "profile")}
             onClick={goProfile}
           >
@@ -385,7 +389,9 @@ function MainAppShell() {
             type="button"
             data-tutorial-target="nav-category"
             className={getNavClass(
-              currentPage === "category" || currentPage === "growth"
+              currentPage === "category" ||
+                currentPage === "growth" ||
+                currentPage === "log"
             )}
             onClick={() => goPage("category")}
           >

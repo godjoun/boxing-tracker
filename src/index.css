@@ -4,20 +4,29 @@
 
 :root {
   color-scheme: dark;
-  --root-bg: #000000;
-  --root-text: #ffffff;
-  --root-control-bg: #000000;
-  --root-control-text: #ffffff;
-  --root-placeholder: rgba(255, 255, 255, 0.42);
+  --root-bg: #0a0909;
+  --root-text: #f5f1e8;
+  --root-control-bg: #120e10;
+  --root-control-text: #f5f1e8;
+  --root-placeholder: rgba(184, 169, 154, 0.62);
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --root-bg: #faf8f4;
-  --root-text: #1f1a12;
-  --root-control-bg: #fffdf8;
-  --root-control-text: #1f1a12;
-  --root-placeholder: #968d7e;
+  --root-bg: #ffffff;
+  --root-text: #0a0909;
+  --root-control-bg: #ffffff;
+  --root-control-text: #0a0909;
+  --root-placeholder: rgba(10, 9, 9, 0.42);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --root-bg: #0a0909;
+  --root-text: #f5f1e8;
+  --root-control-bg: #120e10;
+  --root-control-text: #f5f1e8;
+  --root-placeholder: rgba(184, 169, 154, 0.62);
 }
 
 html {

@@ -41,8 +41,8 @@ export default function TrainingHubPage({
     },
     {
       icon: "2",
-      title: "기록 탭에서 직접 남기기",
-      description: "타이머 없이 운동했다면 기록 탭에서 수동으로 남겨도 됩니다.",
+      title: "더보기에서 직접 남기기",
+      description: "타이머 없이 운동했다면 더보기 → 기록에서 수동으로 남겨도 됩니다.",
     },
     {
       icon: "3",

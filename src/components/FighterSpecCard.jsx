@@ -13,12 +13,14 @@ export default function FighterSpecCard({
   streakDays = 0,
   onUploadPhoto,
   onRemovePhoto,
+  showSpecChips = true,
   children,
 }) {
   const [showCareerScene, setShowCareerScene] = useState(false);
   const fighter = getFighterProgress(logs);
   const nameplateTier = getNameplateTier(fighter.level);
   const veteranBadges = getVeteranBadges(fighter.level);
+  const hasEditor = Boolean(children);
 
   const specItems = [
     profile?.weightClass && { label: "체급", value: profile.weightClass },
@@ -79,8 +81,10 @@ export default function FighterSpecCard({
             </p>
             <h2 className="fighter-nameplate-name">{profile?.nickname || "나"}</h2>
             <p className="fighter-nameplate-title">{fighter.fighterTitle}</p>
-            {fighter.fighterTitleEn ? (
-              <p className="fighter-nameplate-title-en">{fighter.fighterTitleEn}</p>
+            {fighter.fighterTitleEn || titleBadge ? (
+              <p className="fighter-nameplate-title-en">
+                {fighter.fighterTitleEn || titleBadge}
+              </p>
             ) : null}
             {profile?.bio ? (
               <p className="fighter-nameplate-bio">{profile.bio}</p>
@@ -120,11 +124,7 @@ export default function FighterSpecCard({
           </div>
         ) : null}
 
-        {children ? (
-          <div className="fighter-nameplate-edit">{children}</div>
-        ) : null}
-
-        {specItems.length > 0 ? (
+        {showSpecChips && specItems.length > 0 ? (
           <div className="fighter-nameplate-specs">
             {specItems.map((item) => (
               <span key={item.label} className="fighter-nameplate-spec">
@@ -133,11 +133,13 @@ export default function FighterSpecCard({
               </span>
             ))}
           </div>
-        ) : (
+        ) : null}
+
+        {showSpecChips && specItems.length === 0 ? (
           <p className="fighter-nameplate-spec-empty">
             프로필에서 신체 스펙을 입력하면 명패에 표시됩니다
           </p>
-        )}
+        ) : null}
 
         <div className="fighter-nameplate-progress">
           <div className="fighter-nameplate-progress-head">
@@ -178,6 +180,9 @@ export default function FighterSpecCard({
           </div>
         </div>
 
+        {hasEditor ? (
+          <div className="fighter-nameplate-editor">{children}</div>
+        ) : null}
       </div>
 
       {showCareerScene ? (

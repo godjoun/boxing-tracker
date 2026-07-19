@@ -211,9 +211,9 @@ export const styles = {
 
   profileEditPanel: {
     marginTop: "16px",
-    borderRadius: "22px",
-    background: "var(--p-bg-subtle)",
-    border: "1px solid var(--p-border-soft)",
+    borderRadius: "18px",
+    background: "var(--p-card)",
+    border: "1px solid var(--p-border)",
     overflow: "hidden",
   },
 
@@ -240,6 +240,7 @@ export const styles = {
     margin: 0,
     fontSize: "14px",
     fontWeight: 900,
+    color: "var(--p-text)",
   },
 
   profileEditToggleHint: {
@@ -252,24 +253,24 @@ export const styles = {
 
   profileEditToggleAction: {
     flexShrink: 0,
-    color: "var(--p-accent-soft)",
+    color: "#8a2e2e",
     fontSize: "12px",
     fontWeight: 800,
     whiteSpace: "nowrap",
   },
 
   profileEditContent: {
-    padding: "0 18px 18px",
-    borderTop: "1px solid var(--p-border-soft)",
+    padding: 0,
+    borderTop: "none",
   },
 
   profileEditSection: {
-    paddingTop: "18px",
+    paddingTop: "16px",
   },
 
   profileEditSectionTitle: {
     margin: "0 0 14px",
-    color: "var(--p-brass)",
+    color: "#8a2e2e",
     fontSize: "11px",
     fontWeight: 900,
     letterSpacing: "0.14em",
@@ -284,7 +285,7 @@ export const styles = {
   fieldLabel: {
     display: "block",
     marginBottom: "12px",
-    color: "var(--p-text-strong)",
+    color: "#8a2e2e",
     fontSize: "13px",
     fontWeight: 800,
   },
@@ -292,7 +293,7 @@ export const styles = {
   fieldHint: {
     display: "block",
     marginTop: "6px",
-    color: "var(--p-text-faint)",
+    color: "#a34a4a",
     fontSize: "11px",
     fontWeight: 600,
   },
@@ -300,7 +301,7 @@ export const styles = {
   profileSaveFooter: {
     marginTop: "18px",
     paddingTop: "16px",
-    borderTop: "1px solid var(--p-border-soft)",
+    borderTop: "1px solid rgba(138, 46, 46, 0.14)",
   },
 
   profileSaveButton: {
@@ -308,24 +309,24 @@ export const styles = {
     minHeight: "48px",
     border: "none",
     borderRadius: "14px",
-    background: "var(--p-accent-solid)",
-    color: "var(--p-on-accent)",
+    background: "#8a2e2e",
+    color: "#f5f1e8",
     fontSize: "14px",
     fontWeight: 900,
     cursor: "pointer",
-    boxShadow: "var(--p-shadow-accent)",
+    boxShadow: "0 8px 18px rgba(70, 18, 18, 0.2)",
   },
 
   profileSaveError: {
     margin: "0 0 12px",
-    color: "#cf8b8b",
+    color: "#8a2e2e",
     fontSize: "13px",
     lineHeight: 1.5,
   },
 
   sectionDividerLabel: {
     margin: "18px 0 0",
-    color: "var(--p-brass)",
+    color: "#8a2e2e",
     fontSize: "12px",
     fontWeight: 900,
     letterSpacing: "0.16em",
@@ -335,9 +336,9 @@ export const styles = {
     width: "100%",
     boxSizing: "border-box",
     marginTop: "8px",
-    backgroundColor: "var(--p-input-bg)",
+    backgroundColor: "#ffffff",
     color: "var(--p-text)",
-    border: "1px solid var(--p-border-soft)",
+    border: "1px solid rgba(138, 46, 46, 0.22)",
     borderRadius: "12px",
     padding: "12px 13px",
     fontSize: "14px",
@@ -348,7 +349,7 @@ export const styles = {
   label: {
     display: "block",
     marginBottom: "12px",
-    color: "var(--p-text-strong)",
+    color: "var(--p-text)",
     fontSize: "13px",
     fontWeight: 800,
   },
@@ -358,9 +359,9 @@ export const styles = {
     minHeight: "84px",
     boxSizing: "border-box",
     marginTop: "8px",
-    backgroundColor: "var(--p-input-bg)",
+    backgroundColor: "#ffffff",
     color: "var(--p-text)",
-    border: "1px solid var(--p-border-soft)",
+    border: "1px solid rgba(138, 46, 46, 0.22)",
     borderRadius: "12px",
     padding: "12px 13px",
     fontSize: "14px",

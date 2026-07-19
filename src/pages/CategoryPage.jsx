@@ -7,6 +7,8 @@ export default function CategoryPage({
   onNavigateGym,
   onOpenCardMaker,
   onReplayTutorial,
+  theme = "dark",
+  onToggleTheme,
 }) {
   return (
     <main className="category-page">
@@ -29,6 +31,8 @@ export default function CategoryPage({
         onNavigateGym={onNavigateGym}
         onOpenCardMaker={onOpenCardMaker}
         onReplayTutorial={onReplayTutorial}
+        theme={theme}
+        onToggleTheme={onToggleTheme}
       />
     </main>
   );

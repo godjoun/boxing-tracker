@@ -133,9 +133,9 @@ export default function OnboardingSetupPage() {
           <div className="onboarding-street-body">
             <p className="onboarding-street-eyebrow">YOUR ROUND. YOUR STORY.</p>
             <h1 className="onboarding-street-title">
-              ANOTHER ROUND
+              I RULE
               <br />
-              OF LIFE.
+              THE ROUND.
             </h1>
             <p className="onboarding-street-ko">
               한 라운드씩,

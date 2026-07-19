@@ -137,11 +137,6 @@ export default function OnboardingSetupPage() {
               <br />
               THE ROUND.
             </h1>
-            <p className="onboarding-street-ko">
-              한 라운드씩,
-              <br />
-              인생을 쌓는다.
-            </p>
             <p className="onboarding-street-copy">
               이름만 올리면 바로 훈련을 시작할 수 있어요.
             </p>

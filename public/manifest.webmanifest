@@ -1,25 +1,32 @@
 {
-    "name": "My Fighter",
-    "short_name": "Fighter",
-    "description": "훈련할수록 자라는 나의 파이터. 주인공 성장과 훈련 여정을 나만의 창고에 남깁니다.",
-    "start_url": "/",
-    "scope": "/",
-    "display": "standalone",
-    "orientation": "portrait",
-    "background_color": "#050505",
-    "theme_color": "#050505",
-    "lang": "ko-KR",
-    "icons": [
-      {
-        "src": "/icon-192.png",
-        "sizes": "192x192",
-        "type": "image/png"
-      },
-      {
-        "src": "/icon-512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "any maskable"
-      }
-    ]
-  }
+  "name": "ROUND ON",
+  "short_name": "ROUND ON",
+  "description": "당신의 복싱은 멈추지 않는다. 라운드 타이머·기록·명패로 훈련의 흔적을 남깁니다.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "lang": "ko-KR",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

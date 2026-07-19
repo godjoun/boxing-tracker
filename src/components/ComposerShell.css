@@ -16,10 +16,6 @@
   letter-spacing: 0.1em;
 }
 
-.theme-light .composer-meta-label {
-  color: var(--p-text-faint);
-}
-
 .composer-shell.has-dock {
   padding-bottom: calc(var(--app-nav-total) + 88px);
 }
@@ -41,10 +37,6 @@
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
-}
-
-.theme-light .composer-shell-back {
-  color: #5c5346;
 }
 
 .composer-shell-heading {
@@ -192,31 +184,4 @@
 .composer-dock-primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.theme-light .composer-shell-summary,
-.theme-light .composer-segment-tabs {
-  background: var(--p-bg-subtle);
-  border-color: var(--p-border-soft);
-}
-
-.theme-light .composer-shell-summary p,
-.theme-light .composer-shell-summary span,
-.theme-light .composer-segment-tab {
-  color: var(--p-text-muted);
-}
-
-.theme-light .composer-segment-tab.is-active {
-  background: rgba(138, 46, 46, 0.1);
-  color: #742525;
-}
-
-.theme-light .composer-shell-dock {
-  background: var(--p-bg-panel);
-  border-color: var(--p-border-strong);
-  box-shadow: 0 10px 24px rgba(79, 58, 18, 0.12);
-}
-
-.theme-light .composer-shell-kicker {
-  color: var(--p-brass);
 }

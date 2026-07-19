@@ -50,43 +50,26 @@ export default function App() {
   );
 }
 
-function useAppTheme() {
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("fitness-league-theme") || "dark";
-  });
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((currentTheme) => {
-      const nextTheme = currentTheme === "light" ? "dark" : "light";
-      localStorage.setItem("fitness-league-theme", nextTheme);
-      return nextTheme;
-    });
-  };
-
-  return { theme, toggleTheme };
-}
-
 function AppFlow() {
   const { profile } = useTraining();
-  const { theme, toggleTheme } = useAppTheme();
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = "dark";
+    document.documentElement.style.colorScheme = "dark";
+  }, []);
 
   if (needsOnboarding(profile)) {
     return (
-      <div className={`app-shell theme-${theme}`}>
+      <div className="app-shell theme-dark">
         <OnboardingSetupPage />
       </div>
     );
   }
 
-  return <MainAppShell theme={theme} toggleTheme={toggleTheme} />;
+  return <MainAppShell />;
 }
 
-function MainAppShell({ theme, toggleTheme }) {
+function MainAppShell() {
   const { logs, profile, grantFighterLevel } = useTraining();
   const [currentPage, setCurrentPage] = useState("home");
   const [showTutorial, setShowTutorial] = useState(false);
@@ -96,7 +79,6 @@ function MainAppShell({ theme, toggleTheme }) {
   const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
   const [profileStudioOpen, setProfileStudioOpen] = useState(false);
-  const isDark = theme === "dark";
   const fighterLevel = useMemo(
     () => getFighterProgress(logs).level,
     [logs]
@@ -205,7 +187,7 @@ function MainAppShell({ theme, toggleTheme }) {
 
   return (
     <div
-      className={`app-shell theme-${theme}${
+      className={`app-shell theme-dark${
         isFullscreenPage ? " is-fullscreen" : ""
       }`}
     >
@@ -337,15 +319,6 @@ function MainAppShell({ theme, toggleTheme }) {
             />
           ))}
       </main>
-
-      <button
-        type="button"
-        className="theme-toggle"
-        onClick={toggleTheme}
-        aria-label={isDark ? "밝은 화면으로 변경" : "다크 화면으로 변경"}
-      >
-        <span aria-hidden="true">{isDark ? "L" : "D"}</span>
-      </button>
 
       {showTutorial ? (
         <FirstVisitTutorial

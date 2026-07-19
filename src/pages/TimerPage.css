@@ -555,10 +555,3 @@
 .timer-complete-card .timer-complete-links button {
   color: rgba(246, 241, 234, 0.55);
 }
-
-.theme-light .timer-preset-chip.is-active,
-.theme-light .timer-setup-quick-row button.is-active {
-  border-color: rgba(138, 46, 46, 0.28);
-  background: rgba(138, 46, 46, 0.1);
-  color: #742525;
-}

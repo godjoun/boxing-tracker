@@ -157,12 +157,6 @@
   gap: 10px;
 }
 
-.theme-light .log-advanced-toggle {
-  border-color: rgba(22, 22, 22, 0.12);
-  background: rgba(22, 22, 22, 0.03);
-  color: #74706b;
-}
-
 .log-load-more {
   width: 100%;
   margin-top: 12px;
@@ -174,54 +168,6 @@
   font-size: 14px;
   font-weight: 900;
   cursor: pointer;
-}
-
-.theme-light .log-load-more {
-  border-color: rgba(22, 22, 22, 0.12);
-  background: rgba(22, 22, 22, 0.03);
-  color: #1f1a12;
-}
-
-.theme-light .log-view-tabs {
-  background: rgba(22, 22, 22, 0.04);
-  border-color: rgba(22, 22, 22, 0.08);
-}
-
-.theme-light .log-view-tab {
-  color: #74706b;
-}
-
-.theme-light .log-view-tab.is-active {
-  background: #8a2e2e;
-  color: #f5f1e8;
-  box-shadow: 0 6px 16px rgba(70, 18, 18, 0.16);
-}
-
-.theme-light .log-week-strip > div {
-  background: #ffffff;
-  border-color: rgba(22, 22, 22, 0.08);
-}
-
-.theme-light .log-week-strip span {
-  color: #8a837a;
-}
-
-.theme-light .log-week-strip strong {
-  color: #1f1a12;
-}
-
-.theme-light .log-write-dock {
-  background: rgba(250, 248, 244, 0.96);
-  border-color: rgba(22, 22, 22, 0.1);
-  box-shadow: 0 10px 28px rgba(48, 38, 30, 0.12);
-}
-
-.theme-light .log-write-dock-exp span {
-  color: #8a837a;
-}
-
-.theme-light .log-write-dock-exp strong {
-  color: #c49a2e;
 }
 
 .log-empty-state {
@@ -239,11 +185,6 @@
   font-size: 14px;
   font-weight: 900;
   cursor: pointer;
-}
-
-.theme-light .log-empty-cta {
-  background: #8a2e2e;
-  color: #f5f1e8;
 }
 
 .log-card {
@@ -614,28 +555,6 @@
   }
 }
 
-.theme-light .log-growth-reward {
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(22, 22, 22, 0.08);
-}
-
-.theme-light .log-growth-stat,
-.theme-light .log-growth-message {
-  background: rgba(22, 22, 22, 0.04);
-}
-
-.theme-light .log-growth-kicker,
-.theme-light .log-growth-level-head span,
-.theme-light .log-growth-level-note,
-.theme-light .log-growth-stat span,
-.theme-light .log-growth-message {
-  color: rgba(22, 22, 22, 0.52);
-}
-
-.theme-light .log-growth-btn {
-  color: #161616;
-}
-
 /* season summary */
 .log-season-head {
   display: flex;
@@ -943,76 +862,6 @@
   }
 }
 
-.theme-light .log-page {
-  color: #1f1a12;
-  background: #faf8f4;
-}
-
-.theme-light .log-subtitle,
-.theme-light .log-hint,
-.theme-light .log-label,
-.theme-light .log-chip,
-.theme-light .log-stat span,
-.theme-light .log-season-label,
-.theme-light .log-season-copy,
-.theme-light .log-edit-head {
-  color: #6b6254;
-}
-
-.theme-light .log-hero p,
-.theme-light .log-section-head p {
-  color: #a67c00;
-}
-
-.theme-light .log-card,
-.theme-light .log-form-card,
-.theme-light .log-growth-reward,
-.theme-light .log-season-card,
-.theme-light .log-stat,
-.theme-light .log-growth-stat,
-.theme-light .log-growth-message {
-  background: #ffffff;
-  border-color: rgba(196, 154, 46, 0.18);
-  box-shadow: 0 8px 24px rgba(120, 90, 30, 0.06);
-}
-
-.theme-light .log-input,
-.theme-light .log-textarea,
-.theme-light .log-page select {
-  background: #fffdf8;
-  color: #1f1a12;
-  border-color: rgba(196, 154, 46, 0.2);
-}
-
-.theme-light .log-chip {
-  background: #faf6ee;
-  border-color: rgba(196, 154, 46, 0.14);
-  color: #4a4338;
-}
-
-.theme-light .log-chip.is-active {
-  background: rgba(138, 46, 46, 0.1);
-  border-color: rgba(138, 46, 46, 0.28);
-  color: #742525;
-}
-
-.theme-light .log-submit,
-.theme-light .log-growth-btn-primary {
-  background: #8a2e2e;
-  color: #f5f1e8;
-  box-shadow: 0 10px 22px rgba(70, 18, 18, 0.16);
-}
-
-.theme-light .log-growth-kicker,
-.theme-light .log-growth-level-head span {
-  color: #a67c00;
-}
-
-.theme-light .log-btn-cancel {
-  border-color: rgba(196, 154, 46, 0.2);
-  color: #6b6254;
-}
-
 .log-growth-unlocks {
   margin-top: 12px;
   padding: 10px 12px;
@@ -1064,26 +913,4 @@
   border-top: 1px solid rgba(193, 160, 90, 0.2);
   color: #c9b990 !important;
   font-size: 12px !important;
-}
-
-.theme-light .log-growth-unlocks {
-  border-color: rgba(196, 154, 46, 0.32);
-  background: rgba(212, 168, 50, 0.14);
-}
-
-.theme-light .log-growth-unlocks span {
-  color: #a67c00;
-}
-
-.theme-light .log-growth-title-en {
-  color: #a67c00 !important;
-}
-
-.theme-light .log-growth-title-flavor {
-  color: #6b6254;
-}
-
-.theme-light .log-growth-title-extra {
-  border-top-color: rgba(196, 154, 46, 0.22);
-  color: #a67c00 !important;
 }

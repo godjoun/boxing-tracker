@@ -16,10 +16,6 @@
   letter-spacing: 0.1em;
 }
 
-.theme-light .composer-meta-label {
-  color: #8a7d6b;
-}
-
 .strength-card,
 .strength-day-panel {
   border: 1px solid var(--p-border-soft);
@@ -298,73 +294,4 @@
   color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.45;
-}
-
-.theme-light .strength-page {
-  color: var(--p-text);
-}
-
-.theme-light .strength-card,
-.theme-light .strength-day-panel,
-.theme-light .strength-exercise-list li,
-.theme-light .strength-tips-list article,
-.theme-light .strength-day-chip {
-  border-color: var(--p-border-soft);
-  background: #fff;
-  color: var(--p-text-body);
-}
-
-.theme-light .strength-day-chip.is-active {
-  color: #742525;
-  background: rgba(138, 46, 46, 0.1);
-  border-color: rgba(138, 46, 46, 0.28);
-}
-
-.theme-light .strength-day-chip.tone-blue.is-active {
-  color: #45606f;
-  background: rgba(160, 160, 165, 0.14);
-  border-color: rgba(160, 160, 165, 0.32);
-}
-
-.theme-light .strength-day-chip em,
-.theme-light .strength-day-chip span {
-  color: inherit;
-}
-
-.theme-light .strength-hero-copy > span,
-.theme-light .strength-warmup-desc,
-.theme-light .strength-day-head span,
-.theme-light .strength-day-head p,
-.theme-light .strength-exercise-list p,
-.theme-light .strength-tips-list p,
-.theme-light .strength-today-card small,
-.theme-light .strength-block-head em {
-  color: var(--p-text-muted);
-}
-
-.theme-light .strength-card-head h2,
-.theme-light .strength-day-head h2,
-.theme-light .strength-today-card strong,
-.theme-light .strength-exercise-top strong,
-.theme-light .strength-tips-list strong,
-.theme-light .strength-block-head h3 {
-  color: var(--p-text);
-}
-
-.theme-light .strength-today-card {
-  background: rgba(212, 168, 50, 0.1);
-  border-color: rgba(196, 154, 46, 0.24);
-}
-
-.theme-light .strength-today-card > span {
-  color: var(--p-accent);
-}
-
-.theme-light .strength-warmup-meta span {
-  background: var(--p-bg-subtle);
-  color: var(--p-text-muted);
-}
-
-.theme-light .strength-day-chip.is-today:not(.is-active) {
-  box-shadow: inset 0 0 0 1px rgba(196, 154, 46, 0.35);
 }

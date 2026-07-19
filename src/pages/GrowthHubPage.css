@@ -15,10 +15,6 @@
   cursor: pointer;
 }
 
-.theme-light .growth-hub-back {
-  color: #5c5346;
-}
-
 .growth-hub-title {
   margin: 0 0 6px;
   font-size: 26px;
@@ -275,14 +271,4 @@
 
 .growth-hub-collections .journey-card {
   margin: 0;
-}
-
-.theme-light .growth-hub-goal-target {
-  border-color: rgba(196, 154, 46, 0.34);
-  background: rgba(212, 168, 50, 0.12);
-  color: #8a6a12;
-}
-
-.theme-light .growth-hub-progress-fill.is-complete {
-  background: linear-gradient(90deg, #16a34a, #22c55e);
 }

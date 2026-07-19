@@ -272,13 +272,7 @@ export default function HomePage({
             </div>
           </div>
 
-          <h1 className="home-brand-title">I RULE THE ROUND.</h1>
-          <p className="home-brand-copy">
-            EVERY BELL. EVERY ROUND. MINE.
-          </p>
-          <p className="home-brand-line">
-            LIFE GOES ON. SO DOES THE FIGHT.
-          </p>
+          <h1 className="home-brand-title">LIFE IS A ROUND.</h1>
         </div>
 
         <div className="home-brand-actions">

@@ -177,7 +177,7 @@ export default function SparringPartnerPanel({ onGoBack }) {
         </div>
 
         <p className="gym-location-note">
-          파이터명: {profile.nickname || "나"}
+          링네임: {profile.nickname || "나"}
           {profile.heightCm && profile.weightKg
             ? ` · ${profile.heightCm}cm / ${profile.weightKg}kg`
             : ""}

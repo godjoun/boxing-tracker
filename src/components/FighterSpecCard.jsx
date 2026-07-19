@@ -71,7 +71,9 @@ export default function FighterSpecCard({
           )}
 
           <div className="fighter-nameplate-identity">
-            <p className="fighter-nameplate-kicker">ROUND ON</p>
+            <p className="fighter-nameplate-kicker">
+              {fighter.careerStageEn || "NAMEPLATE"}
+            </p>
             <h2 className="fighter-nameplate-name">{profile?.nickname || "나"}</h2>
             <p className="fighter-nameplate-title">{fighter.fighterTitle}</p>
             {fighter.fighterTitleEn ? (

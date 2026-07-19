@@ -31,7 +31,7 @@ export const TITLE_MILESTONES = [
     level: 7,
     ko: "링 도전자",
     en: "RING ASPIRANT",
-    flavor: "스파링 무대에 설 자격을 얻은 파이터",
+    flavor: "스파링 무대에 설 자격을 얻었다",
   },
   {
     level: 10,
@@ -43,7 +43,7 @@ export const TITLE_MILESTONES = [
     level: 16,
     ko: "아마추어 입문",
     en: "AMATEUR ENTRANT",
-    flavor: "공식 아마추어 무대에 들어선 파이터",
+    flavor: "공식 아마추어 무대에 들어섰다",
   },
   {
     level: 20,
@@ -67,7 +67,7 @@ export const TITLE_MILESTONES = [
     level: 35,
     ko: "프로 입성 준비",
     en: "TURNING PRO",
-    flavor: "프로의 문 앞까지 온 파이터",
+    flavor: "프로의 문 앞까지 왔다",
   },
   {
     level: 36,
@@ -131,7 +131,7 @@ export const TITLE_MILESTONES = [
   },
   {
     level: 90,
-    ko: "P4P 파이터",
+    ko: "P4P",
     en: "POUND FOR POUND",
     flavor: "체급을 넘어 강함을 인정받았다",
   },
@@ -139,7 +139,7 @@ export const TITLE_MILESTONES = [
     level: 95,
     ko: "명예의 전당급",
     en: "HALL OF FAME",
-    flavor: "이름이 남는 파이터",
+    flavor: "이름이 남는 단계",
   },
   {
     level: 100,

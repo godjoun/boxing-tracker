@@ -25,73 +25,168 @@
 }
 
 .app-shell {
-  /* ROUND ON dark guide: matte black + ash gray + burgundy CTA */
-  --p-ash: #a0a0a5;
-  --p-ash-soft: #a0a0a5;
-  --p-ash-mid: #2e2e31;
-  --p-ash-card: #242426;
-  --p-ash-deep: #1c1c1e;
-  --p-text: #ffffff;
+  /* ROUND ON: pitch black stage + ivory surface + burgundy signature */
+  --p-stage: #0b0b0b;
+  --p-ivory: #ffe9dc;
+  --p-ivory-deep: #f3e4d6;
+  --p-ivory-inset: #ebd9c8;
+  --p-ink: #1a1412;
+  --p-ink-muted: #5c5346;
+  --p-bone: #f5f1e8;
+  --p-fog: #b8a99a;
+  --p-espresso: #1a1614;
+  --p-espresso-mid: #241f1c;
+  --p-espresso-deep: #100e0d;
+  /* legacy aliases → warm system (no cool ash) */
+  --p-ash: var(--p-fog);
+  --p-ash-soft: var(--p-fog);
+  --p-ash-mid: var(--p-espresso-mid);
+  --p-ash-card: var(--p-ivory);
+  --p-ash-deep: var(--p-espresso);
+  --p-text: var(--p-bone);
   --p-text-strong: #ffffff;
-  --p-text-body: rgba(255, 255, 255, 0.92);
-  --p-text-soft: #a0a0a5;
-  --p-text-muted: #a0a0a5;
-  --p-text-faint: rgba(160, 160, 165, 0.75);
-  --p-on-surface: #ffffff;
-  --p-on-accent: #ffffff;
-  --p-surface: #121212;
-  --p-bg-page: #121212;
-  --p-bg-nav: rgba(18, 18, 18, 0.96);
-  --p-nav-border: rgba(160, 160, 165, 0.22);
-  --p-bg-card: var(--p-ash-card);
-  --p-bg-panel: var(--p-ash-mid);
-  --p-bg-deep: #121212;
-  --p-bg-inner: var(--p-ash-deep);
-  --p-bg-subtle: var(--p-ash-card);
-  --p-bg-inset: var(--p-ash-mid);
-  --p-input-bg: var(--p-ash-deep);
-  --p-border: rgba(160, 160, 165, 0.28);
-  --p-border-soft: rgba(160, 160, 165, 0.18);
-  --p-border-strong: rgba(160, 160, 165, 0.4);
-  /* 행동: 가죽 버건디 (브랜드) */
+  --p-text-body: rgba(245, 241, 232, 0.92);
+  --p-text-soft: var(--p-fog);
+  --p-text-muted: var(--p-fog);
+  --p-text-faint: rgba(184, 169, 154, 0.75);
+  --p-on-surface: var(--p-bone);
+  --p-on-accent: var(--p-bone);
+  --p-surface: var(--p-stage);
+  --p-bg-page: var(--p-stage);
+  --p-bg-nav: rgba(11, 11, 11, 0.96);
+  --p-nav-border: rgba(255, 233, 220, 0.1);
+  --p-bg-card: var(--p-ivory);
+  --p-bg-panel: var(--p-espresso-mid);
+  --p-bg-deep: var(--p-stage);
+  --p-bg-inner: var(--p-espresso);
+  --p-bg-subtle: var(--p-ivory);
+  --p-bg-inset: var(--p-espresso-mid);
+  --p-input-bg: var(--p-espresso);
+  --p-border: rgba(255, 233, 220, 0.14);
+  --p-border-soft: rgba(255, 233, 220, 0.1);
+  --p-border-strong: rgba(255, 233, 220, 0.22);
+  /* Signature: leather burgundy */
   --p-accent: #8a2e2e;
   --p-accent-soft: #a34a4a;
   --p-accent-solid: #742525;
-  --p-accent-bg: rgba(138, 46, 46, 0.14);
-  --p-accent-border: rgba(138, 46, 46, 0.32);
+  --p-accent-bg: rgba(138, 46, 46, 0.16);
+  --p-accent-border: rgba(138, 46, 46, 0.4);
   --levelup-action-bg: #8a2e2e;
   --levelup-action-hover: #742525;
   --levelup-action-pressed: #5f1e1e;
-  --levelup-action-text: #ffffff;
-  --levelup-action-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-  --levelup-button-bg: var(--p-ash-card);
-  --levelup-button-hover: var(--p-ash-mid);
-  --levelup-button-pressed: var(--p-ash-deep);
-  --levelup-button-border: rgba(160, 160, 165, 0.28);
-  --levelup-button-text: #ffffff;
-  --p-brass: #a0a0a5;
-  --p-brass-soft: #c4c4c8;
-  --p-brass-bg: rgba(160, 160, 165, 0.12);
-  --p-brass-border: rgba(160, 160, 165, 0.28);
-  --p-leather: var(--p-ash-deep);
-  --p-ivory: #e8e8ea;
-  --p-ivory-soft: #c4c4c8;
-  --p-hero-bg: var(--p-ash-card);
-  --p-shadow-hero: none;
-  --p-shadow-accent: 0 8px 20px rgba(0, 0, 0, 0.3);
-  --p-done-bg: #1c1c1e;
-  --p-done-title: #c4c4c8;
-  --p-done-text: #a0a0a5;
-  --p-growth: #c4c4c8;
-  --p-growth-soft: rgba(160, 160, 165, 0.82);
+  --levelup-action-text: #f5f1e8;
+  --levelup-action-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+  --levelup-button-bg: var(--p-espresso-mid);
+  --levelup-button-hover: #2e2824;
+  --levelup-button-pressed: var(--p-espresso-deep);
+  --levelup-button-border: rgba(255, 233, 220, 0.14);
+  --levelup-button-text: var(--p-bone);
+  --p-brass: #cf8b8b;
+  --p-brass-soft: #e0a8a8;
+  --p-brass-bg: rgba(138, 46, 46, 0.14);
+  --p-brass-border: rgba(138, 46, 46, 0.32);
+  --p-leather: var(--p-espresso);
+  --p-ivory-soft: #f0dcc8;
+  --p-hero-bg: var(--p-ivory);
+  --p-shadow-hero: 0 18px 40px rgba(0, 0, 0, 0.4);
+  --p-shadow-accent: 0 10px 28px rgba(0, 0, 0, 0.4);
+  --p-done-bg: var(--p-espresso);
+  --p-done-title: var(--p-bone);
+  --p-done-text: var(--p-fog);
+  --p-growth: var(--p-fog);
+  --p-growth-soft: rgba(184, 169, 154, 0.85);
   --p-growth-fill: linear-gradient(90deg, #8a2e2e, #a34a4a);
-  --p-state-done: #c4c4c8;
-  --p-state-done-solid: #5a5a5e;
-  --p-state-rest: #a0a0a5;
-  --p-state-rest-solid: #3a3a3e;
-  --gold: #a0a0a5;
+  --p-state-done: var(--p-fog);
+  --p-state-done-solid: var(--p-espresso-mid);
+  --p-state-rest: var(--p-fog);
+  --p-state-rest-solid: var(--p-espresso-mid);
+  --gold: var(--p-fog);
   --gold-dark: #8a2e2e;
-  --gold-soft: #c4c4c8;
+  --gold-soft: var(--p-ivory-soft);
+}
+
+/* Ivory surfaces: dark ink (album-cover / poster cards) */
+.app-shell :is(
+  .levelup-box-card,
+  .levelup-timer-hero,
+  .home-exp-card,
+  .home-growth-hero,
+  .home-daily-lesson,
+  .curriculum-card,
+  .curriculum-session,
+  .curriculum-today-card,
+  .curriculum-progress-card,
+  .curriculum-graduate-card,
+  .curriculum-settings-card,
+  .curriculum-drill-guide,
+  .curriculum-lesson-card,
+  .curriculum-week-overview-item,
+  .curriculum-saved-item,
+  .technique-continue-card,
+  .technique-cat-card,
+  .strength-card,
+  .strength-day-panel,
+  .strength-tips-card,
+  .strength-today-card,
+  .combo-creator-saved-item,
+  .combo-fighter-combo,
+  .feature-lock-card,
+  .composer-shell-summary,
+  .timer-setup-hero,
+  .timer-complete-card,
+  .log-card,
+  .log-form-card,
+  .log-item,
+  .log-growth-stat,
+  .log-growth-message,
+  .log-score-panel,
+  .log-stat-box,
+  .onboarding-card,
+  .login-card,
+  .login-trust,
+  .fighter-overview,
+  .training-calendar,
+  .home-training-breakdown,
+  .home-weekly-trend,
+  .category-group,
+  .gym-panel,
+  .gym-hero,
+  .gym-state-card,
+  .gym-result-card,
+  .dojo-feature-card,
+  .sparring-partner-card,
+  .app-menu-tile,
+  .dashboard-quick-item,
+  .dashboard-editor,
+  .dashboard-empty,
+  .journey-memory-item,
+  .nameplate-card,
+  .profile-stat-card
+) {
+  color: var(--p-ink);
+  --p-text: var(--p-ink);
+  --p-text-strong: var(--p-ink);
+  --p-text-body: rgba(26, 20, 18, 0.9);
+  --p-text-soft: var(--p-ink-muted);
+  --p-text-muted: var(--p-ink-muted);
+  --p-text-faint: rgba(92, 83, 70, 0.72);
+  --p-on-surface: var(--p-ink);
+  --p-brass: #8a2e2e;
+  --p-brass-soft: #a34a4a;
+  --p-brass-bg: rgba(138, 46, 46, 0.12);
+  --p-brass-border: rgba(138, 46, 46, 0.28);
+  --p-border: rgba(26, 20, 18, 0.12);
+  --p-border-soft: rgba(26, 20, 18, 0.1);
+  --p-border-strong: rgba(26, 20, 18, 0.18);
+  --p-bg-inner: var(--p-ivory-deep);
+  --p-bg-inset: var(--p-ivory-inset);
+  --p-bg-deep: var(--p-ivory-deep);
+  --p-input-bg: #fff6ee;
+  --levelup-button-bg: var(--p-ink);
+  --levelup-button-hover: #2a221e;
+  --levelup-button-pressed: #0f0c0b;
+  --levelup-button-border: rgba(26, 20, 18, 0.2);
+  --levelup-button-text: var(--p-bone);
 }
 
 .theme-light.app-shell {
@@ -505,7 +600,7 @@
   margin-top: 22px;
   padding: 18px 2px;
   border: 0;
-  border-top: 1px solid rgba(160, 160, 165, 0.18);
+  border-top: 1px solid rgba(255, 233, 220, 0.12);
   border-radius: 0;
   background: transparent;
 }
@@ -627,7 +722,7 @@
   margin-top: 22px;
   padding: 18px 2px 16px;
   border: 0;
-  border-top: 1px solid rgba(160, 160, 165, 0.18);
+  border-top: 1px solid rgba(255, 233, 220, 0.12);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -866,7 +961,7 @@
 
 .theme-dark .home-center-dash {
   border: 0;
-  border-top: 1px solid rgba(160, 160, 165, 0.18);
+  border-top: 1px solid rgba(255, 233, 220, 0.12);
   background: transparent;
   color: #ffffff;
   box-shadow: none;
@@ -4148,12 +4243,12 @@
 .theme-dark .fighter-level small,
 .theme-dark .home-round-total span,
 .theme-dark .home-exp-copy {
-  color: rgba(255,255,255,.5);
+  color: rgba(92, 83, 70, 0.75);
 }
 
 .theme-dark .fighter-level strong,
 .theme-dark .home-exp-meta b {
-  color: #fff;
+  color: #1a1412;
 }
 
 .theme-dark .theme-toggle {
@@ -4165,17 +4260,18 @@
 
 .theme-dark .home-exp-card,
 .theme-dark .home-growth-hero {
-  border-color: rgba(142, 142, 147, 0.35);
-  background: var(--p-ash-card, #3c3c3f);
-  box-shadow: none;
+  border-color: rgba(26, 20, 18, 0.12);
+  background: #ffe9dc;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+  color: #1a1412;
 }
 
 .theme-dark .home-exp-meta {
-  color: rgba(255,255,255,.65);
+  color: rgba(92, 83, 70, 0.85);
 }
 
 .theme-dark .home-exp-bar {
-  background: rgba(255,255,255,.09);
+  background: rgba(26, 20, 18, 0.1);
 }
 
 .theme-dark .training-calendar,
@@ -4184,43 +4280,44 @@
 .theme-dark .home-weekly-trend,
 .theme-dark .category-group,
 .theme-dark .fighter-overview {
-  border-color: rgba(255,255,255,.085);
-  background: var(--p-bg-card);
-  box-shadow: none;
+  border-color: rgba(26, 20, 18, 0.12);
+  background: #ffe9dc;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+  color: #1a1412;
 }
 
 .theme-dark .fighter-overview > div {
-  border-color: rgba(255,255,255,.08);
+  border-color: rgba(26, 20, 18, 0.1);
 }
 
 .theme-dark .fighter-overview span,
 .theme-dark .fighter-overview small {
-  color: rgba(255,255,255,.42);
+  color: rgba(92, 83, 70, 0.75);
 }
 
 .theme-dark .fighter-overview strong {
-  color: #fff;
+  color: #1a1412;
 }
 
 .theme-dark .home-weekly-bar-track {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(26, 20, 18, 0.1);
 }
 
 .theme-dark .home-weekly-bar-track div {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(26, 20, 18, 0.28);
 }
 
 .theme-dark .home-weekly-bar.is-current .home-weekly-bar-track div {
-  background: #6a6a6a;
+  background: #8a2e2e;
 }
 
 .theme-dark .home-weekly-bar strong {
-  color: #fff;
+  color: #1a1412;
 }
 
 .theme-dark .home-weekly-bar span,
 .theme-dark .home-weekly-score {
-  color: rgba(255, 255, 255, 0.48);
+  color: rgba(92, 83, 70, 0.75);
 }
 
 .theme-dark .home-weekly-score {
@@ -4231,26 +4328,27 @@
 .theme-dark .dashboard-quick-item,
 .theme-dark .dashboard-empty,
 .theme-dark .dashboard-editor-grid button {
-  border-color: rgba(255,255,255,.08);
-  background: var(--p-bg-deep);
-  color: #fff;
+  border-color: rgba(26, 20, 18, 0.12);
+  background: #ffe9dc;
+  color: #1a1412;
 }
 
 .theme-dark .dashboard-editor {
-  border-color: rgba(255,255,255,.08);
+  border-color: rgba(26, 20, 18, 0.12);
 }
 
 .theme-dark .dashboard-editor-copy span {
-  color: rgba(255,255,255,.45);
+  color: rgba(92, 83, 70, 0.75);
 }
 
 .theme-dark .dashboard-editor-grid button.selected {
-  border-color: rgba(255,75,75,.35);
-  background: rgba(255,55,55,.12);
+  border-color: rgba(138, 46, 46, 0.4);
+  background: rgba(138, 46, 46, 0.12);
 }
 
 .theme-dark .dashboard-editor-grid button > span {
-  background: rgba(255,255,255,.07);
+  background: #1a1412;
+  color: #f5f1e8;
 }
 
 .theme-dark .breakdown-empty {
@@ -7958,11 +8056,19 @@
 .theme-dark .curriculum-lesson-card,
 .theme-dark .combo-creator-saved-item,
 .theme-dark .combo-fighter-combo,
-.theme-dark .curriculum-timer-step,
 .theme-dark .strength-card,
 .theme-dark .strength-day-panel,
-.theme-dark .levelup-box-card {
-  background: #242426;
+.theme-dark .levelup-box-card,
+.theme-dark .levelup-timer-hero,
+.theme-dark .home-exp-card,
+.theme-dark .home-growth-hero,
+.theme-dark .home-daily-lesson,
+.theme-dark .feature-lock-card,
+.theme-dark .composer-shell-summary,
+.theme-dark .timer-setup-hero,
+.theme-dark .timer-complete-card {
+  background: #ffe9dc;
+  color: #1a1412;
 }
 
 .theme-dark .home-features .app-menu-board,
@@ -7972,39 +8078,43 @@
 }
 
 .theme-dark .home-features .app-menu-tile {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: #000000;
-  color: #ffffff;
-  box-shadow: none;
+  border-color: rgba(26, 20, 18, 0.12);
+  background: #ffe9dc;
+  color: #1a1412;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
 }
 
 .theme-dark .home-features .app-menu-tile-icon,
 .theme-dark .dashboard-quick-icon,
 .theme-dark .dashboard-quick-item em,
 .theme-dark .dashboard-editor-grid button > span {
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: #000000;
+  border: 1px solid rgba(26, 20, 18, 0.12);
+  background: #1a1412;
+  color: #f5f1e8;
 }
 
 .theme-dark .home-features .app-menu-tile:hover,
 .theme-dark .dashboard-quick-item:hover {
-  border-color: rgba(138, 46, 46, 0.36);
-  background: #000000;
+  border-color: rgba(138, 46, 46, 0.45);
+  background: #ffe9dc;
 }
 
-/* Dark mode accents: replace remaining yellow/gold UI with burgundy. */
+/* Dark mode accents: burgundy on ivory / bone on stage */
 .theme-dark .sparring-partner-priority,
 .theme-dark .home-daily-lesson-meta span,
 .theme-dark .strength-today-card > span,
 .theme-dark .strength-exercise-top span,
-.theme-dark .curriculum-timer-badge,
-.theme-dark .curriculum-timer-focus-label,
 .theme-dark .curriculum-session-schedule,
 .theme-dark .curriculum-adjusted-badge,
 .theme-dark .curriculum-week-overview-item span,
 .theme-dark .curriculum-lesson-card.has-video em,
 .theme-dark .gym-hub-action.is-locked span,
 .theme-dark .category-row-locked .category-row-copy small {
+  color: #8a2e2e !important;
+}
+
+.theme-dark .curriculum-timer-badge,
+.theme-dark .curriculum-timer-focus-label {
   color: #cf8b8b !important;
 }
 
@@ -8014,10 +8124,10 @@
 .theme-dark .category-row.accent-orange,
 .theme-dark .category-item.accent-gold,
 .theme-dark .category-item.accent-orange {
-  --item-bg: rgba(138, 46, 46, 0.14);
-  --item-border: rgba(138, 46, 46, 0.28);
-  --item-color: #cf8b8b;
-  --item-glow: rgba(138, 46, 46, 0.1);
+  --item-bg: rgba(138, 46, 46, 0.12);
+  --item-border: rgba(138, 46, 46, 0.32);
+  --item-color: #8a2e2e;
+  --item-glow: rgba(138, 46, 46, 0.08);
 }
 
 .theme-dark .levelup-progress-fill,
@@ -8029,22 +8139,27 @@
 
 .theme-dark .curriculum-adjusted-badge,
 .theme-dark .curriculum-session-schedule,
-.theme-dark .curriculum-timer-badge,
-.theme-dark .curriculum-intensity-chip.is-active,
-.theme-dark .curriculum-timer-step.is-active {
+.theme-dark .curriculum-intensity-chip.is-active {
   border-color: rgba(138, 46, 46, 0.34) !important;
-  background: rgba(138, 46, 46, 0.14) !important;
+  background: rgba(138, 46, 46, 0.12) !important;
+}
+
+.theme-dark .curriculum-timer-badge,
+.theme-dark .curriculum-timer-step.is-active {
+  border-color: rgba(138, 46, 46, 0.4) !important;
+  background: rgba(138, 46, 46, 0.16) !important;
 }
 
 .theme-dark .curriculum-timer-panel {
-  border-color: rgba(138, 46, 46, 0.3);
+  border-color: rgba(138, 46, 46, 0.35);
   background:
-    radial-gradient(circle at 100% 0, rgba(138, 46, 46, 0.18), transparent 44%),
-    #242426;
+    radial-gradient(circle at 100% 0, rgba(138, 46, 46, 0.22), transparent 44%),
+    #1a1614;
+  color: #f5f1e8;
 }
 
 .theme-dark .timer-complete-card {
-  border-color: rgba(138, 46, 46, 0.24) !important;
+  border-color: rgba(138, 46, 46, 0.28) !important;
 }
 
 .theme-dark .timer-still-kicker,
@@ -8066,7 +8181,7 @@
 .theme-dark .home-center-dash,
 .theme-dark .home-today-task {
   border: 0;
-  border-top: 1px solid rgba(160, 160, 165, 0.18);
+  border-top: 1px solid rgba(255, 233, 220, 0.12);
   background: transparent;
 }
 
@@ -8096,8 +8211,8 @@
 
 .theme-dark .curriculum-graduate-card {
   background:
-    linear-gradient(160deg, rgba(138, 46, 46, 0.16), transparent),
-    #242426;
+    linear-gradient(160deg, rgba(138, 46, 46, 0.14), transparent),
+    #ffe9dc;
 }
 
 .theme-dark .curriculum-timeline::before {

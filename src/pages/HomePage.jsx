@@ -251,29 +251,26 @@ export default function HomePage({
         </button>
       ) : null}
 
-      <section className="home-brand" aria-label="브랜드 소개">
-        <div className="home-brand-hero">
-          <div className="home-brand-top">
-            <div
-              className="home-brand-avatar"
-              aria-hidden={!profile?.photo}
-            >
-              {profile?.photo ? (
-                <img src={profile.photo} alt="" />
-              ) : (
-                <span>{nickname.slice(0, 1)}</span>
-              )}
-            </div>
-            <div className="home-brand-identity">
-              <p className="home-brand-name">ROUND ON</p>
-              <p className="home-brand-meta">
-                {nickname} · LV.{dashboard.level} · {dashboard.fighterTitle}
-              </p>
-            </div>
-          </div>
+      <section className="home-brand home-brand--player" aria-label="브랜드 소개">
+        <p className="home-brand-name">ROUND ON</p>
 
-          <h1 className="home-brand-title">LIFE IS A ROUND.</h1>
-        </div>
+        <button
+          type="button"
+          className="home-brand-cover"
+          onClick={onGoProfile}
+          aria-label="명패 보기"
+        >
+          {profile?.photo ? (
+            <img src={profile.photo} alt="" />
+          ) : (
+            <span>{nickname.slice(0, 1)}</span>
+          )}
+        </button>
+
+        <h1 className="home-brand-title">LIFE IS A ROUND.</h1>
+        <p className="home-brand-meta">
+          {nickname} · LV.{dashboard.level} · {dashboard.fighterTitle}
+        </p>
 
         <div className="home-brand-actions">
           <button
@@ -296,7 +293,7 @@ export default function HomePage({
           </button>
           <button
             type="button"
-            className="home-brand-secondary"
+            className="home-brand-text-link"
             onClick={onGoProfile}
           >
             내 명패 보기
@@ -304,7 +301,7 @@ export default function HomePage({
         </div>
       </section>
 
-      <section className="home-center-dash" aria-label="대시보드">
+      <section className="home-center-dash home-center-dash--flat" aria-label="대시보드">
         <div className="home-center-dash-head">
           <p className="home-center-dash-label">대시보드</p>
           <button
@@ -394,7 +391,7 @@ export default function HomePage({
         ) : null}
       </section>
 
-      <section className="home-today-task" aria-label="오늘">
+      <section className="home-today-task home-today-task--flat" aria-label="오늘">
         <p className="home-today-task-label">오늘</p>
 
         {todaysLesson.kind === "session" ? (

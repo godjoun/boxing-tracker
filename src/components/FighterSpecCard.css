@@ -10,7 +10,7 @@
   border-radius: 22px;
   background:
     radial-gradient(circle at 100% 0%, rgba(138, 46, 46, 0.18), transparent 42%),
-    linear-gradient(160deg, #141414 0%, #0a0a0a 100%);
+    linear-gradient(160deg, #1a1214 0%, #0a0909 100%);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.38);
 }
 
@@ -336,7 +336,7 @@
 .fighter-nameplate-stat small {
   display: block;
   margin-top: 2px;
-  color: rgba(154, 154, 154, 0.82);
+  color: rgba(184, 169, 154, 0.82);
   font-size: 9px;
   font-weight: 700;
 }

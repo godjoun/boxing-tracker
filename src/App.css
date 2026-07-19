@@ -271,10 +271,10 @@
 }
 
 .home-brand-primary {
-  border: 1px solid rgba(193, 160, 90, 0.24);
+  border: 1px solid rgba(138, 46, 46, 0.4);
   background: #8a2e2e;
-  color: #f5f1e8;
-  box-shadow: 0 10px 24px rgba(70, 18, 18, 0.3);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
   transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
@@ -287,13 +287,13 @@
 .home-today-task-primary:active {
   background: #5f1e1e;
   transform: translateY(1px);
-  box-shadow: 0 5px 14px rgba(55, 14, 14, 0.3);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3);
 }
 
 .home-brand-secondary {
-  border: 1px solid rgba(193, 160, 90, 0.13);
-  background: rgba(193, 160, 90, 0.035);
-  color: var(--p-text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #1a1a1a;
+  color: #ffffff;
 }
 
 .theme-light .home-brand-hero {
@@ -338,42 +338,39 @@
   box-shadow: 0 10px 22px rgba(70, 18, 18, 0.16);
 }
 
-/* Dark shell + light product surface: poster mood without sacrificing readability */
+/* Dark: black + gray cards, white type (no ivory poster surface) */
 .theme-dark .home-brand-hero {
-  border-color: rgba(40, 34, 29, 0.1);
-  background:
-    radial-gradient(circle at 100% 0, rgba(138, 46, 46, 0.11), transparent 46%),
-    var(--p-ivory);
-  color: #211d19;
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.22);
+  border-color: rgba(255, 255, 255, 0.08);
+  background: #161616;
+  color: #ffffff;
+  box-shadow: none;
 }
 
 .theme-dark .home-brand-avatar {
-  border-color: rgba(138, 46, 46, 0.3);
-  background: #f0d8cc;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #222222;
 }
 
 .theme-dark .home-brand-avatar span {
-  color: #5c5148;
+  color: #ffffff;
 }
 
 .theme-dark .home-brand-name {
-  color: #9b7a3f;
+  color: #ffffff;
 }
 
-.theme-dark .home-brand-copy {
-  color: #514942;
+.theme-dark .home-brand-title {
+  color: #ffffff;
 }
 
-.theme-dark .home-brand-line,
 .theme-dark .home-brand-meta {
-  color: #7b7168;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .theme-dark .home-brand-secondary {
-  border-color: rgba(242, 236, 223, 0.2);
-  background: rgba(242, 236, 223, 0.06);
-  color: #f2ecdf;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #1a1a1a;
+  color: #ffffff;
 }
 
 /* KakaoPay-style readability: one number, one task, air */
@@ -501,21 +498,24 @@
 }
 
 .home-today-task {
-  margin-top: 28px;
-  padding: 22px 0 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 22px;
+  padding: 18px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: #161616;
 }
 
 .home-today-task-label {
   margin: 0 0 10px;
-  color: var(--p-text-muted, rgba(255, 255, 255, 0.52));
+  color: rgba(255, 255, 255, 0.55);
   font-size: 13px;
   font-weight: 800;
 }
 
 .home-today-task-title {
   margin: 0;
-  font-size: 24px;
+  color: #ffffff;
+  font-size: 22px;
   font-weight: 900;
   letter-spacing: -0.04em;
   line-height: 1.25;
@@ -523,7 +523,7 @@
 
 .home-today-task-copy {
   margin: 10px 0 0;
-  color: var(--p-text-soft, rgba(255, 255, 255, 0.72));
+  color: rgba(255, 255, 255, 0.72);
   font-size: 15px;
   line-height: 1.55;
   font-weight: 550;
@@ -531,7 +531,7 @@
 
 .home-today-task-meta {
   margin: 8px 0 0;
-  color: var(--p-text-muted, rgba(255, 255, 255, 0.45));
+  color: rgba(255, 255, 255, 0.45);
   font-size: 12px;
   font-weight: 700;
 }
@@ -540,10 +540,10 @@
   width: 100%;
   margin-top: 20px;
   min-height: 56px;
-  border: 1px solid rgba(193, 160, 90, 0.24);
+  border: 1px solid rgba(138, 46, 46, 0.4);
   border-radius: 16px;
   background: #8a2e2e;
-  color: #f5f1e8;
+  color: #ffffff;
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -0.02em;
@@ -562,7 +562,7 @@
   border: 0;
   padding: 0;
   background: transparent;
-  color: var(--p-text-soft, rgba(255, 255, 255, 0.72));
+  color: rgba(255, 255, 255, 0.72);
   font-size: 14px;
   font-weight: 800;
   text-decoration: underline;
@@ -621,10 +621,11 @@
 .home-center-dash {
   margin-top: 22px;
   padding: 18px 16px 16px;
-  border: 1px solid rgba(193, 160, 90, 0.14);
-  border-radius: 22px;
-  background: rgba(39, 32, 25, 0.86);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: #161616;
+  box-shadow: none;
+  color: #ffffff;
 }
 
 .home-center-dash-head {
@@ -669,13 +670,14 @@
 
 .home-center-dash-stats > div {
   padding: 12px 8px;
-  border-radius: 14px;
-  background: rgba(12, 10, 8, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #111111;
 }
 
 .home-center-dash-stats span {
   display: block;
-  color: var(--p-text-muted, rgba(255, 255, 255, 0.5));
+  color: rgba(255, 255, 255, 0.5);
   font-size: 11px;
   font-weight: 800;
 }
@@ -683,6 +685,7 @@
 .home-center-dash-stats strong {
   display: block;
   margin-top: 6px;
+  color: #ffffff;
   font-size: 20px;
   font-weight: 900;
   letter-spacing: -0.03em;
@@ -713,9 +716,10 @@
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 14px;
-  background: rgba(239, 63, 54, 0.14);
-  color: #ff8a84;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #222222;
+  color: #ffffff;
   font-size: 15px;
   font-weight: 900;
 }
@@ -2289,9 +2293,10 @@
   margin-top: 18px;
   padding: 18px 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  background: rgba(0, 0, 0, 0.22);
+  border-radius: 16px;
+  background: #111111;
   text-align: center;
+  color: #ffffff;
 }
 
 .home-today-victory-kicker {
@@ -2324,7 +2329,7 @@
 
 .home-today-victory-statline em {
   font-style: normal;
-  color: #ff8a84;
+  color: #ffffff;
   font-size: clamp(22px, 6vw, 28px);
   font-weight: 900;
 }
@@ -2585,8 +2590,8 @@
 .home-growth-side-stats > div {
   padding: 14px 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.22);
+  border-radius: 12px;
+  background: #111111;
 }
 
 .home-growth-main-stat span,
@@ -4153,11 +4158,9 @@
 
 .theme-dark .home-exp-card,
 .theme-dark .home-growth-hero {
-  border-color: rgba(255,255,255,.1);
-  background:
-    radial-gradient(circle at 90% 0, rgba(255,54,54,.3), transparent 38%),
-    linear-gradient(145deg, #1d1d1f, #0a0a0b 68%);
-  box-shadow: 0 22px 60px rgba(0,0,0,.35);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #161616;
+  box-shadow: none;
 }
 
 .theme-dark .home-exp-meta {
@@ -4201,7 +4204,7 @@
 }
 
 .theme-dark .home-weekly-bar.is-current .home-weekly-bar-track div {
-  background: linear-gradient(180deg, #ff5a5a, #e21919);
+  background: #6a6a6a;
 }
 
 .theme-dark .home-weekly-bar strong {

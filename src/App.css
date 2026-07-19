@@ -179,8 +179,8 @@
 
 .home-brand-hero {
   padding: 16px 14px 14px;
-  border: 1px solid rgba(160, 160, 165, 0.22);
-  border-radius: 16px;
+  border: 0;
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
   color: #ffffff;
@@ -344,7 +344,7 @@
 
 /* Dark: large frames transparent on black stage */
 .theme-dark .home-brand-hero {
-  border-color: rgba(160, 160, 165, 0.22);
+  border: 0;
   background: transparent;
   color: #ffffff;
   box-shadow: none;
@@ -503,9 +503,10 @@
 
 .home-today-task {
   margin-top: 22px;
-  padding: 18px 16px;
-  border: 1px solid rgba(160, 160, 165, 0.22);
-  border-radius: 16px;
+  padding: 18px 2px;
+  border: 0;
+  border-top: 1px solid rgba(160, 160, 165, 0.18);
+  border-radius: 0;
   background: transparent;
 }
 
@@ -624,9 +625,10 @@
 
 .home-center-dash {
   margin-top: 22px;
-  padding: 18px 16px 16px;
-  border: 1px solid rgba(160, 160, 165, 0.22);
-  border-radius: 16px;
+  padding: 18px 2px 16px;
+  border: 0;
+  border-top: 1px solid rgba(160, 160, 165, 0.18);
+  border-radius: 0;
   background: transparent;
   box-shadow: none;
   color: #ffffff;
@@ -863,7 +865,8 @@
 }
 
 .theme-dark .home-center-dash {
-  border-color: rgba(160, 160, 165, 0.22);
+  border: 0;
+  border-top: 1px solid rgba(160, 160, 165, 0.18);
   background: transparent;
   color: #ffffff;
   box-shadow: none;
@@ -8052,10 +8055,15 @@
   border-color: rgba(138, 46, 46, 0.42);
 }
 
-.theme-dark .home-brand-hero,
+.theme-dark .home-brand-hero {
+  border: 0;
+  background: transparent;
+}
+
 .theme-dark .home-center-dash,
 .theme-dark .home-today-task {
-  border-color: rgba(160, 160, 165, 0.22);
+  border: 0;
+  border-top: 1px solid rgba(160, 160, 165, 0.18);
   background: transparent;
 }
 

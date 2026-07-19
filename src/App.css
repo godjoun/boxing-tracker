@@ -25,37 +25,37 @@
 }
 
 .app-shell {
-  /* Black stage + ash-gray surfaces, white type */
-  --p-ash: #8e8e93;
-  --p-ash-soft: #aeaeb2;
-  --p-ash-mid: #4a4a4e;
-  --p-ash-card: #3c3c3f;
-  --p-ash-deep: #2a2a2d;
+  /* ROUND ON dark guide: matte black + ash gray + burgundy CTA */
+  --p-ash: #a0a0a5;
+  --p-ash-soft: #a0a0a5;
+  --p-ash-mid: #2e2e31;
+  --p-ash-card: #242426;
+  --p-ash-deep: #1c1c1e;
   --p-text: #ffffff;
   --p-text-strong: #ffffff;
-  --p-text-body: rgba(255, 255, 255, 0.9);
-  --p-text-soft: rgba(255, 255, 255, 0.78);
-  --p-text-muted: rgba(174, 174, 178, 0.92);
-  --p-text-faint: rgba(142, 142, 147, 0.9);
+  --p-text-body: rgba(255, 255, 255, 0.92);
+  --p-text-soft: #a0a0a5;
+  --p-text-muted: #a0a0a5;
+  --p-text-faint: rgba(160, 160, 165, 0.75);
   --p-on-surface: #ffffff;
   --p-on-accent: #ffffff;
-  --p-surface: #0b0b0c;
-  --p-bg-page: #0b0b0c;
-  --p-bg-nav: rgba(11, 11, 12, 0.96);
-  --p-nav-border: rgba(142, 142, 147, 0.28);
+  --p-surface: #121212;
+  --p-bg-page: #121212;
+  --p-bg-nav: rgba(18, 18, 18, 0.96);
+  --p-nav-border: rgba(160, 160, 165, 0.22);
   --p-bg-card: var(--p-ash-card);
   --p-bg-panel: var(--p-ash-mid);
-  --p-bg-deep: #0b0b0c;
+  --p-bg-deep: #121212;
   --p-bg-inner: var(--p-ash-deep);
   --p-bg-subtle: var(--p-ash-card);
   --p-bg-inset: var(--p-ash-mid);
   --p-input-bg: var(--p-ash-deep);
-  --p-border: rgba(142, 142, 147, 0.35);
-  --p-border-soft: rgba(142, 142, 147, 0.22);
-  --p-border-strong: rgba(174, 174, 178, 0.45);
-  /* 행동만 버건디 */
+  --p-border: rgba(160, 160, 165, 0.28);
+  --p-border-soft: rgba(160, 160, 165, 0.18);
+  --p-border-strong: rgba(160, 160, 165, 0.4);
+  /* 행동: 가죽 버건디 (브랜드) */
   --p-accent: #8a2e2e;
-  --p-accent-soft: #b15b5b;
+  --p-accent-soft: #a34a4a;
   --p-accent-solid: #742525;
   --p-accent-bg: rgba(138, 46, 46, 0.14);
   --p-accent-border: rgba(138, 46, 46, 0.32);
@@ -67,15 +67,15 @@
   --levelup-button-bg: var(--p-ash-card);
   --levelup-button-hover: var(--p-ash-mid);
   --levelup-button-pressed: var(--p-ash-deep);
-  --levelup-button-border: rgba(142, 142, 147, 0.35);
+  --levelup-button-border: rgba(160, 160, 165, 0.28);
   --levelup-button-text: #ffffff;
-  --p-brass: var(--p-ash-soft);
-  --p-brass-soft: #d1d1d6;
-  --p-brass-bg: rgba(142, 142, 147, 0.16);
-  --p-brass-border: rgba(142, 142, 147, 0.35);
+  --p-brass: #a0a0a5;
+  --p-brass-soft: #c4c4c8;
+  --p-brass-bg: rgba(160, 160, 165, 0.12);
+  --p-brass-border: rgba(160, 160, 165, 0.28);
   --p-leather: var(--p-ash-deep);
-  --p-ivory: #e5e5ea;
-  --p-ivory-soft: #d1d1d6;
+  --p-ivory: #e8e8ea;
+  --p-ivory-soft: #c4c4c8;
   --p-hero-bg: var(--p-ash-card);
   --p-shadow-hero: none;
   --p-shadow-accent: 0 8px 20px rgba(0, 0, 0, 0.3);
@@ -89,9 +89,9 @@
   --p-state-done-solid: #7d9d84;
   --p-state-rest: #9db6c8;
   --p-state-rest-solid: #6d8aa0;
-  --gold: var(--p-ash-soft);
+  --gold: #a0a0a5;
   --gold-dark: #8a2e2e;
-  --gold-soft: #d1d1d6;
+  --gold-soft: #c4c4c8;
 }
 
 .theme-light.app-shell {

@@ -1,19 +1,24 @@
 import { useState } from "react";
 import { track } from "@vercel/analytics";
+import { getGymPassLines } from "../utils/gymPricing";
 import { saveGymInquiry } from "../utils/gymInquiry";
 
 const KIND_OPTIONS = [
   {
     id: "trial",
     label: "체험",
-    datePlaceholder: "예: 이번 주 주말 오후",
-    memoPlaceholder: "복싱 경험, 궁금한 점 등",
+    hint: "하루·한달 이용 문의",
+    dateLabel: "희망 방문일",
+    datePlaceholder: "예: 이번 주 토요일 오후",
+    memoPlaceholder: "복싱 경험, 궁금한 점",
   },
   {
     id: "rental",
     label: "대여",
-    datePlaceholder: "예: 토요일 오후 2~5시",
-    memoPlaceholder: "인원, 링 사용, 교류 상대 짐 등",
+    hint: "링·홀 시간 대여",
+    dateLabel: "희망 대여 일정",
+    datePlaceholder: "예: 토요일 14:00~17:00",
+    memoPlaceholder: "링 사용, 교류 상대 짐 등",
   },
 ];
 
@@ -21,12 +26,15 @@ export default function GymInquiryModal({ gym, onClose }) {
   const [kind, setKind] = useState("trial");
   const [contact, setContact] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
+  const [partySize, setPartySize] = useState("1");
+  const [hours, setHours] = useState("2");
   const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
   const [isDone, setIsDone] = useState(false);
 
   const kindMeta =
     KIND_OPTIONS.find((item) => item.id === kind) || KIND_OPTIONS[0];
+  const passes = getGymPassLines(gym);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -44,6 +52,8 @@ export default function GymInquiryModal({ gym, onClose }) {
       contact: trimmedContact,
       preferredDate: preferredDate.trim(),
       memo: memo.trim(),
+      partySize: kind === "rental" ? Number(partySize) || 1 : null,
+      hours: kind === "rental" ? Number(hours) || null : null,
     };
 
     track("gym_inquiry_submit", {
@@ -53,7 +63,6 @@ export default function GymInquiryModal({ gym, onClose }) {
     });
 
     saveGymInquiry(payload);
-
     setIsDone(true);
     setError("");
   }
@@ -98,9 +107,15 @@ export default function GymInquiryModal({ gym, onClose }) {
           <form className="gym-inquiry-form" onSubmit={handleSubmit}>
             <p className="gym-inquiry-kicker">GYM INQUIRY</p>
             <h2 id="gym-inquiry-title">{gym.name} 문의</h2>
-            <p className="gym-inquiry-copy">
-              체험·대여 중 골라 요청해 주세요. 연락처는 앱에만 저장됩니다.
-            </p>
+
+            <div className="gym-inquiry-pass-strip" aria-label="가격 참고">
+              {passes.map((pass) => (
+                <div key={pass.key}>
+                  <span>{pass.label}</span>
+                  <strong>{pass.value}</strong>
+                </div>
+              ))}
+            </div>
 
             <div className="gym-inquiry-kind" role="group" aria-label="문의 종류">
               <span className="gym-inquiry-kind-label">문의 종류 *</span>
@@ -112,13 +127,17 @@ export default function GymInquiryModal({ gym, onClose }) {
                     className={`gym-inquiry-kind-btn${
                       kind === option.id ? " is-active" : ""
                     }`}
-                    onClick={() => setKind(option.id)}
+                    onClick={() => {
+                      setKind(option.id);
+                      setError("");
+                    }}
                     aria-pressed={kind === option.id}
                   >
                     {option.label}
                   </button>
                 ))}
               </div>
+              <p className="gym-inquiry-kind-hint">{kindMeta.hint}</p>
             </div>
 
             <label className="gym-inquiry-field">
@@ -133,7 +152,7 @@ export default function GymInquiryModal({ gym, onClose }) {
             </label>
 
             <label className="gym-inquiry-field">
-              <span>희망 일정</span>
+              <span>{kindMeta.dateLabel}</span>
               <input
                 type="text"
                 value={preferredDate}
@@ -141,6 +160,32 @@ export default function GymInquiryModal({ gym, onClose }) {
                 placeholder={kindMeta.datePlaceholder}
               />
             </label>
+
+            {kind === "rental" ? (
+              <div className="gym-inquiry-rental-row">
+                <label className="gym-inquiry-field">
+                  <span>예상 인원</span>
+                  <input
+                    type="number"
+                    min="1"
+                    inputMode="numeric"
+                    value={partySize}
+                    onChange={(event) => setPartySize(event.target.value)}
+                  />
+                </label>
+                <label className="gym-inquiry-field">
+                  <span>대여 시간(시간)</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.5"
+                    inputMode="decimal"
+                    value={hours}
+                    onChange={(event) => setHours(event.target.value)}
+                  />
+                </label>
+              </div>
+            ) : null}
 
             <label className="gym-inquiry-field">
               <span>메모</span>
@@ -155,7 +200,7 @@ export default function GymInquiryModal({ gym, onClose }) {
             {error ? <p className="gym-inquiry-error">{error}</p> : null}
 
             <button type="submit" className="gym-inquiry-submit">
-              문의 보내기
+              {kindMeta.label} 문의 보내기
             </button>
           </form>
         )}

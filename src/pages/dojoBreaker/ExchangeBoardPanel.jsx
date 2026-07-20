@@ -6,6 +6,7 @@ import {
   cancelExchangeApply,
   combineDateAndTime,
   defaultComposeDateTime,
+  filterExchangeEventsByDate,
   formatExchangeFee,
   formatExchangeSlots,
   formatExchangeWhen,
@@ -39,11 +40,12 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
   const [notice, setNotice] = useState("");
   const [tick, setTick] = useState(0);
   const [showPast, setShowPast] = useState(false);
+  const [dateFilter, setDateFilter] = useState("");
 
-  const events = useMemo(
-    () => listExchangeEvents(userId),
-    [userId, tick]
-  );
+  const events = useMemo(() => {
+    const upcoming = listExchangeEvents(userId);
+    return filterExchangeEventsByDate(upcoming, dateFilter);
+  }, [userId, tick, dateFilter]);
   const pastEvents = useMemo(
     () => (showPast ? listPastExchangeEvents(userId) : []),
     [userId, tick, showPast]
@@ -265,6 +267,26 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
         신청은 이 기기에 저장됩니다. 상대 알림·채팅은 다음 단계에서 연결됩니다.
       </p>
 
+      <label className="exchange-date-filter">
+        <span>날짜로 찾기</span>
+        <div className="exchange-date-filter-row">
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(event) => setDateFilter(event.target.value)}
+          />
+          {dateFilter ? (
+            <button
+              type="button"
+              className="exchange-date-clear"
+              onClick={() => setDateFilter("")}
+            >
+              전체
+            </button>
+          ) : null}
+        </div>
+      </label>
+
       <div className="exchange-toolbar exchange-toolbar-simple">
         <button
           type="button"
@@ -385,8 +407,14 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
 
       {events.length === 0 ? (
         <div className="gym-state-card">
-          <strong>다가오는 일정이 없습니다</strong>
-          <p>주말 오픈 스파링을 올려 보세요.</p>
+          <strong>
+            {dateFilter ? "그날 일정이 없습니다" : "다가오는 일정이 없습니다"}
+          </strong>
+          <p>
+            {dateFilter
+              ? "다른 날짜를 고르거나 전체를 보세요."
+              : "주말 오픈 스파링을 올려 보세요."}
+          </p>
         </div>
       ) : (
         <div className="exchange-feed">{events.map(renderCard)}</div>

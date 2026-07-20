@@ -32,7 +32,7 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
         </button>
       }
       kicker="CONDITIONING"
-      title="몸 강화"
+      title="신체"
       summary={
         <>
           <span className="composer-meta-label">오늘 추천</span>

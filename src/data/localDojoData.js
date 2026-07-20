@@ -7,6 +7,9 @@ export const LOCAL_GYMS = [
     lon: 127.0396,
     phone: "02-000-0001",
     tags: ["복싱", "미트"],
+    dayPassWon: 20000,
+    monthPassWon: 180000,
+    rentalHourWon: 50000,
   },
   {
     id: "local-gym-2",
@@ -16,6 +19,9 @@ export const LOCAL_GYMS = [
     lon: 127.0334,
     phone: "02-000-0002",
     tags: ["복싱", "스파링"],
+    dayPassWon: 25000,
+    monthPassWon: 200000,
+    rentalHourWon: 60000,
   },
   {
     id: "local-gym-3",
@@ -25,6 +31,9 @@ export const LOCAL_GYMS = [
     lon: 126.9225,
     phone: "02-000-0003",
     tags: ["복싱", "킥복싱"],
+    dayPassWon: 18000,
+    monthPassWon: 150000,
+    rentalHourWon: 45000,
   },
   {
     id: "local-gym-4",
@@ -34,6 +43,9 @@ export const LOCAL_GYMS = [
     lon: 126.9138,
     phone: "02-000-0004",
     tags: ["복싱"],
+    dayPassWon: 15000,
+    monthPassWon: 140000,
+    rentalHourWon: 40000,
   },
   {
     id: "local-gym-5",
@@ -43,6 +55,9 @@ export const LOCAL_GYMS = [
     lon: 127.1019,
     phone: "02-000-0005",
     tags: ["복싱", "주짓수"],
+    dayPassWon: 22000,
+    monthPassWon: 170000,
+    rentalHourWon: 55000,
   },
   {
     id: "local-gym-6",
@@ -52,6 +67,9 @@ export const LOCAL_GYMS = [
     lon: 129.0592,
     phone: "051-000-0001",
     tags: ["복싱", "무에타이"],
+    dayPassWon: 15000,
+    monthPassWon: 130000,
+    rentalHourWon: 35000,
   },
   {
     id: "local-gym-7",
@@ -61,6 +79,9 @@ export const LOCAL_GYMS = [
     lon: 128.5969,
     phone: "053-000-0001",
     tags: ["복싱"],
+    dayPassWon: 12000,
+    monthPassWon: 120000,
+    rentalHourWon: 30000,
   },
   {
     id: "local-gym-8",
@@ -70,6 +91,9 @@ export const LOCAL_GYMS = [
     lon: 126.9513,
     phone: "02-000-0006",
     tags: ["복싱", "샌드백"],
+    dayPassWon: 20000,
+    monthPassWon: 160000,
+    rentalHourWon: 48000,
   },
 ];
 

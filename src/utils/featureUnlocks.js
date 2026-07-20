@@ -27,7 +27,7 @@ export const FEATURE_UNLOCKS = [
     description: "잽·크로스·훅을 조합해 나만의 섀도우 루틴 만들기",
     route: "combo-creator",
     kicker: "COMBO LAB",
-    cta: "커리큘럼 훈련하기",
+    cta: "기술로 훈련하기",
     lockedHint: (levelsToGo) =>
       `홈복싱 입문을 마치고 LV.${COMBO_CREATOR_UNLOCK_LEVEL}에 도달하면 콤보 크리에이터가 열립니다. ${levelsToGo}레벨 남음.`,
   },

@@ -584,7 +584,7 @@ export default function TimerPage({
         restSecondsSetting
       )} / 준비 ${isCurriculumSession ? formatTimerDurationLabel(activePrepSeconds) : `${PREP_SECONDS}초`}`,
       publicComment: curriculumSessionId
-        ? `${routineTitle} 완료. 홈 커리큘럼 한 세션 더 버텼다.`
+        ? `${routineTitle} 완료. 기술 코스 한 세션 더 버텼다.`
         : `${totalRounds}R 완료. 오늘도 끝까지 버텼다.`,
     });
 
@@ -787,7 +787,7 @@ export default function TimerPage({
 
     if (completedRounds >= 1) {
       const ok = window.confirm(
-        `지금까지 ${completedRounds}라운드를 기록하고 커리큘럼을 종료할까요?`
+        `지금까지 ${completedRounds}라운드를 기록하고 기술을 종료할까요?`
       );
       if (!ok) return;
 
@@ -801,7 +801,7 @@ export default function TimerPage({
 
     if (
       !window.confirm(
-        "아직 완료한 라운드가 없어요. 커리큘럼을 종료할까요?"
+        "아직 완료한 라운드가 없어요. 기술을 종료할까요?"
       )
     ) {
       return;
@@ -1075,7 +1075,7 @@ export default function TimerPage({
         <ComposerShell
           className="timer-composer"
           kicker="TIMER"
-          title="타이머"
+          title="라운드"
           back={
             onGoBack ? (
               <button

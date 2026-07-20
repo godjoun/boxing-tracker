@@ -331,7 +331,7 @@ export default function CurriculumPage({
         </button>
       }
       kicker="LEARN"
-      title="커리큘럼"
+      title="기술"
       summary={
         <>
           <span className="composer-meta-label">진행</span>
@@ -356,7 +356,7 @@ export default function CurriculumPage({
           tabs={CURRICULUM_TABS}
           activeId={activeTab}
           onChange={setActiveTab}
-          ariaLabel="커리큘럼 메뉴"
+          ariaLabel="기술 메뉴"
         />
       }
       dock={

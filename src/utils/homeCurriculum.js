@@ -13,7 +13,7 @@ export const CURRICULUM_GRADUATION = {
   message:
     "12세션을 모두 마쳤습니다. 스탠스·잽·콤보·디펜스의 기초를 몸에 익혔어요.",
   nextSteps: [
-    "라운드 타이머로 반복 훈련",
+    "라운드로 반복 훈련",
     "LV.10 달성 후 콤보 크리에이터 해금",
     "복싱장 스파링(LV.7+)으로 실전 감각 확장",
   ],
@@ -24,7 +24,7 @@ export const HOME_CURRICULUM = {
   title: "홈복싱 입문",
   subtitle: "복싱장 없이도 따라 할 수 있는 4주 프로그램",
   intro:
-    "샌드백·링이 없어도 섀도우, 풋워크, 맨몸 컨디셔닝으로 복싱 감각을 쌓는 커리큘럼입니다. 좁은 공간에서도 가능해요.",
+    "샌드백·링이 없어도 섀도우, 풋워크, 맨몸 컨디셔닝으로 복싱 감각을 쌓는 기술 코스입니다. 좁은 공간에서도 가능해요.",
   equipment: [
     "넉넉한 수건 또는 매트",
     "물병 500ml 2개(선택 · 가벼운 무게)",
@@ -536,10 +536,10 @@ export function buildCurriculumTimerLaunch(session) {
     curriculumDrills: timerConfig.syncedDrills,
     routineTitle: isCustom
       ? `${session.title} · 커스텀`
-      : `${session.title} · 홈커리큘럼`,
+      : `${session.title} · 기술`,
     logType: isCustom
       ? `커스텀 훈련 · ${session.title}`
-      : `홈커리큘럼 · ${session.title}`,
+      : `기술 · ${session.title}`,
   };
 }
 

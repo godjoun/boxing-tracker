@@ -255,7 +255,7 @@ export default function FirstVisitTutorial({
                 className="first-visit-tutorial-secondary"
                 onClick={handleOpenCurriculum}
               >
-                홈 커리큘럼 보기
+                기술 보기
               </button>
             </>
           ) : (

@@ -1,8 +1,8 @@
 export const TIMER_MENU_CARD = {
   id: "timer",
-  icon: "◷",
-  title: "라운드 타이머",
-  description: "3R · 6R · 9R 경기식 라운드",
+  icon: "round",
+  title: "라운드",
+  description: "3R · 6R · 9R",
   route: "timer",
   accent: "red",
 };
@@ -12,7 +12,7 @@ const SHORTCUTS = {
   timer: TIMER_MENU_CARD,
   "fighter-card": {
     id: "fighter-card",
-    icon: "◆",
+    icon: "card",
     title: "훈련 카드",
     description: "카드 만들기",
     action: "card-maker",
@@ -20,7 +20,7 @@ const SHORTCUTS = {
   },
   "training-log": {
     id: "training-log",
-    icon: "R",
+    icon: "log",
     title: "기록",
     description: "로그 · 캘린더",
     route: "log",
@@ -28,23 +28,23 @@ const SHORTCUTS = {
   },
   curriculum: {
     id: "curriculum",
-    icon: "C",
-    title: "커리큘럼",
+    icon: "skill",
+    title: "기술",
     description: "4주 코스",
     route: "curriculum",
     accent: "red",
   },
   strength: {
     id: "strength",
-    icon: "B",
-    title: "훈련법 추천",
+    icon: "body",
+    title: "신체",
     description: "몸 만들기",
     route: "strength",
     accent: "orange",
   },
   "combo-creator": {
     id: "combo-creator",
-    icon: "※",
+    icon: "combo",
     title: "콤보 만들기",
     description: "내 콤보 · 선수 콤보",
     route: "combo-creator",
@@ -53,7 +53,7 @@ const SHORTCUTS = {
   },
   profile: {
     id: "profile",
-    icon: "◇",
+    icon: "nameplate",
     title: "내 명패",
     description: "스펙 · 사진",
     route: "profile",
@@ -61,7 +61,7 @@ const SHORTCUTS = {
   },
   growth: {
     id: "growth",
-    icon: "↗",
+    icon: "growth",
     title: "성장",
     description: "주간 목표 · 마일스톤",
     route: "growth",
@@ -69,7 +69,7 @@ const SHORTCUTS = {
   },
   gyms: {
     id: "gyms",
-    icon: "M",
+    icon: "dojo",
     title: "도장",
     description: "교류 · 체육관 문의·대여 · 라이벌 찾기",
     route: "gym",
@@ -78,7 +78,7 @@ const SHORTCUTS = {
   },
   backup: {
     id: "backup",
-    icon: "↓",
+    icon: "backup",
     title: "데이터 백업",
     description: "저장 · 복원",
     route: "backup",
@@ -94,7 +94,7 @@ export const MENU_GROUPS = [
   },
   {
     id: "train",
-    title: "훈련",
+    title: "링",
     items: [
       SHORTCUTS.timer,
       SHORTCUTS.curriculum,

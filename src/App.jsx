@@ -17,6 +17,7 @@ import GrowthHubPage from "./pages/GrowthHubPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
 import FirstVisitTutorial from "./components/FirstVisitTutorial";
+import MenuIcon from "./components/MenuIcon";
 import { useBackgroundTimerSession } from "./hooks/useBackgroundTimerSession";
 import { needsOnboarding } from "./utils/bodySpecs";
 import { isTutorialComplete } from "./utils/tutorial";
@@ -353,7 +354,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             onClick={() => goPage("home")}
           >
             <span className="app-nav-icon" aria-hidden="true">
-              ⌂
+              <MenuIcon name="home" size={20} />
             </span>
             <span className="app-nav-label">홈</span>
           </button>
@@ -367,9 +368,9 @@ function MainAppShell({ theme, onToggleTheme }) {
             onClick={() => goPage("train")}
           >
             <span className="app-nav-icon" aria-hidden="true">
-              ↑
+              <MenuIcon name="ring" size={20} />
             </span>
-            <span className="app-nav-label">훈련</span>
+            <span className="app-nav-label">링</span>
           </button>
 
           <button
@@ -379,7 +380,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             onClick={goProfile}
           >
             <span className="app-nav-icon" aria-hidden="true">
-              ▣
+              <MenuIcon name="nameplate" size={20} />
             </span>
             <span className="app-nav-label">명패</span>
           </button>
@@ -394,11 +395,8 @@ function MainAppShell({ theme, onToggleTheme }) {
             )}
             onClick={() => goPage("category")}
           >
-            <span className="app-nav-icon nav-category-icon" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-              <i />
+            <span className="app-nav-icon" aria-hidden="true">
+              <MenuIcon name="more" size={20} />
             </span>
             <span className="app-nav-label">더보기</span>
           </button>

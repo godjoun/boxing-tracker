@@ -29,7 +29,7 @@ export function updateTimerMediaSession(summary) {
   navigator.mediaSession.metadata = new MediaMetadata({
     title: phaseText,
     artist: `${summary.roundLabel} · ${summary.title}`,
-    album: "복싱 라운드 타이머",
+    album: "SECUNDUS 라운드",
     artwork: getArtwork(),
   });
 

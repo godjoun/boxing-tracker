@@ -1,4 +1,4 @@
-/** Locked brand identity — see docs/brand-foundation.md · docs/name-brief.md */
+/** Locked brand — docs/brand.md */
 export const BRAND_NAME = "SECUNDUS";
 
 export const BRAND_SLOGAN_KO = "알 유 레디.";

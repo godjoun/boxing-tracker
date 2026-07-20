@@ -10,6 +10,7 @@ import {
   searchNearbyGyms,
   suggestAreas,
 } from "../../utils/gymSearch";
+import GymResultCard from "./GymResultCard";
 
 export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   const [status, setStatus] = useState("loading");
@@ -225,31 +226,12 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
       {status === "ready" ? (
         <div className="gym-result-list">
           {gyms.map((gym, index) => (
-            <article className="gym-result-card" key={gym.id}>
-              <div className="gym-result-rank">
-                {String(index + 1).padStart(2, "0")}
-              </div>
-              <div className="gym-result-body">
-                <div className="gym-result-top">
-                  <strong>{gym.name}</strong>
-                  <span>{gym.distanceLabel}</span>
-                </div>
-                {gym.address ? <p>{gym.address}</p> : null}
-                {gym.phone ? (
-                  <p className="gym-result-phone">{gym.phone}</p>
-                ) : null}
-                {gym.tags?.length > 0 ? (
-                  <p className="gym-result-category">{gym.tags.join(" · ")}</p>
-                ) : null}
-                <button
-                  type="button"
-                  className="gym-inquiry-button"
-                  onClick={() => openInquiry(gym)}
-                >
-                  문의하기
-                </button>
-              </div>
-            </article>
+            <GymResultCard
+              key={gym.id}
+              gym={gym}
+              index={index}
+              onInquire={openInquiry}
+            />
           ))}
         </div>
       ) : null}

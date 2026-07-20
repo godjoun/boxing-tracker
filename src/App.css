@@ -2619,6 +2619,147 @@
   color: var(--p-text);
 }
 
+.gym-result-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  min-width: 0;
+}
+
+.gym-result-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.gym-result-passes {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+  min-width: 72px;
+  padding-top: 2px;
+}
+
+.gym-result-pass {
+  display: grid;
+  gap: 1px;
+  text-align: right;
+}
+
+.gym-result-pass span {
+  color: var(--p-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.gym-result-pass strong {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.gym-result-distance {
+  flex-shrink: 0;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.gym-result-address {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.gym-inquiry-pass-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.gym-inquiry-pass-strip > div {
+  display: grid;
+  gap: 2px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: rgba(10, 9, 9, 0.05);
+  text-align: center;
+}
+
+.theme-dark .gym-inquiry-pass-strip > div {
+  background: rgba(245, 241, 232, 0.06);
+}
+
+.gym-inquiry-pass-strip span {
+  color: var(--p-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.gym-inquiry-pass-strip strong {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.gym-inquiry-kind-hint {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gym-inquiry-rental-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.exchange-date-filter {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.exchange-date-filter > span {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.exchange-date-filter-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.exchange-date-filter-row input[type="date"] {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--p-border);
+  border-radius: 12px;
+  background: var(--p-bg-subtle);
+  color: var(--p-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.exchange-date-clear {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--p-border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .gym-result-rank {
   display: grid;
   place-items: center;
@@ -4675,6 +4816,14 @@
   color: var(--p-text);
   font-size: 13px;
   font-weight: 900;
+}
+
+.app-menu-tile-icon .menu-icon,
+.levelup-menu-icon .menu-icon,
+.levelup-timer-icon .menu-icon,
+.app-nav-icon .menu-icon {
+  display: block;
+  flex-shrink: 0;
 }
 
 .theme-dark .app-menu-tile-icon {

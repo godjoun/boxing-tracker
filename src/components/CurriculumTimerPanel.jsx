@@ -119,7 +119,7 @@ export default function CurriculumTimerPanel({
       : focus?.combos || visibleDrill?.combos || [];
 
   return (
-    <section className="curriculum-timer-panel" aria-label="커리큘럼 가이드">
+    <section className="curriculum-timer-panel" aria-label="기술 가이드">
       <div className="curriculum-timer-head">
         <div className="curriculum-timer-title-block">
           <div className="curriculum-timer-badges">
@@ -193,7 +193,7 @@ export default function CurriculumTimerPanel({
           className="curriculum-timer-end"
           onClick={onEndCurriculum}
         >
-          커리큘럼 종료
+          기술 종료
         </button>
       </div>
     </section>

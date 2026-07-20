@@ -509,7 +509,7 @@ export default function HomePage({
             className="home-secondary-button"
             onClick={onStartTraining}
           >
-            훈련 메뉴에서 더 보기
+            링에서 더 보기
           </button>
 
           {todaysLesson.kind === "session" ? (
@@ -518,7 +518,7 @@ export default function HomePage({
               className="home-today-task-link home-today-task-link-block"
               onClick={() => onOpenCurriculum?.()}
             >
-              커리큘럼 전체 보기
+              기술 전체 보기
             </button>
           ) : null}
         </div>

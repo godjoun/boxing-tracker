@@ -6,6 +6,7 @@ import {
 } from "../utils/featureUnlocks";
 import { getLevelTitle } from "../utils/fighterTitles";
 import { MENU_GROUPS } from "../utils/appMenu";
+import MenuIcon from "./MenuIcon";
 
 export default function AppMenuBoard({
   fighterLevel = 1,
@@ -22,6 +23,10 @@ export default function AppMenuBoard({
   const sparringProgress = getSparringUnlockProgress(fighterLevel);
   const sparringTitle = getLevelTitle(SPARRING_UNLOCK_LEVEL);
   const isHome = variant === "home";
+  const sparringTitleLabel =
+    typeof sparringTitle === "string"
+      ? sparringTitle
+      : sparringTitle?.ko || sparringTitle?.title || "";
 
   function selectItem(item) {
     if (item.action === "card-maker") {
@@ -52,13 +57,11 @@ export default function AppMenuBoard({
         onClick={() => selectItem(item)}
       >
         <span className="app-menu-tile-icon" aria-hidden="true">
-          {item.icon}
+          <MenuIcon name={item.icon} size={16} />
         </span>
         <strong>{item.title}</strong>
         <small>
-          {locked
-            ? `LV.${unlockLevel} 해금`
-            : item.description}
+          {locked ? `LV.${unlockLevel} 해금` : item.description}
         </small>
         {locked ? <em aria-hidden="true">🔒</em> : null}
       </button>
@@ -95,9 +98,14 @@ export default function AppMenuBoard({
                   onClick={onToggleTheme}
                 >
                   <span className="app-menu-tile-icon" aria-hidden="true">
-                    {theme === "dark" ? "☀" : "☾"}
+                    <MenuIcon
+                      name={theme === "dark" ? "themeLight" : "themeDark"}
+                      size={16}
+                    />
                   </span>
-                  <strong>{theme === "dark" ? "라이트 모드" : "다크 모드"}</strong>
+                  <strong>
+                    {theme === "dark" ? "라이트 모드" : "다크 모드"}
+                  </strong>
                   <small>
                     {theme === "dark"
                       ? "밝은 화면으로 전환"
@@ -112,20 +120,7 @@ export default function AppMenuBoard({
                   onClick={onReplayTutorial}
                 >
                   <span className="app-menu-tile-icon" aria-hidden="true">
-                    ?
-                  </span>
-                  <strong>튜토리얼</strong>
-                  <small>앱 사용법 다시 보기</small>
-                </button>
-              ) : null}
-              {group.id === "more" && onReplayTutorial ? (
-                <button
-                  type="button"
-                  className="app-menu-tile accent-slate"
-                  onClick={onReplayTutorial}
-                >
-                  <span className="app-menu-tile-icon" aria-hidden="true">
-                    ?
+                    <MenuIcon name="help" size={16} />
                   </span>
                   <strong>튜토리얼</strong>
                   <small>앱 사용법 다시 보기</small>
@@ -141,11 +136,19 @@ export default function AppMenuBoard({
           <span>라이벌 찾기 해금</span>
           <p>
             도장 → 라이벌 찾기 · LV.{sparringProgress.unlockLevel}{" "}
-            <strong>{sparringTitle.ko}</strong> · {sparringProgress.levelsToGo}
+            <strong>{sparringTitleLabel}</strong> · {sparringProgress.levelsToGo}
             레벨 남음
           </p>
           <div className="app-menu-unlock-bar" aria-hidden="true">
-            <div style={{ width: `${sparringProgress.progressPercent}%` }} />
+            <div
+              style={{
+                width: `${
+                  sparringProgress.progressPercent ??
+                  sparringProgress.percent ??
+                  0
+                }%`,
+              }}
+            />
           </div>
         </div>
       ) : null}

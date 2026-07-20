@@ -63,6 +63,17 @@ export function toDateInputValue(iso) {
   return `${y}-${m}-${d}`;
 }
 
+/** YYYY-MM-DD 와 같은 날인지 */
+export function isSameExchangeDay(startsAt, dateStr) {
+  if (!startsAt || !dateStr) return false;
+  return toDateInputValue(startsAt) === dateStr;
+}
+
+export function filterExchangeEventsByDate(events, dateStr) {
+  if (!dateStr) return events;
+  return events.filter((event) => isSameExchangeDay(event.startsAt, dateStr));
+}
+
 export function toTimeInputValue(iso) {
   if (!iso) return "";
   const date = new Date(iso);

@@ -6,6 +6,7 @@ import {
   COMBO_CREATOR_UNLOCK_LEVEL,
 } from "../utils/featureUnlocks";
 import { MATCH_TIMER_PRESETS } from "../utils/timerPresets";
+import MenuIcon from "../components/MenuIcon";
 
 export default function TrainingHubPage({
   fighterLevel = 1,
@@ -47,23 +48,23 @@ export default function TrainingHubPage({
   const menuItems = [
     {
       id: "strength",
-      icon: "B",
-      title: "훈련법 추천",
-      description: "요일별 루틴 · 워밍업",
+      icon: "body",
+      title: "신체",
+      description: "몸 만들기 · 워밍업",
       onClick: onOpenStrength,
       locked: false,
     },
     {
       id: "curriculum",
-      icon: "C",
-      title: "커리큘럼",
+      icon: "skill",
+      title: "기술",
       description: "4주 코스 · 영상+훈련",
       onClick: onOpenCurriculum,
       locked: false,
     },
     {
       id: "combo",
-      icon: "◆",
+      icon: "combo",
       title: "콤보 만들기",
       description: comboUnlocked
         ? "나만의 섀도우 루틴"
@@ -76,20 +77,20 @@ export default function TrainingHubPage({
   return (
     <main className="hub-page levelup-page">
       <header className="levelup-header">
-        <h1 className="levelup-title">훈련</h1>
+        <h1 className="levelup-title">링</h1>
         <p className="levelup-subtitle">
-          타이머로 라운드를 남기고, 오늘의 훈련을 이어가세요.
+          라운드로 남기고, 기술·신체를 이어가세요.
         </p>
       </header>
 
-      <section className="levelup-timer-hero" aria-label="라운드 타이머">
+      <section className="levelup-timer-hero" aria-label="라운드">
         <div className="levelup-timer-hero-top">
           <div className="levelup-timer-icon" aria-hidden="true">
-            ◷
+            <MenuIcon name="round" size={22} />
           </div>
           <div className="levelup-timer-copy">
-            <p className="levelup-timer-kicker">ROUND TIMER</p>
-            <h2 className="levelup-timer-title">라운드 타이머</h2>
+            <p className="levelup-timer-kicker">ROUND</p>
+            <h2 className="levelup-timer-title">라운드</h2>
             <span className="levelup-timer-desc">
               1R = 운동 1세트 · 완료 시 기록에 자동 저장
             </span>
@@ -152,7 +153,7 @@ export default function TrainingHubPage({
 
         <section className="levelup-box-card">
           <p className="levelup-box-kicker">TRAINING MENU</p>
-          <h3 className="levelup-box-title">훈련 메뉴</h3>
+          <h3 className="levelup-box-title">링 메뉴</h3>
 
           <div className="levelup-menu-grid">
             {menuItems.map((item) => (
@@ -163,7 +164,7 @@ export default function TrainingHubPage({
                 onClick={item.onClick}
               >
                 <span className="levelup-menu-icon" aria-hidden="true">
-                  {item.icon}
+                  <MenuIcon name={item.icon} size={16} />
                 </span>
                 <strong>{item.title}</strong>
                 <small>{item.description}</small>

@@ -229,7 +229,7 @@ export default function GrowthHubPage({
             <strong className="growth-hub-card-title">
               {curriculum.isComplete
                 ? "프로그램 완주"
-                : `커리큘럼 ${curriculum.completedCount}/${curriculum.totalSessions}`}
+                : `기술 ${curriculum.completedCount}/${curriculum.totalSessions}`}
             </strong>
             <small className="growth-hub-card-desc">
               {curriculum.isComplete

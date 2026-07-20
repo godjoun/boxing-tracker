@@ -273,7 +273,7 @@
 
 .log-hint {
   margin: 6px 0 0;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--p-text-faint);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -788,40 +788,45 @@
 }
 
 .log-btn-edit {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--p-bg-subtle);
+  color: var(--p-text);
 }
 
 .log-btn-card {
-  background: #8a2e2e;
-  color: #f5f1e8;
+  background: #0a0909;
+  color: #ffffff;
+}
+
+.theme-dark .log-btn-card {
+  background: #f5f1e8;
+  color: #0a0909;
 }
 
 .log-btn-delete {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--p-border);
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--p-text-muted);
 }
 
 .log-quote-box {
   margin-top: 10px;
   padding: 10px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--p-border-soft);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--p-bg-subtle);
 }
 
 .log-quote-label {
   display: block;
   margin-bottom: 4px;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--p-text-faint);
   font-size: 11px;
   font-weight: 600;
 }
 
 .log-quote-text {
   margin: 0;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--p-text-body);
   font-size: 13px;
   line-height: 1.5;
   font-weight: 500;

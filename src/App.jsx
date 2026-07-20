@@ -142,7 +142,7 @@ function MainAppShell({ theme, onToggleTheme }) {
     setCurrentPage("profile");
   };
 
-  const goGym = (view = "gyms") => {
+  const goGym = (view = "hub") => {
     setGymView(view);
     setCurrentPage("gym");
   };
@@ -238,7 +238,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             initialView={gymView}
             fighterLevel={fighterLevel}
             onGoBack={() => {
-              setGymView("gyms");
+              setGymView("hub");
               goPage("category");
             }}
             onStartTraining={() => goPage("timer")}

@@ -138,9 +138,9 @@ export default function AppMenuBoard({
 
       {!sparringProgress.unlocked && !isHome ? (
         <div className="app-menu-unlock">
-          <span>스파링 해금</span>
+          <span>라이벌 찾기 해금</span>
           <p>
-            도장 → 스파링 탭 · LV.{sparringProgress.unlockLevel}{" "}
+            도장 → 라이벌 찾기 · LV.{sparringProgress.unlockLevel}{" "}
             <strong>{sparringTitle.ko}</strong> · {sparringProgress.levelsToGo}
             레벨 남음
           </p>

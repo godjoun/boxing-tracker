@@ -6,6 +6,12 @@
   color: var(--p-text);
 }
 
+.feature-lock-page.is-embedded {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 .feature-lock-card {
   padding: 24px 20px;
   border: 1px solid var(--p-border);

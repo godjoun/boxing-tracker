@@ -1,94 +1,117 @@
 import { useEffect, useState } from "react";
 import FeatureLockScreen from "../components/FeatureLockScreen";
 import { getUnlockLevel, isSparringUnlocked } from "../utils/featureUnlocks";
-import { getLevelTitle } from "../utils/fighterTitles";
+import ExchangeBoardPanel from "./dojoBreaker/ExchangeBoardPanel";
 import NearbyGymsPanel from "./dojoBreaker/NearbyGymsPanel";
 import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
-function resolveTab(view) {
-  if (view === "sparring" || view === "sparring-lock") return "sparring";
-  return "gyms";
+/**
+ * 이름 = 하는 일
+ * - 교류 = 주말 오픈 · 원정 스파링 일정
+ * - 체육관 문의·대여 = 찾기 · 체험 · 대여
+ * - 라이벌 찾기 = 1:1 스파링 상대
+ */
+const CATEGORIES = [
+  {
+    id: "exchange",
+    label: "교류",
+    hint: "주말 오픈 · 원정 스파링",
+    howTo: "오픈 스파링 일정을 보거나 올려요.",
+  },
+  {
+    id: "gyms",
+    label: "체육관 문의·대여",
+    hint: "찾기 · 체험 · 대여",
+    howTo: "지역 검색 후 문의하기 · 체험/대여는 폼에서 선택",
+  },
+  {
+    id: "sparring",
+    label: "라이벌 찾기",
+    hint: "1:1 스파링 상대 · 대화 요청",
+    howTo: "지역·희망 시간 맞추고 찾는 중을 켜요.",
+  },
+];
+
+function resolveView(view) {
+  if (view === "gyms" || view === "sparring" || view === "exchange") {
+    return view;
+  }
+  if (view === "sparring-lock") {
+    return "sparring";
+  }
+  return "exchange";
 }
 
 export default function GymFinderPage({
-  initialView = "gyms",
+  initialView = "hub",
   fighterLevel = 1,
   onGoBack,
   onStartTraining,
 }) {
-  const [tab, setTab] = useState(() => resolveTab(initialView));
+  const [view, setView] = useState(() => resolveView(initialView));
   const sparringLocked = !isSparringUnlocked(fighterLevel);
   const sparringLevel = getUnlockLevel("sparring");
+  const active = CATEGORIES.find((item) => item.id === view) || CATEGORIES[0];
 
   useEffect(() => {
-    setTab(resolveTab(initialView));
+    setView(resolveView(initialView));
   }, [initialView]);
 
-  function openTab(nextTab) {
-    setTab(nextTab);
-  }
-
-  const showSparringLock = tab === "sparring" && sparringLocked;
-
   return (
-    <main className="gym-page gym-page-unified">
-      <header className="gym-unified-header">
+    <main className="gym-page gym-page-flap">
+      <header className="dojo-flap-header">
         <button className="category-back" type="button" onClick={onGoBack}>
-          ← 뒤로
+          ← 더보기
         </button>
-        <div className="gym-unified-heading">
+        <div className="dojo-flap-heading">
           <p className="gym-unified-kicker">DOJO</p>
           <h1>도장</h1>
-          <p>근처 체육관과 스파링을 한곳에서 찾으세요.</p>
+          <p>{active.hint}</p>
         </div>
+
+        <nav className="dojo-flap-tabs" aria-label="도장 카테고리">
+          {CATEGORIES.map((item) => {
+            const isSparring = item.id === "sparring";
+            const locked = isSparring && sparringLocked;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={`dojo-flap-tab${
+                  view === item.id ? " is-active" : ""
+                }${locked ? " is-locked" : ""}`}
+                aria-current={view === item.id ? "page" : undefined}
+                onClick={() => setView(item.id)}
+              >
+                {item.label}
+                {locked ? <em>LV.{sparringLevel}</em> : null}
+              </button>
+            );
+          })}
+        </nav>
+
+        <p className="dojo-howto">{active.howTo}</p>
       </header>
 
-      <nav className="gym-unified-tabs" aria-label="도장 메뉴">
-        <button
-          type="button"
-          className={`gym-unified-tab${tab === "gyms" ? " is-active" : ""}`}
-          onClick={() => openTab("gyms")}
-        >
-          체육관
-        </button>
-        <button
-          type="button"
-          className={`gym-unified-tab${tab === "sparring" ? " is-active" : ""}`}
-          onClick={() => openTab("sparring")}
-          aria-disabled={sparringLocked}
-        >
-          스파링
-          {sparringLocked ? (
-            <em>LV.{sparringLevel}</em>
-          ) : null}
-        </button>
-      </nav>
+      <section className="dojo-flap-body" aria-label={active.label}>
+        {view === "exchange" ? <ExchangeBoardPanel embedded /> : null}
 
-      <div className="gym-unified-body">
-        {showSparringLock ? (
+        {view === "gyms" ? <NearbyGymsPanel embedded /> : null}
+
+        {view === "sparring" && sparringLocked ? (
           <FeatureLockScreen
             featureId="sparring"
             currentLevel={fighterLevel}
-            onBack={() => openTab("gyms")}
+            onBack={() => setView("exchange")}
             onStartTraining={onStartTraining}
+            embedded
           />
         ) : null}
 
-        {!showSparringLock && tab === "gyms" ? (
-          <NearbyGymsPanel embedded />
-        ) : null}
-
-        {!showSparringLock && tab === "sparring" ? (
+        {view === "sparring" && !sparringLocked ? (
           <SparringPartnerPanel embedded />
         ) : null}
-      </div>
-
-      {sparringLocked && tab === "gyms" ? (
-        <p className="gym-unified-unlock-hint">
-          스파링은 LV.{sparringLevel} {getLevelTitle(sparringLevel).ko}에서
-          열립니다.
-        </p>
-      ) : null}
+      </section>
     </main>
   );
 }

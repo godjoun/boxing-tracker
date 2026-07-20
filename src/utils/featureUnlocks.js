@@ -11,7 +11,7 @@ export const FEATURE_UNLOCKS = [
   {
     id: "sparring",
     level: SPARRING_UNLOCK_LEVEL,
-    label: "스파링 상대찾기",
+    label: "라이벌 찾기",
     description: "체급·경력 기반 스파링 매칭",
     route: "gym",
     gymView: "sparring",

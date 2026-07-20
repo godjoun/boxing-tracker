@@ -13,6 +13,7 @@ import {
   WEIGHT_CLASSES,
 } from "../utils/sparringPartners";
 import { suggestWeightClass } from "../data/proBoxingWeightClasses";
+import { BRAND_NAME } from "../utils/brand";
 import { styles } from "./ProfilePage.styles";
 import {
   getDisplayComment,
@@ -1141,7 +1142,7 @@ export default function ProfilePage({
     ctx.globalAlpha = 0.14;
     ctx.font = `900 ${Math.round(width * 0.052)}px Arial Black, Arial, sans-serif`;
     ctx.letterSpacing = `${Math.round(width * 0.012)}px`;
-    ctx.fillText("ROUND ON", width * 0.5, height * 0.16);
+    ctx.fillText(BRAND_NAME, width * 0.5, height * 0.16);
 
     ctx.restore();
   }
@@ -1867,7 +1868,7 @@ export default function ProfilePage({
       ctx.fillStyle = sideShade;
       ctx.fillRect(0, 0, width, height);
 
-      drawTextFit(ctx, "ROUND ON", left, 66, 430, {
+      drawTextFit(ctx, BRAND_NAME, left, 66, 430, {
         size: 50,
         minSize: 36,
         weight: 950,
@@ -2731,7 +2732,7 @@ export default function ProfilePage({
               <div>
                 <p style={styles.cardMakerLabel}>2. 카드 배경 선택 (선택)</p>
                 <p style={styles.cardMakerHelp}>
-                  사진이 없어도 ROUND ON 그래픽 카드로 바로 저장할 수 있어요.
+                  사진이 없어도 {BRAND_NAME} 그래픽 카드로 바로 저장할 수 있어요.
                   원할 때만 훈련 사진을 추가하세요. (지금은 사진만 저장됩니다.)
                 </p>
               </div>
@@ -3206,7 +3207,7 @@ export default function ProfilePage({
                     aria-hidden="true"
                   >
                     <span className="training-card-no-photo-brand">
-                      ROUND ON
+                      {BRAND_NAME}
                     </span>
                     <span className="training-card-no-photo-mark">R</span>
                     <span className="training-card-no-photo-ring ring-one" />
@@ -3236,7 +3237,7 @@ export default function ProfilePage({
                     }}
                   >
                     <div className="level-up-performance-brand">
-                      <strong>ROUND ON</strong>
+                      <strong>{BRAND_NAME}</strong>
                       <span>TRAINING RESULT</span>
                     </div>
 

@@ -122,8 +122,8 @@
   margin: 12px 0;
   padding: 4px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--p-bg-subtle);
+  border: 1px solid var(--p-border-soft);
 }
 
 .combo-source-tab {
@@ -155,7 +155,8 @@
   min-width: 16px;
   padding: 1px 5px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--p-bg-deep);
+  color: var(--p-text-faint);
   font-size: 10px;
   font-style: normal;
   font-weight: 800;
@@ -398,8 +399,9 @@
   gap: 10px;
   padding: 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--p-bg-subtle);
+  border: 1px solid var(--p-border-soft);
+  color: var(--p-text);
 }
 
 .combo-saved-main {
@@ -421,21 +423,21 @@
 
 .combo-saved-main span,
 .combo-fighter-combo span {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.4;
 }
 
 .combo-saved-main em,
 .combo-fighter-combo em {
-  color: rgba(138, 46, 46, 0.8);
+  color: var(--p-text-muted);
   font-size: 11px;
   font-style: normal;
   font-weight: 700;
 }
 
 .combo-fighter-combo em {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--p-text-faint);
   font-weight: 500;
   display: block;
   margin-top: 4px;
@@ -450,7 +452,7 @@
 .combo-saved-empty {
   padding: 28px 12px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--p-text-muted);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -465,7 +467,7 @@
 
 .combo-fighter-hint {
   margin: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -475,9 +477,10 @@
   align-items: center;
   gap: 10px;
   padding: 8px 8px 8px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--p-border-soft);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--p-bg-subtle);
+  color: var(--p-text);
 }
 
 .combo-fighter-card-main {
@@ -499,13 +502,13 @@
 
 .combo-fighter-card-main span,
 .combo-fighter-card-main em {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--p-text-muted);
   font-size: 12px;
   font-style: normal;
 }
 
 .combo-fighter-card-main em {
-  color: rgba(138, 46, 46, 0.8);
+  color: var(--p-text-muted);
   font-weight: 700;
 }
 
@@ -515,8 +518,8 @@
   height: 36px;
   border: none;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.45);
+  background: var(--p-bg-deep);
+  color: var(--p-text-faint);
   font-size: 16px;
   cursor: pointer;
 }

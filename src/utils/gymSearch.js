@@ -13,6 +13,80 @@ export const PRESET_AREAS = [
   { id: "gwangju-sangmu", label: "광주 상무", lat: 35.1466, lon: 126.8514 },
 ];
 
+/** 직접 검색용 지역 (프리셋 + 별칭) */
+export const SEARCHABLE_AREAS = [
+  {
+    id: "seoul-gangnam",
+    label: "서울 강남",
+    aliases: ["강남", "역삼", "선릉", "삼성동", "논현"],
+    lat: 37.4979,
+    lon: 127.0276,
+  },
+  {
+    id: "seoul-hongdae",
+    label: "서울 홍대",
+    aliases: ["홍대", "홍익대", "연남", "상수", "합정"],
+    lat: 37.5563,
+    lon: 126.9236,
+  },
+  {
+    id: "seoul-jamsil",
+    label: "서울 잠실",
+    aliases: ["잠실", "송파", "석촌", "방이"],
+    lat: 37.5133,
+    lon: 127.1028,
+  },
+  {
+    id: "seoul-mapo",
+    label: "서울 마포",
+    aliases: ["마포", "공덕", "아현", "망원"],
+    lat: 37.566,
+    lon: 126.901,
+  },
+  {
+    id: "seoul-sungsu",
+    label: "서울 성수",
+    aliases: ["성수", "성수동", "건대", "서울숲"],
+    lat: 37.5445,
+    lon: 127.0559,
+  },
+  {
+    id: "seoul-cityhall",
+    label: "서울 시청",
+    aliases: ["서울", "종로", "중구", "시청", "명동"],
+    lat: 37.5665,
+    lon: 126.978,
+  },
+  {
+    id: "busan-seomyeon",
+    label: "부산 서면",
+    aliases: ["부산", "서면", "부산진"],
+    lat: 35.1579,
+    lon: 129.0595,
+  },
+  {
+    id: "daegu-dongseong",
+    label: "대구 동성로",
+    aliases: ["대구", "동성로"],
+    lat: 35.8694,
+    lon: 128.5938,
+  },
+  {
+    id: "incheon-bupyeong",
+    label: "인천 부평",
+    aliases: ["인천", "부평"],
+    lat: 37.507,
+    lon: 126.7219,
+  },
+  {
+    id: "gwangju-sangmu",
+    label: "광주 상무",
+    aliases: ["광주", "상무"],
+    lat: 35.1466,
+    lon: 126.8514,
+  },
+];
+
 const DEFAULT_LOCATION = {
   lat: 37.5665,
   lon: 126.978,
@@ -20,6 +94,13 @@ const DEFAULT_LOCATION = {
   source: "default",
   accuracy: null,
 };
+
+function normalizeQuery(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+}
 
 function normalizePosition(position) {
   return {
@@ -56,15 +137,15 @@ function getGeolocationErrorMessage(error) {
   if (!error) return "현재 위치를 가져오지 못했습니다.";
 
   if (error.code === 1) {
-    return "위치 권한이 거부되었습니다. 아래에서 지역을 선택해 주세요.";
+    return "위치 권한이 거부되었습니다. 아래에서 지역을 검색해 주세요.";
   }
 
   if (error.code === 2) {
-    return "GPS 신호를 찾지 못했습니다. 지역 버튼으로 선택해 주세요.";
+    return "GPS 신호를 찾지 못했습니다. 지역을 검색해 주세요.";
   }
 
   if (error.code === 3) {
-    return "위치 확인 시간이 초과되었습니다. 지역 버튼으로 선택해 주세요.";
+    return "위치 확인 시간이 초과되었습니다. 지역을 검색해 주세요.";
   }
 
   return error.message || "현재 위치를 가져오지 못했습니다.";
@@ -107,15 +188,73 @@ async function getGpsPosition() {
   }
 }
 
+/** "강남", "홍대", "부산" 등 지역 문자열 → 좌표 */
+export function findAreaByQuery(query) {
+  const q = normalizeQuery(query);
+  if (!q) return null;
+
+  const scored = SEARCHABLE_AREAS.map((area) => {
+    const label = normalizeQuery(area.label);
+    const aliases = (area.aliases || []).map(normalizeQuery);
+    let score = 0;
+
+    if (label === q || aliases.includes(q)) score = 100;
+    else if (label.includes(q) || aliases.some((alias) => alias.includes(q))) {
+      score = 80;
+    } else if (aliases.some((alias) => q.includes(alias) && alias.length >= 2)) {
+      score = 60;
+    }
+
+    return { area, score };
+  })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return scored[0]?.area || null;
+}
+
+export function suggestAreas(query, limit = 6) {
+  const q = normalizeQuery(query);
+  if (!q) return SEARCHABLE_AREAS.slice(0, limit);
+
+  return SEARCHABLE_AREAS.filter((area) => {
+    const hay = [area.label, ...(area.aliases || [])]
+      .map(normalizeQuery)
+      .join(" ");
+    return hay.includes(q);
+  }).slice(0, limit);
+}
+
 export async function resolveSearchLocation(options = {}) {
   const {
     preferGps = true,
     preset = null,
+    query = null,
     allowFallback = true,
   } = options;
 
+  if (query) {
+    const area = findAreaByQuery(query);
+    if (!area) {
+      throw new Error(
+        `"${query.trim()}" 지역을 찾지 못했습니다. 예: 강남, 홍대, 잠실, 부산`
+      );
+    }
+    const position = normalizePosition({
+      lat: area.lat,
+      lon: area.lon,
+      label: area.label,
+      source: "search",
+      accuracy: 1000,
+    });
+    saveSearchLocation(position);
+    return position;
+  }
+
   if (preset) {
-    const area = PRESET_AREAS.find((item) => item.id === preset);
+    const area =
+      SEARCHABLE_AREAS.find((item) => item.id === preset) ||
+      PRESET_AREAS.find((item) => item.id === preset);
     if (area) {
       const position = normalizePosition({
         lat: area.lat,
@@ -187,6 +326,8 @@ export function getLocationSourceLabel(source) {
       return "GPS";
     case "preset":
       return "지역 선택";
+    case "search":
+      return "지역 검색";
     case "default":
       return "기본 위치";
     default:

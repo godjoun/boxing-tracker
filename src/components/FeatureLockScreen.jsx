@@ -10,6 +10,7 @@ export default function FeatureLockScreen({
   currentLevel = 1,
   onBack,
   onStartTraining,
+  embedded = false,
 }) {
   const feature = getFeatureUnlock(featureId);
   const progress = getFeatureUnlockProgress(featureId, currentLevel);
@@ -19,8 +20,12 @@ export default function FeatureLockScreen({
     return null;
   }
 
+  const Shell = embedded ? "div" : "main";
+
   return (
-    <main className="feature-lock-page">
+    <Shell
+      className={`feature-lock-page${embedded ? " is-embedded" : ""}`}
+    >
       <div className="feature-lock-card">
         <p className="feature-lock-kicker">{feature.kicker || "FEATURE LOCK"}</p>
         <h1>{feature.label}</h1>
@@ -60,11 +65,15 @@ export default function FeatureLockScreen({
         </button>
 
         {onBack ? (
-          <button type="button" className="feature-lock-secondary" onClick={onBack}>
-            돌아가기
+          <button
+            type="button"
+            className="feature-lock-secondary"
+            onClick={onBack}
+          >
+            {embedded ? "교류로 돌아가기" : "돌아가기"}
           </button>
         ) : null}
       </div>
-    </main>
+    </Shell>
   );
 }

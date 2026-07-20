@@ -47,7 +47,7 @@ export const TUTORIAL_STEPS = [
     id: "nav-category",
     kicker: "MORE",
     title: "더보기 — 다 찾기",
-    body: "기록·도장(체육관·스파링)·백업은 더보기에 모아 두었습니다. 탭을 늘리지 않고 필요할 때 찾으면 됩니다.",
+    body: "기록·도장·백업은 더보기에 모아 두었습니다. 도장에서 교류·체육관 문의·대여·라이벌 찾기를 고르면 됩니다.",
     mode: "spotlight",
     target: TUTORIAL_TARGETS.navCategory,
     placement: "top",

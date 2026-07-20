@@ -27,7 +27,7 @@ export const VETERAN_PERKS = [
     kind: "badge",
     label: "프로 인증",
     description:
-      "명패·스파링 모집글에 프로 배지가 표시되고, 상대 찾기에서 우선 노출됩니다.",
+      "명패·상대 프로필에 프로 배지가 표시되고, 근처 상대 목록에서 우선 노출됩니다.",
     badgeLabel: "PRO",
   },
   {

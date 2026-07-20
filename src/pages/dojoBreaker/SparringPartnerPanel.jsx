@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { track } from "@vercel/analytics";
 import { useTraining } from "../../store/TrainingContext";
 import { resolveSearchLocation } from "../../utils/gymSearch";
 import { getFighterProgress } from "../../utils/fighterProgress";
@@ -16,7 +17,11 @@ import {
   SPARRING_STYLES,
   WEIGHT_CLASSES,
 } from "../../utils/sparringPartners";
-import { getDojoApiInfo } from "../../api/dojoApi";
+import {
+  cancelSparringInterest,
+  hasSparringInterest,
+  sendSparringInterest,
+} from "../../utils/sparringInterest";
 
 const DEFAULT_FORM = {
   weightClass: "라이트급",
@@ -24,7 +29,7 @@ const DEFAULT_FORM = {
   style: "미디엄",
   area: "",
   note: "",
-  contact: "",
+  meetWhen: "",
   active: false,
 };
 
@@ -36,7 +41,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
     fighterLevel,
   });
   const existingListing = getMyListing(userId);
-  const apiInfo = getDojoApiInfo();
+  const isLooking = Boolean(existingListing?.active);
 
   const [saved, setSaved] = useState(existingListing);
   const [form, setForm] = useState({
@@ -45,13 +50,18 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
     ...existingListing,
     area: existingListing?.area || profileDefaults.area || "",
     note: existingListing?.note || profileDefaults.note || "",
-    contact: existingListing?.contact || profileDefaults.contact || "",
+    meetWhen: existingListing?.meetWhen || "",
   });
+  const [profileOpen, setProfileOpen] = useState(!isLooking);
+  const [formError, setFormError] = useState("");
   const [weightFilter, setWeightFilter] = useState("전체");
   const [partners, setPartners] = useState([]);
   const [position, setPosition] = useState(null);
   const [status, setStatus] = useState("loading");
   const [notice, setNotice] = useState("");
+  const [interestTick, setInterestTick] = useState(0);
+
+  const looking = Boolean(form.active || saved?.active);
 
   async function loadPartners(options = {}) {
     const { preferGps = false, preset = null, allowFallback = true } = options;
@@ -71,7 +81,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
         currentPosition.lon,
         { weightClass: weightFilter },
         userId,
-        { fighterLevel },
+        { fighterLevel }
       );
       setPartners(results);
       setStatus(results.length > 0 ? "ready" : "empty");
@@ -97,11 +107,25 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
 
   function showNotice(message) {
     setNotice(message);
-    window.setTimeout(() => setNotice(""), 2000);
+    window.setTimeout(() => setNotice(""), 2400);
   }
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    setFormError("");
+  }
+
+  /** 공개 필수: 지역·희망 시간만 (연락처 비공개 — 당근/플랩 패턴) */
+  function validateRequired() {
+    if (!form.area.trim()) {
+      setFormError("희망 지역은 필수입니다.");
+      return false;
+    }
+    if (!form.meetWhen.trim()) {
+      setFormError("희망 시간은 필수입니다.");
+      return false;
+    }
+    return true;
   }
 
   function buildListingPayload(overrides = {}) {
@@ -112,7 +136,8 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
       style: form.style,
       area: form.area.trim(),
       note: form.note.trim(),
-      contact: form.contact.trim(),
+      meetWhen: form.meetWhen.trim(),
+      contact: "",
       heightCm: profile.heightCm || null,
       weightKg: profile.weightKg || null,
       reachCm: profile.reachCm || null,
@@ -123,169 +148,251 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
     };
   }
 
-  function handleSave() {
-    const listing = saveMyListing(buildListingPayload(), userId);
+  function handleSaveDetails() {
+    if (!validateRequired()) return;
+
+    const listing = saveMyListing(
+      buildListingPayload({ active: looking }),
+      userId
+    );
     setSaved(listing);
+    setForm((current) => ({ ...current, active: looking }));
     if (position) {
       loadPartners({ preferGps: position.source === "gps", allowFallback: true });
     }
-    showNotice("스파링 모집글이 등록되었습니다.");
+    showNotice("프로필을 저장했습니다.");
+    setProfileOpen(false);
   }
 
-  function handleToggleActive() {
-    const isActive = form.active || saved?.active;
-
-    if (isActive) {
+  function handleToggleLooking() {
+    if (looking) {
       clearMyListing(userId);
       setSaved(null);
       setForm((current) => ({ ...current, active: false }));
       if (position) {
         loadPartners({ preferGps: position.source === "gps", allowFallback: true });
       }
-      showNotice("모집을 종료했습니다.");
+      showNotice("찾는 중을 껐습니다.");
       return;
     }
+
+    if (!validateRequired()) return;
 
     const listing = saveMyListing(buildListingPayload(), userId);
     setSaved(listing);
     setForm((current) => ({ ...current, active: true }));
+    setProfileOpen(false);
     if (position) {
       loadPartners({ preferGps: position.source === "gps", allowFallback: true });
     }
-    showNotice("스파링 모집글이 등록되었습니다.");
+    showNotice("찾는 중으로 공개됐습니다.");
   }
+
+  function handleChatRequest(partner) {
+    if (partner.isMine) return;
+
+    if (hasSparringInterest(partner.id, userId)) {
+      cancelSparringInterest(partner.id, userId);
+      track("sparring_chat_request_cancel", { partnerId: partner.id });
+      setInterestTick((value) => value + 1);
+      showNotice("대화 요청을 취소했습니다.");
+      return;
+    }
+
+    sendSparringInterest(partner, {
+      userId,
+      nickname: profile.nickname || "나",
+    });
+    track("sparring_chat_request", { partnerId: partner.id });
+    setInterestTick((value) => value + 1);
+    showNotice("요청 저장됨 · 상대 알림은 곧 연결됩니다.");
+  }
+
+  const summaryLine = [
+    form.weightClass,
+    form.style,
+    form.area.trim() || null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <>
-      {!embedded && onGoBack ? (
-        <button
-          className="category-back dojo-sub-back"
-          type="button"
-          onClick={onGoBack}
-        >
-          <span>←</span> 도장
-        </button>
+      {!embedded ? (
+        <header className="gym-search-header">
+          {onGoBack ? (
+            <button
+              className="category-back dojo-sub-back"
+              type="button"
+              onClick={onGoBack}
+            >
+              ← 도장
+            </button>
+          ) : null}
+          <h1>라이벌 찾기</h1>
+          <p className="gym-search-context">
+            1:1 스파링 상대를 찾고, 대화 요청을 보내요.
+          </p>
+        </header>
       ) : null}
 
-      <section className="gym-panel sparring-register-panel">
-        <div className="gym-panel-heading">
+      <section
+        className={`sparring-hero${looking ? " is-on" : ""}`}
+        aria-label="찾는 중"
+      >
+        <div className="sparring-hero-top">
           <div>
-            <p className="home-section-label">MY LISTING</p>
-            <h2>내 스파링 모집</h2>
+            <p className="sparring-hero-kicker">LOOKING</p>
+            <strong>{looking ? "찾는 중" : "대기 중"}</strong>
+            <p>
+              {looking
+                ? "근처 목록에 공개됩니다."
+                : "지역·희망 시간을 채운 뒤 켜세요."}
+            </p>
           </div>
           <button
             type="button"
-            className={`gym-refresh-button sparring-toggle${form.active || saved?.active ? " active" : ""}`}
-            onClick={handleToggleActive}
+            className={`sparring-hero-toggle${looking ? " is-on" : ""}`}
+            onClick={handleToggleLooking}
           >
-            {form.active || saved?.active ? "모집 중" : "모집 시작"}
+            {looking ? "끄기" : "켜기"}
           </button>
         </div>
 
-        <p className="gym-location-note">
-          링네임: {profile.nickname || "나"}
-          {profile.heightCm && profile.weightKg
-            ? ` · ${profile.heightCm}cm / ${profile.weightKg}kg`
-            : ""}
-          {profile.reachCm ? ` · 리치 ${profile.reachCm}cm` : ""}
-          {" · "}LV. {fighterLevel}
-          {" · "}데이터: {apiInfo.baseUrl}
-        </p>
-
-        {hasSparringPriority(fighterLevel) ? (
-          <p className="sparring-priority-note">
-            프로 베테랑 혜택 적용 중 · 상대 찾기 목록에서 거리 가산으로 우선 노출됩니다
-          </p>
-        ) : (
-          <p className="sparring-priority-note is-locked">
-            LV.{SPARRING_PRIORITY_LEVEL} 프로 인증부터 스파링 우선 노출이 해금됩니다
-          </p>
-        )}
-
-        <div className="sparring-form-grid">
-          <label className="sparring-field">
-            <span>체급</span>
-            <select
-              value={form.weightClass}
-              onChange={(event) => updateField("weightClass", event.target.value)}
-            >
-              {WEIGHT_CLASSES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="sparring-field">
-            <span>경력</span>
-            <select
-              value={form.experience}
-              onChange={(event) => updateField("experience", event.target.value)}
-            >
-              {EXPERIENCE_LEVELS.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="sparring-field">
-            <span>스파링 강도</span>
-            <select
-              value={form.style}
-              onChange={(event) => updateField("style", event.target.value)}
-            >
-              {SPARRING_STYLES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="sparring-field">
-            <span>활동 지역</span>
+        <div className="sparring-required">
+          <label className="sparring-required-field">
+            <span>희망 지역 *</span>
             <input
               type="text"
               value={form.area}
               onChange={(event) => updateField("area", event.target.value)}
-              placeholder="예: 강남, 홍대, 잠실"
+              placeholder="예: 강남 · 홍대 · 잠실"
+              autoComplete="off"
             />
           </label>
-
-          <label className="sparring-field sparring-field-wide">
-            <span>한 줄 소개</span>
+          <label className="sparring-required-field">
+            <span>희망 시간 *</span>
             <input
               type="text"
-              value={form.note}
-              onChange={(event) => updateField("note", event.target.value)}
-              placeholder="원하는 시간, 스파링 스타일 등"
-            />
-          </label>
-
-          <label className="sparring-field sparring-field-wide">
-            <span>연락 방법</span>
-            <input
-              type="text"
-              value={form.contact}
-              onChange={(event) => updateField("contact", event.target.value)}
-              placeholder="인스타 ID, 오픈채팅 링크 등"
+              value={form.meetWhen}
+              onChange={(event) => updateField("meetWhen", event.target.value)}
+              placeholder="예: 토 오후 · 평일 저녁"
+              autoComplete="off"
             />
           </label>
         </div>
 
-        <button type="button" className="sparring-save-button" onClick={handleSave}>
-          정보 저장
-        </button>
+        {formError ? <p className="sparring-form-error">{formError}</p> : null}
       </section>
 
-      <section className="gym-panel">
-        <div className="gym-panel-heading">
+      <section className="sparring-me" aria-label="내 프로필">
+        <button
+          type="button"
+          className="sparring-me-summary"
+          onClick={() => setProfileOpen((open) => !open)}
+          aria-expanded={profileOpen}
+        >
+          <div className="sparring-me-identity">
+            <span className="sparring-me-mark" aria-hidden="true">
+              {(profile.nickname || "나").slice(0, 1)}
+            </span>
+            <div>
+              <strong>{profile.nickname || "나"}</strong>
+              <p>
+                {summaryLine || "체급·강도·지역을 설정하세요"}
+                {` · LV.${fighterLevel}`}
+              </p>
+            </div>
+          </div>
+          <em>{profileOpen ? "접기" : "펼치기"}</em>
+        </button>
+
+        {profileOpen ? (
+          <div className="sparring-me-body">
+            {hasSparringPriority(fighterLevel) ? (
+              <p className="sparring-priority-note">
+                프로 베테랑 · 목록에서 우선 노출
+              </p>
+            ) : (
+              <p className="sparring-priority-note is-locked">
+                LV.{SPARRING_PRIORITY_LEVEL}부터 우선 노출
+              </p>
+            )}
+
+            <div className="sparring-form-grid">
+              <label className="sparring-field">
+                <span>체급</span>
+                <select
+                  value={form.weightClass}
+                  onChange={(event) =>
+                    updateField("weightClass", event.target.value)
+                  }
+                >
+                  {WEIGHT_CLASSES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="sparring-field">
+                <span>경력</span>
+                <select
+                  value={form.experience}
+                  onChange={(event) =>
+                    updateField("experience", event.target.value)
+                  }
+                >
+                  {EXPERIENCE_LEVELS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="sparring-field">
+                <span>강도</span>
+                <select
+                  value={form.style}
+                  onChange={(event) => updateField("style", event.target.value)}
+                >
+                  {SPARRING_STYLES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="sparring-field sparring-field-wide">
+                <span>한 줄 (선택)</span>
+                <input
+                  type="text"
+                  value={form.note}
+                  onChange={(event) => updateField("note", event.target.value)}
+                  placeholder="헤드기어 필수, 라이트만 등"
+                />
+              </label>
+            </div>
+
+            <button
+              type="button"
+              className="sparring-save-button"
+              onClick={handleSaveDetails}
+            >
+              프로필 저장
+            </button>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="sparring-feed" aria-label="근처 상대">
+        <div className="sparring-feed-head">
           <div>
-            <p className="home-section-label">SPARRING PARTNERS</p>
-            <h2>스파링 상대 찾기</h2>
+            <p className="home-section-label">NEARBY</p>
+            <h2>근처 상대</h2>
           </div>
           <button
             type="button"
@@ -298,104 +405,124 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
             }
             disabled={status === "loading"}
           >
-            {status === "loading" ? "검색 중" : "다시 검색"}
+            {status === "loading" ? "검색 중" : "다시"}
           </button>
         </div>
 
-        {position && (
-          <p className="gym-location-note">검색 위치: {position.label}</p>
-        )}
+        {position ? (
+          <p className="gym-location-note">{position.label}</p>
+        ) : null}
 
-        <p className="sparring-priority-note subtle">
-          베테랑 파이터는 실제 거리보다 가깝게 계산되어 목록 상위에 표시됩니다
-        </p>
-
-        <div className="sparring-filter-row">
-          <label className="sparring-field sparring-filter">
-            <span>체급 필터</span>
-            <select
-              value={weightFilter}
-              onChange={(event) => setWeightFilter(event.target.value)}
+        <div className="sparring-weight-chips" role="group" aria-label="체급 필터">
+          <button
+            type="button"
+            className={`gym-preset-chip${
+              weightFilter === "전체" ? " is-active" : ""
+            }`}
+            onClick={() => setWeightFilter("전체")}
+          >
+            전체
+          </button>
+          {WEIGHT_CLASSES.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={`gym-preset-chip${
+                weightFilter === item ? " is-active" : ""
+              }`}
+              onClick={() => setWeightFilter(item)}
             >
-              <option value="전체">전체</option>
-              {WEIGHT_CLASSES.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
+              {item}
+            </button>
+          ))}
         </div>
 
-        {status === "loading" && (
-          <div className="gym-state-card">주변 스파링 상대를 찾는 중...</div>
-        )}
+        {status === "loading" ? (
+          <div className="gym-state-card">근처 상대를 찾는 중...</div>
+        ) : null}
 
-        {status === "error" && (
+        {status === "error" ? (
           <div className="gym-state-card error">
             <strong>목록을 불러오지 못했습니다</strong>
             <p>{notice}</p>
           </div>
-        )}
+        ) : null}
 
-        {status === "empty" && (
+        {status === "empty" ? (
           <div className="gym-state-card">
             <strong>조건에 맞는 상대가 없습니다</strong>
-            <p>체급 필터를 바꾸거나 직접 모집글을 등록해 보세요.</p>
+            <p>체급을 바꾸거나 찾는 중을 켜 보세요.</p>
           </div>
-        )}
+        ) : null}
 
-        {status === "ready" && (
-          <div className="sparring-partner-list">
-            {partners.map((partner) => (
-              <article
-                className={`sparring-partner-card${partner.isMine ? " mine" : ""}${partner.hasSparringPriority ? " is-veteran" : ""}`}
-                key={partner.id}
-              >
-                <div className="sparring-partner-head">
-                  <div>
-                    <strong>{partner.nickname}</strong>
-                    {partner.isMine && <em>내 글</em>}
-                    {partner.veteranBadges?.length > 0 ? (
-                      <div className="sparring-partner-veteran-badges">
-                        {partner.veteranBadges.map((badge) => (
-                          <span key={badge}>{badge}</span>
-                        ))}
-                      </div>
-                    ) : null}
+        {status === "ready" ? (
+          <div className="sparring-partner-list" key={interestTick}>
+            {partners.map((partner) => {
+              const requested = hasSparringInterest(partner.id, userId);
+              return (
+                <article
+                  className={`sparring-partner-card${
+                    partner.isMine ? " mine" : ""
+                  }${partner.hasSparringPriority ? " is-veteran" : ""}`}
+                  key={partner.id}
+                >
+                  <div className="sparring-partner-head">
+                    <div>
+                      <strong>{partner.nickname}</strong>
+                      {partner.isMine ? <em>나</em> : null}
+                      {partner.veteranBadges?.length > 0 ? (
+                        <div className="sparring-partner-veteran-badges">
+                          {partner.veteranBadges.map((badge) => (
+                            <span key={badge}>{badge}</span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                    <span>{partner.distanceLabel}</span>
                   </div>
-                  <span>{partner.distanceLabel}</span>
-                </div>
 
-                <div className="sparring-partner-tags">
-                  <span>{partner.weightClass}</span>
-                  <span>{partner.experience}</span>
-                  <span>{partner.style}</span>
-                  {partner.area && <span>{partner.area}</span>}
-                </div>
+                  <div className="sparring-partner-tags">
+                    <span>{partner.weightClass}</span>
+                    <span>{partner.experience}</span>
+                    <span>{partner.style}</span>
+                    {partner.area ? <span>{partner.area}</span> : null}
+                  </div>
 
-                {partner.note && <p className="sparring-partner-note">{partner.note}</p>}
+                  {partner.meetWhen ? (
+                    <p className="sparring-partner-when">
+                      희망 · {partner.meetWhen}
+                    </p>
+                  ) : null}
 
-                {partner.hasSparringPriority ? (
-                  <p className="sparring-partner-priority">
-                    베테랑 우선 노출 · LV. {partner.fighterLevel}
-                  </p>
-                ) : null}
+                  {partner.note ? (
+                    <p className="sparring-partner-note">{partner.note}</p>
+                  ) : null}
 
-                {partner.contact && (
-                  <p className="sparring-partner-contact">연락: {partner.contact}</p>
-                )}
-              </article>
-            ))}
+                  {!partner.isMine ? (
+                    <button
+                      type="button"
+                      className={`sparring-chat-request${
+                        requested ? " is-sent" : ""
+                      }`}
+                      onClick={() => handleChatRequest(partner)}
+                    >
+                      {requested ? "요청 취소" : "대화 요청"}
+                    </button>
+                  ) : (
+                    <p className="sparring-partner-note">내 카드</p>
+                  )}
+                </article>
+              );
+            })}
           </div>
-        )}
+        ) : null}
       </section>
 
-      {notice && status !== "error" && (
+      {notice && status !== "error" ? (
         <div className="category-notice" role="status">
           {notice}
         </div>
-      )}
+      ) : null}
     </>
   );
 }

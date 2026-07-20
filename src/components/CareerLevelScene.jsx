@@ -5,6 +5,7 @@ import {
   getNextVeteranPerk,
   getUnlockedVeteranPerks,
 } from "../utils/veteranPerks";
+import { BRAND_NAME } from "../utils/brand";
 import "./CareerLevelScene.css";
 
 function formatMinutes(totalMinutes = 0) {
@@ -18,7 +19,7 @@ function formatMinutes(totalMinutes = 0) {
 }
 
 function buildShareText({ fighter, nickname, streakDays }) {
-  const name = nickname || "ROUND ON";
+  const name = nickname || BRAND_NAME;
   const lines = [
     `${name} · LV.${fighter.level} ${fighter.fighterTitle}`,
     fighter.fighterTitleEn ? fighter.fighterTitleEn : null,
@@ -86,7 +87,7 @@ export default function CareerLevelScene({
     const url =
       typeof window !== "undefined" ? window.location.origin : undefined;
     const shareData = {
-      title: `ROUND ON · LV.${fighter.level}`,
+      title: `${BRAND_NAME} · LV.${fighter.level}`,
       text,
       url,
     };

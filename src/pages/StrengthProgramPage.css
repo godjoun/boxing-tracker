@@ -10,7 +10,7 @@
 }
 
 .composer-meta-label {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--p-text-faint);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.1em;

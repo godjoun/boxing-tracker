@@ -71,9 +71,9 @@ const SHORTCUTS = {
     id: "gyms",
     icon: "M",
     title: "도장",
-    description: "체육관 · 스파링",
+    description: "교류 · 체육관 문의·대여 · 라이벌 찾기",
     route: "gym",
-    gymView: "gyms",
+    gymView: "hub",
     accent: "slate",
   },
   backup: {

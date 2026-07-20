@@ -7,6 +7,7 @@ import {
   enrichSparringPartner,
   sortSparringPartners,
 } from "./veteranPerks";
+import { toPublicSparringPartner } from "./sparringInterest";
 
 export {
   formatWeightClassOption,
@@ -65,6 +66,8 @@ export function getMyListing(userId) {
 export function saveMyListing(listing, userId) {
   const payload = {
     ...listing,
+    // 당근형: 공개 목록에 연락처를 넣지 않음
+    contact: "",
     id: "my-listing",
     updatedAt: new Date().toISOString(),
   };
@@ -76,18 +79,21 @@ export function clearMyListing(userId) {
   localStorage.removeItem(getStorageKey(userId));
 }
 
-export function buildListingFromProfile(profile, { active = false, fighterLevel = 1 } = {}) {
+export function buildListingFromProfile(
+  profile,
+  { active = false, fighterLevel = 1 } = {}
+) {
   return enrichSparringPartner(
     {
       nickname: profile.nickname || "나",
       weightClass: normalizeWeightClass(
-        profile.weightClass || suggestWeightClass(profile.weightKg),
+        profile.weightClass || suggestWeightClass(profile.weightKg)
       ),
       experience: profile.experience || "1년차",
       style: profile.sparringStyle || "미디엄",
       area: profile.area || "",
       note: profile.bio || "",
-      contact: profile.contact || "",
+      contact: "",
       heightCm: profile.heightCm || null,
       weightKg: profile.weightKg || null,
       reachCm: profile.reachCm || null,
@@ -106,8 +112,8 @@ export function syncListingFromProfile(profile, userId, options = {}) {
       fighterLevel: options.fighterLevel ?? existing?.fighterLevel ?? 1,
     }),
     note: existing?.note || profile.bio || "",
-    contact: existing?.contact || profile.contact || "",
     area: existing?.area || profile.area || "",
+    meetWhen: existing?.meetWhen || "",
   };
 
   return saveMyListing(nextListing, userId);
@@ -124,18 +130,23 @@ export async function getAvailablePartners(
   let results = await fetchSparringPartners(lat, lon, filter);
 
   results = results.map((partner) =>
-    enrichSparringPartner(partner, partner.fighterLevel ?? partner.level)
+    toPublicSparringPartner(
+      enrichSparringPartner(partner, partner.fighterLevel ?? partner.level)
+    )
   );
 
   if (myListing?.active) {
-    const enrichedMine = enrichSparringPartner(
-      {
-        ...myListing,
-        distanceLabel: "내 프로필",
-        isMine: true,
-        distanceKm: 0,
-      },
-      fighterLevel
+    const enrichedMine = toPublicSparringPartner(
+      enrichSparringPartner(
+        {
+          ...myListing,
+          contact: "",
+          distanceLabel: "내 프로필",
+          isMine: true,
+          distanceKm: 0,
+        },
+        fighterLevel
+      )
     );
 
     results = [enrichedMine, ...results.filter((partner) => !partner.isMine)];

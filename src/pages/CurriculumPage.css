@@ -908,7 +908,7 @@
 
 .curriculum-settings-note {
   margin: 0 0 14px;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--p-text-muted);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -925,10 +925,10 @@
   gap: 4px;
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--p-border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.82);
+  background: var(--p-bg-subtle);
+  color: var(--p-text);
   text-align: left;
   cursor: pointer;
 }
@@ -938,18 +938,33 @@
 }
 
 .curriculum-intensity-chip span {
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--p-text-muted);
   font-size: 12px;
 }
 
 .curriculum-intensity-chip.is-active {
-  border-color: rgba(138, 46, 46, 0.55);
-  background: rgba(138, 46, 46, 0.12);
+  border-color: #0a0909;
+  background: #0a0909;
+  color: #ffffff;
+}
+
+.theme-dark .curriculum-intensity-chip.is-active {
+  border-color: #f5f1e8;
+  background: #f5f1e8;
+  color: #0a0909;
+}
+
+.curriculum-intensity-chip.is-active span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.theme-dark .curriculum-intensity-chip.is-active span {
+  color: rgba(10, 9, 9, 0.62);
 }
 
 .curriculum-adjusted-badge {
-  background: rgba(138, 46, 46, 0.18) !important;
-  color: var(--p-brass-soft) !important;
+  background: var(--p-bg-subtle) !important;
+  color: var(--p-text-muted) !important;
 }
 
 .curriculum-custom-form {
@@ -995,7 +1010,7 @@
 }
 
 .curriculum-adjust-grid label span {
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--p-text-muted);
   font-size: 11px;
   font-weight: 800;
 }
@@ -1029,21 +1044,21 @@
 }
 
 .curriculum-secondary-button {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--p-border);
+  background: var(--p-bg-subtle);
+  color: var(--p-text);
 }
 
 .curriculum-text-button {
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--p-text-muted);
 }
 
 .curriculum-saved-list {
   margin-top: 18px;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--p-border-soft);
   display: grid;
   gap: 10px;
 }

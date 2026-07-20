@@ -9,6 +9,7 @@ import {
 } from "../utils/trainingStats";
 import { getTodaysLessonPreview } from "../utils/dailyLesson";
 import { getFirstWeekChallengeStatus } from "../utils/retentionMetrics";
+import { BRAND_NAME } from "../utils/brand";
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
@@ -307,7 +308,7 @@ export default function HomePage({
             )}
           </div>
           <div className="home-scene-header-copy">
-            <p className="home-scene-brand">ROUND ON</p>
+            <p className="home-scene-brand">{BRAND_NAME}</p>
             <p className="home-scene-meta">
               {nickname} · LV.{dashboard.level} · {dashboard.fighterTitle}
             </p>
@@ -326,7 +327,7 @@ export default function HomePage({
           </p>
         </div>
 
-        <p className="home-scene-accent">LIFE IS A ROUND.</p>
+        <p className="home-scene-accent">ARE YOU READY?</p>
         <h1 className="home-scene-title">{sceneTitle}</h1>
         <p className="home-scene-copy">{sceneCopy}</p>
 

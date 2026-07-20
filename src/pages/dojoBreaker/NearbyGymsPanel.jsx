@@ -8,6 +8,7 @@ import {
   PRESET_AREAS,
   resolveSearchLocation,
   searchNearbyGyms,
+  suggestAreas,
 } from "../../utils/gymSearch";
 
 export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
@@ -18,6 +19,8 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   const [locationHint, setLocationHint] = useState("");
   const [inquiryGym, setInquiryGym] = useState(null);
   const [activePreset, setActivePreset] = useState(null);
+  const [regionQuery, setRegionQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
 
   function openInquiry(gym) {
     track("gym_inquiry_open", { gymId: gym.id });
@@ -28,29 +31,36 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
     const {
       preferGps = false,
       preset = null,
-      allowFallback = !preferGps && !preset,
+      query = null,
+      allowFallback = !preferGps && !preset && !query,
     } = options;
 
     setStatus("loading");
     setError("");
     setLocationHint("");
     setActivePreset(preset);
+    if (query) {
+      setRegionQuery(query);
+    }
 
     try {
       const currentPosition = await resolveSearchLocation({
         preferGps,
         preset,
+        query,
         allowFallback,
       });
 
       setPosition(currentPosition);
 
-      if (currentPosition.source !== "gps") {
+      if (currentPosition.source === "default") {
         setLocationHint(
-          currentPosition.source === "default"
-            ? "GPS를 쓸 수 없어 기본 위치입니다. 지역을 바꿔 보세요."
-            : ""
+          "GPS를 쓸 수 없어 기본 위치입니다. 위에서 지역을 검색해 보세요."
         );
+      } else if (currentPosition.source === "search") {
+        setLocationHint(`「${currentPosition.label}」 기준으로 검색했습니다.`);
+      } else {
+        setLocationHint("");
       }
 
       if (!isGymSearchAvailable()) {
@@ -72,19 +82,39 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
     }
   }
 
+  function handleRegionSubmit(event) {
+    event.preventDefault();
+    const q = regionQuery.trim();
+    if (!q) {
+      setError("지역을 입력해 주세요. 예: 강남, 홍대, 잠실, 부산");
+      setStatus("error");
+      return;
+    }
+    setSuggestions([]);
+    track("gym_region_search", { query: q });
+    loadGyms({ query: q, allowFallback: false });
+  }
+
+  function handleRegionChange(value) {
+    setRegionQuery(value);
+    setSuggestions(value.trim() ? suggestAreas(value, 5) : []);
+  }
+
   useEffect(() => {
     loadGyms({ preferGps: true, allowFallback: true });
   }, []);
 
   return (
     <>
-      <header className={`gym-search-header${embedded ? " is-embedded" : ""}`}>
+      <header
+        className={`gym-search-header${embedded ? " is-embedded" : ""}`}
+      >
         {!embedded && onGoBack ? (
           <button className="category-back" type="button" onClick={onGoBack}>
             ← 도장
           </button>
         ) : null}
-        <h1>주변 체육관</h1>
+        {!embedded ? <h1>체육관 문의·대여</h1> : null}
         <p className="gym-search-context">
           {position
             ? `${position.label} · ${getLocationSourceLabel(position.source)}`
@@ -95,7 +125,45 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         </p>
       </header>
 
-      <section className="gym-search-bar" aria-label="검색 위치">
+      <form className="gym-region-search" onSubmit={handleRegionSubmit}>
+        <label className="gym-region-search-field" htmlFor="gym-region-input">
+          <span>지역 검색</span>
+          <div className="gym-region-search-row">
+            <input
+              id="gym-region-input"
+              type="search"
+              value={regionQuery}
+              onChange={(event) => handleRegionChange(event.target.value)}
+              placeholder="예: 강남, 홍대, 잠실, 부산"
+              autoComplete="off"
+              enterKeyHint="search"
+            />
+            <button type="submit" disabled={status === "loading"}>
+              검색
+            </button>
+          </div>
+        </label>
+        {suggestions.length > 0 ? (
+          <div className="gym-region-suggestions" role="listbox">
+            {suggestions.map((area) => (
+              <button
+                key={area.id}
+                type="button"
+                className="gym-region-suggestion"
+                onClick={() => {
+                  setRegionQuery(area.label);
+                  setSuggestions([]);
+                  loadGyms({ query: area.label, allowFallback: false });
+                }}
+              >
+                {area.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </form>
+
+      <section className="gym-search-bar" aria-label="빠른 위치">
         <button
           type="button"
           className={`gym-search-gps${
@@ -114,27 +182,17 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
               className={`gym-preset-chip${
                 activePreset === area.id ? " is-active" : ""
               }`}
-              onClick={() => loadGyms({ preset: area.id })}
+              onClick={() => {
+                setRegionQuery(area.label);
+                setSuggestions([]);
+                loadGyms({ preset: area.id });
+              }}
               disabled={status === "loading"}
             >
-              {area.label}
+              {area.label.replace(/^서울\s/, "")}
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="gym-refresh-button"
-          onClick={() =>
-            loadGyms({
-              preferGps: position?.source === "gps",
-              preset: activePreset,
-              allowFallback: position?.source === "default",
-            })
-          }
-          disabled={status === "loading"}
-        >
-          {status === "loading" ? "검색 중" : "다시"}
-        </button>
       </section>
 
       {locationHint ? <p className="gym-location-hint">{locationHint}</p> : null}
@@ -160,7 +218,7 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
       {status === "empty" ? (
         <div className="gym-state-card">
           <strong>근처에서 복싱장을 찾지 못했습니다</strong>
-          <p>다른 지역으로 바꿔 다시 검색해 보세요.</p>
+          <p>다른 지역으로 검색해 보세요. 예: 강남, 홍대, 부산</p>
         </div>
       ) : null}
 
@@ -188,7 +246,7 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
                   className="gym-inquiry-button"
                   onClick={() => openInquiry(gym)}
                 >
-                  체험 문의
+                  문의하기
                 </button>
               </div>
             </article>
@@ -197,7 +255,10 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
       ) : null}
 
       {inquiryGym ? (
-        <GymInquiryModal gym={inquiryGym} onClose={() => setInquiryGym(null)} />
+        <GymInquiryModal
+          gym={inquiryGym}
+          onClose={() => setInquiryGym(null)}
+        />
       ) : null}
     </>
   );

@@ -433,7 +433,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLeve
                 {reward.delta.currentLevel === SPARRING_UNLOCK_LEVEL &&
                 isSparringUnlocked(reward.delta.currentLevel) ? (
                   <p className="log-growth-title-extra">
-                    스파링 상대찾기 이용 가능
+                    라이벌 찾기 이용 가능
                   </p>
                 ) : null}
               </div>

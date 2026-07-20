@@ -5,7 +5,8 @@
 | 도장 탭 | `src/pages/GymFinderPage.jsx` |
 | 교류 | `src/pages/dojoBreaker/ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` |
 | 체육관 검색·카드 | `NearbyGymsPanel.jsx` · `GymResultCard.jsx` · `utils/gymPricing.js` |
-| 문의 | `src/components/GymInquiryModal.jsx` |
+| 문의 | `GymInquiryModal.jsx` · `utils/gymInquiry.js` · `api/gymInquiryApi.js` |
+| 문의 SQL | `supabase/dojo_inquiries.sql` |
 | 라이벌 | `SparringPartnerPanel.jsx` · `SparringPartnerCard.jsx` |
 | 시드 | `src/data/localDojoData.js` |
 | API 자리 | `src/api/dojoApi.js` · 교류 `src/api/dojoExchangeApi.js` |

@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { track } from "@vercel/analytics";
 import { getGymPassLines } from "../utils/gymPricing";
-import { saveGymInquiry } from "../utils/gymInquiry";
+import {
+  hasGymInquiryRemote,
+  saveGymInquiryAsync,
+} from "../utils/gymInquiry";
 
 const KIND_OPTIONS = [
   {
@@ -22,7 +25,12 @@ const KIND_OPTIONS = [
   },
 ];
 
-export default function GymInquiryModal({ gym, onClose }) {
+export default function GymInquiryModal({
+  gym,
+  onClose,
+  userId = null,
+  nickname = "",
+}) {
   const [kind, setKind] = useState("trial");
   const [contact, setContact] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
@@ -31,13 +39,17 @@ export default function GymInquiryModal({ gym, onClose }) {
   const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
   const [isDone, setIsDone] = useState(false);
+  const [synced, setSynced] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const kindMeta =
     KIND_OPTIONS.find((item) => item.id === kind) || KIND_OPTIONS[0];
   const passes = getGymPassLines(gym);
+  const remoteReady = hasGymInquiryRemote();
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    if (submitting) return;
 
     const trimmedContact = contact.trim();
     if (!trimmedContact) {
@@ -54,17 +66,28 @@ export default function GymInquiryModal({ gym, onClose }) {
       memo: memo.trim(),
       partySize: kind === "rental" ? Number(partySize) || 1 : null,
       hours: kind === "rental" ? Number(hours) || null : null,
+      userId,
+      nickname: nickname || "",
     };
 
-    track("gym_inquiry_submit", {
-      gymId: payload.gymId,
-      kind,
-      hasPhone: Boolean(gym?.phone),
-    });
-
-    saveGymInquiry(payload);
-    setIsDone(true);
+    setSubmitting(true);
     setError("");
+
+    try {
+      track("gym_inquiry_submit", {
+        gymId: payload.gymId,
+        kind,
+        hasPhone: Boolean(gym?.phone),
+      });
+
+      const result = await saveGymInquiryAsync(payload);
+      setSynced(Boolean(result.synced));
+      setIsDone(true);
+    } catch {
+      setError("전송에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (!gym) return null;
@@ -85,11 +108,20 @@ export default function GymInquiryModal({ gym, onClose }) {
         {isDone ? (
           <div className="gym-inquiry-done">
             <p className="gym-inquiry-kicker">INQUIRY SENT</p>
-            <h2 id="gym-inquiry-title">문의가 접수됐어요</h2>
+            <h2 id="gym-inquiry-title">
+              {synced ? "문의가 전달됐어요" : "문의가 접수됐어요"}
+            </h2>
             <p>
-              <strong>{gym.name}</strong> {kindMeta.label} 문의를 기록했습니다.
-              제휴 도장이 연결되면 입력하신 연락처로 안내드릴게요.
+              <strong>{gym.name}</strong> {kindMeta.label} 문의를{" "}
+              {synced
+                ? "서버에 저장했습니다. 제휴·운영에서 확인하고 연락드릴 수 있어요."
+                : "이 기기에 기록했습니다. (서버 미연결 — SQL 실행 후 다시 보내 보세요)"}
             </p>
+            {!synced && remoteReady ? (
+              <p className="gym-inquiry-sync-hint">
+                Supabase에서 dojo_inquiries.sql 실행이 필요할 수 있어요.
+              </p>
+            ) : null}
             {gym.phone ? (
               <a className="gym-inquiry-call" href={`tel:${gym.phone}`}>
                 도장에 직접 전화하기
@@ -199,8 +231,14 @@ export default function GymInquiryModal({ gym, onClose }) {
 
             {error ? <p className="gym-inquiry-error">{error}</p> : null}
 
-            <button type="submit" className="gym-inquiry-submit">
-              {kindMeta.label} 문의 보내기
+            <button
+              type="submit"
+              className="gym-inquiry-submit"
+              disabled={submitting}
+            >
+              {submitting
+                ? "보내는 중..."
+                : `${kindMeta.label} 문의 보내기`}
             </button>
           </form>
         )}

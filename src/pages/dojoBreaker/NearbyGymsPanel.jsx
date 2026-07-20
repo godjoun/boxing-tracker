@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import GymInquiryModal from "../../components/GymInquiryModal";
+import { useTraining } from "../../store/TrainingContext";
 import {
   getGymDataSourceLabel,
   getLocationSourceLabel,
@@ -13,6 +14,7 @@ import {
 import GymResultCard from "./GymResultCard";
 
 export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
+  const { profile, userId } = useTraining();
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [gyms, setGyms] = useState([]);
@@ -239,6 +241,8 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
       {inquiryGym ? (
         <GymInquiryModal
           gym={inquiryGym}
+          userId={userId}
+          nickname={profile?.nickname || ""}
           onClose={() => setInquiryGym(null)}
         />
       ) : null}

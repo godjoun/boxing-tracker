@@ -2916,6 +2916,14 @@
   line-height: 1.55;
 }
 
+.gym-inquiry-sync-hint {
+  margin: -6px 0 14px;
+  color: #cf8b8b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .gym-inquiry-kind {
   display: grid;
   gap: 8px;

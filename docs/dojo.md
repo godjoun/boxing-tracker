@@ -13,3 +13,4 @@
 - 연락처 공개 안 함
 - 시드 카드 = 예시
 - **교류 일정·신청** — Supabase 연결 시 폰끼리 동기화 (`supabase/dojo_exchange.sql`) · 미연결이면 로컬
+- **체육관 문의** — Supabase에 리드 적재 (`supabase/dojo_inquiries.sql`) · 체육관 계정·알림은 아직 없음

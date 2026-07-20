@@ -8396,30 +8396,56 @@
 }
 
 .onboarding-street--setup .onboarding-submit {
-  position: sticky;
-  bottom: 0;
+  position: relative;
   z-index: 2;
-  margin-top: 12px;
+  margin-top: 0;
   margin-bottom: 0;
   border-radius: 4px;
+  background: #8a2e2e;
+  background-image: none;
+  color: #f5f1e8;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.08) inset,
     0 14px 28px rgba(70, 18, 18, 0.3);
-  background-image: linear-gradient(
+}
+
+.onboarding-cta-block {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin-top: 8px;
+  padding-top: 10px;
+  background: linear-gradient(
     180deg,
     rgba(7, 7, 8, 0) 0%,
-    rgba(7, 7, 8, 0.92) 28%,
+    rgba(7, 7, 8, 0.94) 36%,
     #070708 100%
   );
-  background-color: #8a2e2e;
-  padding-top: 14px;
+}
+
+.onboarding-cta-hint {
+  margin: 0 0 8px;
+  color: rgba(245, 241, 232, 0.55);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.onboarding-cta-hint.is-ready {
+  color: #9fd4a8;
 }
 
 .onboarding-street-cta:disabled,
 .onboarding-submit:disabled {
-  opacity: 0.45;
+  opacity: 0.72;
   cursor: not-allowed;
   transform: none;
+}
+
+.onboarding-street--setup .onboarding-submit:disabled {
+  background: #5f1e1e;
+  color: rgba(245, 241, 232, 0.75);
 }
 
 .onboarding-specs-toggle {

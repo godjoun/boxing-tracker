@@ -56,53 +56,13 @@ export default function OnboardingSetupPage() {
     return () => window.clearTimeout(timer);
   }, [showWelcome]);
 
-  useEffect(() => {
-    if (showWelcome) return;
-
-    const trimmed = form.nickname.trim();
-    setVerifiedNickname("");
-    setNicknameNotice("");
-
-    if (trimmed.length < 2) {
-      setCheckingNickname(false);
-      return undefined;
-    }
-
-    const seq = ++nicknameCheckSeq.current;
-    setCheckingNickname(true);
-
-    const timer = window.setTimeout(async () => {
-      try {
-        const result = await checkNicknameAvailability(trimmed, userId);
-        if (seq !== nicknameCheckSeq.current) return;
-
-        if (result.available) {
-          setVerifiedNickname(result.nickname);
-          setNicknameNotice(result.message);
-        } else {
-          setVerifiedNickname("");
-          setNicknameNotice(result.message);
-        }
-      } catch (checkError) {
-        if (seq !== nicknameCheckSeq.current) return;
-        setVerifiedNickname("");
-        setNicknameNotice(
-          checkError.message || "이름 확인 중 문제가 발생했습니다.",
-        );
-      } finally {
-        if (seq === nicknameCheckSeq.current) {
-          setCheckingNickname(false);
-        }
-      }
-    }, 450);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [form.nickname, showWelcome, userId]);
-
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+    if (field === "nickname") {
+      setVerifiedNickname("");
+      setNicknameNotice("");
+      setError("");
+    }
   }
 
   function handleWelcomeNext() {
@@ -114,6 +74,49 @@ export default function OnboardingSetupPage() {
     setShowWelcome(true);
   }
 
+  async function handleCheckNickname() {
+    setError("");
+    const trimmed = form.nickname.trim();
+
+    if (!trimmed) {
+      setNicknameNotice("링네임을 입력해 주세요.");
+      setVerifiedNickname("");
+      return;
+    }
+
+    if (trimmed.length < 2) {
+      setNicknameNotice("링네임은 2자 이상이어야 합니다.");
+      setVerifiedNickname("");
+      return;
+    }
+
+    const seq = ++nicknameCheckSeq.current;
+    setCheckingNickname(true);
+
+    try {
+      const result = await checkNicknameAvailability(trimmed, userId);
+      if (seq !== nicknameCheckSeq.current) return;
+
+      if (result.available) {
+        setVerifiedNickname(result.nickname);
+        setNicknameNotice(result.message || "사용할 수 있는 이름입니다.");
+      } else {
+        setVerifiedNickname("");
+        setNicknameNotice(result.message || "이미 사용 중인 이름입니다.");
+      }
+    } catch (checkError) {
+      if (seq !== nicknameCheckSeq.current) return;
+      setVerifiedNickname("");
+      setNicknameNotice(
+        checkError.message || "이름 확인 중 문제가 발생했습니다.",
+      );
+    } finally {
+      if (seq === nicknameCheckSeq.current) {
+        setCheckingNickname(false);
+      }
+    }
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
@@ -122,11 +125,13 @@ export default function OnboardingSetupPage() {
 
     if (!trimmedNickname) {
       setError("링네임을 입력해 주세요.");
+      nicknameInputRef.current?.focus();
       return;
     }
 
     if (trimmedNickname.length < 2) {
       setError("링네임은 2자 이상이어야 합니다.");
+      nicknameInputRef.current?.focus();
       return;
     }
 
@@ -139,7 +144,7 @@ export default function OnboardingSetupPage() {
         if (!result.available) {
           setVerifiedNickname("");
           setNicknameNotice(result.message);
-          setError("다른 링네임을 입력해 주세요.");
+          setError("중복확인 후 다른 링네임을 입력해 주세요.");
           return;
         }
 
@@ -159,12 +164,28 @@ export default function OnboardingSetupPage() {
     verifiedNickname === form.nickname.trim() && verifiedNickname.length > 0;
   const nicknameHint =
     form.nickname.trim().length === 0
-      ? "2~12자. 입력하면 자동으로 확인합니다."
+      ? "2~12자. 입력 후 중복확인을 눌러 주세요."
       : form.nickname.trim().length < 2
         ? "한 글자 더 입력해 주세요."
         : checkingNickname
           ? "확인 중…"
-          : nicknameNotice;
+          : nicknameNotice ||
+            (nicknameIsVerified
+              ? "사용할 수 있는 이름입니다."
+              : "중복확인을 눌러 주세요.");
+  const startHint = !form.nickname.trim()
+    ? "링네임을 입력해야 시작할 수 있어요."
+    : form.nickname.trim().length < 2
+      ? "링네임은 2자 이상이어야 해요."
+      : checkingNickname
+        ? "이름 확인 중이에요."
+        : !nicknameIsVerified
+          ? "중복확인을 먼저 눌러 주세요."
+          : "준비가 됐어요. 시작하세요.";
+  const canStart =
+    !submitting &&
+    !checkingNickname &&
+    nicknameIsVerified;
 
   if (showWelcome) {
     return (
@@ -261,24 +282,36 @@ export default function OnboardingSetupPage() {
 
           <form className="onboarding-form" onSubmit={handleSubmit}>
             <div className="onboarding-field">
-              <span>링네임</span>
-              <input
-                ref={nicknameInputRef}
-                type="text"
-                value={form.nickname}
-                onChange={(event) => updateField("nickname", event.target.value)}
-                placeholder="예: 새벽벨"
-                disabled={submitting}
-                maxLength={12}
-                autoComplete="nickname"
-                enterKeyHint="done"
-                aria-invalid={Boolean(
-                  form.nickname.trim().length >= 2 &&
-                    !checkingNickname &&
-                    !nicknameIsVerified &&
-                    nicknameNotice,
-                )}
-              />
+              <span>링네임 *</span>
+              <div className="onboarding-nickname-row">
+                <input
+                  ref={nicknameInputRef}
+                  type="text"
+                  value={form.nickname}
+                  onChange={(event) =>
+                    updateField("nickname", event.target.value)
+                  }
+                  placeholder="예: 새벽벨"
+                  disabled={submitting}
+                  maxLength={12}
+                  autoComplete="nickname"
+                  enterKeyHint="done"
+                  aria-invalid={Boolean(
+                    form.nickname.trim().length >= 2 &&
+                      !checkingNickname &&
+                      !nicknameIsVerified &&
+                      nicknameNotice,
+                  )}
+                />
+                <button
+                  type="button"
+                  className="onboarding-check-button"
+                  onClick={handleCheckNickname}
+                  disabled={submitting || checkingNickname}
+                >
+                  {checkingNickname ? "확인 중" : "중복확인"}
+                </button>
+              </div>
               <p
                 className={`onboarding-inline-note${
                   nicknameIsVerified
@@ -421,20 +454,22 @@ export default function OnboardingSetupPage() {
               </p>
             ) : null}
 
-            <button
-              type="submit"
-              className="onboarding-street-cta onboarding-submit"
-              disabled={
-                submitting ||
-                checkingNickname ||
-                form.nickname.trim().length < 2 ||
-                (form.nickname.trim().length >= 2 &&
-                  !nicknameIsVerified &&
-                  Boolean(nicknameNotice))
-              }
-            >
-              {submitting ? "저장 중..." : "라운드 시작하기"}
-            </button>
+            <div className="onboarding-cta-block">
+              <p
+                className={`onboarding-cta-hint${
+                  canStart ? " is-ready" : ""
+                }`}
+              >
+                {startHint}
+              </p>
+              <button
+                type="submit"
+                className="onboarding-street-cta onboarding-submit"
+                disabled={submitting}
+              >
+                {submitting ? "저장 중..." : "라운드 시작하기"}
+              </button>
+            </div>
           </form>
         </div>
       </section>

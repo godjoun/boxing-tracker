@@ -5,13 +5,18 @@
   --app-safe-top: env(safe-area-inset-top, 0px);
   --app-top-chrome: 56px;
   --app-top-total: calc(max(var(--app-safe-top), 12px) + var(--app-top-chrome));
-  min-height: 100dvh;
-  padding-bottom: var(--app-nav-total);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  padding-bottom: 0;
 }
 
 .app-shell.is-fullscreen {
   --app-nav-total: max(12px, env(safe-area-inset-bottom, 12px));
-  padding-bottom: var(--app-nav-total);
 }
 
 .app-shell.theme-dark,
@@ -8118,7 +8123,13 @@
 }
 
 .onboarding-page {
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   display: grid;
   place-items: center;
   padding:
@@ -8148,7 +8159,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  min-height: 100%;
   padding:
     max(28px, calc(env(safe-area-inset-top, 0px) + 22px))
     22px
@@ -8930,8 +8941,14 @@
 }
 
 .app-main {
+  flex: 1 1 auto;
   width: 100%;
-  min-height: 100dvh;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: var(--app-nav-total);
   color: var(--p-text);
   background: transparent;
 }

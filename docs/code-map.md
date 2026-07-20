@@ -8,7 +8,8 @@
 | 문의 | `src/components/GymInquiryModal.jsx` |
 | 라이벌 | `SparringPartnerPanel.jsx` · `SparringPartnerCard.jsx` |
 | 시드 | `src/data/localDojoData.js` |
-| API 자리 | `src/api/dojoApi.js` |
+| API 자리 | `src/api/dojoApi.js` · 교류 `src/api/dojoExchangeApi.js` |
+| 교류 SQL | `supabase/dojo_exchange.sql` |
 | 라운드(타이머) | `src/pages/TimerPage.jsx` |
 | 기술(4주 코스) | `src/pages/CurriculumPage.jsx` |
 | 신체(몸 만들기) | `src/pages/StrengthProgramPage.jsx` |

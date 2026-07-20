@@ -2729,20 +2729,29 @@
   margin: 0 0 12px;
 }
 
-.exchange-date-filter > span {
+.exchange-search-filter {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.exchange-date-filter > span,
+.exchange-search-filter > span {
   color: var(--p-text-muted);
   font-size: 12px;
   font-weight: 800;
 }
 
-.exchange-date-filter-row {
+.exchange-date-filter-row,
+.exchange-search-filter-row {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
   align-items: center;
 }
 
-.exchange-date-filter-row input[type="date"] {
+.exchange-date-filter-row input[type="date"],
+.exchange-search-filter-row input[type="search"] {
   min-height: 44px;
   padding: 0 12px;
   border: 1px solid var(--p-border);
@@ -2751,6 +2760,10 @@
   color: var(--p-text);
   font-size: 14px;
   font-weight: 700;
+}
+
+.exchange-search-filter-row input[type="search"] {
+  font-weight: 600;
 }
 
 .exchange-date-clear {

@@ -6,17 +6,37 @@ create table if not exists public.dojo_gym_inquiries (
   id uuid primary key default gen_random_uuid(),
   gym_id text not null default 'general',
   gym_name text not null,
-  kind text not null check (kind in ('trial', 'rental')),
+  kind text not null check (kind in ('trial', 'rental', 'reservation')),
   contact text not null,
   preferred_date text not null default '',
   memo text not null default '',
   party_size integer,
   hours integer,
+  experience text not null default '',
+  purpose text not null default '',
+  time_slot text not null default '',
   user_id text,
   nickname text not null default '',
   source text not null default 'app',
   created_at timestamptz not null default now()
 );
+
+-- 이미 만든 테이블용 업그레이드 (한 번 더 실행해도 됨)
+alter table public.dojo_gym_inquiries
+  drop constraint if exists dojo_gym_inquiries_kind_check;
+
+alter table public.dojo_gym_inquiries
+  add constraint dojo_gym_inquiries_kind_check
+  check (kind in ('trial', 'rental', 'reservation'));
+
+alter table public.dojo_gym_inquiries
+  add column if not exists experience text not null default '';
+
+alter table public.dojo_gym_inquiries
+  add column if not exists purpose text not null default '';
+
+alter table public.dojo_gym_inquiries
+  add column if not exists time_slot text not null default '';
 
 create index if not exists dojo_gym_inquiries_created_at_idx
   on public.dojo_gym_inquiries (created_at desc);

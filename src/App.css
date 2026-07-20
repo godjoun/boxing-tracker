@@ -2942,6 +2942,45 @@
   gap: 8px;
 }
 
+.gym-inquiry-kind-row--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gym-inquiry-branch {
+  display: grid;
+  gap: 0;
+}
+
+.gym-inquiry-chip-group {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.gym-inquiry-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gym-inquiry-chip {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--p-border-strong, var(--p-border));
+  border-radius: 999px;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gym-inquiry-chip.is-active {
+  border-color: #8a2e2e;
+  background: rgba(138, 46, 46, 0.22);
+  color: #f5f1e8;
+}
+
 .gym-inquiry-kind-btn {
   min-height: 44px;
   border: 1px solid var(--p-border-strong, var(--p-border));

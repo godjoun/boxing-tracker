@@ -30,14 +30,20 @@ export async function insertRemoteGymInquiry(inquiry) {
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const payload = {
+  const kind =
+    inquiry.kind === "rental"
+      ? "rental"
+      : inquiry.kind === "reservation"
+        ? "reservation"
+        : "trial";
+
+  const base = {
     id: inquiry.id,
     gym_id: inquiry.gymId || "general",
     gym_name: inquiry.gymName || "일반 문의",
-    kind: inquiry.kind === "rental" ? "rental" : "trial",
+    kind,
     contact: inquiry.contact,
     preferred_date: inquiry.preferredDate || "",
-    memo: inquiry.memo || "",
     party_size: inquiry.partySize ?? null,
     hours: inquiry.hours ?? null,
     user_id: inquiry.userId || null,
@@ -45,9 +51,45 @@ export async function insertRemoteGymInquiry(inquiry) {
     source: "app",
   };
 
+  const richMemoParts = [
+    inquiry.experience ? `경험: ${inquiry.experience}` : "",
+    inquiry.purpose ? `목적: ${inquiry.purpose}` : "",
+    inquiry.timeSlot ? `시간: ${inquiry.timeSlot}` : "",
+    inquiry.memo || "",
+  ].filter(Boolean);
+
+  const fullPayload = {
+    ...base,
+    memo: inquiry.memo || "",
+    experience: inquiry.experience || "",
+    purpose: inquiry.purpose || "",
+    time_slot: inquiry.timeSlot || "",
+  };
+
+  const legacyPayload = {
+    ...base,
+    kind: kind === "reservation" ? "trial" : kind,
+    memo: richMemoParts.join(" · "),
+  };
+
   try {
-    // select/RETURNING 없이 insert — anon에 select RLS가 없어도 성공 판정 가능
-    const { error } = await supabase.from("dojo_gym_inquiries").insert(payload);
+    let { error } = await supabase.from("dojo_gym_inquiries").insert(fullPayload);
+
+    if (error) {
+      const message = String(error.message || "").toLowerCase();
+      const needsLegacy =
+        message.includes("experience") ||
+        message.includes("purpose") ||
+        message.includes("time_slot") ||
+        message.includes("reservation") ||
+        message.includes("check");
+
+      if (needsLegacy) {
+        ({ error } = await supabase
+          .from("dojo_gym_inquiries")
+          .insert(legacyPayload));
+      }
+    }
 
     if (error) {
       if (isRemoteUnavailable(error)) return null;

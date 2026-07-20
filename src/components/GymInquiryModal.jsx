@@ -11,18 +11,34 @@ const KIND_OPTIONS = [
     id: "trial",
     label: "체험",
     hint: "하루·한달 이용 문의",
-    dateLabel: "희망 방문일",
-    datePlaceholder: "예: 이번 주 토요일 오후",
-    memoPlaceholder: "복싱 경험, 궁금한 점",
+    submitLabel: "체험 문의 보내기",
   },
   {
     id: "rental",
     label: "대여",
     hint: "링·홀 시간 대여",
-    dateLabel: "희망 대여 일정",
-    datePlaceholder: "예: 토요일 14:00~17:00",
-    memoPlaceholder: "링 사용, 교류 상대 짐 등",
+    submitLabel: "대여 문의 보내기",
   },
+  {
+    id: "reservation",
+    label: "예약",
+    hint: "방문·레슨·스파링 일정 예약",
+    submitLabel: "예약 문의 보내기",
+  },
+];
+
+const TRIAL_EXPERIENCE = [
+  { id: "beginner", label: "입문" },
+  { id: "hobby", label: "취미" },
+  { id: "amateur", label: "아마추어" },
+  { id: "other", label: "기타" },
+];
+
+const RESERVATION_PURPOSE = [
+  { id: "visit", label: "방문 상담" },
+  { id: "lesson", label: "레슨" },
+  { id: "sparring", label: "스파링" },
+  { id: "other", label: "기타" },
 ];
 
 export default function GymInquiryModal({
@@ -34,8 +50,11 @@ export default function GymInquiryModal({
   const [kind, setKind] = useState("trial");
   const [contact, setContact] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
+  const [timeSlot, setTimeSlot] = useState("");
   const [partySize, setPartySize] = useState("1");
   const [hours, setHours] = useState("2");
+  const [experience, setExperience] = useState("hobby");
+  const [purpose, setPurpose] = useState("visit");
   const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
   const [isDone, setIsDone] = useState(false);
@@ -47,6 +66,14 @@ export default function GymInquiryModal({
   const passes = getGymPassLines(gym);
   const remoteReady = hasGymInquiryRemote();
 
+  function switchKind(nextKind) {
+    setKind(nextKind);
+    setError("");
+    setPreferredDate("");
+    setTimeSlot("");
+    setMemo("");
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     if (submitting) return;
@@ -57,15 +84,36 @@ export default function GymInquiryModal({
       return;
     }
 
+    if (kind === "reservation" && !preferredDate.trim()) {
+      setError("희망 날짜를 입력해 주세요.");
+      return;
+    }
+
+    if (kind === "rental" && !preferredDate.trim()) {
+      setError("희망 대여 일정을 입력해 주세요.");
+      return;
+    }
+
+    const experienceLabel =
+      TRIAL_EXPERIENCE.find((item) => item.id === experience)?.label || "";
+    const purposeLabel =
+      RESERVATION_PURPOSE.find((item) => item.id === purpose)?.label || "";
+
     const payload = {
       kind,
       gymId: gym?.id || "general",
       gymName: gym?.name || "일반 문의",
       contact: trimmedContact,
       preferredDate: preferredDate.trim(),
+      timeSlot: kind === "reservation" ? timeSlot.trim() : "",
       memo: memo.trim(),
-      partySize: kind === "rental" ? Number(partySize) || 1 : null,
+      partySize:
+        kind === "rental" || kind === "reservation"
+          ? Number(partySize) || 1
+          : null,
       hours: kind === "rental" ? Number(hours) || null : null,
+      experience: kind === "trial" ? experienceLabel : "",
+      purpose: kind === "reservation" ? purposeLabel : "",
       userId,
       nickname: nickname || "",
     };
@@ -151,7 +199,7 @@ export default function GymInquiryModal({
 
             <div className="gym-inquiry-kind" role="group" aria-label="문의 종류">
               <span className="gym-inquiry-kind-label">문의 종류 *</span>
-              <div className="gym-inquiry-kind-row">
+              <div className="gym-inquiry-kind-row gym-inquiry-kind-row--3">
                 {KIND_OPTIONS.map((option) => (
                   <button
                     key={option.id}
@@ -159,10 +207,7 @@ export default function GymInquiryModal({
                     className={`gym-inquiry-kind-btn${
                       kind === option.id ? " is-active" : ""
                     }`}
-                    onClick={() => {
-                      setKind(option.id);
-                      setError("");
-                    }}
+                    onClick={() => switchKind(option.id)}
                     aria-pressed={kind === option.id}
                   >
                     {option.label}
@@ -183,20 +228,150 @@ export default function GymInquiryModal({
               />
             </label>
 
-            <label className="gym-inquiry-field">
-              <span>{kindMeta.dateLabel}</span>
-              <input
-                type="text"
-                value={preferredDate}
-                onChange={(event) => setPreferredDate(event.target.value)}
-                placeholder={kindMeta.datePlaceholder}
-              />
-            </label>
+            {kind === "trial" ? (
+              <div className="gym-inquiry-branch" key="trial">
+                <div
+                  className="gym-inquiry-chip-group"
+                  role="group"
+                  aria-label="경험"
+                >
+                  <span className="gym-inquiry-kind-label">복싱 경험</span>
+                  <div className="gym-inquiry-chip-row">
+                    {TRIAL_EXPERIENCE.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={`gym-inquiry-chip${
+                          experience === option.id ? " is-active" : ""
+                        }`}
+                        onClick={() => setExperience(option.id)}
+                        aria-pressed={experience === option.id}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="gym-inquiry-field">
+                  <span>희망 방문일</span>
+                  <input
+                    type="text"
+                    value={preferredDate}
+                    onChange={(event) => setPreferredDate(event.target.value)}
+                    placeholder="예: 이번 주 토요일 오후"
+                  />
+                </label>
+
+                <label className="gym-inquiry-field">
+                  <span>메모</span>
+                  <textarea
+                    value={memo}
+                    onChange={(event) => setMemo(event.target.value)}
+                    placeholder="궁금한 점 · 목표"
+                    rows={3}
+                  />
+                </label>
+              </div>
+            ) : null}
 
             {kind === "rental" ? (
-              <div className="gym-inquiry-rental-row">
+              <div className="gym-inquiry-branch" key="rental">
                 <label className="gym-inquiry-field">
-                  <span>예상 인원</span>
+                  <span>희망 대여 일정 *</span>
+                  <input
+                    type="text"
+                    value={preferredDate}
+                    onChange={(event) => setPreferredDate(event.target.value)}
+                    placeholder="예: 토요일 14:00~17:00"
+                    required
+                  />
+                </label>
+
+                <div className="gym-inquiry-rental-row">
+                  <label className="gym-inquiry-field">
+                    <span>예상 인원</span>
+                    <input
+                      type="number"
+                      min="1"
+                      inputMode="numeric"
+                      value={partySize}
+                      onChange={(event) => setPartySize(event.target.value)}
+                    />
+                  </label>
+                  <label className="gym-inquiry-field">
+                    <span>대여 시간(시간)</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="0.5"
+                      inputMode="decimal"
+                      value={hours}
+                      onChange={(event) => setHours(event.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <label className="gym-inquiry-field">
+                  <span>메모</span>
+                  <textarea
+                    value={memo}
+                    onChange={(event) => setMemo(event.target.value)}
+                    placeholder="링 사용 · 교류 상대 짐 등"
+                    rows={3}
+                  />
+                </label>
+              </div>
+            ) : null}
+
+            {kind === "reservation" ? (
+              <div className="gym-inquiry-branch" key="reservation">
+                <div
+                  className="gym-inquiry-chip-group"
+                  role="group"
+                  aria-label="목적"
+                >
+                  <span className="gym-inquiry-kind-label">목적 *</span>
+                  <div className="gym-inquiry-chip-row">
+                    {RESERVATION_PURPOSE.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={`gym-inquiry-chip${
+                          purpose === option.id ? " is-active" : ""
+                        }`}
+                        onClick={() => setPurpose(option.id)}
+                        aria-pressed={purpose === option.id}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className="gym-inquiry-field">
+                  <span>희망 날짜 *</span>
+                  <input
+                    type="text"
+                    value={preferredDate}
+                    onChange={(event) => setPreferredDate(event.target.value)}
+                    placeholder="예: 7/26 (토)"
+                    required
+                  />
+                </label>
+
+                <label className="gym-inquiry-field">
+                  <span>희망 시간</span>
+                  <input
+                    type="text"
+                    value={timeSlot}
+                    onChange={(event) => setTimeSlot(event.target.value)}
+                    placeholder="예: 오후 2시~4시"
+                  />
+                </label>
+
+                <label className="gym-inquiry-field">
+                  <span>인원</span>
                   <input
                     type="number"
                     min="1"
@@ -205,29 +380,18 @@ export default function GymInquiryModal({
                     onChange={(event) => setPartySize(event.target.value)}
                   />
                 </label>
+
                 <label className="gym-inquiry-field">
-                  <span>대여 시간(시간)</span>
-                  <input
-                    type="number"
-                    min="1"
-                    step="0.5"
-                    inputMode="decimal"
-                    value={hours}
-                    onChange={(event) => setHours(event.target.value)}
+                  <span>메모</span>
+                  <textarea
+                    value={memo}
+                    onChange={(event) => setMemo(event.target.value)}
+                    placeholder="레슨 코치 · 스파링 체급 등"
+                    rows={3}
                   />
                 </label>
               </div>
             ) : null}
-
-            <label className="gym-inquiry-field">
-              <span>메모</span>
-              <textarea
-                value={memo}
-                onChange={(event) => setMemo(event.target.value)}
-                placeholder={kindMeta.memoPlaceholder}
-                rows={3}
-              />
-            </label>
 
             {error ? <p className="gym-inquiry-error">{error}</p> : null}
 
@@ -236,9 +400,7 @@ export default function GymInquiryModal({
               className="gym-inquiry-submit"
               disabled={submitting}
             >
-              {submitting
-                ? "보내는 중..."
-                : `${kindMeta.label} 문의 보내기`}
+              {submitting ? "보내는 중..." : kindMeta.submitLabel}
             </button>
           </form>
         )}

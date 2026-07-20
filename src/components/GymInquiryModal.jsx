@@ -115,11 +115,11 @@ export default function GymInquiryModal({
               <strong>{gym.name}</strong> {kindMeta.label} 문의를{" "}
               {synced
                 ? "서버에 저장했습니다. 제휴·운영에서 확인하고 연락드릴 수 있어요."
-                : "이 기기에 기록했습니다. (서버 미연결 — SQL 실행 후 다시 보내 보세요)"}
+                : "이 기기에 기록했습니다. 서버 연결이 안 되면 잠시 후 다시 보내 주세요."}
             </p>
             {!synced && remoteReady ? (
               <p className="gym-inquiry-sync-hint">
-                Supabase에서 dojo_inquiries.sql 실행이 필요할 수 있어요.
+                네트워크·서버 상태를 확인한 뒤 다시 시도해 주세요.
               </p>
             ) : null}
             {gym.phone ? (

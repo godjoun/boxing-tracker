@@ -46,18 +46,15 @@ export async function insertRemoteGymInquiry(inquiry) {
   };
 
   try {
-    const { data, error } = await supabase
-      .from("dojo_gym_inquiries")
-      .insert(payload)
-      .select("id")
-      .single();
+    // select/RETURNING 없이 insert — anon에 select RLS가 없어도 성공 판정 가능
+    const { error } = await supabase.from("dojo_gym_inquiries").insert(payload);
 
     if (error) {
       if (isRemoteUnavailable(error)) return null;
       throw error;
     }
 
-    return data?.id || inquiry.id;
+    return inquiry.id;
   } catch (error) {
     if (isRemoteUnavailable(error)) return null;
     throw error;

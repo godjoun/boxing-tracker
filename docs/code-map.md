@@ -3,7 +3,8 @@
 | 하고 싶은 일 | 파일 |
 |---|---|
 | 도장 탭 | `src/pages/GymFinderPage.jsx` |
-| 교류 | `src/pages/dojoBreaker/ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` |
+| 교류 | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
+| 채팅 SQL | `supabase/dojo_chat.sql` |
 | 체육관 검색·카드 | `NearbyGymsPanel.jsx` · `GymResultCard.jsx` · `utils/gymPricing.js` |
 | 문의 | `GymInquiryModal.jsx` · `utils/gymInquiry.js` · `api/gymInquiryApi.js` |
 | 문의 SQL | `supabase/dojo_inquiries.sql` |

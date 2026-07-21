@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
+import ExchangeChatModal from "../../components/ExchangeChatModal";
 import { useTraining } from "../../store/TrainingContext";
+import { resolveDojoActorId } from "../../utils/dojoChat";
 import {
   applyExchangeEventAsync,
   cancelExchangeApplyAsync,
@@ -49,8 +51,35 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
   const [synced, setSynced] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [chatTarget, setChatTarget] = useState(null);
 
   const remoteReady = hasDojoExchangeRemote();
+  const myActorId = resolveDojoActorId(userId);
+
+  function openChatWith({
+    event,
+    hostActorId,
+    applicantActorId,
+    hostNickname,
+    applicantNickname,
+  }) {
+    if (!event?.id || event.isSample || event.source === "seed") {
+      flash("예시 일정에서는 대화를 열 수 없어요.");
+      return;
+    }
+
+    setChatTarget({
+      eventId: event.id,
+      hostActorId,
+      applicantActorId,
+      hostNickname: hostNickname || event.hostNickname || "주최자",
+      applicantNickname: applicantNickname || "신청자",
+      gymName: event.gymName || "",
+      eventLabel:
+        event.whenLabel ||
+        formatExchangeWhen(event.startsAt, event.whenLabel || ""),
+    });
+  }
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -295,9 +324,30 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
         {item.isMine && applicants.length > 0 ? (
           <div className="exchange-match-applicants">
             <span>신청자</span>
-            <strong>
-              {applicants.map((person) => person.nickname || "나").join(", ")}
-            </strong>
+            <ul className="exchange-match-applicant-list">
+              {applicants.map((person) => (
+                <li key={person.id || person.userId}>
+                  <strong>{person.nickname || "나"}</strong>
+                  {item.source === "server" && person.userId ? (
+                    <button
+                      type="button"
+                      className="exchange-chat-open"
+                      onClick={() =>
+                        openChatWith({
+                          event: item,
+                          hostActorId: item.userId || myActorId,
+                          applicantActorId: person.userId,
+                          hostNickname: profile?.nickname || "주최자",
+                          applicantNickname: person.nickname || "신청자",
+                        })
+                      }
+                    >
+                      대화하기
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
           </div>
         ) : null}
 
@@ -318,14 +368,33 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
           ) : item.isPast ? (
             <p className="exchange-sample-hint">지난 일정</p>
           ) : (
-            <button
-              type="button"
-              className={`exchange-match-cta${applied ? " is-cancel" : ""}`}
-              onClick={() => handleApplyToggle(item)}
-              disabled={full || busy}
-            >
-              {applied ? "신청 취소" : full ? "마감" : "참가 신청"}
-            </button>
+            <>
+              <button
+                type="button"
+                className={`exchange-match-cta${applied ? " is-cancel" : ""}`}
+                onClick={() => handleApplyToggle(item)}
+                disabled={full || busy}
+              >
+                {applied ? "신청 취소" : full ? "마감" : "참가 신청"}
+              </button>
+              {applied && item.source === "server" && item.userId ? (
+                <button
+                  type="button"
+                  className="exchange-match-chat"
+                  onClick={() =>
+                    openChatWith({
+                      event: item,
+                      hostActorId: item.userId,
+                      applicantActorId: myActorId,
+                      hostNickname: item.hostNickname || "주최자",
+                      applicantNickname: profile?.nickname || "신청자",
+                    })
+                  }
+                >
+                  대화하기
+                </button>
+              ) : null}
+            </>
           )}
         </div>
       </article>
@@ -556,6 +625,22 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
             {visiblePastEvents.map(renderCard)}
           </div>
         )
+      ) : null}
+
+      {chatTarget ? (
+        <ExchangeChatModal
+          open
+          userId={userId}
+          nickname={profile?.nickname || ""}
+          eventId={chatTarget.eventId}
+          hostActorId={chatTarget.hostActorId}
+          applicantActorId={chatTarget.applicantActorId}
+          hostNickname={chatTarget.hostNickname}
+          applicantNickname={chatTarget.applicantNickname}
+          gymName={chatTarget.gymName}
+          eventLabel={chatTarget.eventLabel}
+          onClose={() => setChatTarget(null)}
+        />
       ) : null}
     </>
   );

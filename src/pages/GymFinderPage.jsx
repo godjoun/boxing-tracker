@@ -60,9 +60,11 @@ export default function GymFinderPage({
   return (
     <main className="gym-page gym-page-flap">
       <header className="dojo-flap-header">
-        <button className="category-back" type="button" onClick={onGoBack}>
-          ← 더보기
-        </button>
+        {onGoBack ? (
+          <button className="category-back" type="button" onClick={onGoBack}>
+            ← 뒤로
+          </button>
+        ) : null}
         <div className="dojo-flap-heading">
           <p className="gym-unified-kicker">DOJO</p>
           <h1>도장</h1>

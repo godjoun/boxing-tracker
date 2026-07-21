@@ -9395,8 +9395,8 @@
   width: calc(100% - 20px);
   max-width: 720px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
   padding: 6px;
   border: 1px solid var(--p-nav-border);
   border-radius: 22px;
@@ -9453,6 +9453,21 @@
 .theme-dark .app-nav-button.is-active {
   background: #f5f1e8;
   color: #0a0909;
+}
+
+.app-nav-button.is-nav-home.is-active {
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
+}
+
+.theme-dark .app-nav-button.is-nav-home.is-active {
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
+}
+
+.app-nav-button.is-nav-home .app-nav-icon {
+  width: 20px;
+  height: 20px;
 }
 
 .app-nav-button .nav-category-icon {

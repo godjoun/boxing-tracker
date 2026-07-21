@@ -2,6 +2,7 @@
 
 | 하고 싶은 일 | 파일 |
 |---|---|
+| 하단 내비 | `src/App.jsx` · 링 · 도장 · 홈 · 명패 · 더보기 |
 | 도장 탭 | `src/pages/GymFinderPage.jsx` |
 | 교류 | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
 | 채팅 SQL | `supabase/dojo_chat.sql` |

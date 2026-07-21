@@ -42,7 +42,6 @@ const FULLSCREEN_PAGES = new Set([
   "curriculum",
   "strength",
   "combo-creator",
-  "gym",
   "backup",
   "timer",
   "growth",
@@ -238,10 +237,6 @@ function MainAppShell({ theme, onToggleTheme }) {
           <GymFinderPage
             initialView={gymView}
             fighterLevel={fighterLevel}
-            onGoBack={() => {
-              setGymView("hub");
-              goPage("category");
-            }}
             onStartTraining={() => goPage("timer")}
           />
         )}
@@ -350,17 +345,6 @@ function MainAppShell({ theme, onToggleTheme }) {
         <nav className="app-bottom-nav" aria-label="메인 메뉴">
           <button
             type="button"
-            className={getNavClass(currentPage === "home")}
-            onClick={() => goPage("home")}
-          >
-            <span className="app-nav-icon" aria-hidden="true">
-              <MenuIcon name="home" size={20} />
-            </span>
-            <span className="app-nav-label">홈</span>
-          </button>
-
-          <button
-            type="button"
             data-tutorial-target="nav-timer"
             className={getNavClass(
               currentPage === "train" || currentPage === "timer"
@@ -371,6 +355,29 @@ function MainAppShell({ theme, onToggleTheme }) {
               <MenuIcon name="ring" size={20} />
             </span>
             <span className="app-nav-label">링</span>
+          </button>
+
+          <button
+            type="button"
+            data-tutorial-target="nav-dojo"
+            className={getNavClass(currentPage === "gym")}
+            onClick={() => goGym("exchange")}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              <MenuIcon name="dojo" size={20} />
+            </span>
+            <span className="app-nav-label">도장</span>
+          </button>
+
+          <button
+            type="button"
+            className={`${getNavClass(currentPage === "home")} is-nav-home`}
+            onClick={() => goPage("home")}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              <MenuIcon name="home" size={22} />
+            </span>
+            <span className="app-nav-label">홈</span>
           </button>
 
           <button

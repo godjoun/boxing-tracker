@@ -22,7 +22,7 @@ const CATEGORIES = [
     id: "gyms",
     label: "체육관 문의·대여",
     hint: "찾기 · 체험 · 대여",
-    howTo: "지역 검색 후 문의하기 · 체험/대여는 폼에서 선택",
+    howTo: "지역 검색 · 문의 · 관 운영자면 등록 신청",
   },
   {
     id: "sparring",

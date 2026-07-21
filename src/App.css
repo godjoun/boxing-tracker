@@ -2805,6 +2805,195 @@
   text-decoration: none;
 }
 
+.gym-listing-cta {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid rgba(138, 46, 46, 0.28);
+  border-radius: 18px;
+  background:
+    linear-gradient(160deg, rgba(138, 46, 46, 0.18) 0%, rgba(10, 10, 10, 0.92) 55%),
+    #121012;
+}
+
+.gym-listing-cta-copy strong {
+  display: block;
+  margin: 0 0 6px;
+  color: #f5f1e8;
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.gym-listing-cta-copy p:last-child {
+  margin: 0;
+  color: rgba(245, 241, 232, 0.62);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.gym-listing-kicker {
+  margin: 0 0 6px;
+  color: #cf8b8b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.gym-listing-cta-button,
+.gym-listing-submit {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 14px;
+  background: #8a2e2e;
+  color: #f5f1e8;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 12px 24px rgba(70, 18, 18, 0.28);
+}
+
+.gym-listing-cta-button:active,
+.gym-listing-submit:active {
+  background: #5f1e1e;
+}
+
+.gym-listing-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.gym-listing-panel {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 28px;
+}
+
+.gym-listing-back {
+  justify-self: start;
+  border: none;
+  background: transparent;
+  color: rgba(245, 241, 232, 0.62);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+}
+
+.gym-listing-hero h2 {
+  margin: 0 0 8px;
+  color: #f5f1e8;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+
+.gym-listing-hero > p {
+  margin: 0;
+  color: rgba(245, 241, 232, 0.62);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.gym-listing-form {
+  display: grid;
+  gap: 14px;
+}
+
+.gym-listing-block {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.gym-listing-block legend {
+  padding: 0 4px;
+  color: #cf8b8b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.gym-listing-block-note {
+  margin: 0 0 10px;
+  color: rgba(245, 241, 232, 0.45);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gym-listing-price-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gym-listing-foot {
+  margin: 0;
+  text-align: center;
+  color: rgba(245, 241, 232, 0.45);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.gym-listing-done {
+  display: grid;
+  gap: 12px;
+  padding: 22px 18px;
+  border: 1px solid rgba(138, 46, 46, 0.28);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(26, 18, 20, 0.95), rgba(10, 10, 10, 0.98));
+}
+
+.gym-listing-done h2 {
+  margin: 0;
+  color: #f5f1e8;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+
+.gym-listing-done-lead {
+  margin: 0;
+  color: rgba(245, 241, 232, 0.68);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.gym-listing-done-points {
+  margin: 0;
+  padding-left: 18px;
+  color: rgba(245, 241, 232, 0.55);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.gym-listing-sync-hint {
+  margin: 0;
+  color: #cf8b8b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 420px) {
+  .gym-listing-price-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .gym-result-list {
   display: grid;
   gap: 10px;

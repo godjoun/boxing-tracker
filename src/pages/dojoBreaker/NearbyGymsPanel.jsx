@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import GymInquiryModal from "../../components/GymInquiryModal";
+import GymListingRegisterPanel from "../../components/GymListingRegisterPanel";
 import { useTraining } from "../../store/TrainingContext";
 import {
   getGymDataSourceLabel,
@@ -21,6 +22,7 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   const [position, setPosition] = useState(null);
   const [locationHint, setLocationHint] = useState("");
   const [inquiryGym, setInquiryGym] = useState(null);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const [activePreset, setActivePreset] = useState(null);
   const [regionQuery, setRegionQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -28,6 +30,11 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   function openInquiry(gym) {
     track("gym_inquiry_open", { gymId: gym.id });
     setInquiryGym(gym);
+  }
+
+  function openRegister() {
+    track("gym_listing_open");
+    setRegisterOpen(true);
   }
 
   async function loadGyms(options = {}) {
@@ -107,6 +114,16 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
     loadGyms({ preferGps: true, allowFallback: true });
   }, []);
 
+  if (registerOpen) {
+    return (
+      <GymListingRegisterPanel
+        userId={userId}
+        nickname={profile?.nickname || ""}
+        onClose={() => setRegisterOpen(false)}
+      />
+    );
+  }
+
   return (
     <>
       <header
@@ -127,6 +144,17 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
             : ""}
         </p>
       </header>
+
+      <aside className="gym-listing-cta" aria-label="체육관 입점">
+        <div className="gym-listing-cta-copy">
+          <p className="gym-listing-kicker">FOR GYMS</p>
+          <strong>관을 운영 중이신가요?</strong>
+          <p>이름·주소·가격을 올리고, 복서의 문의를 받습니다.</p>
+        </div>
+        <button type="button" className="gym-listing-cta-button" onClick={openRegister}>
+          내 체육관 등록
+        </button>
+      </aside>
 
       <form className="gym-region-search" onSubmit={handleRegionSubmit}>
         <label className="gym-region-search-field" htmlFor="gym-region-input">

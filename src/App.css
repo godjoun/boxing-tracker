@@ -70,6 +70,10 @@
   --p-accent-solid: #742525;
   --p-accent-bg: rgba(138, 46, 46, 0.08);
   --p-accent-border: rgba(138, 46, 46, 0.36);
+  --p-action: #8a2e2e;
+  --p-action-hover: #742525;
+  --p-action-pressed: #5f1e1e;
+  --p-action-text: #f5f1e8;
   --levelup-action-bg: #8a2e2e;
   --levelup-action-hover: #742525;
   --levelup-action-pressed: #5f1e1e;
@@ -151,6 +155,10 @@
   --p-accent-solid: #742525;
   --p-accent-bg: rgba(138, 46, 46, 0.18);
   --p-accent-border: rgba(138, 46, 46, 0.42);
+  --p-action: #8a2e2e;
+  --p-action-hover: #742525;
+  --p-action-pressed: #5f1e1e;
+  --p-action-text: #f5f1e8;
   --levelup-action-bg: #8a2e2e;
   --levelup-action-hover: #742525;
   --levelup-action-pressed: #5f1e1e;
@@ -1955,10 +1963,10 @@
 
 .exchange-compose-button {
   min-height: 44px;
-  border: 1px solid var(--p-border);
+  border: none;
   border-radius: 14px;
-  background: #0a0909;
-  color: #ffffff;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
   font-size: 14px;
   font-weight: 900;
   letter-spacing: -0.02em;
@@ -1966,8 +1974,8 @@
 }
 
 .theme-dark .exchange-compose-button {
-  background: #f5f1e8;
-  color: #0a0909;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
 }
 
 .exchange-notice {
@@ -2465,13 +2473,13 @@
 
 .exchange-match-cta {
   border: none;
-  background: #0a0909;
-  color: #fff;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
 }
 
 .theme-dark .exchange-match-cta {
-  background: #f5f1e8;
-  color: #0a0909;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
 }
 
 .exchange-match-cta.is-cancel {
@@ -3207,10 +3215,10 @@
   margin-top: 12px;
   width: 100%;
   min-height: 40px;
-  border: 1px solid var(--p-border);
+  border: none;
   border-radius: 12px;
-  background: #0a0909;
-  color: #ffffff;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
@@ -3230,7 +3238,7 @@
 .gym-inquiry-button-secondary {
   background: transparent;
   color: var(--p-text);
-  border-color: var(--p-border-strong, var(--p-border));
+  border: 1px solid var(--p-border-strong, var(--p-border));
 }
 
 .theme-dark .gym-inquiry-button-secondary {
@@ -3240,8 +3248,8 @@
 }
 
 .theme-dark .gym-inquiry-button {
-  background: #f5f1e8;
-  color: #0a0909;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
 }
 
 .gym-inquiry-overlay {
@@ -3441,13 +3449,13 @@
 
 .gym-inquiry-submit {
   border: none;
-  background: #0a0909;
-  color: #ffffff;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
 }
 
 .theme-dark .gym-inquiry-submit {
-  background: #f5f1e8;
-  color: #0a0909;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
 }
 
 .gym-inquiry-call {
@@ -4023,17 +4031,17 @@
   padding: 12px;
   border: none;
   border-radius: 14px;
-  background: #0a0909;
-  color: #ffffff;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 8px 18px rgba(10, 9, 9, 0.12);
+  box-shadow: 0 10px 24px rgba(70, 18, 18, 0.22);
 }
 
 .theme-dark .sparring-save-button {
-  background: #f5f1e8;
-  color: #0a0909;
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
   box-shadow: none;
 }
 
@@ -9892,7 +9900,7 @@
   font-weight: 950;
 }
 
-/* ROUND ON global palette: restrained stage, clear action, small brass details */
+/* SECUNDUS global palette: restrained stage, clear action, small brass details */
 .home-section-label,
 .home-today-victory-kicker,
 .category-group-heading p,
@@ -9932,34 +9940,72 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* SECUNDUS action lock: one burgundy for start / save / inquire / apply */
 .home-today-card-link,
 .home-main-button,
 .backup-primary-button,
 .gym-inquiry-submit,
+.gym-inquiry-button:not(.gym-inquiry-button-secondary),
 .gym-primary-button,
-.sparring-primary {
-  border-color: #8a2e2e;
-  background: #8a2e2e;
-  color: #f5f1e8;
+.gym-listing-cta-button,
+.gym-listing-submit,
+.exchange-match-cta:not(.is-cancel),
+.exchange-compose-button,
+.sparring-primary,
+.sparring-save-button,
+.onboarding-street--setup .onboarding-submit {
+  border-color: var(--p-action, #8a2e2e);
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
   box-shadow: 0 10px 24px rgba(70, 18, 18, 0.22);
+}
+
+.theme-dark .home-today-card-link,
+.theme-dark .home-main-button,
+.theme-dark .backup-primary-button,
+.theme-dark .gym-inquiry-submit,
+.theme-dark .gym-inquiry-button:not(.gym-inquiry-button-secondary),
+.theme-dark .gym-primary-button,
+.theme-dark .gym-listing-cta-button,
+.theme-dark .gym-listing-submit,
+.theme-dark .exchange-match-cta:not(.is-cancel),
+.theme-dark .exchange-compose-button,
+.theme-dark .sparring-primary,
+.theme-dark .sparring-save-button {
+  border-color: var(--p-action, #8a2e2e);
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
 }
 
 .home-today-card-link:hover,
 .home-main-button:hover,
 .backup-primary-button:hover,
 .gym-inquiry-submit:hover,
+.gym-inquiry-button:not(.gym-inquiry-button-secondary):hover,
 .gym-primary-button:hover,
-.sparring-primary:hover {
-  background: #742525;
+.gym-listing-cta-button:hover,
+.gym-listing-submit:hover,
+.exchange-match-cta:not(.is-cancel):hover,
+.exchange-compose-button:hover,
+.sparring-primary:hover,
+.sparring-save-button:hover {
+  background: var(--p-action-hover, #742525);
 }
 
 .home-today-card-link:active,
 .home-main-button:active,
 .backup-primary-button:active,
 .gym-inquiry-submit:active,
+.gym-inquiry-button:not(.gym-inquiry-button-secondary):active,
 .gym-primary-button:active,
-.sparring-primary:active {
-  background: #5f1e1e;
+.gym-listing-cta-button:active,
+.gym-listing-submit:active,
+.exchange-match-cta:not(.is-cancel):active,
+.exchange-compose-button:active,
+.sparring-primary:active,
+.sparring-save-button:active,
+.onboarding-street--setup .onboarding-submit:active {
+  background: var(--p-action-pressed, #5f1e1e);
 }
 
 .home-center-dash-pick.is-selected,

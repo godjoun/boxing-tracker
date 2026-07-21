@@ -1,12 +1,82 @@
 import {
+  fetchApprovedGymListings,
   hasGymListingRemote,
   insertRemoteGymListing,
 } from "../api/gymListingApi";
 import { resolveDojoActorId } from "../api/dojoExchangeApi";
+import { findAreaByQuery, getDistanceKm } from "./gymSearch";
 
 const LISTINGS_KEY = "fitness-league-gym-listings";
 
 export { hasGymListingRemote };
+
+function formatDistance(km) {
+  if (!Number.isFinite(km)) return "입점";
+  if (km < 1) return `${Math.round(km * 1000)}m`;
+  return `${km.toFixed(1)}km`;
+}
+
+/** 입점 신청 → 검색 카드 형태 */
+export function listingToSearchGym(listing, searchLat, searchLon) {
+  if (!listing) return null;
+
+  const area =
+    findAreaByQuery(listing.areaLabel) || findAreaByQuery(listing.address);
+  const lat = area?.lat ?? searchLat;
+  const lon = area?.lon ?? searchLon;
+  const distanceKm = getDistanceKm(searchLat, searchLon, lat, lon);
+  const fullAddress = [listing.address, listing.addressDetail]
+    .filter(Boolean)
+    .join(" ");
+
+  return {
+    id: listing.id,
+    name: listing.gymName,
+    address: fullAddress,
+    lat,
+    lon,
+    phone: listing.phone || "",
+    tags: ["입점", listing.areaLabel].filter(Boolean),
+    dayPassWon: listing.dayPassWon ?? null,
+    monthPassWon: listing.monthPassWon ?? null,
+    rentalHourWon: listing.rentalHourWon ?? null,
+    distanceKm,
+    distanceLabel: area ? formatDistance(distanceKm) : "입점",
+    source: "listing",
+    intro: listing.intro || "",
+  };
+}
+
+export function mergeGymSearchResults(listedGyms, baseGyms) {
+  const listed = Array.isArray(listedGyms) ? listedGyms.filter(Boolean) : [];
+  const base = Array.isArray(baseGyms) ? baseGyms.filter(Boolean) : [];
+  const listedIds = new Set(listed.map((gym) => gym.id));
+  const listedNames = new Set(
+    listed.map((gym) => String(gym.name || "").trim().toLowerCase())
+  );
+
+  const rest = base.filter((gym) => {
+    if (listedIds.has(gym.id)) return false;
+    const name = String(gym.name || "").trim().toLowerCase();
+    return !name || !listedNames.has(name);
+  });
+
+  return [...listed, ...rest].sort((a, b) => {
+    if (a.source === "listing" && b.source !== "listing") return -1;
+    if (b.source === "listing" && a.source !== "listing") return 1;
+    return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
+  });
+}
+
+/** 승인된 입점관을 검색 결과용으로 로드 */
+export async function loadApprovedGymsForSearch(lat, lon) {
+  if (!hasGymListingRemote()) return [];
+
+  const listings = await fetchApprovedGymListings();
+  return listings
+    .map((listing) => listingToSearchGym(listing, lat, lon))
+    .filter(Boolean);
+}
 
 export function validateGymListingForm(form) {
   const gymName = String(form.gymName || "").trim();

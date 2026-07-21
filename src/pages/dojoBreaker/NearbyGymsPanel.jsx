@@ -12,6 +12,10 @@ import {
   searchNearbyGyms,
   suggestAreas,
 } from "../../utils/gymSearch";
+import {
+  loadApprovedGymsForSearch,
+  mergeGymSearchResults,
+} from "../../utils/gymListing";
 import GymResultCard from "./GymResultCard";
 
 export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
@@ -79,13 +83,14 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         return;
       }
 
-      const results = await searchNearbyGyms(
-        currentPosition.lat,
-        currentPosition.lon
-      );
+      const [results, listed] = await Promise.all([
+        searchNearbyGyms(currentPosition.lat, currentPosition.lon),
+        loadApprovedGymsForSearch(currentPosition.lat, currentPosition.lon),
+      ]);
+      const merged = mergeGymSearchResults(listed, results);
 
-      setGyms(results);
-      setStatus(results.length > 0 ? "ready" : "empty");
+      setGyms(merged);
+      setStatus(merged.length > 0 ? "ready" : "empty");
     } catch (loadError) {
       setError(loadError.message || "검색 중 문제가 발생했습니다.");
       setStatus("error");

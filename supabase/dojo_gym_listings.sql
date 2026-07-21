@@ -34,6 +34,13 @@ create policy "Public insert gym listings"
   on public.dojo_gym_listings for insert to anon, authenticated
   with check (true);
 
--- 열람은 대시보드(service). anon select 없음 = 사업자 정보 보호
+-- pending/rejected는 비공개. approved만 검색 노출용으로 읽기
 drop policy if exists "Public read gym listings" on public.dojo_gym_listings;
 drop policy if exists "Public read own gym listings" on public.dojo_gym_listings;
+drop policy if exists "Public read approved gym listings" on public.dojo_gym_listings;
+create policy "Public read approved gym listings"
+  on public.dojo_gym_listings for select to anon, authenticated
+  using (status = 'approved');
+
+-- 승인(운영): Table Editor에서 status를 approved로 바꾸면 됨 (service role)
+-- 예) update public.dojo_gym_listings set status = 'approved' where id = '...';

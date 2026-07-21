@@ -33,6 +33,26 @@ function toWonOrNull(value) {
   return Math.round(n);
 }
 
+function mapListingRow(row) {
+  if (!row?.id) return null;
+  return {
+    id: row.id,
+    gymName: row.gym_name || "",
+    ownerName: row.owner_name || "",
+    phone: row.phone || "",
+    address: row.address || "",
+    addressDetail: row.address_detail || "",
+    intro: row.intro || "",
+    areaLabel: row.area_label || "",
+    dayPassWon: row.day_pass_won ?? null,
+    monthPassWon: row.month_pass_won ?? null,
+    rentalHourWon: row.rental_hour_won ?? null,
+    status: row.status || "pending",
+    createdAt: row.created_at || null,
+    source: "server",
+  };
+}
+
 export async function insertRemoteGymListing(listing) {
   const supabase = getSupabase();
   if (!supabase) return null;
@@ -67,6 +87,33 @@ export async function insertRemoteGymListing(listing) {
     return listing.id;
   } catch (error) {
     if (isRemoteUnavailable(error)) return null;
+    throw error;
+  }
+}
+
+/** 승인된 입점관만 (RLS: status = approved) */
+export async function fetchApprovedGymListings() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from("dojo_gym_listings")
+      .select(
+        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, status, created_at"
+      )
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(80);
+
+    if (error) {
+      if (isRemoteUnavailable(error)) return [];
+      throw error;
+    }
+
+    return (data || []).map(mapListingRow).filter(Boolean);
+  } catch (error) {
+    if (isRemoteUnavailable(error)) return [];
     throw error;
   }
 }

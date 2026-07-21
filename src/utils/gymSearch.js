@@ -316,6 +316,7 @@ export function isGymSearchAvailable() {
 
 export function getGymDataSourceLabel(source) {
   if (source === "server") return "자체 서버";
+  if (source === "listing") return "입점";
   if (source === "local") return "자체 데이터";
   return "자체 데이터";
 }

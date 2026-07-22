@@ -3,8 +3,10 @@ import { track } from "@vercel/analytics";
 import { getGymPassLines } from "../utils/gymPricing";
 import {
   hasGymInquiryRemote,
+  inquiryKindLabel,
   saveGymInquiryAsync,
 } from "../utils/gymInquiry";
+import GymInquiryChatModal from "./GymInquiryChatModal";
 
 const KIND_OPTIONS = [
   {
@@ -59,6 +61,9 @@ export default function GymInquiryModal({
   const [error, setError] = useState("");
   const [isDone, setIsDone] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
+  const [doneInquiry, setDoneInquiry] = useState(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const kindMeta =
@@ -130,6 +135,8 @@ export default function GymInquiryModal({
 
       const result = await saveGymInquiryAsync(payload);
       setSynced(Boolean(result.synced));
+      setSyncMessage(result.syncMessage || "");
+      setDoneInquiry(result.inquiry || null);
       setIsDone(true);
     } catch {
       setError("전송에 실패했습니다. 잠시 후 다시 시도해 주세요.");
@@ -162,13 +169,25 @@ export default function GymInquiryModal({
             <p>
               <strong>{gym.name}</strong> {kindMeta.label} 문의를{" "}
               {synced
-                ? "서버에 저장했습니다. 제휴·운영에서 확인하고 연락드릴 수 있어요."
-                : "이 기기에 기록했습니다. 서버 연결이 안 되면 잠시 후 다시 보내 주세요."}
+                ? "서버에 저장했습니다. 「대화하기」로 관장과 메시지를 주고받을 수 있어요."
+                : "이 기기에만 기록됐습니다."}
             </p>
-            {!synced && remoteReady ? (
+            {!synced ? (
               <p className="gym-inquiry-sync-hint">
-                네트워크·서버 상태를 확인한 뒤 다시 시도해 주세요.
+                {syncMessage ||
+                  (remoteReady
+                    ? "서버 저장에 실패했습니다. dojo_inquiries_insert_fix.sql 실행 후 다시 보내 주세요."
+                    : "서버 연결(VITE_SUPABASE)이 없습니다.")}
               </p>
+            ) : null}
+            {synced && doneInquiry?.id && gym?.source === "listing" ? (
+              <button
+                type="button"
+                className="gym-inquiry-submit"
+                onClick={() => setChatOpen(true)}
+              >
+                대화하기
+              </button>
             ) : null}
             {gym.phone ? (
               <a className="gym-inquiry-call" href={`tel:${gym.phone}`}>
@@ -182,6 +201,15 @@ export default function GymInquiryModal({
             >
               확인
             </button>
+            <GymInquiryChatModal
+              open={chatOpen}
+              onClose={() => setChatOpen(false)}
+              userId={userId}
+              nickname={nickname}
+              inquiryId={doneInquiry?.id}
+              gymName={gym.name}
+              inquiryLabel={inquiryKindLabel(doneInquiry?.kind || kind)}
+            />
           </div>
         ) : (
           <form className="gym-inquiry-form" onSubmit={handleSubmit}>

@@ -5,15 +5,18 @@ import {
   inquiryKindLabel,
   loadOwnerGymInquiries,
 } from "../utils/gymInquiry";
+import GymInquiryChatModal from "./GymInquiryChatModal";
 
 export default function GymInquiryLedgerPanel({
   userId,
+  nickname = "",
   onClose,
   onOpenManage,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [chatItem, setChatItem] = useState(null);
   const remoteReady = hasGymInquiryRemote();
 
   async function refresh() {
@@ -43,8 +46,7 @@ export default function GymInquiryLedgerPanel({
         <p className="gym-listing-kicker">INQUIRY LEDGER</p>
         <h2>받은 문의</h2>
         <p>
-          내가 등록한 체육관으로 온 체험·대여·예약 문의입니다.
-          답장은 연락처로 직접 하면 됩니다.
+          내가 등록한 체육관으로 온 문의입니다. 「대화하기」로 앱에서 답장하세요.
         </p>
       </header>
 
@@ -74,6 +76,12 @@ export default function GymInquiryLedgerPanel({
         </p>
       ) : null}
 
+      {!loading && remoteReady && items.length === 0 && !error ? (
+        <p className="gym-listing-sync-hint">
+          대화까지 쓰려면 <code>dojo_inquiry_chat.sql</code> 도 실행해 주세요.
+        </p>
+      ) : null}
+
       {loading ? (
         <p className="gym-listing-block-note">불러오는 중…</p>
       ) : null}
@@ -84,8 +92,7 @@ export default function GymInquiryLedgerPanel({
         <div className="gym-listing-empty">
           <strong>아직 받은 문의가 없습니다</strong>
           <p>
-            「입점」으로 올라간 내 체육관에 다른 사람이 문의하기를 보내면
-            여기에 쌓입니다. 시드(예시) 체육관 문의는 여기에 안 옵니다.
+            입점한 내 체육관에 다른 사람이 문의하면 여기에 쌓입니다.
           </p>
         </div>
       ) : null}
@@ -112,15 +119,29 @@ export default function GymInquiryLedgerPanel({
             {item.preferredDate ? (
               <p>희망일 {item.preferredDate}</p>
             ) : null}
-            {item.timeSlot ? <p>시간 {item.timeSlot}</p> : null}
-            {item.partySize ? <p>인원 {item.partySize}명</p> : null}
-            {item.hours ? <p>대여 {item.hours}시간</p> : null}
-            {item.experience ? <p>경험 {item.experience}</p> : null}
-            {item.purpose ? <p>목적 {item.purpose}</p> : null}
-            {item.memo ? <p className="gym-inquiry-ledger-memo">{item.memo}</p> : null}
+            {item.memo ? (
+              <p className="gym-inquiry-ledger-memo">{item.memo}</p>
+            ) : null}
+            <button
+              type="button"
+              className="gym-inquiry-button"
+              onClick={() => setChatItem(item)}
+            >
+              대화하기
+            </button>
           </li>
         ))}
       </ul>
+
+      <GymInquiryChatModal
+        open={Boolean(chatItem)}
+        onClose={() => setChatItem(null)}
+        userId={userId}
+        nickname={nickname}
+        inquiryId={chatItem?.id}
+        gymName={chatItem?.gymName || ""}
+        inquiryLabel={inquiryKindLabel(chatItem?.kind)}
+      />
     </section>
   );
 }

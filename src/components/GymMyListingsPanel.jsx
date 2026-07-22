@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import {
   deleteGymListingAsync,
+  hasGymListingRemote,
   listingStatusLabel,
   loadMyGymListings,
+  syncGymListingToServer,
 } from "../utils/gymListing";
 
 export default function GymMyListingsPanel({
@@ -36,6 +38,8 @@ export default function GymMyListingsPanel({
     refresh();
   }, [userId]);
 
+  const remoteReady = hasGymListingRemote();
+
   async function handleDelete(listing) {
     if (!listing?.id || busyId) return;
     const ok = window.confirm(
@@ -56,6 +60,24 @@ export default function GymMyListingsPanel({
     }
   }
 
+  async function handleResync(listing) {
+    if (!listing?.id || busyId) return;
+    setBusyId(listing.id);
+    setError("");
+    try {
+      const result = await syncGymListingToServer(listing);
+      track("gym_listing_resync", { synced: result.synced });
+      if (!result.ok) {
+        setError(result.message || "서버로 보내지 못했습니다.");
+      }
+      await refresh();
+    } catch {
+      setError("서버 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setBusyId("");
+    }
+  }
+
   return (
     <section className="gym-listing-panel" aria-label="내 등록 관리">
       <button type="button" className="gym-listing-back" onClick={onClose}>
@@ -68,6 +90,9 @@ export default function GymMyListingsPanel({
         <p>
           이 기기에서 신청한 체육관을 수정·삭제합니다.
           {nickname ? ` (${nickname})` : ""}
+          {!remoteReady
+            ? " 서버 연결이 없어 지금은 이 기기에만 저장됩니다."
+            : ""}
         </p>
       </header>
 
@@ -99,7 +124,9 @@ export default function GymMyListingsPanel({
       ) : null}
 
       <ul className="gym-my-listing-list">
-        {items.map((item) => (
+        {items.map((item) => {
+          const isLocalOnly = item.synced !== true;
+          return (
           <li key={item.id} className="gym-my-listing-card">
             {item.photoUrl ? (
               <img
@@ -116,13 +143,32 @@ export default function GymMyListingsPanel({
               <div className="gym-my-listing-top">
                 <strong>{item.gymName}</strong>
                 <span
-                  className={`gym-my-listing-status is-${item.status || "pending"}`}
+                  className={`gym-my-listing-status ${
+                    isLocalOnly
+                      ? "is-local"
+                      : `is-${item.status || "pending"}`
+                  }`}
                 >
-                  {listingStatusLabel(item.status)}
+                  {isLocalOnly
+                    ? "이 기기에만"
+                    : listingStatusLabel(item.status)}
                 </span>
               </div>
               <p>{item.address}</p>
+              {isLocalOnly && item.lastSyncError ? (
+                <p className="gym-listing-sync-hint">{item.lastSyncError}</p>
+              ) : null}
               <div className="gym-my-listing-actions">
+                {isLocalOnly && remoteReady ? (
+                  <button
+                    type="button"
+                    className="gym-inquiry-button"
+                    onClick={() => handleResync(item)}
+                    disabled={busyId === item.id}
+                  >
+                    {busyId === item.id ? "전송 중…" : "서버로 다시 보내기"}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="gym-inquiry-button"
@@ -142,7 +188,8 @@ export default function GymMyListingsPanel({
               </div>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </section>
   );

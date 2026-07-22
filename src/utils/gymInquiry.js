@@ -3,6 +3,7 @@ import {
   hasGymInquiryRemote,
   insertRemoteGymInquiry,
 } from "../api/gymInquiryApi";
+import { fetchSentGymInquiries } from "../api/gymInquiryChatApi";
 import { resolveDojoActorId } from "../api/dojoExchangeApi";
 
 const INQUIRIES_KEY = "fitness-league-gym-inquiries";
@@ -72,24 +73,37 @@ function markInquirySynced(id) {
 
 /** 로컬 저장 + 가능하면 서버(리드함)로 전송 */
 export async function saveGymInquiryAsync(inquiry) {
-  const entry = saveGymInquiry(inquiry);
+  const actorId = resolveDojoActorId(inquiry.userId);
+  const entry = saveGymInquiry({
+    ...inquiry,
+    userId: actorId,
+  });
   if (!entry) {
-    return { inquiry: null, synced: false };
+    return { inquiry: null, synced: false, syncMessage: "저장에 실패했습니다." };
   }
 
   if (!hasGymInquiryRemote()) {
-    return { inquiry: entry, synced: false };
+    return {
+      inquiry: entry,
+      synced: false,
+      syncMessage: "서버 설정이 없어 이 기기에만 저장했습니다.",
+    };
   }
 
-  const remoteId = await insertRemoteGymInquiry(entry);
-  if (!remoteId) {
-    return { inquiry: entry, synced: false };
+  const remote = await insertRemoteGymInquiry(entry);
+  if (!remote.id) {
+    return {
+      inquiry: entry,
+      synced: false,
+      syncMessage: remote.errorMessage || "서버 저장에 실패했습니다.",
+    };
   }
 
   markInquirySynced(entry.id);
   return {
     inquiry: { ...entry, synced: true, source: "server" },
     synced: true,
+    syncMessage: "",
   };
 }
 
@@ -109,4 +123,32 @@ export async function loadOwnerGymInquiries(userId) {
   if (!hasGymInquiryRemote()) return [];
   const actorId = resolveDojoActorId(userId);
   return fetchOwnerGymInquiries(actorId);
+}
+
+/** 문의자: 내가 보낸 문의 */
+export async function loadSentGymInquiries(userId) {
+  if (!hasGymInquiryRemote()) return [];
+  const actorId = resolveDojoActorId(userId);
+  const rows = await fetchSentGymInquiries(actorId);
+  return rows
+    .map((row) => ({
+      id: row.id,
+      gymId: row.gym_id || "general",
+      gymName: row.gym_name || "",
+      kind: row.kind || "trial",
+      contact: row.contact || "",
+      preferredDate: row.preferred_date || "",
+      memo: row.memo || "",
+      partySize: row.party_size ?? null,
+      hours: row.hours ?? null,
+      experience: row.experience || "",
+      purpose: row.purpose || "",
+      timeSlot: row.time_slot || "",
+      userId: row.user_id || null,
+      nickname: row.nickname || "",
+      source: row.source || "server",
+      createdAt: row.created_at || null,
+      synced: true,
+    }))
+    .filter((item) => item.id);
 }

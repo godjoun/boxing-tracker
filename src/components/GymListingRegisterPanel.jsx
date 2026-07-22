@@ -68,6 +68,7 @@ export default function GymListingRegisterPanel({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [syncMessage, setSyncMessage] = useState("");
 
   const remoteReady = hasGymListingRemote();
   const title = useMemo(
@@ -162,6 +163,7 @@ export default function GymListingRegisterPanel({
       });
 
       setSynced(Boolean(result.synced));
+      setSyncMessage(result.syncMessage || "");
       setDone(true);
       onSaved?.(result.listing);
     } catch {
@@ -200,9 +202,12 @@ export default function GymListingRegisterPanel({
                 ? "운영에서 확인한 뒤, 검색 목록에 올릴 수 있습니다. 승인이 끝나면 노출됩니다."
                 : "이 기기에 저장했습니다. 서버 연결 후 다시 보내 주시면 장부에 쌓입니다."}
           </p>
-          {!synced && remoteReady ? (
+          {!synced ? (
             <p className="gym-listing-sync-hint">
-              Supabase에서 dojo_gym_listings_manage.sql 실행이 필요할 수 있어요.
+              {syncMessage ||
+                (remoteReady
+                  ? "서버에 안 올라갔습니다. 내 등록 관리에서 「서버로 다시 보내기」를 눌러 보세요."
+                  : "서버 연결(VITE_SUPABASE)이 없습니다.")}
             </p>
           ) : null}
           <button type="button" className="gym-listing-submit" onClick={onClose}>

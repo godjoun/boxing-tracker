@@ -29,7 +29,9 @@ function isRemoteUnavailable(error) {
 
 export async function insertRemoteGymInquiry(inquiry) {
   const supabase = getSupabase();
-  if (!supabase) return null;
+  if (!supabase) {
+    return { id: null, errorMessage: "서버 연결이 없습니다." };
+  }
 
   const kind =
     inquiry.kind === "rental"
@@ -73,35 +75,50 @@ export async function insertRemoteGymInquiry(inquiry) {
     memo: richMemoParts.join(" · "),
   };
 
+  const attempts = [fullPayload, legacyPayload];
+
   try {
-    let { error } = await supabase.from("dojo_gym_inquiries").insert(fullPayload);
-
-    if (error) {
-      const message = String(error.message || "").toLowerCase();
-      const needsLegacy =
-        message.includes("experience") ||
-        message.includes("purpose") ||
-        message.includes("time_slot") ||
-        message.includes("reservation") ||
-        message.includes("check");
-
-      if (needsLegacy) {
-        ({ error } = await supabase
-          .from("dojo_gym_inquiries")
-          .insert(legacyPayload));
+    let lastError = null;
+    for (const payload of attempts) {
+      const { error } = await supabase
+        .from("dojo_gym_inquiries")
+        .insert(payload);
+      if (!error) {
+        return { id: inquiry.id, errorMessage: "" };
       }
+      lastError = error;
+      console.warn("[gymInquiry] insert failed", error.message || error);
     }
 
-    if (error) {
-      if (isRemoteUnavailable(error)) return null;
-      throw error;
-    }
-
-    return inquiry.id;
+    return {
+      id: null,
+      errorMessage: formatInquiryInsertError(lastError),
+    };
   } catch (error) {
-    if (isRemoteUnavailable(error)) return null;
+    if (isRemoteUnavailable(error)) {
+      return {
+        id: null,
+        errorMessage: formatInquiryInsertError(error),
+      };
+    }
     throw error;
   }
+}
+
+function formatInquiryInsertError(error) {
+  const message = String(error?.message || error || "");
+  const lower = message.toLowerCase();
+  if (
+    lower.includes("row-level security") ||
+    lower.includes("42501") ||
+    String(error?.code || "") === "42501"
+  ) {
+    return "서버 권한(RLS) 때문에 문의가 막혔습니다. Supabase에서 dojo_inquiries_insert_fix.sql을 실행해 주세요.";
+  }
+  if (lower.includes("does not exist") || String(error?.code || "") === "42P01") {
+    return "문의 테이블이 없습니다. dojo_inquiries.sql을 먼저 실행해 주세요.";
+  }
+  return message || "서버 저장에 실패했습니다.";
 }
 
 function mapInquiryRow(row) {

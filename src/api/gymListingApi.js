@@ -83,40 +83,80 @@ function toRemotePayload(listing, { includeStatus = false } = {}) {
 
 export async function insertRemoteGymListing(listing) {
   const supabase = getSupabase();
-  if (!supabase) return null;
+  if (!supabase) {
+    return { id: null, errorMessage: "서버 연결이 없습니다." };
+  }
 
   const fullPayload = {
     id: listing.id,
     ...toRemotePayload(listing),
-    status: "pending",
+    status: listing.status || "pending",
     source: "app",
   };
 
-  const legacyPayload = { ...fullPayload };
-  delete legacyPayload.photo_url;
+  const withoutPhoto = { ...fullPayload };
+  delete withoutPhoto.photo_url;
+
+  const minimalPayload = {
+    id: listing.id,
+    gym_name: listing.gymName,
+    owner_name: listing.ownerName || "",
+    phone: listing.phone,
+    address: listing.address,
+    address_detail: listing.addressDetail || "",
+    intro: listing.intro || "",
+    area_label: listing.areaLabel || "",
+    day_pass_won: toWonOrNull(listing.dayPassWon),
+    month_pass_won: toWonOrNull(listing.monthPassWon),
+    rental_hour_won: toWonOrNull(listing.rentalHourWon),
+    applicant_actor_id: listing.applicantActorId || null,
+    applicant_nickname: listing.applicantNickname || "",
+    status: listing.status || "pending",
+    source: "app",
+  };
+
+  const attempts = [fullPayload, withoutPhoto, minimalPayload];
 
   try {
-    let { error } = await supabase.from("dojo_gym_listings").insert(fullPayload);
-
-    if (error) {
-      const message = String(error.message || "").toLowerCase();
-      if (message.includes("photo_url") || message.includes("is_featured")) {
-        ({ error } = await supabase
-          .from("dojo_gym_listings")
-          .insert(legacyPayload));
+    let lastError = null;
+    for (const payload of attempts) {
+      const { error } = await supabase.from("dojo_gym_listings").insert(payload);
+      if (!error) {
+        return { id: listing.id, errorMessage: "" };
       }
+      lastError = error;
+      console.warn("[gymListing] insert failed", error.message || error);
     }
 
-    if (error) {
-      if (isRemoteUnavailable(error)) return null;
-      throw error;
-    }
-
-    return listing.id;
+    return {
+      id: null,
+      errorMessage: formatInsertError(lastError),
+    };
   } catch (error) {
-    if (isRemoteUnavailable(error)) return null;
+    if (isRemoteUnavailable(error)) {
+      return {
+        id: null,
+        errorMessage: formatInsertError(error),
+      };
+    }
     throw error;
   }
+}
+
+function formatInsertError(error) {
+  const message = String(error?.message || error || "");
+  const lower = message.toLowerCase();
+  if (
+    lower.includes("row-level security") ||
+    lower.includes("42501") ||
+    String(error?.code || "") === "42501"
+  ) {
+    return "서버 권한(RLS) 때문에 저장이 막혔습니다. Supabase에서 dojo_gym_listings_insert_fix.sql을 실행해 주세요.";
+  }
+  if (lower.includes("does not exist") || String(error?.code || "") === "42P01") {
+    return "dojo_gym_listings 테이블이 없습니다. dojo_gym_listings.sql을 먼저 실행해 주세요.";
+  }
+  return message || "서버 저장에 실패했습니다.";
 }
 
 export async function updateRemoteGymListing(listing) {

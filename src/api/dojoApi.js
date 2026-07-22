@@ -1,4 +1,4 @@
-import { LOCAL_GYMS, LOCAL_SPARRING_PARTNERS } from "../data/localDojoData";
+import { LOCAL_SPARRING_PARTNERS } from "../data/localDojoData";
 import { normalizeWeightClass } from "../data/proBoxingWeightClasses";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "";
@@ -31,22 +31,9 @@ function withDistance(items, lat, lon, mapper) {
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
-function searchLocalGyms(lat, lon, radiusKm = 12) {
-  return withDistance(LOCAL_GYMS, lat, lon, (gym, distanceKm) => ({
-    id: gym.id,
-    name: gym.name,
-    address: gym.address,
-    lat: gym.lat,
-    lon: gym.lon,
-    phone: gym.phone || "",
-    tags: gym.tags || [],
-    dayPassWon: gym.dayPassWon ?? null,
-    monthPassWon: gym.monthPassWon ?? null,
-    rentalHourWon: gym.rentalHourWon ?? null,
-    distanceKm,
-    distanceLabel: formatDistance(distanceKm),
-    source: "local",
-  })).filter((gym) => gym.distanceKm <= radiusKm);
+function searchLocalGyms(_lat, _lon, _radiusKm = 12) {
+  // 시드(예시) 체육관은 운영 목록에서 제외. 입점(approved)만 NearbyGymsPanel에서 합침.
+  return [];
 }
 
 function searchLocalPartners(lat, lon, filter = {}, radiusKm = 15) {

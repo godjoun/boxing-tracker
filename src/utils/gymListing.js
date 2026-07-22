@@ -55,7 +55,14 @@ export function listingToSearchGym(listing, searchLat, searchLon) {
     distanceLabel: area ? formatDistance(distanceKm) : "입점",
     source: "listing",
     intro: listing.intro || "",
+    applicantActorId: listing.applicantActorId || null,
   };
+}
+
+/** 검색 카드가 내가 등록한 관인지 */
+export function isOwnListedGym(gym, userId) {
+  if (!gym?.applicantActorId) return false;
+  return gym.applicantActorId === resolveDojoActorId(userId);
 }
 
 export function mergeGymSearchResults(listedGyms, baseGyms) {
@@ -186,7 +193,14 @@ function markLocalSynced(id) {
   const current = readLocalGymListings();
   writeLocalListings(
     current.map((item) =>
-      item.id === id ? { ...item, synced: true, source: "server" } : item
+      item.id === id
+        ? {
+            ...item,
+            synced: true,
+            source: "server",
+            lastSyncError: "",
+          }
+        : item
     )
   );
 }
@@ -326,20 +340,70 @@ export async function submitGymListingAsync(
   saveLocalListing(entry);
 
   if (!hasGymListingRemote()) {
-    return { ok: true, synced: false, listing: entry };
+    const syncMessage = "서버 설정이 없어 이 기기에만 저장했습니다.";
+    saveLocalListing({ ...entry, lastSyncError: syncMessage });
+    return {
+      ok: true,
+      synced: false,
+      listing: { ...entry, lastSyncError: syncMessage },
+      syncMessage,
+    };
   }
 
-  const remoteId = await insertRemoteGymListing(entry);
-  if (!remoteId) {
-    return { ok: true, synced: false, listing: entry };
+  const remote = await insertRemoteGymListing(entry);
+  if (!remote.id) {
+    const syncMessage = remote.errorMessage || "서버 저장에 실패했습니다.";
+    const failed = { ...entry, lastSyncError: syncMessage };
+    saveLocalListing(failed);
+    return {
+      ok: true,
+      synced: false,
+      listing: failed,
+      syncMessage,
+    };
   }
 
   markLocalSynced(entry.id);
   return {
     ok: true,
     synced: true,
-    listing: { ...entry, synced: true, source: "server" },
+    listing: { ...entry, synced: true, source: "server", lastSyncError: "" },
+    syncMessage: "",
   };
+}
+
+/** 로컬에만 있는 입점을 서버로 다시 보내기 */
+export async function syncGymListingToServer(listing) {
+  if (!listing?.id) {
+    return { ok: false, synced: false, message: "잘못된 등록입니다." };
+  }
+  if (!hasGymListingRemote()) {
+    return { ok: false, synced: false, message: "서버 연결이 없습니다." };
+  }
+
+  const remote = await insertRemoteGymListing({
+    ...listing,
+    status: listing.status || "pending",
+  });
+
+  if (!remote.id) {
+    // 이미 서버에 있을 수도 있음 → update 시도
+    const updated = await updateRemoteGymListing(listing);
+    if (updated) {
+      markLocalSynced(listing.id);
+      return { ok: true, synced: true, message: "" };
+    }
+    const message = remote.errorMessage || "서버 저장에 실패했습니다.";
+    saveLocalListing({ ...listing, synced: false, lastSyncError: message });
+    return {
+      ok: false,
+      synced: false,
+      message,
+    };
+  }
+
+  markLocalSynced(listing.id);
+  return { ok: true, synced: true, message: "" };
 }
 
 /** 내 등록 수정 */

@@ -1,12 +1,38 @@
 import { getGymPassLines } from "../../utils/gymPricing";
 
-export default function GymResultCard({ gym, index, onInquire, featured = false }) {
+export default function GymResultCard({
+  gym,
+  index,
+  onOpen,
+  onInquire,
+  featured = false,
+  isOwn = false,
+}) {
   const passes = getGymPassLines(gym);
   const isFeatured = featured || Boolean(gym.featured);
 
+  function handleCardActivate() {
+    onOpen?.(gym);
+  }
+
   return (
     <article
-      className={`gym-result-card${isFeatured ? " is-featured" : ""}`}
+      className={`gym-result-card${isFeatured ? " is-featured" : ""}${
+        onOpen ? " is-tappable" : ""
+      }`}
+      onClick={onOpen ? handleCardActivate : undefined}
+      onKeyDown={
+        onOpen
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleCardActivate();
+              }
+            }
+          : undefined
+      }
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
     >
       <div className="gym-result-rank">
         {isFeatured ? "추천" : String(index + 1).padStart(2, "0")}
@@ -21,7 +47,11 @@ export default function GymResultCard({ gym, index, onInquire, featured = false 
               alt=""
               loading="lazy"
             />
-          ) : null}
+          ) : (
+            <div className="gym-result-photo is-empty" aria-hidden="true">
+              GYM
+            </div>
+          )}
           <div className="gym-result-top">
             <strong>{gym.name}</strong>
             <span className="gym-result-distance">{gym.distanceLabel}</span>
@@ -30,13 +60,20 @@ export default function GymResultCard({ gym, index, onInquire, featured = false 
           {gym.tags?.length > 0 ? (
             <p className="gym-result-category">{gym.tags.join(" · ")}</p>
           ) : null}
-          <button
-            type="button"
-            className="gym-inquiry-button"
-            onClick={() => onInquire?.(gym)}
-          >
-            문의하기
-          </button>
+          {isOwn ? (
+            <p className="gym-result-own-hint">내 등록 · 문의 대상 아님</p>
+          ) : (
+            <button
+              type="button"
+              className="gym-inquiry-button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onInquire?.(gym);
+              }}
+            >
+              문의하기
+            </button>
+          )}
         </div>
 
         <aside className="gym-result-passes" aria-label="이용권 가격">

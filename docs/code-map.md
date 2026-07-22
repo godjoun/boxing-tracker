@@ -7,7 +7,8 @@
 | 교류 | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
 | 채팅 SQL | `supabase/dojo_chat.sql` |
 | 체육관 검색·카드 | `NearbyGymsPanel.jsx` · `GymResultCard.jsx` · `utils/gymPricing.js` |
-| 문의 | `GymInquiryModal.jsx` · `GymInquiryLedgerPanel.jsx` · `utils/gymInquiry.js` · `api/gymInquiryApi.js` |
+| 관 상세 | `GymDetailPanel.jsx` · `docs/dojo-ui.md` |
+| 문의 | `GymInquiryModal.jsx` · `GymInquiryLedgerPanel.jsx` · `GymSentInquiriesPanel.jsx` · `GymInquiryChatModal.jsx` · `utils/gymInquiry.js` · `api/gymInquiryApi.js` · `api/gymInquiryChatApi.js` |
 | 문의 SQL | `dojo_inquiries.sql` · 장부 `dojo_inquiries_ledger.sql` |
 | 입점 등록 | `GymListingRegisterPanel.jsx` · `GymMyListingsPanel.jsx` · `utils/gymListing.js` · `api/gymListingApi.js` |
 | 입점 SQL | `dojo_gym_listings.sql` · 승인 `*_approved_read.sql` · 관리 `*_manage.sql` · 추천 `*_featured.sql` |

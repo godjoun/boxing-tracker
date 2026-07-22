@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import {
   hasGymListingRemote,
@@ -56,6 +56,9 @@ export default function GymListingRegisterPanel({
   onSaved,
 }) {
   const isEdit = Boolean(initialListing?.id);
+  const galleryInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const previewObjectUrlRef = useRef("");
   const [form, setForm] = useState(() => listingToForm(initialListing));
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(
@@ -72,17 +75,56 @@ export default function GymListingRegisterPanel({
     [isEdit]
   );
 
+  useEffect(() => {
+    return () => {
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+      }
+    };
+  }, []);
+
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function applyPhotoFile(file) {
+    if (!file) return;
+    if (!file.type?.startsWith("image/")) {
+      setError("이미지 파일만 올릴 수 있습니다.");
+      return;
+    }
+
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = "";
+    }
+
+    const url = URL.createObjectURL(file);
+    previewObjectUrlRef.current = url;
+    setPhotoFile(file);
+    setPhotoPreview(url);
+    setError("");
+  }
+
   function handlePhotoChange(event) {
     const file = event.target.files?.[0] || null;
-    setPhotoFile(file);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPhotoPreview(url);
+    applyPhotoFile(file);
+    event.target.value = "";
+  }
+
+  function clearPhoto() {
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = "";
     }
+    setPhotoFile(null);
+    setPhotoPreview("");
+    setForm((current) => ({
+      ...current,
+      photoUrl: "",
+    }));
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   }
 
   async function handleSubmit(event) {
@@ -191,23 +233,66 @@ export default function GymListingRegisterPanel({
         <fieldset className="gym-listing-block">
           <legend>사진</legend>
           <p className="gym-listing-block-note">
-            대표 사진 1장 (선택). 올리면 검색 카드에 보입니다.
+            대표 사진 1장 (선택). 앨범에서 고르거나 카메라로 찍을 수 있습니다.
           </p>
+
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoChange}
+            className="gym-listing-file-input"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoChange}
+            className="gym-listing-file-input"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
+
           {photoPreview ? (
             <img
               className="gym-listing-photo-preview"
               src={photoPreview}
               alt="체육관 미리보기"
             />
-          ) : null}
-          <label className="gym-inquiry-field">
-            <span>이미지 파일</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-            />
-          </label>
+          ) : (
+            <div className="gym-listing-photo-empty" aria-hidden="true">
+              사진을 추가하면 검색 카드에 보입니다
+            </div>
+          )}
+
+          <div className="gym-listing-photo-actions">
+            <button
+              type="button"
+              className="gym-listing-photo-button"
+              onClick={() => galleryInputRef.current?.click()}
+            >
+              사진에서 선택
+            </button>
+            <button
+              type="button"
+              className="gym-listing-photo-button is-camera"
+              onClick={() => cameraInputRef.current?.click()}
+            >
+              카메라로 촬영
+            </button>
+            {photoPreview ? (
+              <button
+                type="button"
+                className="gym-listing-photo-button is-clear"
+                onClick={clearPhoto}
+              >
+                사진 지우기
+              </button>
+            ) : null}
+          </div>
         </fieldset>
 
         <fieldset className="gym-listing-block">

@@ -339,14 +339,14 @@ export async function updateGymListingAsync(
   }
 
   const actorId = resolveDojoActorId(userId);
-  let photoUrl = checked.payload.photoUrl || existing?.photoUrl || "";
+  let photoUrl = String(checked.payload.photoUrl || "");
 
   if (photoFile && hasGymListingRemote()) {
     try {
       const url = await uploadListingPhotoAsync(photoFile, listingId);
       if (url) photoUrl = url;
     } catch {
-      // keep previous
+      // keep previous form value
     }
   }
 

@@ -17,6 +17,7 @@ import {
 import {
   loadApprovedGymsForSearch,
   mergeGymSearchResults,
+  splitFeaturedGyms,
 } from "../../utils/gymListing";
 import GymResultCard from "./GymResultCard";
 
@@ -216,7 +217,10 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         <div className="gym-listing-cta-copy">
           <p className="gym-listing-kicker">FOR GYMS</p>
           <strong>관을 운영 중이신가요?</strong>
-          <p>이름·주소·가격·사진을 올리고, 복서의 문의를 받습니다.</p>
+          <p>
+            이름·주소·가격·사진을 올리고, 복서의 문의를 받습니다. 승인 후
+            검색·추천 노출로 이어집니다.
+          </p>
         </div>
         <div className="gym-listing-cta-actions">
           <button
@@ -342,14 +346,42 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
 
       {status === "ready" ? (
         <div className="gym-result-list">
-          {gyms.map((gym, index) => (
-            <GymResultCard
-              key={gym.id}
-              gym={gym}
-              index={index}
-              onInquire={openInquiry}
-            />
-          ))}
+          {(() => {
+            const { featured, rest } = splitFeaturedGyms(gyms);
+            return (
+              <>
+                {featured.length > 0 ? (
+                  <section
+                    className="gym-featured-slot"
+                    aria-label="추천 체육관"
+                  >
+                    <div className="gym-featured-slot-head">
+                      <p className="gym-listing-kicker">FEATURED</p>
+                      <strong>추천</strong>
+                      <span>관이 올리는 노출 자리</span>
+                    </div>
+                    {featured.map((gym, index) => (
+                      <GymResultCard
+                        key={gym.id}
+                        gym={gym}
+                        index={index}
+                        featured
+                        onInquire={openInquiry}
+                      />
+                    ))}
+                  </section>
+                ) : null}
+                {rest.map((gym, index) => (
+                  <GymResultCard
+                    key={gym.id}
+                    gym={gym}
+                    index={featured.length + index}
+                    onInquire={openInquiry}
+                  />
+                ))}
+              </>
+            );
+          })()}
         </div>
       ) : null}
 

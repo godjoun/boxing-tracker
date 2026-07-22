@@ -49,6 +49,7 @@ function mapListingRow(row) {
     monthPassWon: row.month_pass_won ?? null,
     rentalHourWon: row.rental_hour_won ?? null,
     photoUrl: row.photo_url || "",
+    isFeatured: Boolean(row.is_featured),
     status: row.status || "pending",
     createdAt: row.created_at || null,
     applicantActorId: row.applicant_actor_id || null,
@@ -158,14 +159,29 @@ export async function fetchApprovedGymListings() {
   if (!supabase) return [];
 
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("dojo_gym_listings")
       .select(
-        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, photo_url, status, created_at, applicant_actor_id, applicant_nickname"
+        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, photo_url, is_featured, status, created_at, applicant_actor_id, applicant_nickname"
       )
       .eq("status", "approved")
+      .order("is_featured", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(80);
+
+    if (error) {
+      const message = String(error.message || "").toLowerCase();
+      if (message.includes("is_featured")) {
+        ({ data, error } = await supabase
+          .from("dojo_gym_listings")
+          .select(
+            "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, photo_url, status, created_at, applicant_actor_id, applicant_nickname"
+          )
+          .eq("status", "approved")
+          .order("created_at", { ascending: false })
+          .limit(80));
+      }
+    }
 
     if (error) {
       if (isRemoteUnavailable(error)) return [];

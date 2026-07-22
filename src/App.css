@@ -3273,6 +3273,46 @@
   color: var(--p-text);
 }
 
+.gym-featured-slot {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.gym-featured-slot-head {
+  display: grid;
+  gap: 2px;
+  padding: 0 2px;
+}
+
+.gym-featured-slot-head strong {
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.gym-featured-slot-head span {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gym-result-card.is-featured {
+  border-color: rgba(138, 46, 46, 0.55);
+  background: linear-gradient(
+    160deg,
+    rgba(138, 46, 46, 0.18),
+    rgba(26, 18, 20, 0.96) 55%
+  );
+  box-shadow: 0 10px 24px rgba(70, 18, 18, 0.18);
+}
+
+.gym-result-card.is-featured .gym-result-rank {
+  color: #e8b4b4;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
 .gym-result-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

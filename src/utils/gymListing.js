@@ -33,6 +33,11 @@ export function listingToSearchGym(listing, searchLat, searchLon) {
     .filter(Boolean)
     .join(" ");
 
+  const tags = [];
+  if (listing.isFeatured) tags.push("추천");
+  tags.push("입점");
+  if (listing.areaLabel) tags.push(listing.areaLabel);
+
   return {
     id: listing.id,
     name: listing.gymName,
@@ -41,7 +46,8 @@ export function listingToSearchGym(listing, searchLat, searchLon) {
     lon,
     phone: listing.phone || "",
     photoUrl: listing.photoUrl || "",
-    tags: ["입점", listing.areaLabel].filter(Boolean),
+    tags,
+    featured: Boolean(listing.isFeatured),
     dayPassWon: listing.dayPassWon ?? null,
     monthPassWon: listing.monthPassWon ?? null,
     rentalHourWon: listing.rentalHourWon ?? null,
@@ -67,10 +73,19 @@ export function mergeGymSearchResults(listedGyms, baseGyms) {
   });
 
   return [...listed, ...rest].sort((a, b) => {
+    if (a.featured && !b.featured) return -1;
+    if (b.featured && !a.featured) return 1;
     if (a.source === "listing" && b.source !== "listing") return -1;
     if (b.source === "listing" && a.source !== "listing") return 1;
     return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
   });
+}
+
+export function splitFeaturedGyms(gyms) {
+  const list = Array.isArray(gyms) ? gyms : [];
+  const featured = list.filter((gym) => gym.featured);
+  const rest = list.filter((gym) => !gym.featured);
+  return { featured, rest };
 }
 
 /** 승인된 입점관을 검색 결과용으로 로드 */

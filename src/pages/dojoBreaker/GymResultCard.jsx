@@ -1,12 +1,15 @@
 import { getGymPassLines } from "../../utils/gymPricing";
 
-export default function GymResultCard({ gym, index, onInquire }) {
+export default function GymResultCard({ gym, index, onInquire, featured = false }) {
   const passes = getGymPassLines(gym);
+  const isFeatured = featured || Boolean(gym.featured);
 
   return (
-    <article className="gym-result-card">
+    <article
+      className={`gym-result-card${isFeatured ? " is-featured" : ""}`}
+    >
       <div className="gym-result-rank">
-        {String(index + 1).padStart(2, "0")}
+        {isFeatured ? "추천" : String(index + 1).padStart(2, "0")}
       </div>
 
       <div className="gym-result-body">

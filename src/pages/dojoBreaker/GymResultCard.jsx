@@ -11,6 +11,14 @@ export default function GymResultCard({ gym, index, onInquire }) {
 
       <div className="gym-result-body">
         <div className="gym-result-main">
+          {gym.photoUrl ? (
+            <img
+              className="gym-result-photo"
+              src={gym.photoUrl}
+              alt=""
+              loading="lazy"
+            />
+          ) : null}
           <div className="gym-result-top">
             <strong>{gym.name}</strong>
             <span className="gym-result-distance">{gym.distanceLabel}</span>

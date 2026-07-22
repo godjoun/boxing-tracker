@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import GymInquiryModal from "../../components/GymInquiryModal";
 import GymListingRegisterPanel from "../../components/GymListingRegisterPanel";
+import GymMyListingsPanel from "../../components/GymMyListingsPanel";
 import { useTraining } from "../../store/TrainingContext";
 import {
   getGymDataSourceLabel,
@@ -26,7 +27,8 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   const [position, setPosition] = useState(null);
   const [locationHint, setLocationHint] = useState("");
   const [inquiryGym, setInquiryGym] = useState(null);
-  const [registerOpen, setRegisterOpen] = useState(false);
+  const [listingMode, setListingMode] = useState(null);
+  const [editingListing, setEditingListing] = useState(null);
   const [activePreset, setActivePreset] = useState(null);
   const [regionQuery, setRegionQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -38,7 +40,18 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
 
   function openRegister() {
     track("gym_listing_open");
-    setRegisterOpen(true);
+    setEditingListing(null);
+    setListingMode("register");
+  }
+
+  function openManage() {
+    track("gym_listing_manage_open");
+    setListingMode("manage");
+  }
+
+  function closeListingPanels() {
+    setListingMode(null);
+    setEditingListing(null);
   }
 
   async function loadGyms(options = {}) {
@@ -119,12 +132,44 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
     loadGyms({ preferGps: true, allowFallback: true });
   }, []);
 
-  if (registerOpen) {
+  if (listingMode === "manage") {
+    return (
+      <GymMyListingsPanel
+        userId={userId}
+        nickname={profile?.nickname || ""}
+        onClose={closeListingPanels}
+        onCreate={openRegister}
+        onEdit={(listing) => {
+          setEditingListing(listing);
+          setListingMode("register");
+        }}
+      />
+    );
+  }
+
+  if (listingMode === "register") {
     return (
       <GymListingRegisterPanel
         userId={userId}
         nickname={profile?.nickname || ""}
-        onClose={() => setRegisterOpen(false)}
+        initialListing={editingListing}
+        onClose={() => {
+          if (editingListing) {
+            setEditingListing(null);
+            setListingMode("manage");
+            return;
+          }
+          closeListingPanels();
+        }}
+        onSaved={() => {
+          if (position) {
+            loadGyms({
+              preferGps: position.source === "gps",
+              query: position.source === "search" ? regionQuery : null,
+              preset: activePreset,
+            });
+          }
+        }}
       />
     );
   }
@@ -154,11 +199,24 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         <div className="gym-listing-cta-copy">
           <p className="gym-listing-kicker">FOR GYMS</p>
           <strong>관을 운영 중이신가요?</strong>
-          <p>이름·주소·가격을 올리고, 복서의 문의를 받습니다.</p>
+          <p>이름·주소·가격·사진을 올리고, 복서의 문의를 받습니다.</p>
         </div>
-        <button type="button" className="gym-listing-cta-button" onClick={openRegister}>
-          내 체육관 등록
-        </button>
+        <div className="gym-listing-cta-actions">
+          <button
+            type="button"
+            className="gym-listing-cta-button"
+            onClick={openRegister}
+          >
+            내 체육관 등록
+          </button>
+          <button
+            type="button"
+            className="gym-listing-manage-button"
+            onClick={openManage}
+          >
+            내 등록 관리
+          </button>
+        </div>
       </aside>
 
       <form className="gym-region-search" onSubmit={handleRegionSubmit}>

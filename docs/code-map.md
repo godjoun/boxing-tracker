@@ -9,8 +9,8 @@
 | 체육관 검색·카드 | `NearbyGymsPanel.jsx` · `GymResultCard.jsx` · `utils/gymPricing.js` |
 | 문의 | `GymInquiryModal.jsx` · `utils/gymInquiry.js` · `api/gymInquiryApi.js` |
 | 문의 SQL | `supabase/dojo_inquiries.sql` |
-| 입점 등록 | `GymListingRegisterPanel.jsx` · `utils/gymListing.js` · `api/gymListingApi.js` |
-| 입점 SQL | `supabase/dojo_gym_listings.sql` · 승인 읽기만 `dojo_gym_listings_approved_read.sql` |
+| 입점 등록 | `GymListingRegisterPanel.jsx` · `GymMyListingsPanel.jsx` · `utils/gymListing.js` · `api/gymListingApi.js` |
+| 입점 SQL | `dojo_gym_listings.sql` · 승인 읽기 `*_approved_read.sql` · 관리 `*_manage.sql` |
 | 라이벌 | `SparringPartnerPanel.jsx` · `SparringPartnerCard.jsx` |
 | 시드 | `src/data/localDojoData.js` |
 | API 자리 | `src/api/dojoApi.js` · 교류 `src/api/dojoExchangeApi.js` |

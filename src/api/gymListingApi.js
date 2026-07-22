@@ -22,7 +22,8 @@ function isRemoteUnavailable(error) {
     message.includes("does not exist") ||
     message.includes("failed to fetch") ||
     message.includes("network") ||
-    message.includes("dojo_gym_listings")
+    message.includes("dojo_gym_listings") ||
+    message.includes("list_my_dojo_gym_listings")
   );
 }
 
@@ -47,18 +48,18 @@ function mapListingRow(row) {
     dayPassWon: row.day_pass_won ?? null,
     monthPassWon: row.month_pass_won ?? null,
     rentalHourWon: row.rental_hour_won ?? null,
+    photoUrl: row.photo_url || "",
     status: row.status || "pending",
     createdAt: row.created_at || null,
+    applicantActorId: row.applicant_actor_id || null,
+    applicantNickname: row.applicant_nickname || "",
     source: "server",
+    synced: true,
   };
 }
 
-export async function insertRemoteGymListing(listing) {
-  const supabase = getSupabase();
-  if (!supabase) return null;
-
+function toRemotePayload(listing, { includeStatus = false } = {}) {
   const payload = {
-    id: listing.id,
     gym_name: listing.gymName,
     owner_name: listing.ownerName || "",
     phone: listing.phone,
@@ -69,14 +70,28 @@ export async function insertRemoteGymListing(listing) {
     day_pass_won: toWonOrNull(listing.dayPassWon),
     month_pass_won: toWonOrNull(listing.monthPassWon),
     rental_hour_won: toWonOrNull(listing.rentalHourWon),
+    photo_url: listing.photoUrl || "",
     applicant_actor_id: listing.applicantActorId || null,
     applicant_nickname: listing.applicantNickname || "",
+  };
+  if (includeStatus) {
+    payload.status = listing.status || "pending";
+  }
+  return payload;
+}
+
+export async function insertRemoteGymListing(listing) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+
+  const payload = {
+    id: listing.id,
+    ...toRemotePayload(listing),
     status: "pending",
     source: "app",
   };
 
   try {
-    // select 없이 insert — anon에 select RLS가 없어도 성공 판정
     const { error } = await supabase.from("dojo_gym_listings").insert(payload);
 
     if (error) {
@@ -91,6 +106,52 @@ export async function insertRemoteGymListing(listing) {
   }
 }
 
+export async function updateRemoteGymListing(listing) {
+  const supabase = getSupabase();
+  if (!supabase || !listing?.id || !listing?.applicantActorId) return false;
+
+  try {
+    const { error } = await supabase
+      .from("dojo_gym_listings")
+      .update(toRemotePayload(listing))
+      .eq("id", listing.id)
+      .eq("applicant_actor_id", listing.applicantActorId);
+
+    if (error) {
+      if (isRemoteUnavailable(error)) return false;
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    if (isRemoteUnavailable(error)) return false;
+    throw error;
+  }
+}
+
+export async function deleteRemoteGymListing(id, actorId) {
+  const supabase = getSupabase();
+  if (!supabase || !id || !actorId) return false;
+
+  try {
+    const { error } = await supabase
+      .from("dojo_gym_listings")
+      .delete()
+      .eq("id", id)
+      .eq("applicant_actor_id", actorId);
+
+    if (error) {
+      if (isRemoteUnavailable(error)) return false;
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    if (isRemoteUnavailable(error)) return false;
+    throw error;
+  }
+}
+
 /** 승인된 입점관만 (RLS: status = approved) */
 export async function fetchApprovedGymListings() {
   const supabase = getSupabase();
@@ -100,7 +161,7 @@ export async function fetchApprovedGymListings() {
     const { data, error } = await supabase
       .from("dojo_gym_listings")
       .select(
-        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, status, created_at"
+        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, photo_url, status, created_at, applicant_actor_id, applicant_nickname"
       )
       .eq("status", "approved")
       .order("created_at", { ascending: false })
@@ -114,6 +175,63 @@ export async function fetchApprovedGymListings() {
     return (data || []).map(mapListingRow).filter(Boolean);
   } catch (error) {
     if (isRemoteUnavailable(error)) return [];
+    throw error;
+  }
+}
+
+/** 내 신청 (pending 포함) — RPC */
+export async function fetchMyGymListings(actorId) {
+  const supabase = getSupabase();
+  if (!supabase || !actorId) return [];
+
+  try {
+    const { data, error } = await supabase.rpc("list_my_dojo_gym_listings", {
+      p_actor_id: actorId,
+    });
+
+    if (error) {
+      if (isRemoteUnavailable(error)) return [];
+      throw error;
+    }
+
+    return (data || []).map(mapListingRow).filter(Boolean);
+  } catch (error) {
+    if (isRemoteUnavailable(error)) return [];
+    throw error;
+  }
+}
+
+/** 체육관 사진 → Storage public URL */
+export async function uploadGymListingPhoto(file, listingId) {
+  const supabase = getSupabase();
+  if (!supabase || !file || !listingId) return null;
+
+  const ext =
+    (file.type || "").includes("png")
+      ? "png"
+      : (file.type || "").includes("webp")
+        ? "webp"
+        : "jpg";
+  const path = `${listingId}/${Date.now()}.${ext}`;
+
+  try {
+    const { error } = await supabase.storage
+      .from("gym-photos")
+      .upload(path, file, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: file.type || "image/jpeg",
+      });
+
+    if (error) {
+      if (isRemoteUnavailable(error)) return null;
+      throw error;
+    }
+
+    const { data } = supabase.storage.from("gym-photos").getPublicUrl(path);
+    return data?.publicUrl || null;
+  } catch (error) {
+    if (isRemoteUnavailable(error)) return null;
     throw error;
   }
 }

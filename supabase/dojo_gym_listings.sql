@@ -13,6 +13,7 @@ create table if not exists public.dojo_gym_listings (
   day_pass_won integer check (day_pass_won is null or day_pass_won >= 0),
   month_pass_won integer check (month_pass_won is null or month_pass_won >= 0),
   rental_hour_won integer check (rental_hour_won is null or rental_hour_won >= 0),
+  photo_url text not null default '',
   applicant_actor_id text,
   applicant_nickname text not null default '',
   status text not null default 'pending'

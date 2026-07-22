@@ -1,7 +1,11 @@
 import {
+  deleteRemoteGymListing,
   fetchApprovedGymListings,
+  fetchMyGymListings,
   hasGymListingRemote,
   insertRemoteGymListing,
+  updateRemoteGymListing,
+  uploadGymListingPhoto,
 } from "../api/gymListingApi";
 import { resolveDojoActorId } from "../api/dojoExchangeApi";
 import { findAreaByQuery, getDistanceKm } from "./gymSearch";
@@ -36,6 +40,7 @@ export function listingToSearchGym(listing, searchLat, searchLon) {
     lat,
     lon,
     phone: listing.phone || "",
+    photoUrl: listing.photoUrl || "",
     tags: ["입점", listing.areaLabel].filter(Boolean),
     dayPassWon: listing.dayPassWon ?? null,
     monthPassWon: listing.monthPassWon ?? null,
@@ -86,6 +91,7 @@ export function validateGymListingForm(form) {
   const addressDetail = String(form.addressDetail || "").trim();
   const intro = String(form.intro || "").trim();
   const areaLabel = String(form.areaLabel || "").trim();
+  const photoUrl = String(form.photoUrl || "").trim();
 
   if (gymName.length < 2) {
     return { ok: false, message: "체육관 이름을 2자 이상 입력해 주세요." };
@@ -107,7 +113,9 @@ export function validateGymListingForm(form) {
   }
 
   const parseOptionalWon = (value, label) => {
-    if (value === "" || value === null || value === undefined) return { ok: true, value: null };
+    if (value === "" || value === null || value === undefined) {
+      return { ok: true, value: null };
+    }
     const n = Number(String(value).replace(/,/g, ""));
     if (!Number.isFinite(n) || n < 0) {
       return { ok: false, message: `${label}은 0 이상 숫자로 입력해 주세요.` };
@@ -132,6 +140,7 @@ export function validateGymListingForm(form) {
       addressDetail,
       intro,
       areaLabel,
+      photoUrl,
       dayPassWon: day.value,
       monthPassWon: month.value,
       rentalHourWon: rental.value,
@@ -139,34 +148,32 @@ export function validateGymListingForm(form) {
   };
 }
 
-function saveLocalListing(entry) {
-  if (typeof localStorage === "undefined") return entry;
+function writeLocalListings(list) {
+  if (typeof localStorage === "undefined") return;
   try {
-    const current = JSON.parse(localStorage.getItem(LISTINGS_KEY) || "[]");
-    const next = [entry, ...(Array.isArray(current) ? current : [])].slice(0, 20);
-    localStorage.setItem(LISTINGS_KEY, JSON.stringify(next));
+    localStorage.setItem(LISTINGS_KEY, JSON.stringify(list.slice(0, 20)));
   } catch {
-    localStorage.setItem(LISTINGS_KEY, JSON.stringify([entry]));
+    // ignore
   }
+}
+
+function saveLocalListing(entry) {
+  const current = readLocalGymListings();
+  const next = [entry, ...current.filter((item) => item.id !== entry.id)].slice(
+    0,
+    20
+  );
+  writeLocalListings(next);
   return entry;
 }
 
 function markLocalSynced(id) {
-  if (typeof localStorage === "undefined" || !id) return;
-  try {
-    const current = JSON.parse(localStorage.getItem(LISTINGS_KEY) || "[]");
-    if (!Array.isArray(current)) return;
-    localStorage.setItem(
-      LISTINGS_KEY,
-      JSON.stringify(
-        current.map((item) =>
-          item.id === id ? { ...item, synced: true, source: "server" } : item
-        )
-      )
-    );
-  } catch {
-    // ignore
-  }
+  const current = readLocalGymListings();
+  writeLocalListings(
+    current.map((item) =>
+      item.id === id ? { ...item, synced: true, source: "server" } : item
+    )
+  );
 }
 
 export function readLocalGymListings() {
@@ -179,8 +186,103 @@ export function readLocalGymListings() {
   }
 }
 
+export function removeLocalGymListing(id) {
+  writeLocalListings(readLocalGymListings().filter((item) => item.id !== id));
+}
+
+export function listingStatusLabel(status) {
+  if (status === "approved") return "검색 노출 중";
+  if (status === "rejected") return "반려";
+  return "승인 대기";
+}
+
+/** 로컬 + 서버 내 신청 합치기 */
+export async function loadMyGymListings(userId) {
+  const actorId = resolveDojoActorId(userId);
+  const local = readLocalGymListings();
+  const remote = hasGymListingRemote()
+    ? await fetchMyGymListings(actorId)
+    : [];
+
+  const byId = new Map();
+  for (const item of local) {
+    byId.set(item.id, { ...item, source: item.source || "local" });
+  }
+  for (const item of remote) {
+    const prev = byId.get(item.id);
+    byId.set(item.id, {
+      ...prev,
+      ...item,
+      synced: true,
+      source: "server",
+    });
+  }
+
+  return [...byId.values()].sort((a, b) =>
+    String(b.createdAt || "").localeCompare(String(a.createdAt || ""))
+  );
+}
+
+/** 이미지 파일 → JPEG Blob (긴 변 1280) */
+export function compressImageFile(file, maxSide = 1280, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type?.startsWith("image/")) {
+      reject(new Error("이미지 파일만 올릴 수 있습니다."));
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("이미지를 처리할 수 없습니다."));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("이미지 변환에 실패했습니다."));
+            return;
+          }
+          resolve(
+            new File([blob], "gym.jpg", {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            })
+          );
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("이미지를 읽지 못했습니다."));
+    };
+    img.src = url;
+  });
+}
+
+export async function uploadListingPhotoAsync(file, listingId) {
+  if (!hasGymListingRemote()) return null;
+  const compressed = await compressImageFile(file);
+  return uploadGymListingPhoto(compressed, listingId);
+}
+
 /** 로컬 보관 + 가능하면 서버(입점 신청함)로 전송 */
-export async function submitGymListingAsync(form, { userId, nickname } = {}) {
+export async function submitGymListingAsync(
+  form,
+  { userId, nickname, photoFile } = {}
+) {
   const checked = validateGymListingForm(form);
   if (!checked.ok) {
     return { ok: false, message: checked.message, synced: false, listing: null };
@@ -196,6 +298,15 @@ export async function submitGymListingAsync(form, { userId, nickname } = {}) {
     applicantNickname: nickname || "",
     ...checked.payload,
   };
+
+  if (photoFile && hasGymListingRemote()) {
+    try {
+      const url = await uploadListingPhotoAsync(photoFile, entry.id);
+      if (url) entry.photoUrl = url;
+    } catch {
+      // 사진 실패해도 신청은 진행
+    }
+  }
 
   saveLocalListing(entry);
 
@@ -214,4 +325,72 @@ export async function submitGymListingAsync(form, { userId, nickname } = {}) {
     synced: true,
     listing: { ...entry, synced: true, source: "server" },
   };
+}
+
+/** 내 등록 수정 */
+export async function updateGymListingAsync(
+  listingId,
+  form,
+  { userId, nickname, photoFile, existing } = {}
+) {
+  const checked = validateGymListingForm(form);
+  if (!checked.ok) {
+    return { ok: false, message: checked.message, synced: false, listing: null };
+  }
+
+  const actorId = resolveDojoActorId(userId);
+  let photoUrl = checked.payload.photoUrl || existing?.photoUrl || "";
+
+  if (photoFile && hasGymListingRemote()) {
+    try {
+      const url = await uploadListingPhotoAsync(photoFile, listingId);
+      if (url) photoUrl = url;
+    } catch {
+      // keep previous
+    }
+  }
+
+  const entry = {
+    ...existing,
+    id: listingId,
+    createdAt: existing?.createdAt || new Date().toISOString(),
+    status: existing?.status || "pending",
+    applicantActorId: existing?.applicantActorId || actorId,
+    applicantNickname: nickname || existing?.applicantNickname || "",
+    ...checked.payload,
+    photoUrl,
+    synced: false,
+    source: "local",
+  };
+
+  saveLocalListing(entry);
+
+  if (!hasGymListingRemote()) {
+    return { ok: true, synced: false, listing: entry };
+  }
+
+  const ok = await updateRemoteGymListing(entry);
+  if (!ok) {
+    return { ok: true, synced: false, listing: entry };
+  }
+
+  markLocalSynced(entry.id);
+  return {
+    ok: true,
+    synced: true,
+    listing: { ...entry, synced: true, source: "server" },
+  };
+}
+
+/** 내 등록 삭제 */
+export async function deleteGymListingAsync(listingId, { userId } = {}) {
+  const actorId = resolveDojoActorId(userId);
+  removeLocalGymListing(listingId);
+
+  if (!hasGymListingRemote()) {
+    return { ok: true, synced: false };
+  }
+
+  const synced = await deleteRemoteGymListing(listingId, actorId);
+  return { ok: true, synced };
 }

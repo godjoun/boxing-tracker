@@ -85,15 +85,27 @@ export async function insertRemoteGymListing(listing) {
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const payload = {
+  const fullPayload = {
     id: listing.id,
     ...toRemotePayload(listing),
     status: "pending",
     source: "app",
   };
 
+  const legacyPayload = { ...fullPayload };
+  delete legacyPayload.photo_url;
+
   try {
-    const { error } = await supabase.from("dojo_gym_listings").insert(payload);
+    let { error } = await supabase.from("dojo_gym_listings").insert(fullPayload);
+
+    if (error) {
+      const message = String(error.message || "").toLowerCase();
+      if (message.includes("photo_url") || message.includes("is_featured")) {
+        ({ error } = await supabase
+          .from("dojo_gym_listings")
+          .insert(legacyPayload));
+      }
+    }
 
     if (error) {
       if (isRemoteUnavailable(error)) return null;

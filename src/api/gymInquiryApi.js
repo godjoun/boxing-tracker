@@ -22,7 +22,8 @@ function isRemoteUnavailable(error) {
     message.includes("does not exist") ||
     message.includes("failed to fetch") ||
     message.includes("network") ||
-    message.includes("dojo_gym_inquiries")
+    message.includes("dojo_gym_inquiries") ||
+    message.includes("list_dojo_gym_inquiries_for_owner")
   );
 }
 
@@ -99,6 +100,52 @@ export async function insertRemoteGymInquiry(inquiry) {
     return inquiry.id;
   } catch (error) {
     if (isRemoteUnavailable(error)) return null;
+    throw error;
+  }
+}
+
+function mapInquiryRow(row) {
+  if (!row?.id) return null;
+  return {
+    id: row.id,
+    gymId: row.gym_id || "general",
+    gymName: row.gym_name || "",
+    kind: row.kind || "trial",
+    contact: row.contact || "",
+    preferredDate: row.preferred_date || "",
+    memo: row.memo || "",
+    partySize: row.party_size ?? null,
+    hours: row.hours ?? null,
+    experience: row.experience || "",
+    purpose: row.purpose || "",
+    timeSlot: row.time_slot || "",
+    userId: row.user_id || null,
+    nickname: row.nickname || "",
+    source: row.source || "server",
+    createdAt: row.created_at || null,
+    synced: true,
+  };
+}
+
+/** 내 입점관으로 온 문의 (RPC) */
+export async function fetchOwnerGymInquiries(actorId) {
+  const supabase = getSupabase();
+  if (!supabase || !actorId) return [];
+
+  try {
+    const { data, error } = await supabase.rpc(
+      "list_dojo_gym_inquiries_for_owner",
+      { p_actor_id: actorId }
+    );
+
+    if (error) {
+      if (isRemoteUnavailable(error)) return [];
+      throw error;
+    }
+
+    return (data || []).map(mapInquiryRow).filter(Boolean);
+  } catch (error) {
+    if (isRemoteUnavailable(error)) return [];
     throw error;
   }
 }

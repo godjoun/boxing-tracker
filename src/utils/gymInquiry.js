@@ -1,11 +1,35 @@
 import {
+  fetchOwnerGymInquiries,
   hasGymInquiryRemote,
   insertRemoteGymInquiry,
 } from "../api/gymInquiryApi";
+import { resolveDojoActorId } from "../api/dojoExchangeApi";
 
 const INQUIRIES_KEY = "fitness-league-gym-inquiries";
 
 export { hasGymInquiryRemote };
+
+export function inquiryKindLabel(kind) {
+  if (kind === "rental") return "대여";
+  if (kind === "reservation") return "예약";
+  return "체험";
+}
+
+export function formatInquiryWhen(value) {
+  if (!value) return "";
+  try {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString("ko-KR", {
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return String(value);
+  }
+}
 
 export function saveGymInquiry(inquiry) {
   if (typeof localStorage === "undefined") return null;
@@ -78,4 +102,11 @@ export function readGymInquiries() {
   } catch {
     return [];
   }
+}
+
+/** 관장: 내 입점관으로 온 문의 */
+export async function loadOwnerGymInquiries(userId) {
+  if (!hasGymInquiryRemote()) return [];
+  const actorId = resolveDojoActorId(userId);
+  return fetchOwnerGymInquiries(actorId);
 }

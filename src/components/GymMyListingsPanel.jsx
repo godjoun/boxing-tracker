@@ -12,6 +12,7 @@ export default function GymMyListingsPanel({
   onClose,
   onCreate,
   onEdit,
+  onOpenLedger,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +74,16 @@ export default function GymMyListingsPanel({
       <button type="button" className="gym-listing-submit" onClick={onCreate}>
         새 체육관 등록
       </button>
+
+      {onOpenLedger ? (
+        <button
+          type="button"
+          className="gym-listing-manage-button"
+          onClick={onOpenLedger}
+        >
+          받은 문의 보기
+        </button>
+      ) : null}
 
       {loading ? (
         <p className="gym-listing-block-note">불러오는 중…</p>

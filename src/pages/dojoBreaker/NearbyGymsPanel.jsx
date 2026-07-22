@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import GymInquiryModal from "../../components/GymInquiryModal";
+import GymInquiryLedgerPanel from "../../components/GymInquiryLedgerPanel";
 import GymListingRegisterPanel from "../../components/GymListingRegisterPanel";
 import GymMyListingsPanel from "../../components/GymMyListingsPanel";
 import { useTraining } from "../../store/TrainingContext";
@@ -47,6 +48,11 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   function openManage() {
     track("gym_listing_manage_open");
     setListingMode("manage");
+  }
+
+  function openLedger() {
+    track("gym_inquiry_ledger_open");
+    setListingMode("ledger");
   }
 
   function closeListingPanels() {
@@ -132,6 +138,16 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
     loadGyms({ preferGps: true, allowFallback: true });
   }, []);
 
+  if (listingMode === "ledger") {
+    return (
+      <GymInquiryLedgerPanel
+        userId={userId}
+        onClose={closeListingPanels}
+        onOpenManage={openManage}
+      />
+    );
+  }
+
   if (listingMode === "manage") {
     return (
       <GymMyListingsPanel
@@ -139,6 +155,7 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         nickname={profile?.nickname || ""}
         onClose={closeListingPanels}
         onCreate={openRegister}
+        onOpenLedger={openLedger}
         onEdit={(listing) => {
           setEditingListing(listing);
           setListingMode("register");
@@ -215,6 +232,13 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
             onClick={openManage}
           >
             내 등록 관리
+          </button>
+          <button
+            type="button"
+            className="gym-listing-manage-button"
+            onClick={openLedger}
+          >
+            받은 문의
           </button>
         </div>
       </aside>

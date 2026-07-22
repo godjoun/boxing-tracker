@@ -3133,6 +3133,69 @@
   margin-bottom: 8px;
 }
 
+.gym-inquiry-ledger-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.gym-inquiry-ledger-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--p-border);
+  border-radius: 16px;
+  background: var(--p-bg-subtle);
+}
+
+.gym-inquiry-ledger-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gym-inquiry-ledger-kind {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(138, 46, 46, 0.22);
+  color: #e8b4b4;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.gym-inquiry-ledger-top time {
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.gym-inquiry-ledger-card > strong {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.gym-inquiry-ledger-card > p {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.gym-inquiry-ledger-contact a {
+  color: #f5f1e8;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.gym-inquiry-ledger-memo {
+  color: var(--p-text-body, rgba(245, 241, 232, 0.9)) !important;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 420px) {
   .gym-listing-price-row {
     grid-template-columns: 1fr;

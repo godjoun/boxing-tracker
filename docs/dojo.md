@@ -14,7 +14,7 @@
 - 연락처 공개 안 함
 - 시드 카드 = 예시
 - **교류 일정·신청** — Supabase 연결 시 폰끼리 동기화 (`supabase/dojo_exchange.sql`) · 미연결이면 로컬
-- **체육관 문의** — Supabase 리드 (`dojo_inquiries.sql`) · 폼은 체험/대여/**예약** 분기 · 체육관 계정·알림은 아직 없음
+- **체육관 문의** — Supabase 리드 · 폼 체험/대여/예약 · **받은 문의** 장부 (`dojo_inquiries_ledger.sql`) · 앱 안 답장/알림은 아직 없음
 - **체육관 입점** — 등록·**수정·삭제·사진** (`dojo_gym_listings*.sql`) · `approved`면 검색 「입점」 · 승인은 Table Editor
 
 - **교류 채팅** — 신청자↔주최자 DM (`supabase/dojo_chat.sql`) · 실시간 없음(새로고침) · 예시 일정 제외

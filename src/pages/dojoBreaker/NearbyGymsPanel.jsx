@@ -26,8 +26,15 @@ import {
 } from "../../utils/gymListing";
 import GymResultCard from "./GymResultCard";
 
+const SECTIONS = [
+  { id: "find", label: "찾기" },
+  { id: "sent", label: "내 문의" },
+  { id: "owner", label: "내 관" },
+];
+
 export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   const { profile, userId } = useTraining();
+  const [section, setSection] = useState("find");
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [gyms, setGyms] = useState([]);
@@ -36,11 +43,21 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   const [inquiryGym, setInquiryGym] = useState(null);
   const [detailGym, setDetailGym] = useState(null);
   const [chatInquiry, setChatInquiry] = useState(null);
-  const [listingMode, setListingMode] = useState(null);
+  const [ownerMode, setOwnerMode] = useState(null);
   const [editingListing, setEditingListing] = useState(null);
   const [activePreset, setActivePreset] = useState(null);
   const [regionQuery, setRegionQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+
+  function switchSection(next) {
+    track("gym_section_tab", { section: next });
+    setSection(next);
+    setDetailGym(null);
+    setInquiryGym(null);
+    setChatInquiry(null);
+    setOwnerMode(null);
+    setEditingListing(null);
+  }
 
   function openInquiry(gym) {
     track("gym_inquiry_open", { gymId: gym.id });
@@ -55,31 +72,16 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   function openRegister() {
     track("gym_listing_open");
     setEditingListing(null);
-    setListingMode("register");
-  }
-
-  function openManage() {
-    track("gym_listing_manage_open");
-    setListingMode("manage");
+    setOwnerMode("register");
   }
 
   function openLedger() {
     track("gym_inquiry_ledger_open");
-    setListingMode("ledger");
-  }
-
-  function openSent() {
-    track("gym_inquiry_sent_open");
-    setListingMode("sent");
+    setOwnerMode("ledger");
   }
 
   function openInquiryChat(item) {
     setChatInquiry(item);
-  }
-
-  function closeListingPanels() {
-    setListingMode(null);
-    setEditingListing(null);
   }
 
   async function loadGyms(options = {}) {
@@ -160,23 +162,28 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
     loadGyms({ preferGps: true, allowFallback: true });
   }, []);
 
-  if (listingMode === "ledger") {
-    return (
-      <GymInquiryLedgerPanel
-        userId={userId}
-        nickname={profile?.nickname || ""}
-        onClose={closeListingPanels}
-        onOpenManage={openManage}
-      />
-    );
-  }
+  const sectionNav = (
+    <nav className="gym-role-tabs" aria-label="체육관 역할">
+      {SECTIONS.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className={`gym-role-tab${section === item.id ? " is-active" : ""}`}
+          onClick={() => switchSection(item.id)}
+        >
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
 
-  if (listingMode === "sent") {
+  if (section === "sent") {
     return (
       <>
+        {sectionNav}
         <GymSentInquiriesPanel
           userId={userId}
-          onClose={closeListingPanels}
+          embedded
           onOpenChat={openInquiryChat}
         />
         <GymInquiryChatModal
@@ -192,52 +199,70 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
     );
   }
 
-  if (listingMode === "manage") {
-    return (
-      <GymMyListingsPanel
-        userId={userId}
-        nickname={profile?.nickname || ""}
-        onClose={closeListingPanels}
-        onCreate={openRegister}
-        onOpenLedger={openLedger}
-        onEdit={(listing) => {
-          setEditingListing(listing);
-          setListingMode("register");
-        }}
-      />
-    );
-  }
+  if (section === "owner") {
+    if (ownerMode === "ledger") {
+      return (
+        <>
+          {sectionNav}
+          <GymInquiryLedgerPanel
+            userId={userId}
+            nickname={profile?.nickname || ""}
+            embedded
+            onClose={() => setOwnerMode(null)}
+            onOpenManage={() => setOwnerMode(null)}
+          />
+        </>
+      );
+    }
 
-  if (listingMode === "register") {
+    if (ownerMode === "register") {
+      return (
+        <>
+          {sectionNav}
+          <GymListingRegisterPanel
+            userId={userId}
+            nickname={profile?.nickname || ""}
+            initialListing={editingListing}
+            onClose={() => {
+              setEditingListing(null);
+              setOwnerMode(null);
+            }}
+            onSaved={() => {
+              if (position) {
+                loadGyms({
+                  preferGps: position.source === "gps",
+                  query: position.source === "search" ? regionQuery : null,
+                  preset: activePreset,
+                });
+              }
+            }}
+          />
+        </>
+      );
+    }
+
     return (
-      <GymListingRegisterPanel
-        userId={userId}
-        nickname={profile?.nickname || ""}
-        initialListing={editingListing}
-        onClose={() => {
-          if (editingListing) {
-            setEditingListing(null);
-            setListingMode("manage");
-            return;
-          }
-          closeListingPanels();
-        }}
-        onSaved={() => {
-          if (position) {
-            loadGyms({
-              preferGps: position.source === "gps",
-              query: position.source === "search" ? regionQuery : null,
-              preset: activePreset,
-            });
-          }
-        }}
-      />
+      <>
+        {sectionNav}
+        <GymMyListingsPanel
+          userId={userId}
+          nickname={profile?.nickname || ""}
+          embedded
+          onCreate={openRegister}
+          onOpenLedger={openLedger}
+          onEdit={(listing) => {
+            setEditingListing(listing);
+            setOwnerMode("register");
+          }}
+        />
+      </>
     );
   }
 
   if (detailGym) {
     return (
       <>
+        {sectionNav}
         <GymDetailPanel
           gym={detailGym}
           isOwn={isOwnListedGym(detailGym, userId)}
@@ -245,7 +270,8 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
           onInquire={openInquiry}
           onOpenLedger={() => {
             setDetailGym(null);
-            openLedger();
+            setSection("owner");
+            setOwnerMode("ledger");
           }}
         />
         {inquiryGym ? (
@@ -281,46 +307,12 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         </p>
       </header>
 
-      <aside className="gym-listing-cta" aria-label="체육관 입점">
-        <div className="gym-listing-cta-copy">
-          <p className="gym-listing-kicker">FOR GYMS</p>
-          <strong>관을 운영 중이신가요?</strong>
-          <p>
-            이름·주소·가격·사진을 올리고, 복서의 문의를 받습니다. 승인 후
-            검색·추천 노출로 이어집니다.
-          </p>
-        </div>
-        <div className="gym-listing-cta-actions">
-          <button
-            type="button"
-            className="gym-listing-cta-button"
-            onClick={openRegister}
-          >
-            내 체육관 등록
-          </button>
-          <button
-            type="button"
-            className="gym-listing-manage-button"
-            onClick={openManage}
-          >
-            내 등록 관리
-          </button>
-          <button
-            type="button"
-            className="gym-listing-manage-button"
-            onClick={openLedger}
-          >
-            받은 문의
-          </button>
-          <button
-            type="button"
-            className="gym-listing-manage-button"
-            onClick={openSent}
-          >
-            보낸 문의
-          </button>
-        </div>
-      </aside>
+      {sectionNav}
+
+      <p className="gym-role-hint">
+        관을 찾아 문의하거나, 「내 문의」에서 대화를 이어 가세요. 관 운영은
+        「내 관」입니다.
+      </p>
 
       <form className="gym-region-search" onSubmit={handleRegionSubmit}>
         <label className="gym-region-search-field" htmlFor="gym-region-input">
@@ -416,8 +408,8 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         <div className="gym-state-card">
           <strong>이 지역에 입점한 체육관이 아직 없습니다</strong>
           <p>
-            승인된 입점관만 검색에 나옵니다. 관을 운영 중이면 「내 체육관 등록」을
-            남겨 보세요.
+            승인된 입점관만 검색에 나옵니다. 관을 운영 중이면 「내 관」에서
+            등록해 보세요.
           </p>
         </div>
       ) : null}

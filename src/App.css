@@ -1462,6 +1462,51 @@
   min-width: 0;
 }
 
+.gym-role-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--p-border);
+  border-radius: 14px;
+  background: var(--p-bg-subtle);
+}
+
+.theme-dark .gym-role-tabs {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #120e10;
+}
+
+.gym-role-tab {
+  min-height: 44px;
+  border: none;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  cursor: pointer;
+}
+
+.gym-role-tab.is-active {
+  background: #0a0909;
+  color: #ffffff;
+}
+
+.theme-dark .gym-role-tab.is-active {
+  background: #f5f1e8;
+  color: #0a0a0a;
+}
+
+.gym-role-hint {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 .dojo-howto {
   margin: 0;
   padding: 10px 12px;

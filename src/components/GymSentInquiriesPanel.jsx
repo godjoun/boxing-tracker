@@ -10,6 +10,7 @@ export default function GymSentInquiriesPanel({
   userId,
   onClose,
   onOpenChat,
+  embedded = false,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,14 +36,16 @@ export default function GymSentInquiriesPanel({
 
   return (
     <section className="gym-listing-panel" aria-label="보낸 문의">
-      <button type="button" className="gym-listing-back" onClick={onClose}>
-        ← 목록으로
-      </button>
+      {!embedded && onClose ? (
+        <button type="button" className="gym-listing-back" onClick={onClose}>
+          ← 목록으로
+        </button>
+      ) : null}
 
       <header className="gym-listing-hero">
         <p className="gym-listing-kicker">MY INQUIRIES</p>
         <h2>보낸 문의</h2>
-        <p>내가 체육관에 보낸 문의입니다. 대화하기로 답장을 주고받습니다.</p>
+        <p>내가 보낸 문의입니다. 「대화하기」로 관장과 메시지를 주고받으세요.</p>
       </header>
 
       <button

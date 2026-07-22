@@ -12,6 +12,7 @@ export default function GymInquiryLedgerPanel({
   nickname = "",
   onClose,
   onOpenManage,
+  embedded = false,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,16 +39,20 @@ export default function GymInquiryLedgerPanel({
 
   return (
     <section className="gym-listing-panel" aria-label="받은 문의">
-      <button type="button" className="gym-listing-back" onClick={onClose}>
-        ← 목록으로
-      </button>
+      {!embedded ? (
+        <button type="button" className="gym-listing-back" onClick={onClose}>
+          ← 목록으로
+        </button>
+      ) : onClose ? (
+        <button type="button" className="gym-listing-back" onClick={onClose}>
+          ← 내 등록
+        </button>
+      ) : null}
 
       <header className="gym-listing-hero">
         <p className="gym-listing-kicker">INQUIRY LEDGER</p>
         <h2>받은 문의</h2>
-        <p>
-          내가 등록한 체육관으로 온 문의입니다. 「대화하기」로 앱에서 답장하세요.
-        </p>
+        <p>내 관으로 온 문의입니다. 「대화하기」로 답장하세요.</p>
       </header>
 
       <div className="gym-listing-cta-actions">

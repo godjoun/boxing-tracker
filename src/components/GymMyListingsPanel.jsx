@@ -15,6 +15,7 @@ export default function GymMyListingsPanel({
   onCreate,
   onEdit,
   onOpenLedger,
+  embedded = false,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -80,15 +81,17 @@ export default function GymMyListingsPanel({
 
   return (
     <section className="gym-listing-panel" aria-label="내 등록 관리">
-      <button type="button" className="gym-listing-back" onClick={onClose}>
-        ← 목록으로
-      </button>
+      {!embedded && onClose ? (
+        <button type="button" className="gym-listing-back" onClick={onClose}>
+          ← 목록으로
+        </button>
+      ) : null}
 
       <header className="gym-listing-hero">
-        <p className="gym-listing-kicker">MY LISTINGS</p>
-        <h2>내 등록 관리</h2>
+        <p className="gym-listing-kicker">MY GYM</p>
+        <h2>내 관</h2>
         <p>
-          이 기기에서 신청한 체육관을 수정·삭제합니다.
+          체육관 등록·수정·삭제를 하고, 받은 문의에 답장합니다.
           {nickname ? ` (${nickname})` : ""}
           {!remoteReady
             ? " 서버 연결이 없어 지금은 이 기기에만 저장됩니다."

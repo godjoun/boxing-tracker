@@ -13,6 +13,12 @@ set photo_urls = array[photo_url]
 where coalesce(array_length(photo_urls, 1), 0) = 0
   and length(trim(photo_url)) > 0;
 
+-- 배열은 있는데 대표 photo_url 이 비면 1번 사진으로 채움
+update public.dojo_gym_listings
+set photo_url = photo_urls[1]
+where length(trim(coalesce(photo_url, ''))) = 0
+  and coalesce(array_length(photo_urls, 1), 0) > 0;
+
 -- 공개 사진 버킷 (없으면 생성)
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (

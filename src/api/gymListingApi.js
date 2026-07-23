@@ -34,11 +34,39 @@ function toWonOrNull(value) {
   return Math.round(n);
 }
 
+function coercePhotoUrlList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    // Postgres text[] 리터럴: {url1,url2} 또는 JSON 배열
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item) => String(item || "").trim()).filter(Boolean);
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      return trimmed
+        .slice(1, -1)
+        .split(",")
+        .map((part) => part.trim().replace(/^"(.*)"$/, "$1"))
+        .filter(Boolean);
+    }
+    if (/^https?:\/\//i.test(trimmed)) return [trimmed];
+  }
+  return [];
+}
+
 function normalizePhotoUrls(value, fallbackCover = "") {
   const isHttpUrl = (item) => /^https?:\/\//i.test(String(item || "").trim());
-  const fromArray = Array.isArray(value)
-    ? value.map((item) => String(item || "").trim()).filter(isHttpUrl)
-    : [];
+  const fromArray = coercePhotoUrlList(value).filter(isHttpUrl);
   if (fromArray.length > 0) return fromArray.slice(0, 5);
   const cover = String(fallbackCover || "").trim();
   return isHttpUrl(cover) ? [cover] : [];

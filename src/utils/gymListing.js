@@ -18,16 +18,40 @@ export { hasGymListingRemote };
 export function normalizeGymPhotoUrls(listingOrUrls, fallbackCover = "") {
   const isHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
 
-  if (Array.isArray(listingOrUrls)) {
-    return listingOrUrls
-      .map((item) => String(item || "").trim())
-      .filter(isHttpUrl)
-      .slice(0, MAX_GYM_PHOTOS);
+  const coerce = (value) => {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item || "").trim()).filter(Boolean);
+    }
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      if (trimmed.startsWith("[")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            return parsed.map((item) => String(item || "").trim()).filter(Boolean);
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+        return trimmed
+          .slice(1, -1)
+          .split(",")
+          .map((part) => part.trim().replace(/^"(.*)"$/, "$1"))
+          .filter(Boolean);
+      }
+      if (isHttpUrl(trimmed)) return [trimmed];
+    }
+    return [];
+  };
+
+  if (Array.isArray(listingOrUrls) || typeof listingOrUrls === "string") {
+    return coerce(listingOrUrls).filter(isHttpUrl).slice(0, MAX_GYM_PHOTOS);
   }
   const listing = listingOrUrls || {};
-  const fromArray = Array.isArray(listing.photoUrls)
-    ? listing.photoUrls.map((item) => String(item || "").trim()).filter(isHttpUrl)
-    : [];
+  const fromArray = coerce(listing.photoUrls).filter(isHttpUrl);
   if (fromArray.length > 0) return fromArray.slice(0, MAX_GYM_PHOTOS);
   const cover = String(listing.photoUrl || fallbackCover || "").trim();
   return isHttpUrl(cover) ? [cover] : [];
@@ -134,19 +158,52 @@ export async function loadApprovedGymsForSearch(lat, lon, { userId } = {}) {
   if (!mine.length) return gyms;
 
   const mineById = new Map(mine.map((item) => [item.id, item]));
+  const myActorId = resolveDojoActorId(userId);
+
+  function findOwnListing(gym) {
+    const byId = mineById.get(gym.id);
+    if (byId) return byId;
+    const gymName = String(gym.name || "").trim().toLowerCase();
+    if (!gymName) return null;
+    return (
+      mine.find(
+        (item) =>
+          String(item.applicantActorId || "") ===
+            String(gym.applicantActorId || myActorId) &&
+          String(item.gymName || "").trim().toLowerCase() === gymName
+      ) || null
+    );
+  }
 
   gyms = gyms.map((gym) => {
-    const own = mineById.get(gym.id);
+    const own = findOwnListing(gym);
     if (!own) return gym;
     const ownPhotos = normalizeGymPhotoUrls(own);
+    const searchPhotos = normalizeGymPhotoUrls(gym);
     if (ownPhotos.length === 0) return gym;
-    if (normalizeGymPhotoUrls(gym).length > 0) return gym;
+    if (ownPhotos.length <= searchPhotos.length) return gym;
     return {
       ...gym,
       photoUrl: ownPhotos[0],
       photoUrls: ownPhotos,
     };
   });
+
+  // 승인 관인데 서버 사진이 비어 있고 내 관에 있으면 서버에도 밀어 넣기
+  for (const gym of gyms) {
+    const own = findOwnListing(gym);
+    if (!own) continue;
+    const ownPhotos = normalizeGymPhotoUrls(own);
+    const searchPhotos = normalizeGymPhotoUrls(gym);
+    if (ownPhotos.length === 0 || searchPhotos.length > 0) continue;
+    updateRemoteGymListing({
+      ...own,
+      id: gym.id,
+      applicantActorId: gym.applicantActorId || own.applicantActorId,
+      photoUrls: ownPhotos,
+      photoUrl: ownPhotos[0],
+    }).catch(() => {});
+  }
 
   const shownIds = new Set(gyms.map((gym) => gym.id));
   const previews = [];

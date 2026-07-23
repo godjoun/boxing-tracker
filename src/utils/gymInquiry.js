@@ -146,6 +146,7 @@ export async function loadSentGymInquiries(userId) {
       timeSlot: row.time_slot || "",
       userId: row.user_id || null,
       nickname: row.nickname || "",
+      acquisitionSource: row.acquisition_source || "organic",
       source: row.source || "server",
       createdAt: row.created_at || null,
       synced: true,

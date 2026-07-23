@@ -94,12 +94,19 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   }
 
   function openInquiry(gym) {
-    track("gym_inquiry_open", { gymId: gym.id });
+    track("gym_inquiry_open", {
+      gymId: gym.id,
+      acquisitionSource: gym.featured ? "featured" : "organic",
+    });
     setInquiryGym(gym);
   }
 
   function openDetail(gym) {
-    track("gym_detail_open", { gymId: gym.id, source: gym.source || "" });
+    track("gym_detail_open", {
+      gymId: gym.id,
+      source: gym.source || "",
+      acquisitionSource: gym.featured ? "featured" : "organic",
+    });
     setDetailGym(gym);
   }
 
@@ -167,6 +174,15 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         }),
       ]);
       const merged = mergeGymSearchResults(listed, results);
+      const featuredIds = merged
+        .filter((gym) => gym.featured)
+        .map((gym) => gym.id);
+
+      track("gym_search_results_view", {
+        resultCount: merged.length,
+        featuredCount: featuredIds.length,
+        featuredGymIds: featuredIds.join(",").slice(0, 240),
+      });
 
       setGyms(merged);
       setStatus(merged.length > 0 ? "ready" : "empty");
@@ -240,6 +256,7 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
           inquiryId={chatInquiry?.id}
           gymName={chatInquiry?.gymName || ""}
           inquiryLabel={inquiryKindLabel(chatInquiry?.kind)}
+          acquisitionSource={chatInquiry?.acquisitionSource || "organic"}
         />
       </>
     );
@@ -339,6 +356,17 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
       <p className="gym-role-hint gym-find-next">
         지역을 검색한 뒤 관을 골라 문의하세요.
       </p>
+      <button
+        type="button"
+        className="gym-owner-recruit-button"
+        onClick={() => {
+          track("gym_owner_recruit_open");
+          setSection("owner");
+          setOwnerMode("register");
+        }}
+      >
+        체육관을 운영하시나요? 무료 입점 신청 →
+      </button>
 
       <form className="gym-region-search" onSubmit={handleRegionSubmit}>
         <label className="gym-region-search-field" htmlFor="gym-region-input">

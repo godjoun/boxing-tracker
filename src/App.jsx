@@ -18,6 +18,7 @@ import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
 import FirstVisitTutorial from "./components/FirstVisitTutorial";
 import MenuIcon from "./components/MenuIcon";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 import { useBackgroundTimerSession } from "./hooks/useBackgroundTimerSession";
 import { needsOnboarding } from "./utils/bodySpecs";
 import { isTutorialComplete } from "./utils/tutorial";
@@ -37,6 +38,23 @@ import {
 } from "./utils/theme";
 import "./App.css";
 
+const TIMER_RETURN_PAGE_KEY = "anima-timer-return-page";
+const CURRICULUM_RETURN_STYLE_KEY = "anima-curriculum-return-style";
+
+function readTimerReturnPage() {
+  if (typeof sessionStorage === "undefined") return "train";
+  return sessionStorage.getItem(TIMER_RETURN_PAGE_KEY) || "train";
+}
+
+function readCurriculumReturnStyle() {
+  if (typeof sessionStorage === "undefined") return null;
+  try {
+    return JSON.parse(sessionStorage.getItem(CURRICULUM_RETURN_STYLE_KEY));
+  } catch {
+    return null;
+  }
+}
+
 /** 하단 탭을 숨기고 풀스크린으로 쓰는 부가 화면 (안 B 하이브리드) */
 const FULLSCREEN_PAGES = new Set([
   "curriculum",
@@ -49,9 +67,11 @@ const FULLSCREEN_PAGES = new Set([
 
 export default function App() {
   return (
-    <TrainingProvider>
-      <AppFlow />
-    </TrainingProvider>
+    <AppErrorBoundary>
+      <TrainingProvider>
+        <AppFlow />
+      </TrainingProvider>
+    </AppErrorBoundary>
   );
 }
 
@@ -91,6 +111,10 @@ function MainAppShell({ theme, onToggleTheme }) {
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
+  const [timerReturnPage, setTimerReturnPage] = useState(readTimerReturnPage);
+  const [curriculumReturnStyle, setCurriculumReturnStyle] = useState(
+    readCurriculumReturnStyle
+  );
   const [profileStudioOpen, setProfileStudioOpen] = useState(false);
   const fighterLevel = useMemo(
     () => getFighterProgress(logs).level,
@@ -142,26 +166,68 @@ function MainAppShell({ theme, onToggleTheme }) {
     setCurrentPage("profile");
   };
 
-  const goGym = (view = "hub") => {
+  const goGym = (view = "gyms") => {
     setGymView(view);
     setCurrentPage("gym");
+  };
+
+  const rememberTimerReturnPage = (page) => {
+    setTimerReturnPage(page);
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(TIMER_RETURN_PAGE_KEY, page);
+    }
+  };
+
+  const rememberCurriculumReturnStyle = (style) => {
+    setCurriculumReturnStyle(style);
+    if (typeof sessionStorage === "undefined") return;
+    if (style) {
+      sessionStorage.setItem(
+        CURRICULUM_RETURN_STYLE_KEY,
+        JSON.stringify(style)
+      );
+    } else {
+      sessionStorage.removeItem(CURRICULUM_RETURN_STYLE_KEY);
+    }
   };
 
   const goTimerWithSession = (session) => {
     track("curriculum_session_start", {
       sessionId: session?.id || "unknown",
     });
+    rememberTimerReturnPage("curriculum");
+    if (session?.styleId) {
+      rememberCurriculumReturnStyle({
+        styleId: session.styleId,
+        categoryId: session.styleCategoryId || null,
+      });
+    } else {
+      rememberCurriculumReturnStyle(null);
+    }
+    if (session?.id && !session?.isCustom) {
+      setCurriculumFocus({ sessionId: session.id });
+    }
     setTimerLaunch(buildCurriculumTimerLaunch(session));
     setCurrentPage("timer");
   };
 
-  const goTimerWithLaunch = (launch) => {
+  const goTimerWithLaunch = (launch, returnPage = "train") => {
+    rememberTimerReturnPage(returnPage);
     setTimerLaunch(launch);
     setCurrentPage("timer");
   };
 
-  const goDefaultTimer = () => {
-    goTimerWithLaunch(buildPresetTimerLaunch(getTimerPresetById("match3")));
+  const openTimerFrom = (returnPage = "train") => {
+    rememberTimerReturnPage(returnPage);
+    setTimerLaunch(null);
+    setCurrentPage("timer");
+  };
+
+  const goDefaultTimer = (returnPage = "home") => {
+    goTimerWithLaunch(
+      buildPresetTimerLaunch(getTimerPresetById("match3")),
+      returnPage
+    );
   };
 
   const [curriculumFocus, setCurriculumFocus] = useState(null);
@@ -172,12 +238,19 @@ function MainAppShell({ theme, onToggleTheme }) {
     track("lesson_read_start", {
       sessionId: session.id,
     });
+    rememberCurriculumReturnStyle(null);
     setCurriculumFocus({ sessionId: session.id, openDrills: true });
     setCurrentPage("curriculum");
   };
 
   const clearCurriculumFocus = () => {
     setCurriculumFocus(null);
+  };
+
+  const goCurriculum = () => {
+    rememberCurriculumReturnStyle(null);
+    setCurriculumFocus(null);
+    setCurrentPage("curriculum");
   };
 
   const clearTimerLaunch = () => {
@@ -210,12 +283,12 @@ function MainAppShell({ theme, onToggleTheme }) {
             fighterLevel={fighterLevel}
             timerSummary={timerSummary}
             onStartTraining={() => goPage("train")}
-            onOpenTimer={goDefaultTimer}
+            onOpenTimer={() => goDefaultTimer("home")}
             onGoProfile={goProfile}
             onNavigate={goPage}
             onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
-            onOpenCurriculum={() => goPage("curriculum")}
+            onOpenCurriculum={goCurriculum}
             onReadLesson={goReadLesson}
           />
         )}
@@ -237,16 +310,18 @@ function MainAppShell({ theme, onToggleTheme }) {
           <GymFinderPage
             initialView={gymView}
             fighterLevel={fighterLevel}
-            onStartTraining={() => goPage("timer")}
+            onStartTraining={() => openTimerFrom("gym")}
           />
         )}
 
         {currentPage === "train" && (
           <TrainingHubPage
             fighterLevel={fighterLevel}
-            onStartPreset={(preset) => goTimerWithLaunch(buildPresetTimerLaunch(preset))}
-            onOpenTimer={() => goPage("timer")}
-            onOpenCurriculum={() => goPage("curriculum")}
+            onStartPreset={(preset) =>
+              goTimerWithLaunch(buildPresetTimerLaunch(preset), "train")
+            }
+            onOpenTimer={() => openTimerFrom("train")}
+            onOpenCurriculum={goCurriculum}
             onOpenComboCreator={() => goPage("combo-creator")}
             onOpenStrength={() => goPage("strength")}
           />
@@ -256,9 +331,20 @@ function MainAppShell({ theme, onToggleTheme }) {
           <TimerPage
             launchConfig={timerLaunch}
             onLaunchConsumed={clearTimerLaunch}
+            onRelaunch={(launch) =>
+              goTimerWithLaunch(launch, timerReturnPage)
+            }
             onGoLog={() => goPage("log")}
             onGoHome={() => goPage("home")}
-            onGoBack={() => goPage("train")}
+            onGoBack={() => goPage(timerReturnPage)}
+            backLabel={{
+              home: "홈",
+              curriculum: "기술",
+              strength: "신체",
+              gym: "도장",
+              profile: "명패",
+              growth: "성장",
+            }[timerReturnPage] || "링"}
             onGoProfile={goProfileCardMaker}
           />
         )}
@@ -273,8 +359,8 @@ function MainAppShell({ theme, onToggleTheme }) {
 
         {currentPage === "growth" && (
           <GrowthHubPage
-            onOpenCurriculum={() => goPage("curriculum")}
-            onStartTraining={() => goPage("timer")}
+            onOpenCurriculum={goCurriculum}
+            onStartTraining={() => openTimerFrom("growth")}
             onGoBack={() => goPage("category")}
           />
         )}
@@ -288,7 +374,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             scrollTarget={profileScrollTarget}
             cardMakerFocusLogId={cardMakerLogId}
             fighterLevel={fighterLevel}
-            onStartTraining={() => goPage("timer")}
+            onStartTraining={() => openTimerFrom("profile")}
             onStudioModeChange={setProfileStudioOpen}
           />
         )}
@@ -296,6 +382,8 @@ function MainAppShell({ theme, onToggleTheme }) {
         {currentPage === "curriculum" && (
           <CurriculumPage
             fighterLevel={fighterLevel}
+            initialStyleId={curriculumReturnStyle?.styleId || null}
+            initialCategoryId={curriculumReturnStyle?.categoryId || null}
             focusSessionId={curriculumFocus?.sessionId || null}
             focusOpenDrills={Boolean(curriculumFocus?.openDrills)}
             focusOpenVideo={Boolean(curriculumFocus?.openVideo)}
@@ -303,14 +391,14 @@ function MainAppShell({ theme, onToggleTheme }) {
             onGoBack={() => goPage("train")}
             onStartSession={goTimerWithSession}
             onOpenComboCreator={() => goPage("combo-creator")}
-            onStartTraining={() => goPage("timer")}
+            onStartTraining={() => openTimerFrom("curriculum")}
           />
         )}
 
         {currentPage === "strength" && (
           <StrengthProgramPage
             onGoBack={() => goPage("train")}
-            onStartWarmup={goTimerWithLaunch}
+            onStartDay={(launch) => goTimerWithLaunch(launch, "strength")}
           />
         )}
 
@@ -325,7 +413,7 @@ function MainAppShell({ theme, onToggleTheme }) {
               featureId="combo-creator"
               currentLevel={fighterLevel}
               onBack={() => goPage("curriculum")}
-              onStartTraining={() => goPage("timer")}
+              onStartTraining={() => openTimerFrom("curriculum")}
             />
           ))}
       </main>
@@ -336,8 +424,8 @@ function MainAppShell({ theme, onToggleTheme }) {
           nickname={profile?.nickname}
           onClose={closeTutorial}
           onEnsurePage={goPage}
-          onStartTimer={() => goPage("timer")}
-          onOpenCurriculum={() => goPage("curriculum")}
+          onStartTimer={() => goDefaultTimer("home")}
+          onOpenCurriculum={goCurriculum}
         />
       ) : null}
 
@@ -361,7 +449,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             type="button"
             data-tutorial-target="nav-dojo"
             className={getNavClass(currentPage === "gym")}
-            onClick={() => goGym("exchange")}
+            onClick={() => goGym("gyms")}
           >
             <span className="app-nav-icon" aria-hidden="true">
               <MenuIcon name="dojo" size={20} />

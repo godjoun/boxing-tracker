@@ -29,6 +29,7 @@ export default function GymInquiryChatModal({
   inquiryId,
   gymName = "",
   inquiryLabel = "",
+  acquisitionSource = "organic",
 }) {
   const [thread, setThread] = useState(null);
   const [myActorId, setMyActorId] = useState("");
@@ -46,7 +47,7 @@ export default function GymInquiryChatModal({
 
   const loadMessages = useCallback(async (threadId, options = {}) => {
     if (!threadId) return;
-    const result = await listInquiryChatMessagesAsync(threadId);
+    const result = await listInquiryChatMessagesAsync(threadId, userId);
     setMessages(result.messages);
     setSynced(result.synced);
     if (options.markRead && userId) {
@@ -89,6 +90,7 @@ export default function GymInquiryChatModal({
         track("gym_inquiry_chat_open", {
           inquiryId,
           synced: opened.synced,
+          acquisitionSource,
         });
       } catch {
         if (!cancelled) setError("대화를 불러오지 못했습니다.");
@@ -101,7 +103,14 @@ export default function GymInquiryChatModal({
     return () => {
       cancelled = true;
     };
-  }, [open, userId, nickname, inquiryId, loadMessages]);
+  }, [
+    open,
+    userId,
+    nickname,
+    inquiryId,
+    acquisitionSource,
+    loadMessages,
+  ]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -137,7 +146,10 @@ export default function GymInquiryChatModal({
       }
 
       setDraft("");
-      track("gym_inquiry_chat_send", { synced: result.synced });
+      track("gym_inquiry_chat_send", {
+        synced: result.synced,
+        acquisitionSource,
+      });
       await loadMessages(thread.id);
       setSynced(result.synced || synced);
     } catch {

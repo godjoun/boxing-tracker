@@ -4,7 +4,7 @@ import ComposerShell, {
   ComposerSegmentTabs,
 } from "../components/ComposerShell";
 import {
-  buildStrengthWarmupLaunch,
+  buildStrengthDayLaunch,
   getTodayStrengthDay,
   STRENGTH_TIPS,
   STRENGTH_WARMUP,
@@ -12,7 +12,7 @@ import {
 } from "../utils/strengthProgram";
 import "./StrengthProgramPage.css";
 
-export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
+export default function StrengthProgramPage({ onGoBack, onStartDay }) {
   const todayPlan = useMemo(() => getTodayStrengthDay(), []);
   const [activeDayId, setActiveDayId] = useState(todayPlan.id);
   const activeDay =
@@ -22,6 +22,15 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
     id: day.id,
     label: day.shortDay,
   }));
+
+  const mainTimer = activeDay.timer || {
+    rounds: 5,
+    workSeconds: 180,
+    restSeconds: 60,
+  };
+  const warmupRounds = STRENGTH_WARMUP.rounds;
+  const totalRounds = warmupRounds + mainTimer.rounds;
+  const workMin = Math.round(mainTimer.workSeconds / 60);
 
   return (
     <ComposerShell
@@ -41,7 +50,7 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
           </strong>
           <p>{todayPlan.focus} · 복싱을 위한 컨디셔닝 루틴입니다</p>
           <p className="strength-summary-warmup">
-            시작 전 워밍업 · {STRENGTH_WARMUP.title}
+            시작 시 줄넘기 워밍업 {warmupRounds}R 포함 · 타이머에서 제외 가능
           </p>
         </>
       }
@@ -55,8 +64,10 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
       }
       dock={
         <ComposerDockPrimary
-          label="줄넘기 워밍업 시작"
-          onClick={() => onStartWarmup?.(buildStrengthWarmupLaunch())}
+          label={`${activeDay.shortDay} · 타이머 시작 (${totalRounds}R)`}
+          onClick={() =>
+            onStartDay?.(buildStrengthDayLaunch(activeDay, { skipWarmup: false }))
+          }
         />
       }
     >
@@ -67,6 +78,10 @@ export default function StrengthProgramPage({ onGoBack, onStartWarmup }) {
             <h2>{activeDay.theme}</h2>
             <span>{activeDay.focus}</span>
           </div>
+          <p className="strength-day-timer-meta">
+            타이머 · 줄넘기 {warmupRounds}R + 본운동 {mainTimer.rounds}R (
+            {workMin}분 / 휴식 {mainTimer.restSeconds}초)
+          </p>
         </header>
 
         {activeDay.blocks.map((block) => (

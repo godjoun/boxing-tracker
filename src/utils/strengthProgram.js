@@ -16,15 +16,15 @@ export const STRENGTH_WARMUP = {
 export const STRENGTH_TIPS = [
   {
     title: "수분 섭취",
-    body: "땀이 많이 나는 루틴입니다. 갈증 날 때 소량씩 자주 마시십시오.",
+    body: "땀이 나는 루틴입니다. 갈증 나기 전에 소량씩 자주 마시세요.",
   },
   {
-    title: "속도가 생명",
-    body: "웨이트는 천천히 버티기보다, 밀 때(수축할 때) 펀치를 뻗듯 빠르고 폭발적으로 움직이세요.",
+    title: "폭발적으로",
+    body: "웨이트는 천천히 버티기보다, 밀 때(수축) 펀치를 뻗듯 빠르고 깔끔하게 움직이세요.",
   },
   {
-    title: "현실 대체 운동",
-    body: "메디신볼 대신 타이어 때리기, 풀업 대신 밴드 풀다운, 러닝머신 대신 야외 로드워크로 바꿔도 됩니다.",
+    title: "장비 없으면",
+    body: "메디신볼 → 가방 밀치기, 풀업 → 밴드 풀다운, 러닝머신 → 야외 로드워크로 바꿔도 됩니다.",
   },
 ];
 
@@ -36,6 +36,7 @@ export const STRENGTH_WEEK = [
     theme: "전신 폭발력 & 하체 파워",
     focus: "헬스장 위주",
     tone: "red",
+    timer: { rounds: 5, workSeconds: 180, restSeconds: 90 },
     blocks: [
       {
         title: "메인 리프트",
@@ -58,7 +59,7 @@ export const STRENGTH_WEEK = [
         ],
       },
       {
-        title: "근전환 슈퍼세트",
+        title: "전환 슈퍼세트",
         items: [
           {
             name: "벤치프레스 1세트 → 맨몸 원투 펀치",
@@ -76,12 +77,13 @@ export const STRENGTH_WEEK = [
     theme: "무산소 심폐 서킷 & 코어",
     focus: "맨몸 위주",
     tone: "blue",
+    timer: { rounds: 5, workSeconds: 180, restSeconds: 60 },
     blocks: [
       {
         title: "서킷 (1라운드 = 3분)",
         prescription: "5라운드 · 라운드 간 휴식 1분",
         items: [
-          { name: "버피 테스트", prescription: "45초", note: "" },
+          { name: "버피", prescription: "45초", note: "" },
           { name: "점프 스쿼트", prescription: "45초", note: "" },
           {
             name: "박수 푸시업 (또는 빠른 푸시업)",
@@ -94,11 +96,11 @@ export const STRENGTH_WEEK = [
       {
         title: "코어 마무리",
         items: [
-          { name: "플랭크", prescription: "2분", note: "" },
+          { name: "플랭크", prescription: "45~60초 × 3세트", note: "" },
           {
             name: "러시안 트위스트",
-            prescription: "50회",
-            note: "복부 회전 · 펀치 회전력",
+            prescription: "좌우 합 40회 × 3세트",
+            note: "복부 회전 · 훅 회전력",
           },
         ],
       },
@@ -111,6 +113,7 @@ export const STRENGTH_WEEK = [
     theme: "협응력 & 펀치 스피드",
     focus: "헬스장 + 맨몸",
     tone: "red",
+    timer: { rounds: 4, workSeconds: 180, restSeconds: 60 },
     blocks: [
       {
         title: "스피드 & 백",
@@ -131,9 +134,9 @@ export const STRENGTH_WEEK = [
             note: "고관절 탄력 · 회전력",
           },
           {
-            name: "메디신볼 벽 던지기 (또는 타이어 때리기)",
-            prescription: "15회 × 4세트",
-            note: "전신 폭발 · 현실 대체 가능",
+            name: "메디신볼 벽 던지기 (또는 샌드백 밀치기)",
+            prescription: "12~15회 × 3세트",
+            note: "전신 폭발 · 장비 없으면 생략 가능",
           },
         ],
       },
@@ -143,42 +146,43 @@ export const STRENGTH_WEEK = [
     id: "thu",
     day: "목요일",
     shortDay: "목",
-    theme: "지옥의 6분 인터벌 & 맷집",
-    focus: "러닝머신 + 맨몸",
+    theme: "로드워크 인터벌 & 코어",
+    focus: "야외 · 줄넘기 · 맨몸",
     tone: "blue",
+    timer: { rounds: 10, workSeconds: 60, restSeconds: 60 },
     blocks: [
       {
-        title: "6분 인터벌 러닝",
-        prescription: "4세트 · 세트 간 2분 가볍게 걷기",
+        title: "로드워크 인터벌",
+        prescription: "10라운드 · 라운드 = 하드 1분 + 회복 1분",
         items: [
           {
-            name: "전력 질주",
-            prescription: "3분",
-            note: "시속 13~15km (시합 체력)",
-          },
-          {
-            name: "가벼운 조깅",
+            name: "하드 페이스 (러닝 또는 줄넘기 전력)",
             prescription: "1분",
-            note: "시속 6km",
+            note: "말할 수 없을 만큼 빠르게 · 본인 체력에 맞게",
           },
           {
-            name: "최고 속도 질주",
-            prescription: "2분",
-            note: "시속 14~16km",
+            name: "회복 페이스 (걷기~가벼운 조깅)",
+            prescription: "1분",
+            note: "숨만 고르기 · 멈추지 말고 계속 움직이기",
           },
         ],
       },
       {
-        title: "복서 맷집",
+        title: "코어 · 목",
         items: [
           {
-            name: "넥 익스텐션 (목 운동, 선택)",
-            prescription: "가볍게 각 10~15회",
-            note: "손으로 가볍게 저항만 주고, 목을 세게 밀지 마십시오. 불편하면 생략",
+            name: "넥 브릿지 대체 (누워서 고개만 살짝)",
+            prescription: "각 방향 8~10회",
+            note: "손으로 가벼운 저항만 · 통증 있으면 생략",
           },
           {
             name: "행잉 레그레이즈 (또는 레그레이즈)",
-            prescription: "20회 × 4세트",
+            prescription: "10~15회 × 3세트",
+            note: "복부 · 가드 유지에 쓰는 힘",
+          },
+          {
+            name: "플랭크",
+            prescription: "45~60초 × 3세트",
             note: "",
           },
         ],
@@ -192,6 +196,7 @@ export const STRENGTH_WEEK = [
     theme: "전신 스트렝스 & 피로 누적 극복",
     focus: "헬스장",
     tone: "red",
+    timer: { rounds: 5, workSeconds: 180, restSeconds: 90 },
     blocks: [
       {
         title: "스트렝스",
@@ -224,22 +229,23 @@ export const STRENGTH_WEEK = [
     id: "sat",
     day: "토요일",
     shortDay: "토",
-    theme: "아침 로드워크 챌린지",
+    theme: "로드워크 & 회복",
     focus: "야외 또는 러닝머신",
     tone: "blue",
+    timer: { rounds: 8, workSeconds: 180, restSeconds: 30 },
     blocks: [
       {
         title: "유산소 베이스",
         items: [
           {
-            name: "5km 타임 어택",
-            prescription: "가능한 빠른 페이스",
-            note: "심폐 지구력 베이스",
+            name: "로드워크",
+            prescription: "40~50분 · 편한 페이스",
+            note: "대화 가능한 속도 · 거리보다 꾸준함이 중요",
           },
           {
             name: "전신 스트레칭",
-            prescription: "20분",
-            note: "한 주 피로 해소",
+            prescription: "15~20분",
+            note: "한 주 피로 풀기 · 고관절·어깨·발목",
           },
         ],
       },
@@ -267,5 +273,82 @@ export function buildStrengthWarmupLaunch() {
     prepSeconds: 10,
     routineTitle: "몸강화 · 줄넘기 워밍업",
     logType: "몸강화 · 줄넘기 워밍업",
+  };
+}
+
+/**
+ * 요일 본운동 타이머. skipWarmup이면 줄넘기 라운드 없이 본운동만.
+ * strengthPlan = 타이머 옆에 띄울 요일 운동 전체(블록·종목).
+ */
+export function buildStrengthDayLaunch(day, { skipWarmup = false } = {}) {
+  const plan = day || getTodayStrengthDay();
+  const main = plan.timer || { rounds: 5, workSeconds: 180, restSeconds: 60 };
+  const warmupRounds = skipWarmup ? 0 : STRENGTH_WARMUP.rounds;
+  const totalRounds = warmupRounds + main.rounds;
+  const warmupNote =
+    STRENGTH_WARMUP.steps[0]?.note ||
+    "발목·손목 풀고 라운드 리듬에 맞춰 가볍게";
+  const drills = [];
+
+  if (warmupRounds > 0) {
+    drills.push({
+      name: `줄넘기 워밍업`,
+      duration: `${warmupRounds}R`,
+      description: warmupNote,
+      roundFrom: 1,
+      roundTo: warmupRounds,
+    });
+  }
+
+  const mainFrom = warmupRounds + 1;
+  const exerciseLines = plan.blocks
+    .flatMap((block) =>
+      block.items.map(
+        (item) => `${item.name}${item.prescription ? ` · ${item.prescription}` : ""}`
+      )
+    )
+    .slice(0, 4);
+  drills.push({
+    name: plan.theme,
+    duration: `${main.rounds}R`,
+    description:
+      exerciseLines.length > 0
+        ? `${plan.focus}. 아래 목록을 따라가세요 · ${exerciseLines.join(" / ")}`
+        : `${plan.focus} · 아래 요일 루틴을 따라가세요`,
+    roundFrom: mainFrom,
+    roundTo: totalRounds,
+  });
+
+  return {
+    presetId: `strength-${plan.id}${skipWarmup ? "-nowarm" : ""}`,
+    rounds: totalRounds,
+    workSeconds: main.workSeconds,
+    restSeconds: main.restSeconds,
+    prepSeconds: 10,
+    cooldownSeconds: 0,
+    strengthDayId: plan.id,
+    strengthSkipWarmup: skipWarmup,
+    canSkipStrengthWarmup: !skipWarmup,
+    strengthPlan: {
+      id: plan.id,
+      day: plan.day,
+      shortDay: plan.shortDay,
+      theme: plan.theme,
+      focus: plan.focus,
+      warmupRounds,
+      warmupTitle: STRENGTH_WARMUP.title,
+      warmupNote,
+      blocks: plan.blocks,
+      mainRounds: main.rounds,
+      workSeconds: main.workSeconds,
+      restSeconds: main.restSeconds,
+    },
+    routineTitle: `${plan.day} · ${plan.theme}`,
+    logType: `신체 · ${plan.day}`,
+    curriculumTitle: plan.theme,
+    curriculumGoal: plan.focus,
+    curriculumSessionCode: plan.shortDay,
+    curriculumWeekLabel: plan.day,
+    curriculumDrills: drills,
   };
 }

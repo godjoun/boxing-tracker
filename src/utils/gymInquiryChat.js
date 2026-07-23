@@ -78,11 +78,12 @@ export async function openInquiryChatAsync({
   };
 }
 
-export async function listInquiryChatMessagesAsync(threadId) {
-  if (!threadId || !hasInquiryChatRemote()) {
+export async function listInquiryChatMessagesAsync(threadId, userId) {
+  const myActorId = resolveDojoActorId(userId);
+  if (!threadId || !myActorId || !hasInquiryChatRemote()) {
     return { messages: [], synced: false };
   }
-  const messages = await fetchRemoteInquiryMessages(threadId);
+  const messages = await fetchRemoteInquiryMessages(threadId, myActorId);
   if (!messages) return { messages: [], synced: false };
   return { messages, synced: true };
 }

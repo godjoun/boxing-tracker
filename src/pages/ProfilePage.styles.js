@@ -310,11 +310,11 @@ export const styles = {
     border: "none",
     borderRadius: "14px",
     background: "#8a2e2e",
-    color: "#f5f1e8",
+    color: "#ffffff",
     fontSize: "14px",
     fontWeight: 900,
     cursor: "pointer",
-    boxShadow: "0 8px 18px rgba(70, 18, 18, 0.2)",
+    boxShadow: "0 8px 18px rgba(10, 9, 9, 0.12)",
   },
 
   profileSaveError: {

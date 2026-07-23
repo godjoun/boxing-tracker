@@ -2,11 +2,12 @@
   color: var(--p-text);
 }
 
-.strength-summary-warmup {
-  margin: 0 !important;
-  color: var(--p-brass, #cf8b8b) !important;
-  font-size: 11px !important;
-  font-weight: 800;
+.strength-day-timer-meta {
+  margin: 10px 0 0;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .composer-meta-label {
@@ -294,4 +295,18 @@
   color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.theme-light .strength-card,
+
+.theme-light .strength-day-panel,
+
+.theme-light .strength-tabs,
+
+.theme-light .strength-day-tab {
+
+  border: 0 !important;
+
+  box-shadow: none !important;
+
 }

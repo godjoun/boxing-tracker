@@ -65,6 +65,7 @@ export default function GymInquiryModal({
   const [doneInquiry, setDoneInquiry] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
 
   const kindMeta =
     KIND_OPTIONS.find((item) => item.id === kind) || KIND_OPTIONS[0];
@@ -86,6 +87,11 @@ export default function GymInquiryModal({
     const trimmedContact = contact.trim();
     if (!trimmedContact) {
       setError("연락처(전화번호 또는 카카오 ID)를 입력해 주세요.");
+      return;
+    }
+
+    if (!privacyAgreed) {
+      setError("문의 전달을 위한 개인정보 수집·제공에 동의해 주세요.");
       return;
     }
 
@@ -121,6 +127,7 @@ export default function GymInquiryModal({
       purpose: kind === "reservation" ? purposeLabel : "",
       userId,
       nickname: nickname || "",
+      acquisitionSource: gym?.featured ? "featured" : "organic",
     };
 
     setSubmitting(true);
@@ -131,6 +138,7 @@ export default function GymInquiryModal({
         gymId: payload.gymId,
         kind,
         hasPhone: Boolean(gym?.phone),
+        acquisitionSource: payload.acquisitionSource,
       });
 
       const result = await saveGymInquiryAsync(payload);
@@ -209,6 +217,9 @@ export default function GymInquiryModal({
               inquiryId={doneInquiry?.id}
               gymName={gym.name}
               inquiryLabel={inquiryKindLabel(doneInquiry?.kind || kind)}
+              acquisitionSource={
+                doneInquiry?.acquisitionSource || "organic"
+              }
             />
           </div>
         ) : (
@@ -421,12 +432,31 @@ export default function GymInquiryModal({
               </div>
             ) : null}
 
+            <label className="gym-inquiry-consent">
+              <input
+                type="checkbox"
+                checked={privacyAgreed}
+                onChange={(event) => setPrivacyAgreed(event.target.checked)}
+              />
+              <span>
+                문의 전달을 위해 연락처와 입력 내용을 선택한 체육관에 제공하는
+                데 동의합니다.{" "}
+                <a
+                  href={`${import.meta.env.BASE_URL}privacy.html`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  개인정보 안내
+                </a>
+              </span>
+            </label>
+
             {error ? <p className="gym-inquiry-error">{error}</p> : null}
 
             <button
               type="submit"
               className="gym-inquiry-submit"
-              disabled={submitting}
+              disabled={submitting || !privacyAgreed}
             >
               {submitting ? "보내는 중..." : kindMeta.submitLabel}
             </button>

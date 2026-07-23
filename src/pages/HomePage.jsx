@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { buildTrainingBreakdown } from "../utils/trainingBreakdown";
 import { getFighterProgress, getLogExp } from "../utils/fighterProgress";
@@ -153,6 +153,7 @@ export default function HomePage({
 }) {
   const { logs = [], profile, weeklyScore } = useTraining();
   const [selectedDate, setSelectedDate] = useState("");
+  const calendarDetailsRef = useRef(null);
 
   const dashboard = useMemo(() => {
     const fighter = getFighterProgress(logs);
@@ -249,6 +250,14 @@ export default function HomePage({
 
   function handleCalendarSelect(dateKey) {
     setSelectedDate((current) => (current === dateKey ? "" : dateKey));
+  }
+
+  function handleOpenCalendar() {
+    const node = calendarDetailsRef.current;
+    if (node && !node.open) {
+      node.open = true;
+    }
+    node?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function handlePrimaryAction() {
@@ -377,9 +386,18 @@ export default function HomePage({
       <section className="home-week-strip" aria-label="이번 주 훈련 흔적">
         <div className="home-week-strip-head">
           <p className="home-week-strip-label">이번 주</p>
-          <span>
-            {dashboard.weekStrip.filter((day) => day.trained).length}일 훈련
-          </span>
+          <div className="home-week-strip-actions">
+            <span>
+              {dashboard.weekStrip.filter((day) => day.trained).length}일 훈련
+            </span>
+            <button
+              type="button"
+              className="home-week-calendar-link"
+              onClick={handleOpenCalendar}
+            >
+              캘린더
+            </button>
+          </div>
         </div>
         <div className="home-week-strip-days">
           {dashboard.weekStrip.map((day) => (
@@ -600,7 +618,11 @@ export default function HomePage({
         </section>
       </details>
 
-      <details className="home-collapsible">
+      <details
+        className="home-collapsible"
+        ref={calendarDetailsRef}
+        id="home-calendar"
+      >
         <summary className="home-collapsible-summary">
           <span className="home-section-label">캘린더</span>
           <strong>이번 달 훈련 · {monthTitle}</strong>

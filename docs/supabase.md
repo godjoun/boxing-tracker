@@ -1,5 +1,30 @@
 # Supabase 중간 점검 (한국어 이름표)
 
+## 공개 베타 적용 순서 (현재 기준)
+
+아래 순서를 SQL Editor에서 한 번씩 실행하고 체크한다.
+
+- [ ] `dojo_gym_listings.sql`
+- [ ] `dojo_gym_listings_approved_read.sql`
+- [ ] `dojo_gym_listings_manage.sql`
+- [ ] `dojo_gym_listings_featured.sql`
+- [ ] `dojo_gym_listings_photos.sql`
+- [ ] `dojo_inquiries.sql`
+- [ ] `dojo_inquiries_ledger.sql`
+- [ ] `dojo_inquiry_chat.sql`
+- [ ] `dojo_inquiry_chat_inbox.sql`
+- [ ] `dojo_exchange.sql`
+- [ ] `dojo_chat.sql`
+- [ ] `dojo_sparring_v1.sql` — 실제 라이벌 찾기를 켤 때
+- [ ] `beta_rls_hardening.sql` — 위 기능 확인 후 마지막
+- [ ] `gym_featured_pilot.sql` — 2주 추천 노출 파일럿을 시작할 때만
+
+공개 주소는 **Vercel 배포만** 사용한다. GitHub Pages 워크플로는 수동
+레거시 미리보기이며 Supabase 환경변수가 없을 수 있다.
+
+`beta_rls_hardening.sql` 적용 후에는 앱에서 입점 수정·삭제, 교류 삭제,
+문의 대화 열기·목록·전송을 다시 확인한다.
+
 > **Table Editor에 보이는 장부 ≈ 6개**가 정상입니다.  
 > 아래 SQL 파일 10개는 **설치·고침 스크립트**라서 개수가 더 많습니다.  
 > (같은 장부를 여러 번 손보는 파일이 있음)

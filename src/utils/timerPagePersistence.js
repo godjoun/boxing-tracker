@@ -14,6 +14,9 @@ export const TIMER_DEFAULT_STATE = {
   curriculumWeekLabel: "",
   curriculumWeekTheme: "",
   curriculumDrills: [],
+  strengthDayId: null,
+  canSkipStrengthWarmup: false,
+  strengthPlan: null,
   prepSecondsSetting: 10,
   cooldownSecondsSetting: 0,
   totalRounds: 3,
@@ -41,6 +44,9 @@ export function readInitialTimerState() {
     curriculumDrills: Array.isArray(saved.curriculumDrills)
       ? saved.curriculumDrills
       : [],
+    strengthDayId: saved.strengthDayId || null,
+    canSkipStrengthWarmup: Boolean(saved.canSkipStrengthWarmup),
+    strengthPlan: saved.strengthPlan || null,
   };
 }
 
@@ -56,6 +62,9 @@ export function buildTimerSnapshot(state) {
     curriculumWeekLabel: state.curriculumWeekLabel,
     curriculumWeekTheme: state.curriculumWeekTheme,
     curriculumDrills: state.curriculumDrills,
+    strengthDayId: state.strengthDayId || null,
+    canSkipStrengthWarmup: Boolean(state.canSkipStrengthWarmup),
+    strengthPlan: state.strengthPlan || null,
     prepSecondsSetting: state.prepSecondsSetting,
     cooldownSecondsSetting: state.cooldownSecondsSetting,
     totalRounds: state.totalRounds,

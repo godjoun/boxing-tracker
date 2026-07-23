@@ -30,7 +30,11 @@ import { resolveSessionTimerConfig } from "../utils/curriculumTimerSync";
 import SessionDrillGuide from "../components/SessionDrillGuide";
 import LessonVideoPlayer from "../components/LessonVideoPlayer";
 import { getLessonBySessionId } from "../utils/lessonCatalog";
-import { getTechniqueCatalog } from "../utils/techniqueCatalog";
+import {
+  buildStyleDrillSession,
+  getStyleCategories,
+  getTechniqueCatalog,
+} from "../utils/techniqueCatalog";
 import ComposerShell, {
   ComposerDockPrimary,
   ComposerSegmentTabs,
@@ -46,7 +50,7 @@ const EMPTY_CUSTOM_FORM = {
   title: "",
   goal: "",
   rounds: 4,
-  workMinutes: 2,
+  workMinutes: 3,
   restSeconds: 30,
   drills: [
     { name: "워밍업", duration: "5분", description: "가벼운 스트레칭과 제자리 뛰기를 하십시오" },
@@ -137,6 +141,8 @@ function WeekProgressRing({ percent }) {
 
 export default function CurriculumPage({
   fighterLevel = 1,
+  initialStyleId = null,
+  initialCategoryId = null,
   focusSessionId = null,
   focusOpenDrills = false,
   focusOpenVideo = false,
@@ -154,7 +160,9 @@ export default function CurriculumPage({
   const [sessionDrafts, setSessionDrafts] = useState({});
   const [expandedDrillId, setExpandedDrillId] = useState(null);
   const [expandedVideoId, setExpandedVideoId] = useState(null);
-  const [activeTab, setActiveTab] = useState("techniques");
+  const [activeTab, setActiveTab] = useState(
+    initialStyleId ? "techniques" : "program"
+  );
   const [openWeekId, setOpenWeekId] = useState(() => {
     const next = getRecommendedSession(progress);
     return next?.weekId || HOME_CURRICULUM.weeks[0]?.id || null;
@@ -172,8 +180,27 @@ export default function CurriculumPage({
 
   const sessions = useMemo(() => getAllCurriculumSessions(), []);
   const weekOverviews = useMemo(() => getCurriculumWeekOverviews(), [progress]);
-  const techniqueCatalog = useMemo(() => getTechniqueCatalog(), [progress]);
-  const [openCategoryId, setOpenCategoryId] = useState(null);
+  const techniqueCatalog = useMemo(() => getTechniqueCatalog(), []);
+  const [selectedStyleId, setSelectedStyleId] = useState(initialStyleId);
+  const [selectedCategoryId, setSelectedCategoryId] =
+    useState(initialCategoryId);
+  const selectedStyle = useMemo(
+    () => techniqueCatalog.find((style) => style.id === selectedStyleId) || null,
+    [techniqueCatalog, selectedStyleId]
+  );
+  const styleCategories = useMemo(
+    () => getStyleCategories(selectedStyle),
+    [selectedStyle]
+  );
+  const selectedCategory = useMemo(
+    () =>
+      styleCategories.find((category) => category.id === selectedCategoryId) ||
+      null,
+    [styleCategories, selectedCategoryId]
+  );
+  const isStyleDetail =
+    activeTab === "techniques" && Boolean(selectedStyle);
+  const isCategoryDetail = isStyleDetail && Boolean(selectedCategory);
 
   useEffect(() => {
     if (!focusSessionId) return;
@@ -184,9 +211,7 @@ export default function CurriculumPage({
       return;
     }
 
-    const isTodaySession = recommended?.id === focusSessionId;
-
-    setActiveTab(isTodaySession ? "techniques" : "program");
+    setActiveTab("program");
     setOpenWeekId(session.weekId);
 
     if (focusOpenDrills) {
@@ -198,9 +223,9 @@ export default function CurriculumPage({
     }
 
     requestAnimationFrame(() => {
-      const scrollTarget = isTodaySession
-        ? document.querySelector(".technique-continue-card")
-        : document.getElementById(`curriculum-week-${session.weekId}`);
+      const scrollTarget = document.getElementById(
+        `curriculum-week-${session.weekId}`
+      );
 
       scrollTarget?.scrollIntoView({
         behavior: "smooth",
@@ -213,7 +238,6 @@ export default function CurriculumPage({
     focusOpenDrills,
     focusOpenVideo,
     sessions,
-    recommended?.id,
     onFocusConsumed,
   ]);
 
@@ -240,6 +264,36 @@ export default function CurriculumPage({
   function handleStartSession(session) {
     const adjusted = applyTrainingSettings(session, settings);
     onStartSession?.(adjusted);
+  }
+
+  function handleStartStyleDrill(style, stage) {
+    const session = buildStyleDrillSession(style, stage);
+    if (session) onStartSession?.(session);
+  }
+
+  function handleOpenStyle(styleId) {
+    setSelectedStyleId(styleId);
+    setSelectedCategoryId(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleCloseStyle() {
+    if (selectedCategoryId) {
+      setSelectedCategoryId(null);
+      return;
+    }
+    setSelectedStyleId(null);
+  }
+
+  function handleOpenCategory(categoryId) {
+    setSelectedCategoryId(categoryId);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleTabChange(tabId) {
+    setActiveTab(tabId);
+    setSelectedStyleId(null);
+    setSelectedCategoryId(null);
   }
 
   function toggleWeek(weekId) {
@@ -324,154 +378,237 @@ export default function CurriculumPage({
 
   return (
     <ComposerShell
-      className="curriculum-page"
+      className={`curriculum-page${isStyleDetail ? " is-style-detail" : ""}`}
       back={
-        <button className="curriculum-back" type="button" onClick={onGoBack}>
-          ← 뒤로
+        <button
+          className="curriculum-back"
+          type="button"
+          onClick={isStyleDetail ? handleCloseStyle : onGoBack}
+        >
+          {isCategoryDetail
+            ? "← 카테고리"
+            : isStyleDetail
+              ? "← 스타일"
+              : "← 뒤로"}
         </button>
       }
-      kicker="LEARN"
-      title="기술"
+      kicker={
+        isCategoryDetail
+          ? selectedStyle.en
+          : isStyleDetail
+            ? selectedStyle.en
+            : "LEARN"
+      }
+      title={
+        isCategoryDetail
+          ? selectedCategory.label
+          : isStyleDetail
+            ? selectedStyle.title
+            : "기술"
+      }
       summary={
         <>
-          <span className="composer-meta-label">진행</span>
-          <strong>
-            {progress.completedCount}/{progress.totalSessions} 세션 ·{" "}
-            {progress.progressPercent}%
-          </strong>
-          <p>
-            {recommendedAdjusted
-              ? `다음 · ${recommended.title} · ${recommendedAdjusted.rounds}R`
-              : progress.isComplete
-                ? "4주 프로그램을 모두 마쳤습니다."
-                : "세션을 완료하면 진행률이 올라갑니다."}
-          </p>
-          <div className="curriculum-progress-bar" aria-hidden="true">
-            <div style={{ width: `${progress.progressPercent}%` }} />
-          </div>
+          {isCategoryDetail ? (
+            <>
+              <span className="composer-meta-label">
+                {selectedStyle.title} · {selectedCategory.kind === "stage" ? "기술" : selectedCategory.label}
+              </span>
+              <strong>{selectedCategory.title}</strong>
+              <p>{selectedCategory.description}</p>
+            </>
+          ) : isStyleDetail ? (
+            <>
+              <span className="composer-meta-label">카테고리</span>
+              <strong>{selectedStyle.title} 안에서 고르기</strong>
+              <p>{selectedStyle.summary}</p>
+              {selectedStyle.advanced ? (
+                <p className="style-detail-advanced">
+                  숙련자 권장 · 균형이 잡힌 뒤 연습하세요
+                </p>
+              ) : null}
+            </>
+          ) : activeTab === "techniques" ? (
+            <>
+              <span className="composer-meta-label">스타일 연습장</span>
+              <strong>{techniqueCatalog.length}가지 스타일</strong>
+              <p>하나를 고르면 그 스타일 전용 화면으로 들어갑니다.</p>
+            </>
+          ) : (
+            <>
+              <span className="composer-meta-label">진행</span>
+              <strong>
+                {progress.completedCount}/{progress.totalSessions} 세션 ·{" "}
+                {progress.progressPercent}%
+              </strong>
+              <p>
+                {recommendedAdjusted
+                  ? `다음 · ${recommended.title} · ${recommendedAdjusted.rounds}R`
+                  : progress.isComplete
+                    ? "4주 프로그램을 모두 마쳤습니다."
+                    : "세션을 완료하면 진행률이 올라갑니다."}
+              </p>
+              <div className="curriculum-progress-bar" aria-hidden="true">
+                <div style={{ width: `${progress.progressPercent}%` }} />
+              </div>
+            </>
+          )}
         </>
       }
       segments={
-        <ComposerSegmentTabs
-          tabs={CURRICULUM_TABS}
-          activeId={activeTab}
-          onChange={setActiveTab}
-          ariaLabel="기술 메뉴"
-        />
+        isStyleDetail ? null : (
+          <ComposerSegmentTabs
+            tabs={CURRICULUM_TABS}
+            activeId={activeTab}
+            onChange={handleTabChange}
+            ariaLabel="기술 메뉴"
+          />
+        )
       }
       dock={
-        recommendedAdjusted ? (
+        activeTab === "program" && !isStyleDetail && recommendedAdjusted ? (
           <ComposerDockPrimary
             label={`${recommendedAdjusted.rounds}R 훈련 시작`}
             onClick={() => handleStartSession(recommended)}
           />
         ) : null
       }
-      hideDock={!recommendedAdjusted}
+      hideDock={isStyleDetail || activeTab !== "program" || !recommendedAdjusted}
     >
-      <header className="curriculum-hero curriculum-hero-compact">
-        <p className="curriculum-intro">
-          {activeTab === "techniques"
-            ? "4주 코스를 기술별로 모아 둔 목록입니다. 새 수업이 아니라 같은 세션의 다른 보기예요."
-            : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
-        </p>
-      </header>
+      {!isStyleDetail ? (
+        <header className="curriculum-hero curriculum-hero-compact">
+          <p className="curriculum-intro">
+            {activeTab === "techniques"
+              ? "스타일은 정답이 아니라 자주 쓰는 선택입니다. 하나를 고르면 전용 화면으로 들어갑니다."
+              : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
+          </p>
+        </header>
+      ) : null}
 
-      {activeTab === "techniques" ? (
-        <>
-          {recommendedAdjusted ? (
-            <button
-              type="button"
-              className="technique-continue-card"
-              onClick={() => handleStartSession(recommended)}
-            >
-              <span className="technique-continue-kicker">CONTINUE · 4주 코스</span>
-              <strong className="technique-continue-title">
-                {recommended.title}
-              </strong>
-              <span className="technique-continue-meta">
-                {recommended.weekLabel} · {recommended.code} ·{" "}
-                {recommendedAdjusted.rounds}R
-              </span>
-              <span className="technique-continue-cta">이어서 훈련 →</span>
-            </button>
+      {activeTab === "techniques" && !selectedStyle ? (
+        <section className="style-lab">
+          <div className="style-picker" aria-label="복싱 스타일 선택">
+            {techniqueCatalog.map((style) => (
+              <button
+                type="button"
+                className="style-picker-card"
+                key={style.id}
+                onClick={() => handleOpenStyle(style.id)}
+              >
+                <span className="style-picker-icon" aria-hidden="true">
+                  {style.icon}
+                </span>
+                <span className="style-picker-en">{style.en}</span>
+                <strong>{style.title}</strong>
+                <p>{style.summary}</p>
+                {style.advanced ? <em>숙련자 권장</em> : null}
+                <span className="style-picker-enter">들어가기 →</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {isStyleDetail && !selectedCategory ? (
+        <section
+          className="style-detail"
+          aria-label={`${selectedStyle.title} 카테고리`}
+        >
+          <div className="style-category-grid">
+            {styleCategories.map((category) => (
+              <button
+                type="button"
+                className={`style-category-card kind-${category.kind}`}
+                key={category.id}
+                onClick={() => handleOpenCategory(category.id)}
+              >
+                <span className="style-category-kicker">
+                  {category.kind === "overview"
+                    ? "OVERVIEW"
+                    : category.kind === "flow"
+                      ? "FLOW"
+                      : `STEP ${String(category.order).padStart(2, "0")}`}
+                </span>
+                <strong>{category.label}</strong>
+                <p>{category.title}</p>
+                <span className="style-picker-enter">보기 →</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {isCategoryDetail ? (
+        <section
+          className="style-category-detail"
+          aria-label={`${selectedCategory.label} 상세`}
+        >
+          {selectedCategory.kind === "overview" ? (
+            <article className="style-category-panel">
+              <p className="style-category-panel-label">제목 · 요약</p>
+              <h2>{selectedStyle.title}</h2>
+              <p className="style-category-panel-en">{selectedStyle.en}</p>
+              <p>{selectedStyle.summary}</p>
+              {selectedStyle.advanced ? (
+                <p className="style-detail-advanced">
+                  숙련자 권장 · 균형이 잡힌 뒤 연습하세요
+                </p>
+              ) : null}
+            </article>
           ) : null}
 
-          <p className="technique-catalog-label">기술별 모아보기</p>
-          <p className="technique-catalog-help">
-            아래 항목을 열면 4주 코스의 해당 DAY로 이동합니다.
-          </p>
-          <div className="technique-catalog-grid">
-            {techniqueCatalog.map((category) => {
-              const isOpen = openCategoryId === category.id;
+          {selectedCategory.kind === "flow" ? (
+            <article className="style-category-panel">
+              <p className="style-category-panel-label">흐름 순서</p>
+              <h2>이렇게 연결합니다</h2>
+              <ol className="style-detail-flow-steps">
+                {selectedCategory.steps.map((step, index) => (
+                  <li key={`${selectedStyle.id}-flow-${index}`}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{step}</strong>
+                  </li>
+                ))}
+              </ol>
+            </article>
+          ) : null}
 
-              return (
-                <div
-                  className={`technique-cat-wrap${isOpen ? " is-open" : ""}`}
-                  key={category.id}
-                >
-                  <button
-                    type="button"
-                    className={`technique-cat-card accent-${category.accent}`}
-                    onClick={() =>
-                      setOpenCategoryId((current) =>
-                        current === category.id ? null : category.id
-                      )
-                    }
-                    aria-expanded={isOpen}
-                  >
-                    <span className="technique-cat-icon" aria-hidden="true">
-                      {category.icon}
-                    </span>
-                    <span className="technique-cat-en">{category.en}</span>
-                    <strong className="technique-cat-title">
-                      {category.title}
-                    </strong>
-                    <span className="technique-cat-desc">
-                      {category.description}
-                    </span>
-                    <span className="technique-cat-foot">
-                      <span>
-                        {category.completedCount}/{category.sessionCount} 완료
-                      </span>
-                      <span aria-hidden="true">{isOpen ? "▲" : "▼"}</span>
-                    </span>
-                  </button>
+          {selectedCategory.kind === "stage" ? (
+            <article className="style-category-panel">
+              <p className="style-category-panel-label">
+                단계 {String(selectedCategory.order).padStart(2, "0")} · 드릴
+              </p>
+              <h2>{selectedCategory.stage.title}</h2>
+              <p>{selectedCategory.stage.purpose}</p>
 
-                  {isOpen ? (
-                    <div className="technique-cat-sessions">
-                      {category.sessions.map((session) => {
-                        const adjusted = applyTrainingSettings(session, settings);
-                        return (
-                          <div
-                            className="technique-session-row"
-                            key={session.id}
-                          >
-                            <div className="technique-session-copy">
-                              <span>
-                                {session.weekLabel} · {session.code}
-                                {session.completed ? " · 완료" : ""}
-                              </span>
-                              <strong>{session.title}</strong>
-                              <p>{session.goal}</p>
-                            </div>
-                            <button
-                              type="button"
-                              className="technique-session-start"
-                              onClick={() => handleStartSession(session)}
-                            >
-                              {adjusted.rounds}R 시작
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null}
+              <div className="style-drill style-detail-drill">
+                <div className="style-drill-head">
+                  <div>
+                    <span>DRILL · 3분 기준</span>
+                    <strong>{selectedCategory.stage.drill.title}</strong>
+                  </div>
+                  <em>{selectedCategory.stage.drill.rounds}R</em>
                 </div>
-              );
-            })}
-          </div>
-        </>
+                <p>{selectedCategory.stage.drill.goal}</p>
+                <ol>
+                  {selectedCategory.stage.drill.cues.map((cue) => (
+                    <li key={cue}>{cue}</li>
+                  ))}
+                </ol>
+                <button
+                  type="button"
+                  className="style-drill-start"
+                  onClick={() =>
+                    handleStartStyleDrill(
+                      selectedStyle,
+                      selectedCategory.stage
+                    )
+                  }
+                >
+                  {selectedCategory.stage.drill.rounds}R 드릴 시작
+                </button>
+              </div>
+            </article>
+          ) : null}
+        </section>
       ) : null}
 
       {activeTab === "program" ? (

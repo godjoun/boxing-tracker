@@ -56,17 +56,23 @@ export function resolveSessionTimerConfig(session) {
   const rounds = Number(session?.rounds) || 3;
   const workSeconds = Number(session?.workSeconds) || 120;
   const restSeconds = Number(session?.restSeconds) || 30;
+  const explicitPrepSeconds = Number(session?.prepSeconds);
+  const hasExplicitPrep = Number.isFinite(explicitPrepSeconds);
   const drills = Array.isArray(session?.drills) ? session.drills : [];
   const workMinutes = Math.max(1, Math.round(workSeconds / 60));
 
   const warmup = drills.find((drill) => getDrillRole(drill) === "warmup");
   const cooldown = drills.find((drill) => getDrillRole(drill) === "cooldown");
 
-  const prepSeconds = warmup
-    ? clampPrepSeconds(parseDrillDurationToSeconds(warmup.duration) ?? MIN_PREP_SECONDS)
-    : drills.length > 0
-      ? MIN_PREP_SECONDS
-      : 10;
+  const prepSeconds = hasExplicitPrep
+    ? Math.max(0, Math.min(MAX_PREP_SECONDS, explicitPrepSeconds))
+    : warmup
+      ? clampPrepSeconds(
+          parseDrillDurationToSeconds(warmup.duration) ?? MIN_PREP_SECONDS
+        )
+      : drills.length > 0
+        ? MIN_PREP_SECONDS
+        : 10;
 
   const cooldownSeconds = cooldown
     ? clampCooldownSeconds(parseDrillDurationToSeconds(cooldown.duration) ?? 0)

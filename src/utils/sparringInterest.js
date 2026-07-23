@@ -15,7 +15,7 @@ function writeInterests(items) {
   localStorage.setItem(INTEREST_KEY, JSON.stringify(items.slice(0, 80)));
 }
 
-/** 당근형: 연락처 공개 대신 앱 안 ‘대화 요청’만 기록 */
+/** 레거시 로컬 관심 기록: 실제 매칭은 Supabase RPC를 사용한다. */
 export function hasSparringInterest(partnerId, userId = null) {
   if (!partnerId) return false;
   return readInterests().some(

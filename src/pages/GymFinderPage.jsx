@@ -27,8 +27,8 @@ const CATEGORIES = [
   {
     id: "sparring",
     label: "라이벌 찾기",
-    hint: "1:1 스파링 상대 · 대화 요청",
-    howTo: "지역·희망 시간 맞추고 찾는 중을 켜요.",
+    hint: "1:1 스파링 상대 · 관심 요청",
+    howTo: "지역·희망 시간을 적고 내 카드를 공개한 뒤 관심을 보내요.",
   },
 ];
 
@@ -39,11 +39,11 @@ function resolveView(view) {
   if (view === "sparring-lock") {
     return "sparring";
   }
-  return "exchange";
+  return "gyms";
 }
 
 export default function GymFinderPage({
-  initialView = "hub",
+  initialView = "gyms",
   fighterLevel = 1,
   onGoBack,
   onStartTraining,

@@ -230,44 +230,21 @@ export async function updateRemoteGymListing(listing) {
   const supabase = getSupabase();
   if (!supabase || !listing?.id || !listing?.applicantActorId) return false;
 
-  const full = toRemotePayload(listing);
-  const withoutUrls = { ...full };
-  delete withoutUrls.photo_urls;
-  const photoOnly = {
-    photo_url: full.photo_url || "",
-    photo_urls: full.photo_urls || [],
-  };
-  const photoUrlOnly = {
-    photo_url: full.photo_url || "",
-  };
-
   try {
-    for (const payload of [full, withoutUrls]) {
-      const { error } = await supabase
-        .from("dojo_gym_listings")
-        .update(payload)
-        .eq("id", listing.id)
-        .eq("applicant_actor_id", listing.applicantActorId);
-
-      if (!error) {
-        // 사진만 한 번 더 밀어 photo_url 누락을 막는다
-        if (full.photo_url || (full.photo_urls && full.photo_urls.length)) {
-          const photoPayload =
-            Object.prototype.hasOwnProperty.call(payload, "photo_urls")
-              ? photoOnly
-              : photoUrlOnly;
-          await supabase
-            .from("dojo_gym_listings")
-            .update(photoPayload)
-            .eq("id", listing.id)
-            .eq("applicant_actor_id", listing.applicantActorId);
-        }
-        return true;
+    const { data, error } = await supabase.rpc(
+      "update_my_dojo_gym_listing",
+      {
+        p_listing_id: listing.id,
+        p_actor_id: listing.applicantActorId,
+        p_patch: toRemotePayload(listing),
       }
+    );
+
+    if (error) {
       if (isRemoteUnavailable(error)) return false;
-      console.warn("[gymListing] update failed", error.message || error);
+      throw error;
     }
-    return false;
+    return Boolean(data);
   } catch (error) {
     if (isRemoteUnavailable(error)) return false;
     throw error;
@@ -279,18 +256,20 @@ export async function deleteRemoteGymListing(id, actorId) {
   if (!supabase || !id || !actorId) return false;
 
   try {
-    const { error } = await supabase
-      .from("dojo_gym_listings")
-      .delete()
-      .eq("id", id)
-      .eq("applicant_actor_id", actorId);
+    const { data, error } = await supabase.rpc(
+      "delete_my_dojo_gym_listing",
+      {
+        p_listing_id: id,
+        p_actor_id: actorId,
+      }
+    );
 
     if (error) {
       if (isRemoteUnavailable(error)) return false;
       throw error;
     }
 
-    return true;
+    return Boolean(data);
   } catch (error) {
     if (isRemoteUnavailable(error)) return false;
     throw error;

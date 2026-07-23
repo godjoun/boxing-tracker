@@ -577,3 +577,19 @@
 .timer-complete-card .timer-complete-links button {
   color: rgba(246, 241, 234, 0.55);
 }
+
+.timer-skip-warmup {
+  display: block;
+  width: 100%;
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}

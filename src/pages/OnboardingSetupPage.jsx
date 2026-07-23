@@ -457,6 +457,10 @@ export default function OnboardingSetupPage() {
             ) : null}
 
             <div className="onboarding-cta-block">
+              <p className="onboarding-storage-notice">
+                훈련 기록은 이 기기에 저장됩니다. 더보기에서 JSON 백업을
+                보관할 수 있어요.
+              </p>
               <p
                 className={`onboarding-cta-hint${
                   canStart ? " is-ready" : ""
@@ -467,10 +471,29 @@ export default function OnboardingSetupPage() {
               <button
                 type="submit"
                 className="onboarding-street-cta onboarding-submit"
-                disabled={submitting}
+                disabled={!canStart}
               >
                 {submitting ? "저장 중..." : "라운드 시작하기"}
               </button>
+              <p className="onboarding-legal-notice">
+                시작하면{" "}
+                <a
+                  href={`${import.meta.env.BASE_URL}terms.html`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  베타 이용약관
+                </a>
+                과{" "}
+                <a
+                  href={`${import.meta.env.BASE_URL}privacy.html`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  개인정보 안내
+                </a>
+                를 확인한 것으로 봅니다.
+              </p>
             </div>
           </form>
         </div>

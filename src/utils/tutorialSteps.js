@@ -1,6 +1,7 @@
 export const TUTORIAL_TARGETS = {
   homeStart: "home-start",
   navTimer: "nav-timer",
+  navDojo: "nav-dojo",
   navProfile: "nav-profile",
   navCategory: "nav-category",
 };
@@ -35,6 +36,15 @@ export const TUTORIAL_STEPS = [
     placement: "top",
   },
   {
+    id: "nav-dojo",
+    kicker: "DOJO",
+    title: "도장 — 체육관을 찾는다",
+    body: "가까운 체육관을 찾고 체험·대여를 문의하세요. 교류와 라이벌 찾기도 도장 안에 있습니다.",
+    mode: "spotlight",
+    target: TUTORIAL_TARGETS.navDojo,
+    placement: "top",
+  },
+  {
     id: "nav-profile",
     kicker: "NAMEPLATE",
     title: "명패 — 나는 복서다",
@@ -47,7 +57,7 @@ export const TUTORIAL_STEPS = [
     id: "nav-category",
     kicker: "MORE",
     title: "더보기 — 다 찾기",
-    body: "기록·도장·백업은 더보기에 모아 두었습니다. 도장에서 교류·체육관 문의·대여·라이벌 찾기를 고르면 됩니다.",
+    body: "수동 기록·데이터 백업·테마 같은 보조 도구를 모아 두었습니다.",
     mode: "spotlight",
     target: TUTORIAL_TARGETS.navCategory,
     placement: "top",

@@ -82,11 +82,13 @@ export async function openRemoteInquiryChat({
     }
     if (!data) return null;
 
-    const { data: thread, error: fetchError } = await supabase
-      .from("dojo_inquiry_threads")
-      .select("*")
-      .eq("id", data)
-      .maybeSingle();
+    const { data: threadRows, error: fetchError } = await supabase.rpc(
+      "get_dojo_inquiry_thread",
+      {
+        p_thread_id: data,
+        p_actor_id: actorId,
+      }
+    );
 
     if (fetchError) {
       if (isRemoteUnavailable(fetchError)) {
@@ -95,24 +97,31 @@ export async function openRemoteInquiryChat({
       throw fetchError;
     }
 
-    return mapThread(thread) || { id: data, inquiryId, source: "server" };
+    return (
+      mapThread(Array.isArray(threadRows) ? threadRows[0] : threadRows) || {
+        id: data,
+        inquiryId,
+        source: "server",
+      }
+    );
   } catch (error) {
     if (isRemoteUnavailable(error)) return null;
     throw error;
   }
 }
 
-export async function fetchRemoteInquiryMessages(threadId) {
+export async function fetchRemoteInquiryMessages(threadId, actorId) {
   const supabase = getSupabase();
-  if (!supabase || !threadId) return null;
+  if (!supabase || !threadId || !actorId) return null;
 
   try {
-    const { data, error } = await supabase
-      .from("dojo_inquiry_messages")
-      .select("*")
-      .eq("thread_id", threadId)
-      .order("created_at", { ascending: true })
-      .limit(120);
+    const { data, error } = await supabase.rpc(
+      "list_dojo_inquiry_messages",
+      {
+        p_thread_id: threadId,
+        p_actor_id: actorId,
+      }
+    );
 
     if (error) {
       if (isRemoteUnavailable(error)) return null;

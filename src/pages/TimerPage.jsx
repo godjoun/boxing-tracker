@@ -8,6 +8,10 @@ import {
 } from "../utils/fighterProgress";
 import { getTrainingStreak } from "./profilePage/profileCardUtils";
 import {
+  buildStrengthDayLaunch,
+  getStrengthDay,
+} from "../utils/strengthProgram";
+import {
   getCurriculumPhaseFocus,
   markCurriculumSessionComplete,
 } from "../utils/homeCurriculum";
@@ -41,6 +45,7 @@ import {
 } from "../utils/timerPagePersistence";
 import { styles } from "./TimerPage.styles";
 import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
+import StrengthTimerGuide from "../components/StrengthTimerGuide";
 import ComposerShell, {
   ComposerDockPrimary,
   ComposerSegmentTabs,
@@ -159,9 +164,11 @@ const clampSeconds = (value, min, max) => {
 export default function TimerPage({
   launchConfig = null,
   onLaunchConsumed,
+  onRelaunch,
   onGoLog,
   onGoHome,
   onGoBack,
+  backLabel = "링",
   onGoProfile,
 }) {
   const { addLog, logs, profile } = useTraining();
@@ -196,6 +203,15 @@ export default function TimerPage({
   );
   const [curriculumDrills, setCurriculumDrills] = useState(
     initialTimerState.curriculumDrills
+  );
+  const [strengthDayId, setStrengthDayId] = useState(
+    initialTimerState.strengthDayId || null
+  );
+  const [canSkipStrengthWarmup, setCanSkipStrengthWarmup] = useState(
+    Boolean(initialTimerState.canSkipStrengthWarmup)
+  );
+  const [strengthPlan, setStrengthPlan] = useState(
+    initialTimerState.strengthPlan || null
   );
   const [prepSecondsSetting, setPrepSecondsSetting] = useState(
     initialTimerState.prepSecondsSetting
@@ -299,6 +315,9 @@ export default function TimerPage({
     setCurriculumDrills(
       Array.isArray(saved.curriculumDrills) ? saved.curriculumDrills : []
     );
+    setStrengthDayId(saved.strengthDayId || null);
+    setCanSkipStrengthWarmup(Boolean(saved.canSkipStrengthWarmup));
+    setStrengthPlan(saved.strengthPlan || null);
     setPrepSecondsSetting(saved.prepSecondsSetting ?? 10);
     setCooldownSecondsSetting(saved.cooldownSecondsSetting ?? 0);
     setTotalRounds(saved.totalRounds ?? 3);
@@ -333,6 +352,9 @@ export default function TimerPage({
     setCurriculumWeekLabel("");
     setCurriculumWeekTheme("");
     setCurriculumDrills([]);
+    setStrengthDayId(null);
+    setCanSkipStrengthWarmup(false);
+    setStrengthPlan(null);
     setPrepSecondsSetting(10);
     setCooldownSecondsSetting(0);
   }
@@ -349,6 +371,9 @@ export default function TimerPage({
       curriculumWeekLabel,
       curriculumWeekTheme,
       curriculumDrills,
+      strengthDayId,
+      canSkipStrengthWarmup,
+      strengthPlan,
       prepSecondsSetting,
       cooldownSecondsSetting,
       totalRounds,
@@ -377,6 +402,9 @@ export default function TimerPage({
     curriculumWeekLabel,
     curriculumWeekTheme,
     curriculumDrills,
+    strengthDayId,
+    canSkipStrengthWarmup,
+    strengthPlan,
     prepSecondsSetting,
     cooldownSecondsSetting,
     totalRounds,
@@ -437,6 +465,9 @@ export default function TimerPage({
           curriculumWeekLabel,
           curriculumWeekTheme,
           curriculumDrills,
+          strengthDayId,
+          canSkipStrengthWarmup,
+          strengthPlan,
           totalRounds,
           workSecondsSetting,
           restSecondsSetting,
@@ -468,6 +499,9 @@ export default function TimerPage({
     curriculumWeekLabel,
     curriculumWeekTheme,
     curriculumDrills,
+    strengthDayId,
+    canSkipStrengthWarmup,
+    strengthPlan,
     prepSecondsSetting,
     cooldownSecondsSetting,
     totalRounds,
@@ -682,10 +716,24 @@ export default function TimerPage({
     setCurriculumWeekLabel(config.curriculumWeekLabel || "");
     setCurriculumWeekTheme(config.curriculumWeekTheme || "");
     setCurriculumDrills(config.curriculumDrills || []);
+    setStrengthDayId(config.strengthDayId || null);
+    setCanSkipStrengthWarmup(Boolean(config.canSkipStrengthWarmup));
+    setStrengthPlan(config.strengthPlan || null);
     setPrepSecondsSetting(config.prepSeconds ?? 10);
     setCooldownSecondsSetting(config.cooldownSeconds ?? 0);
     resetTimerState(config.workSeconds);
   };
+
+  function handleSkipStrengthWarmup() {
+    if (!strengthDayId || !canSkipStrengthWarmup) return;
+    const day = getStrengthDay(strengthDayId);
+    const next = buildStrengthDayLaunch(day, { skipWarmup: true });
+    if (onRelaunch) {
+      onRelaunch(next);
+      return;
+    }
+    applyLaunchConfig(next);
+  }
 
   const applyPreset = (preset) => {
     setSelectedPresetId(preset.id);
@@ -784,10 +832,11 @@ export default function TimerPage({
 
   const handleEndCurriculum = () => {
     const completedRounds = getCompletedRoundsSoFar();
+    const endLabel = strengthPlan ? "신체" : "기술";
 
     if (completedRounds >= 1) {
       const ok = window.confirm(
-        `지금까지 ${completedRounds}라운드를 기록하고 기술을 종료할까요?`
+        `지금까지 ${completedRounds}라운드를 기록하고 ${endLabel}을 종료할까요?`
       );
       if (!ok) return;
 
@@ -801,7 +850,7 @@ export default function TimerPage({
 
     if (
       !window.confirm(
-        "아직 완료한 라운드가 없어요. 기술을 종료할까요?"
+        `아직 완료한 라운드가 없어요. ${endLabel}을 종료할까요?`
       )
     ) {
       return;
@@ -1083,7 +1132,7 @@ export default function TimerPage({
                 className="composer-shell-back"
                 onClick={onGoBack}
               >
-                ← 훈련
+                ← {backLabel}
               </button>
             ) : null
           }
@@ -1247,6 +1296,25 @@ export default function TimerPage({
               </div>
             </details>
           </section>
+
+          {strengthPlan ? (
+            <>
+              {canSkipStrengthWarmup && strengthDayId ? (
+                <button
+                  type="button"
+                  className="timer-skip-warmup"
+                  onClick={handleSkipStrengthWarmup}
+                >
+                  줄넘기 제외하기
+                </button>
+              ) : null}
+              <StrengthTimerGuide
+                plan={strengthPlan}
+                phase={phase}
+                currentRound={currentRound}
+              />
+            </>
+          ) : null}
         </ComposerShell>
       ) : null}
 
@@ -1310,7 +1378,14 @@ export default function TimerPage({
           </div>
         ) : null}
 
-        {curriculumDrills.length > 0 && phase !== "done" ? (
+        {strengthPlan && phase !== "done" ? (
+          <StrengthTimerGuide
+            plan={strengthPlan}
+            phase={phase}
+            currentRound={currentRound}
+            onEnd={handleEndCurriculum}
+          />
+        ) : curriculumDrills.length > 0 && phase !== "done" ? (
           <CurriculumTimerPanel
             sessionTitle={curriculumSessionTitle}
             sessionGoal={curriculumGoal}

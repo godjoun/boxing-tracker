@@ -172,6 +172,7 @@ export default function GymInquiryLedgerPanel({
         inquiryId={chatItem?.id}
         gymName={chatItem?.gymName || ""}
         inquiryLabel={inquiryKindLabel(chatItem?.kind)}
+        acquisitionSource={chatItem?.acquisitionSource || "organic"}
       />
     </section>
   );

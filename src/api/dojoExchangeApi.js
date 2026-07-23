@@ -231,18 +231,20 @@ export async function deleteRemoteExchangeEvent(eventId, actorId) {
   if (!supabase || !eventId || !actorId) return false;
 
   try {
-    const { error, count } = await supabase
-      .from("dojo_exchange_events")
-      .delete({ count: "exact" })
-      .eq("id", eventId)
-      .eq("user_id", actorId);
+    const { data, error } = await supabase.rpc(
+      "delete_my_dojo_exchange_event",
+      {
+        p_event_id: eventId,
+        p_actor_id: actorId,
+      }
+    );
 
     if (error) {
       if (isRemoteUnavailable(error)) return false;
       throw error;
     }
 
-    return (count ?? 1) > 0;
+    return Boolean(data);
   } catch (error) {
     if (isRemoteUnavailable(error)) return false;
     throw error;

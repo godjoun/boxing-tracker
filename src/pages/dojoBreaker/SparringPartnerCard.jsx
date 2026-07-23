@@ -1,12 +1,8 @@
-import { hasSparringInterest } from "../../utils/sparringInterest";
-
 export default function SparringPartnerCard({
   partner,
-  userId,
+  requested = false,
   onChatRequest,
 }) {
-  const requested = hasSparringInterest(partner.id, userId);
-
   return (
     <article
       className={`sparring-partner-card${partner.isMine ? " mine" : ""}${
@@ -49,7 +45,7 @@ export default function SparringPartnerCard({
           className={`sparring-chat-request${requested ? " is-sent" : ""}`}
           onClick={() => onChatRequest?.(partner)}
         >
-          {requested ? "요청 취소" : "대화 요청"}
+          {requested ? "관심 취소" : "관심 보내기"}
         </button>
       ) : (
         <p className="sparring-partner-note">내 카드</p>

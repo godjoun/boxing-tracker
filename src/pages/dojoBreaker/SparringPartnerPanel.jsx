@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { track } from "@vercel/analytics";
 import { useTraining } from "../../store/TrainingContext";
-import { resolveSearchLocation } from "../../utils/gymSearch";
 import { getFighterProgress } from "../../utils/fighterProgress";
+import { resolveDojoActorId } from "../../api/dojoExchangeApi";
+import {
+  cancelRemoteSparringInterest,
+  deleteRemoteSparringProfile,
+  fetchMySparringProfile,
+  fetchRemoteSparringInterests,
+  fetchSparringProfiles,
+  hasSparringPartnerRemote,
+  saveRemoteSparringProfile,
+  sendRemoteSparringInterest,
+} from "../../api/sparringPartnerApi";
 import {
   hasSparringPriority,
   SPARRING_PRIORITY_LEVEL,
@@ -11,17 +21,11 @@ import {
   buildListingFromProfile,
   clearMyListing,
   EXPERIENCE_LEVELS,
-  getAvailablePartners,
   getMyListing,
   saveMyListing,
   SPARRING_STYLES,
   WEIGHT_CLASSES,
 } from "../../utils/sparringPartners";
-import {
-  cancelSparringInterest,
-  hasSparringInterest,
-  sendSparringInterest,
-} from "../../utils/sparringInterest";
 import SparringPartnerCard from "./SparringPartnerCard";
 
 const DEFAULT_FORM = {
@@ -37,6 +41,8 @@ const DEFAULT_FORM = {
 export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
   const { profile, userId, logs } = useTraining();
   const fighterLevel = useMemo(() => getFighterProgress(logs).level, [logs]);
+  const actorId = useMemo(() => resolveDojoActorId(userId), [userId]);
+  const remoteReady = hasSparringPartnerRemote();
   const profileDefaults = buildListingFromProfile(profile, {
     active: false,
     fighterLevel,
@@ -56,34 +62,50 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
   const [profileOpen, setProfileOpen] = useState(!isLooking);
   const [formError, setFormError] = useState("");
   const [weightFilter, setWeightFilter] = useState("전체");
+  const [areaFilter, setAreaFilter] = useState("");
+  const [timeFilter, setTimeFilter] = useState("");
   const [partners, setPartners] = useState([]);
-  const [position, setPosition] = useState(null);
   const [status, setStatus] = useState("loading");
   const [notice, setNotice] = useState("");
-  const [interestTick, setInterestTick] = useState(0);
+  const [interests, setInterests] = useState([]);
 
   const looking = Boolean(form.active || saved?.active);
+  const sentInterests = useMemo(
+    () => interests.filter((item) => item.direction === "sent"),
+    [interests]
+  );
+  const receivedInterests = useMemo(
+    () => interests.filter((item) => item.direction === "received"),
+    [interests]
+  );
+  const requestedProfileIds = useMemo(
+    () => new Set(sentInterests.map((item) => item.profile_id)),
+    [sentInterests]
+  );
 
   async function loadPartners(options = {}) {
-    const { preferGps = false, preset = null, allowFallback = true } = options;
-
     setStatus("loading");
+    setNotice("");
+
+    if (!remoteReady) {
+      setPartners([]);
+      setStatus("unavailable");
+      return;
+    }
 
     try {
-      const currentPosition = await resolveSearchLocation({
-        preferGps,
-        preset,
-        allowFallback,
+      const results = await fetchSparringProfiles({
+        actorId,
+        weightClass: weightFilter,
+        areaQuery: options.areaQuery ?? areaFilter,
+        timeQuery: options.timeQuery ?? timeFilter,
       });
-      setPosition(currentPosition);
 
-      const results = await getAvailablePartners(
-        currentPosition.lat,
-        currentPosition.lon,
-        { weightClass: weightFilter },
-        userId,
-        { fighterLevel }
-      );
+      if (!results) {
+        setPartners([]);
+        setStatus("unavailable");
+        return;
+      }
       setPartners(results);
       setStatus(results.length > 0 ? "ready" : "empty");
     } catch (error) {
@@ -94,17 +116,44 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
   }
 
   useEffect(() => {
-    loadPartners({ preferGps: true, allowFallback: true });
+    loadPartners();
   }, []);
 
   useEffect(() => {
-    if (!position) return;
-    loadPartners({
-      preferGps: position.source === "gps",
-      preset: null,
-      allowFallback: true,
-    });
+    if (remoteReady) loadPartners();
   }, [weightFilter]);
+
+  useEffect(() => {
+    if (!remoteReady) return;
+
+    async function loadMine() {
+      const remoteProfile = await fetchMySparringProfile(actorId);
+      if (!remoteProfile) return;
+
+      setSaved(remoteProfile);
+      setForm((current) => ({
+        ...current,
+        ...remoteProfile,
+        active: remoteProfile.active,
+      }));
+      setProfileOpen(!remoteProfile.active);
+    }
+
+    loadMine();
+  }, [actorId, remoteReady]);
+
+  async function loadInterests() {
+    if (!remoteReady) {
+      setInterests([]);
+      return;
+    }
+    const next = await fetchRemoteSparringInterests(actorId);
+    setInterests(next || []);
+  }
+
+  useEffect(() => {
+    loadInterests();
+  }, [actorId, remoteReady]);
 
   function showNotice(message) {
     setNotice(message);
@@ -149,64 +198,110 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
     };
   }
 
-  function handleSaveDetails() {
+  async function saveProfile(active = looking) {
     if (!validateRequired()) return;
 
-    const listing = saveMyListing(
-      buildListingPayload({ active: looking }),
-      userId
-    );
-    setSaved(listing);
-    setForm((current) => ({ ...current, active: looking }));
-    if (position) {
-      loadPartners({ preferGps: position.source === "gps", allowFallback: true });
-    }
-    showNotice("프로필을 저장했습니다.");
-    setProfileOpen(false);
-  }
-
-  function handleToggleLooking() {
-    if (looking) {
-      clearMyListing(userId);
-      setSaved(null);
-      setForm((current) => ({ ...current, active: false }));
-      if (position) {
-        loadPartners({ preferGps: position.source === "gps", allowFallback: true });
-      }
-      showNotice("찾는 중을 껐습니다.");
+    if (!remoteReady) {
+      setFormError("실제 매칭을 위해 서버 연결이 필요합니다.");
       return;
     }
 
-    if (!validateRequired()) return;
-
-    const listing = saveMyListing(buildListingPayload(), userId);
-    setSaved(listing);
-    setForm((current) => ({ ...current, active: true }));
-    setProfileOpen(false);
-    if (position) {
-      loadPartners({ preferGps: position.source === "gps", allowFallback: true });
+    const payload = buildListingPayload({ active });
+    const savedRemotely = await saveRemoteSparringProfile({
+      actorId,
+      profile: payload,
+    });
+    if (!savedRemotely) {
+      setFormError(
+        "서버에 저장하지 못했습니다. Supabase에서 dojo_sparring_v1.sql 적용 여부를 확인해 주세요."
+      );
+      return;
     }
-    showNotice("찾는 중으로 공개됐습니다.");
+
+    const listing = saveMyListing(payload, userId);
+    setSaved(listing);
+    setForm((current) => ({ ...current, active }));
+    await loadPartners();
+    await loadInterests();
+    return listing;
   }
 
-  function handleChatRequest(partner) {
+  async function handleSaveDetails() {
+    const listing = await saveProfile(looking);
+    if (!listing) return;
+    showNotice("공개 카드 정보를 저장했습니다.");
+    setProfileOpen(false);
+  }
+
+  async function handleToggleLooking() {
+    if (looking) {
+      const listing = await saveProfile(false);
+      if (!listing) return;
+      setSaved(listing);
+      setForm((current) => ({ ...current, active: false }));
+      showNotice("내 공개 카드를 숨겼습니다.");
+      return;
+    }
+
+    const listing = await saveProfile(true);
+    if (!listing) return;
+    setProfileOpen(false);
+    showNotice("내 카드가 공개됐습니다. 맞는 상대에게 관심을 보내 보세요.");
+  }
+
+  async function handleDeleteProfile() {
+    if (!window.confirm("공개 카드와 받은/보낸 관심 기록을 모두 삭제할까요?")) {
+      return;
+    }
+
+    const deleted = await deleteRemoteSparringProfile(actorId);
+    if (!deleted) {
+      setFormError("카드를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    clearMyListing(userId);
+    setSaved(null);
+    setForm((current) => ({ ...current, active: false }));
+    setProfileOpen(true);
+    await loadPartners();
+    await loadInterests();
+    showNotice("공개 카드를 삭제했습니다.");
+  }
+
+  async function handleChatRequest(partner) {
     if (partner.isMine) return;
 
-    if (hasSparringInterest(partner.id, userId)) {
-      cancelSparringInterest(partner.id, userId);
-      track("sparring_chat_request_cancel", { partnerId: partner.id });
-      setInterestTick((value) => value + 1);
-      showNotice("대화 요청을 취소했습니다.");
+    if (!looking) {
+      showNotice("먼저 내 카드를 공개해야 관심을 보낼 수 있어요.");
       return;
     }
 
-    sendSparringInterest(partner, {
-      userId,
-      nickname: profile.nickname || "나",
+    const requested = requestedProfileIds.has(partner.id);
+    const updated = requested
+      ? await cancelRemoteSparringInterest({
+          actorId,
+          profileId: partner.id,
+        })
+      : await sendRemoteSparringInterest({
+          actorId,
+          profileId: partner.id,
+        });
+
+    if (!updated) {
+      showNotice("관심 요청을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    track(requested ? "sparring_interest_cancel" : "sparring_interest_send", {
+      partnerId: partner.id,
     });
-    track("sparring_chat_request", { partnerId: partner.id });
-    setInterestTick((value) => value + 1);
-    showNotice("요청 저장됨 · 상대 알림은 곧 연결됩니다.");
+    await loadInterests();
+    showNotice(
+      requested
+        ? "관심 요청을 취소했습니다."
+        : "관심을 보냈습니다. 상대의 관심 목록에 표시됩니다."
+    );
   }
 
   const summaryLine = [
@@ -232,7 +327,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
           ) : null}
           <h1>라이벌 찾기</h1>
           <p className="gym-search-context">
-            1:1 스파링 상대를 찾고, 대화 요청을 보내요.
+            체급·지역·희망 시간이 맞는 복서에게 관심을 보내요.
           </p>
         </header>
       ) : null}
@@ -247,8 +342,8 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
             <strong>{looking ? "찾는 중" : "대기 중"}</strong>
             <p>
               {looking
-                ? "근처 목록에 공개됩니다."
-                : "지역·희망 시간을 채운 뒤 켜세요."}
+                ? "내 카드가 실제 라이벌 목록에 공개 중입니다."
+                : "지역과 희망 시간만 채우면 바로 공개할 수 있어요."}
             </p>
           </div>
           <button
@@ -256,7 +351,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
             className={`sparring-hero-toggle${looking ? " is-on" : ""}`}
             onClick={handleToggleLooking}
           >
-            {looking ? "끄기" : "켜기"}
+            {looking ? "공개 끄기" : "내 카드 공개"}
           </button>
         </div>
 
@@ -284,6 +379,10 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
         </div>
 
         {formError ? <p className="sparring-form-error">{formError}</p> : null}
+        <p className="sparring-privacy">
+          <strong>공개되는 정보:</strong> 닉네임·체급·경력·강도·지역·희망 시간.
+          연락처와 훈련 기록은 공개하지 않습니다.
+        </p>
       </section>
 
       <section className="sparring-me" aria-label="내 프로필">
@@ -383,8 +482,17 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
               className="sparring-save-button"
               onClick={handleSaveDetails}
             >
-              프로필 저장
+              공개 카드 저장
             </button>
+            {saved ? (
+              <button
+                type="button"
+                className="sparring-delete-button"
+                onClick={handleDeleteProfile}
+              >
+                공개 카드 삭제
+              </button>
+            ) : null}
           </div>
         ) : null}
       </section>
@@ -393,26 +501,17 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
         <div className="sparring-feed-head">
           <div>
             <p className="home-section-label">NEARBY</p>
-            <h2>근처 상대</h2>
+            <h2>조건이 맞는 상대</h2>
           </div>
           <button
             type="button"
             className="gym-refresh-button"
-            onClick={() =>
-              loadPartners({
-                preferGps: position?.source === "gps",
-                allowFallback: true,
-              })
-            }
+            onClick={() => loadPartners()}
             disabled={status === "loading"}
           >
             {status === "loading" ? "검색 중" : "다시"}
           </button>
         </div>
-
-        {position ? (
-          <p className="gym-location-note">{position.label}</p>
-        ) : null}
 
         <div className="sparring-weight-chips" role="group" aria-label="체급 필터">
           <button
@@ -438,6 +537,49 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
           ))}
         </div>
 
+        <div className="sparring-filter-grid">
+          <label className="sparring-field">
+            <span>지역</span>
+            <input
+              type="search"
+              value={areaFilter}
+              onChange={(event) => setAreaFilter(event.target.value)}
+              placeholder={form.area || "예: 강남"}
+            />
+          </label>
+          <label className="sparring-field">
+            <span>희망 시간</span>
+            <input
+              type="search"
+              value={timeFilter}
+              onChange={(event) => setTimeFilter(event.target.value)}
+              placeholder={form.meetWhen || "예: 주말"}
+            />
+          </label>
+        </div>
+        <div className="sparring-filter-actions">
+          <button
+            type="button"
+            className="sparring-filter-apply"
+            onClick={() => loadPartners()}
+          >
+            조건 적용
+          </button>
+          {(areaFilter || timeFilter) && (
+            <button
+              type="button"
+              className="sparring-filter-clear"
+              onClick={() => {
+                setAreaFilter("");
+                setTimeFilter("");
+                loadPartners({ areaQuery: "", timeQuery: "" });
+              }}
+            >
+              전체 보기
+            </button>
+          )}
+        </div>
+
         {status === "loading" ? (
           <div className="gym-state-card">근처 상대를 찾는 중...</div>
         ) : null}
@@ -449,25 +591,85 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
           </div>
         ) : null}
 
+        {status === "unavailable" ? (
+          <div className="gym-state-card error">
+            <strong>라이벌 매칭 서버를 준비 중입니다</strong>
+            <p>
+              공개 베타 SQL이 아직 연결되지 않았습니다. 운영자가
+              dojo_sparring_v1.sql을 적용하면 실제 카드가 여기에 표시됩니다.
+            </p>
+          </div>
+        ) : null}
+
         {status === "empty" ? (
           <div className="gym-state-card">
             <strong>조건에 맞는 상대가 없습니다</strong>
-            <p>체급을 바꾸거나 찾는 중을 켜 보세요.</p>
+            <p>체급·지역·시간 조건을 넓히거나, 먼저 내 카드를 공개해 보세요.</p>
           </div>
         ) : null}
 
         {status === "ready" ? (
-          <div className="sparring-partner-list" key={interestTick}>
+          <div className="sparring-partner-list">
             {partners.map((partner) => (
               <SparringPartnerCard
                 key={partner.id}
                 partner={partner}
-                userId={userId}
+                requested={requestedProfileIds.has(partner.id)}
                 onChatRequest={handleChatRequest}
               />
             ))}
           </div>
         ) : null}
+      </section>
+
+      <section className="sparring-interest-ledger" aria-label="관심 요청">
+        <div className="sparring-feed-head">
+          <div>
+            <p className="home-section-label">INTEREST</p>
+            <h2>관심 요청</h2>
+          </div>
+          <button
+            type="button"
+            className="gym-refresh-button"
+            onClick={loadInterests}
+          >
+            새로고침
+          </button>
+        </div>
+        <p>
+          연락처는 공개되지 않습니다. 채팅·푸시 기능 없이 관심 요청만 서로
+          확인할 수 있어요.
+        </p>
+        <div className="sparring-interest-grid">
+          <div>
+            <span>보낸 관심</span>
+            <strong>{sentInterests.length}</strong>
+          </div>
+          <div>
+            <span>받은 관심</span>
+            <strong>{receivedInterests.length}</strong>
+          </div>
+        </div>
+        {interests.length > 0 ? (
+          <ul className="sparring-interest-list">
+            {interests.map((interest) => (
+              <li key={interest.id}>
+                <span>{interest.direction === "received" ? "받음" : "보냄"}</span>
+                <strong>{interest.nickname}</strong>
+                <small>
+                  {[interest.weight_class, interest.area, interest.meet_when]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </small>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="sparring-interest-empty">
+            아직 관심 요청이 없습니다. 조건이 맞는 상대에게 먼저 관심을 보내
+            보세요.
+          </p>
+        )}
       </section>
 
       {notice && status !== "error" ? (

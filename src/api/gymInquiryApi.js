@@ -67,7 +67,10 @@ export async function insertRemoteGymInquiry(inquiry) {
     experience: inquiry.experience || "",
     purpose: inquiry.purpose || "",
     time_slot: inquiry.timeSlot || "",
+    acquisition_source: inquiry.acquisitionSource || "organic",
   };
+  const compatiblePayload = { ...fullPayload };
+  delete compatiblePayload.acquisition_source;
 
   const legacyPayload = {
     ...base,
@@ -75,7 +78,7 @@ export async function insertRemoteGymInquiry(inquiry) {
     memo: richMemoParts.join(" · "),
   };
 
-  const attempts = [fullPayload, legacyPayload];
+  const attempts = [fullPayload, compatiblePayload, legacyPayload];
 
   try {
     let lastError = null;
@@ -138,6 +141,7 @@ function mapInquiryRow(row) {
     timeSlot: row.time_slot || "",
     userId: row.user_id || null,
     nickname: row.nickname || "",
+    acquisitionSource: row.acquisition_source || "organic",
     source: row.source || "server",
     createdAt: row.created_at || null,
     synced: true,

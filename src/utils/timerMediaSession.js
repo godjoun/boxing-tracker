@@ -1,3 +1,5 @@
+import { BRAND_NAME } from "./brand";
+
 let artworkCache = null;
 
 function getArtwork() {
@@ -29,7 +31,7 @@ export function updateTimerMediaSession(summary) {
   navigator.mediaSession.metadata = new MediaMetadata({
     title: phaseText,
     artist: `${summary.roundLabel} · ${summary.title}`,
-    album: "SECUNDUS 라운드",
+    album: `${BRAND_NAME} 라운드`,
     artwork: getArtwork(),
   });
 

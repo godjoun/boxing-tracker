@@ -8,12 +8,10 @@ import {
 } from "../utils/sparringPartners";
 import { suggestWeightClass } from "../data/proBoxingWeightClasses";
 import {
+  BRAND_NAME,
   BRAND_PHILOSOPHY_EN,
   BRAND_SLOGAN_EN,
 } from "../utils/brand";
-
-/** 온보딩·앱 표시명만. 홈·로고·색은 출시 전 개편까지 기존 유지. */
-const APP_NAME = "ANIMA";
 
 const EXPERIENCE_CHIP_LABELS = {
   "초보 (6개월 미만)": "초보",
@@ -225,7 +223,7 @@ export default function OnboardingSetupPage() {
               height={120}
             />
             <h1 className="onboarding-street-title onboarding-street-title--brand">
-              {APP_NAME}
+              {BRAND_NAME}
             </h1>
             <p className="onboarding-street-slogan">{BRAND_SLOGAN_EN}</p>
             <p className="onboarding-street-value">{BRAND_PHILOSOPHY_EN}</p>
@@ -277,7 +275,7 @@ export default function OnboardingSetupPage() {
 
         <div className="onboarding-setup-shell">
           <header className="onboarding-setup-hero">
-            <p className="onboarding-setup-kicker">{APP_NAME}</p>
+            <p className="onboarding-setup-kicker">{BRAND_NAME}</p>
             <h1 className="onboarding-setup-title">링네임을 정해 주세요</h1>
             <p className="onboarding-setup-copy">
               이름만 있으면 바로 시작할 수 있어요. 나머지는 선택입니다.

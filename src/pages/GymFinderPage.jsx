@@ -92,7 +92,7 @@ export default function GymFinderPage({
           })}
         </nav>
 
-        <p className="dojo-howto">{active.howTo}</p>
+        {view !== "gyms" ? <p className="dojo-howto">{active.howTo}</p> : null}
       </header>
 
       <section className="dojo-flap-body" aria-label={active.label}>

@@ -334,42 +334,22 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
 
   return (
     <>
-      <header
-        className={`gym-search-header${embedded ? " is-embedded" : ""}`}
-      >
-        {!embedded && onGoBack ? (
-          <button className="category-back" type="button" onClick={onGoBack}>
-            ← 도장
-          </button>
-        ) : null}
-        {!embedded ? <h1>체육관 문의·대여</h1> : null}
-        <p className="gym-search-context">
-          {position
-            ? `${position.label} · ${getLocationSourceLabel(position.source)}`
-            : "위치 확인 중"}
-          {status === "ready" && gyms[0]
-            ? ` · ${getGymDataSourceLabel(gyms[0].source)}`
-            : ""}
-        </p>
-      </header>
-
       {sectionNav}
 
-      <p className="gym-role-hint">
-        관을 찾아 문의하거나, 「내 문의」에서 대화를 이어 가세요. 관 운영은
-        「내 관」입니다.
+      <p className="gym-role-hint gym-find-next">
+        지역을 검색한 뒤 관을 골라 문의하세요.
       </p>
 
       <form className="gym-region-search" onSubmit={handleRegionSubmit}>
         <label className="gym-region-search-field" htmlFor="gym-region-input">
-          <span>지역 검색</span>
+          <span className="gym-region-search-label-sr">지역 검색</span>
           <div className="gym-region-search-row">
             <input
               id="gym-region-input"
               type="search"
               value={regionQuery}
               onChange={(event) => handleRegionChange(event.target.value)}
-              placeholder="예: 강남, 홍대, 잠실, 부산"
+              placeholder="체육관 지역 검색 (예: 강남, 홍대)"
               autoComplete="off"
               enterKeyHint="search"
             />
@@ -398,7 +378,16 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         ) : null}
       </form>
 
-      <section className="gym-search-bar" aria-label="빠른 위치">
+      <p className="gym-search-context is-caption">
+        {position
+          ? `${position.label} · ${getLocationSourceLabel(position.source)}`
+          : "위치 확인 중"}
+        {status === "ready" && gyms[0]
+          ? ` · ${getGymDataSourceLabel(gyms[0].source)}`
+          : ""}
+      </p>
+
+      <section className="gym-search-bar is-secondary" aria-label="빠른 위치">
         <button
           type="button"
           className={`gym-search-gps${
@@ -472,7 +461,6 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
                     aria-label="추천 체육관"
                   >
                     <div className="gym-featured-slot-head">
-                      <p className="gym-listing-kicker">FEATURED</p>
                       <strong>추천</strong>
                       <span>관이 올리는 노출 자리</span>
                     </div>

@@ -1259,6 +1259,96 @@
 
 .curriculum-session-media-button {
   margin-top: 0;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid var(--p-border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* 4주 코스 라이트 모드 — 기존 다크 전용 rgba 텍스트 대비 보정 */
+.theme-light .curriculum-week-ring circle:first-child {
+  stroke: var(--p-border-strong);
+}
+
+.theme-light .curriculum-timeline-line {
+  background: linear-gradient(
+    180deg,
+    rgba(138, 46, 46, 0.35),
+    var(--p-border-soft)
+  );
+}
+
+.theme-light .curriculum-timeline-week-copy p,
+.theme-light .curriculum-session-main > p,
+.theme-light .curriculum-session-head p,
+.theme-light .curriculum-drill-guide-main > p,
+.theme-light .curriculum-drill-guide-segment > p,
+.theme-light .curriculum-drill-steps p,
+.theme-light .curriculum-drill-list p,
+.theme-light .curriculum-week-overview-item p,
+.theme-light .curriculum-lesson-placeholder p {
+  color: var(--p-text-muted);
+}
+
+.theme-light .curriculum-timeline-week-meta em,
+.theme-light .curriculum-week-overview-item em,
+.theme-light .curriculum-graduate-list {
+  color: var(--p-text-body);
+}
+
+.theme-light .curriculum-timeline-week-meta span,
+.theme-light .curriculum-session-status.is-pending,
+.theme-light .curriculum-drill-guide-main > em,
+.theme-light .curriculum-drill-guide-footnote,
+.theme-light .curriculum-drill-steps em,
+.theme-light .curriculum-week-toggle-meta span,
+.theme-light .curriculum-week-toggle-meta em,
+.theme-light .curriculum-session-head span,
+.theme-light .curriculum-session-foot span,
+.theme-light .curriculum-drill-list span,
+.theme-light .curriculum-saved-item span,
+.theme-light .curriculum-lock-progress-head {
+  color: var(--p-text-faint);
+}
+
+.theme-light .curriculum-session-day,
+.theme-light .curriculum-session-status.is-pending,
+.theme-light .curriculum-session-meta span,
+.theme-light .curriculum-drill-steps li,
+.theme-light .curriculum-drill-list li {
+  background: var(--p-bg-inner);
+}
+
+.theme-light .curriculum-session-meta span,
+.theme-light .curriculum-drill-toggle {
+  color: var(--p-text-muted);
+}
+
+.theme-light .curriculum-drill-toggle,
+.theme-light .curriculum-drill-guide,
+.theme-light .curriculum-drill-guide-segment,
+.theme-light .curriculum-session-media-button {
+  border-color: var(--p-border);
+}
+
+.theme-light .curriculum-drill-guide,
+.theme-light .curriculum-saved-item,
+.theme-light .curriculum-week-overview-item,
+.theme-light .curriculum-lesson-card {
+  background: var(--p-bg-subtle);
+}
+
+.theme-light .curriculum-session-adjust {
+  background: var(--p-bg-inner);
+}
+
+.theme-light .curriculum-session-adjust > p {
+  color: var(--p-text-muted);
 }
 
 .curriculum-progress-card-compact {

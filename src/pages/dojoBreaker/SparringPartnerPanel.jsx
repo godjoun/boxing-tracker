@@ -26,6 +26,8 @@ import {
   SPARRING_STYLES,
   WEIGHT_CLASSES,
 } from "../../utils/sparringPartners";
+import { getMatchedSparringProfileIds } from "../../utils/sparringInterest";
+import SparringChatModal from "../../components/SparringChatModal";
 import SparringPartnerCard from "./SparringPartnerCard";
 
 const DEFAULT_FORM = {
@@ -68,6 +70,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
   const [status, setStatus] = useState("loading");
   const [notice, setNotice] = useState("");
   const [interests, setInterests] = useState([]);
+  const [chatPartner, setChatPartner] = useState(null);
 
   const looking = Boolean(form.active || saved?.active);
   const sentInterests = useMemo(
@@ -82,6 +85,20 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
     () => new Set(sentInterests.map((item) => item.profile_id)),
     [sentInterests]
   );
+  const matchedProfileIds = useMemo(
+    () => new Set(getMatchedSparringProfileIds(interests)),
+    [interests]
+  );
+  const displayInterests = useMemo(() => {
+    const byProfile = new Map();
+    interests.forEach((interest) => {
+      const current = byProfile.get(interest.profile_id);
+      if (!current || interest.direction === "received") {
+        byProfile.set(interest.profile_id, interest);
+      }
+    });
+    return [...byProfile.values()];
+  }, [interests]);
 
   async function loadPartners(options = {}) {
     setStatus("loading");
@@ -272,6 +289,11 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
   async function handleChatRequest(partner) {
     if (partner.isMine) return;
 
+    if (matchedProfileIds.has(partner.id)) {
+      setChatPartner(partner);
+      return;
+    }
+
     if (!looking) {
       showNotice("먼저 내 카드를 공개해야 관심을 보낼 수 있어요.");
       return;
@@ -302,6 +324,33 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
         ? "관심 요청을 취소했습니다."
         : "관심을 보냈습니다. 상대의 관심 목록에 표시됩니다."
     );
+  }
+
+  async function handleInterestAction(interest) {
+    if (matchedProfileIds.has(interest.profile_id)) {
+      setChatPartner({
+        id: interest.profile_id,
+        nickname: interest.nickname,
+        weightClass: interest.weight_class,
+        area: interest.area,
+        meetWhen: interest.meet_when,
+      });
+      return;
+    }
+
+    if (interest.direction !== "received") return;
+    const sent = await sendRemoteSparringInterest({
+      actorId,
+      profileId: interest.profile_id,
+    });
+    if (!sent) {
+      showNotice("관심 요청을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    await loadInterests();
+    track("sparring_match_created", { partnerId: interest.profile_id });
+    showNotice("서로 관심이 확인됐습니다. 이제 대화할 수 있어요.");
   }
 
   const summaryLine = [
@@ -615,7 +664,9 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
                 key={partner.id}
                 partner={partner}
                 requested={requestedProfileIds.has(partner.id)}
+                matched={matchedProfileIds.has(partner.id)}
                 onChatRequest={handleChatRequest}
+                onOpenChat={setChatPartner}
               />
             ))}
           </div>
@@ -637,8 +688,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
           </button>
         </div>
         <p>
-          연락처는 공개되지 않습니다. 채팅·푸시 기능 없이 관심 요청만 서로
-          확인할 수 있어요.
+          연락처는 공개되지 않습니다. 서로 관심을 보낸 뒤에만 대화가 열립니다.
         </p>
         <div className="sparring-interest-grid">
           <div>
@@ -650,17 +700,42 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
             <strong>{receivedInterests.length}</strong>
           </div>
         </div>
-        {interests.length > 0 ? (
+        {displayInterests.length > 0 ? (
           <ul className="sparring-interest-list">
-            {interests.map((interest) => (
+            {displayInterests.map((interest) => (
               <li key={interest.id}>
-                <span>{interest.direction === "received" ? "받음" : "보냄"}</span>
+                <span>
+                  {matchedProfileIds.has(interest.profile_id)
+                    ? "매칭"
+                    : interest.direction === "received"
+                      ? "받음"
+                      : "보냄"}
+                </span>
                 <strong>{interest.nickname}</strong>
                 <small>
                   {[interest.weight_class, interest.area, interest.meet_when]
                     .filter(Boolean)
                     .join(" · ")}
                 </small>
+                {matchedProfileIds.has(interest.profile_id) ? (
+                  <button
+                    type="button"
+                    className="sparring-interest-action"
+                    onClick={() => handleInterestAction(interest)}
+                  >
+                    대화하기
+                  </button>
+                ) : interest.direction === "received" ? (
+                  <button
+                    type="button"
+                    className="sparring-interest-action"
+                    onClick={() => handleInterestAction(interest)}
+                  >
+                    나도 관심
+                  </button>
+                ) : (
+                  <small className="sparring-interest-waiting">응답 대기</small>
+                )}
               </li>
             ))}
           </ul>
@@ -677,6 +752,22 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
           {notice}
         </div>
       ) : null}
+
+      <SparringChatModal
+        open={Boolean(chatPartner)}
+        onClose={() => setChatPartner(null)}
+        actorId={actorId}
+        nickname={profile.nickname || "나"}
+        peerProfileId={chatPartner?.id}
+        peerName={chatPartner?.nickname}
+        peerMeta={[
+          chatPartner?.weightClass || chatPartner?.weight_class,
+          chatPartner?.area,
+          chatPartner?.meetWhen || chatPartner?.meet_when,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      />
     </>
   );
 }

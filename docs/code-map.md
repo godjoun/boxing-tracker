@@ -9,10 +9,11 @@
 | 체육관 검색·카드 | `NearbyGymsPanel.jsx` · `GymResultCard.jsx` · `utils/gymPricing.js` |
 | 관 상세 | `GymDetailPanel.jsx` · `docs/dojo-ui.md` |
 | 문의 | `GymInquiryModal.jsx` · `GymInquiryLedgerPanel.jsx` · `GymSentInquiriesPanel.jsx` · `GymInquiryChatModal.jsx` · `utils/gymInquiry.js` · `api/gymInquiryApi.js` · `api/gymInquiryChatApi.js` |
-| 문의 SQL | `dojo_inquiries.sql` · 장부 `dojo_inquiries_ledger.sql` |
+| 문의 SQL | `supabase/dojo_inquiries.sql` · 채팅 `dojo_inquiry_chat.sql` · 인박스 `dojo_inquiry_chat_inbox.sql` |
 | 입점 등록 | `GymListingRegisterPanel.jsx` · `GymMyListingsPanel.jsx` · `utils/gymListing.js` · `api/gymListingApi.js` |
-| 입점 SQL | `dojo_gym_listings.sql` · 승인 `*_approved_read.sql` · 관리 `*_manage.sql` · 추천 `*_featured.sql` |
-| 라이벌 | `SparringPartnerPanel.jsx` · `SparringPartnerCard.jsx` |
+| 입점 SQL | `dojo_gym_listings.sql` · 관리 `*_manage.sql` · 사진 `*_photos.sql` · 목록 `supabase/README.md` |
+| 라이벌 | `SparringPartnerPanel.jsx` · `SparringPartnerCard.jsx` · `SparringChatModal.jsx` · `api/sparringPartnerApi.js` · `api/sparringChatApi.js` |
+| 라이벌 SQL | `supabase/dojo_sparring_v1.sql` · 채팅 `dojo_sparring_chat.sql` |
 | 시드 | `src/data/localDojoData.js` |
 | API 자리 | `src/api/dojoApi.js` · 교류 `src/api/dojoExchangeApi.js` |
 | 교류 SQL | `supabase/dojo_exchange.sql` |

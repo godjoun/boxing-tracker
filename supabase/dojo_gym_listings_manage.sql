@@ -1,8 +1,20 @@
 -- 이미 dojo_gym_listings 있는 경우 이 파일만 실행
--- 입점 다듬기: 사진 · 수정 · 삭제 (관 계정 전까지 MVP)
+-- 입점 다듬기: 사진 · 수정 · 삭제 · insert 막힘 고침 (관 계정 전까지 MVP)
 
 alter table public.dojo_gym_listings
   add column if not exists photo_url text not null default '';
+
+alter table public.dojo_gym_listings
+  add column if not exists is_featured boolean not null default false;
+
+alter table public.dojo_gym_listings
+  add column if not exists source text not null default 'app';
+
+-- 공개 insert (anon 키로 앱에서 신청이 막힐 때)
+drop policy if exists "Public insert gym listings" on public.dojo_gym_listings;
+create policy "Public insert gym listings"
+  on public.dojo_gym_listings for insert to anon, authenticated
+  with check (true);
 
 -- 수정: 클라이언트가 id + applicant_actor_id 로 좁혀서 호출
 drop policy if exists "Public update gym listings" on public.dojo_gym_listings;

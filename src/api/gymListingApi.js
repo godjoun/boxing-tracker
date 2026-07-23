@@ -218,7 +218,7 @@ function formatInsertError(error) {
     lower.includes("42501") ||
     String(error?.code || "") === "42501"
   ) {
-    return "서버 권한(RLS) 때문에 저장이 막혔습니다. Supabase에서 dojo_gym_listings_insert_fix.sql을 실행해 주세요.";
+    return "서버 권한(RLS) 때문에 저장이 막혔습니다. Supabase에서 dojo_gym_listings_manage.sql을 실행해 주세요.";
   }
   if (lower.includes("does not exist") || String(error?.code || "") === "42P01") {
     return "dojo_gym_listings 테이블이 없습니다. dojo_gym_listings.sql을 먼저 실행해 주세요.";

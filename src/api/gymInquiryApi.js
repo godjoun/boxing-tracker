@@ -116,7 +116,7 @@ function formatInquiryInsertError(error) {
     lower.includes("42501") ||
     String(error?.code || "") === "42501"
   ) {
-    return "서버 권한(RLS) 때문에 문의가 막혔습니다. Supabase에서 dojo_inquiries_insert_fix.sql을 실행해 주세요.";
+    return "서버 권한(RLS) 때문에 문의가 막혔습니다. Supabase에서 dojo_inquiries.sql을 실행해 주세요.";
   }
   if (lower.includes("does not exist") || String(error?.code || "") === "42P01") {
     return "문의 테이블이 없습니다. dojo_inquiries.sql을 먼저 실행해 주세요.";

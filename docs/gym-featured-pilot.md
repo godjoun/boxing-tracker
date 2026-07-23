@@ -7,7 +7,7 @@
 
 - 한 지역에서 운영 중인 체육관 3~5곳을 모집한다.
 - 1~2곳만 추천군으로 두고 나머지는 일반 노출 비교군으로 둔다.
-- `supabase/gym_featured_pilot.sql`을 적용한다.
+- `supabase/later/gym_featured_pilot.sql`을 적용한다.
 - 추천 체육관 행의 `is_featured = true`를 수동 설정한다.
 - 노출 기간, 수동 청구액, 중도 중단·환불 조건을 서면으로 확인한다.
 - 자동 갱신·장기 계약·앱 결제는 사용하지 않는다.

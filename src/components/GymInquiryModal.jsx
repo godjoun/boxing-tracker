@@ -66,6 +66,7 @@ export default function GymInquiryModal({
   const [chatOpen, setChatOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   const kindMeta =
     KIND_OPTIONS.find((item) => item.id === kind) || KIND_OPTIONS[0];
@@ -168,7 +169,40 @@ export default function GymInquiryModal({
           닫기
         </button>
 
-        {isDone ? (
+        {privacyOpen ? (
+          <div className="gym-inquiry-privacy-view">
+            <button
+              type="button"
+              className="gym-inquiry-privacy-back"
+              onClick={() => setPrivacyOpen(false)}
+            >
+              ← 문의로 돌아가기
+            </button>
+            <p className="gym-inquiry-kicker">PRIVACY</p>
+            <h2 id="gym-inquiry-title">개인정보 안내</h2>
+            <p>
+              체육관 문의를 보내면 연락처, 문의 내용, 희망 일정, 링네임과
+              대화 내용이 문의 전달과 답변을 위해 서버에 저장됩니다.
+            </p>
+            <h3>제공받는 곳</h3>
+            <p>사용자가 선택한 체육관 운영자</p>
+            <h3>이용 목적</h3>
+            <p>체험·대여·예약 문의 전달과 답변, 문의 대화 제공</p>
+            <h3>주의</h3>
+            <p>
+              메모와 채팅에 주민등록번호, 계좌 비밀번호, 건강 진단서 등
+              불필요한 민감정보를 입력하지 마세요.
+            </p>
+            <a
+              className="gym-inquiry-privacy-full"
+              href={`${import.meta.env.BASE_URL}privacy.html`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              전체 개인정보 처리 안내 보기
+            </a>
+          </div>
+        ) : isDone ? (
           <div className="gym-inquiry-done">
             <p className="gym-inquiry-kicker">INQUIRY SENT</p>
             <h2 id="gym-inquiry-title">
@@ -184,7 +218,7 @@ export default function GymInquiryModal({
               <p className="gym-inquiry-sync-hint">
                 {syncMessage ||
                   (remoteReady
-                    ? "서버 저장에 실패했습니다. dojo_inquiries_insert_fix.sql 실행 후 다시 보내 주세요."
+                    ? "서버 저장에 실패했습니다. dojo_inquiries.sql 실행 후 다시 보내 주세요."
                     : "서버 연결(VITE_SUPABASE)이 없습니다.")}
               </p>
             ) : null}
@@ -441,13 +475,13 @@ export default function GymInquiryModal({
               <span>
                 문의 전달을 위해 연락처와 입력 내용을 선택한 체육관에 제공하는
                 데 동의합니다.{" "}
-                <a
-                  href={`${import.meta.env.BASE_URL}privacy.html`}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  className="gym-inquiry-privacy-link"
+                  onClick={() => setPrivacyOpen(true)}
                 >
                   개인정보 안내
-                </a>
+                </button>
               </span>
             </label>
 

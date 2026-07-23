@@ -73,6 +73,22 @@ export function listSparringInterests(userId = null) {
 /** 공개 카드에서 연락처 제거 */
 export function toPublicSparringPartner(partner) {
   if (!partner) return partner;
-  const { contact: _contact, ...rest } = partner;
-  return rest;
+  const publicPartner = { ...partner };
+  delete publicPartner.contact;
+  return publicPartner;
+}
+
+/** 같은 상대에게 보낸 관심과 받은 관심이 모두 있으면 매칭 */
+export function getMatchedSparringProfileIds(interests = []) {
+  const sent = new Set(
+    interests
+      .filter((item) => item.direction === "sent")
+      .map((item) => item.profile_id)
+  );
+  const received = new Set(
+    interests
+      .filter((item) => item.direction === "received")
+      .map((item) => item.profile_id)
+  );
+  return [...sent].filter((profileId) => received.has(profileId));
 }

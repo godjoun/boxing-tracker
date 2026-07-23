@@ -1,7 +1,9 @@
 export default function SparringPartnerCard({
   partner,
   requested = false,
+  matched = false,
   onChatRequest,
+  onOpenChat,
 }) {
   return (
     <article
@@ -42,10 +44,14 @@ export default function SparringPartnerCard({
       {!partner.isMine ? (
         <button
           type="button"
-          className={`sparring-chat-request${requested ? " is-sent" : ""}`}
-          onClick={() => onChatRequest?.(partner)}
+          className={`sparring-chat-request${
+            requested || matched ? " is-sent" : ""
+          }`}
+          onClick={() =>
+            matched ? onOpenChat?.(partner) : onChatRequest?.(partner)
+          }
         >
-          {requested ? "관심 취소" : "관심 보내기"}
+          {matched ? "대화하기" : requested ? "관심 취소" : "관심 보내기"}
         </button>
       ) : (
         <p className="sparring-partner-note">내 카드</p>

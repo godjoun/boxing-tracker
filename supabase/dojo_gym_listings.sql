@@ -29,6 +29,10 @@ create index if not exists dojo_gym_listings_created_at_idx
 create index if not exists dojo_gym_listings_status_idx
   on public.dojo_gym_listings (status);
 
+create index if not exists dojo_gym_listings_featured_idx
+  on public.dojo_gym_listings (is_featured, status)
+  where is_featured = true and status = 'approved';
+
 alter table public.dojo_gym_listings enable row level security;
 
 drop policy if exists "Public insert gym listings" on public.dojo_gym_listings;

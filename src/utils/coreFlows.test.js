@@ -20,7 +20,10 @@ import {
   parseBackupFileText,
 } from "./dataBackup";
 import { reconcileTimerSession } from "./timerSession";
-import { toPublicSparringPartner } from "./sparringInterest";
+import {
+  getMatchedSparringProfileIds,
+  toPublicSparringPartner,
+} from "./sparringInterest";
 
 describe("스타일 기술 흐름", () => {
   it("스타일을 개요·흐름·단계 카테고리로 분리한다", () => {
@@ -163,5 +166,15 @@ describe("라이벌 공개 카드", () => {
       nickname: "복서",
       area: "강남",
     });
+  });
+
+  it("같은 상대에게 보낸 관심과 받은 관심이 모두 있어야 매칭한다", () => {
+    const matched = getMatchedSparringProfileIds([
+      { direction: "sent", profile_id: "profile-a" },
+      { direction: "received", profile_id: "profile-a" },
+      { direction: "sent", profile_id: "profile-b" },
+    ]);
+
+    expect(matched).toEqual(["profile-a"]);
   });
 });

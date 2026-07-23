@@ -55,3 +55,33 @@ create policy "Public insert gym inquiries"
 drop policy if exists "Public read own gym inquiries" on public.dojo_gym_inquiries;
 drop policy if exists "Public read gym inquiries" on public.dojo_gym_inquiries;
 -- select 정책 없음 = anon/authenticated는 목록 조회 불가 (연락처 보호)
+
+-- 관장 「받은 문의」 (예전 dojo_inquiries_ledger.sql)
+create or replace function public.list_dojo_gym_inquiries_for_owner(p_actor_id text)
+returns setof public.dojo_gym_inquiries
+language sql
+security definer
+set search_path = public
+as $$
+  select i.*
+  from public.dojo_gym_inquiries i
+  where p_actor_id is not null
+    and length(trim(p_actor_id)) > 0
+    and (
+      i.gym_id in (
+        select l.id::text
+        from public.dojo_gym_listings l
+        where l.applicant_actor_id = p_actor_id
+      )
+      or i.gym_name in (
+        select l.gym_name
+        from public.dojo_gym_listings l
+        where l.applicant_actor_id = p_actor_id
+      )
+    )
+  order by i.created_at desc
+  limit 80;
+$$;
+
+revoke all on function public.list_dojo_gym_inquiries_for_owner(text) from public;
+grant execute on function public.list_dojo_gym_inquiries_for_owner(text) to anon, authenticated;

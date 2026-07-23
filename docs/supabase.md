@@ -1,52 +1,55 @@
 # Supabase 중간 점검 (한국어 이름표)
 
-## 공개 베타 적용 순서 (현재 기준)
+> **전부 다시 Run 하라는 목록이 아니다.**  
+> 이미 되는 기능은 건드리지 말고, 고장 난 기능에 해당하는 파일만 연다.  
+> 원본 목록: `supabase/README.md`
 
-아래 순서를 SQL Editor에서 한 번씩 실행하고 체크한다.
+## Table Editor = 장부 **12개** (라이벌 채팅 적용 후 정상)
 
-- [ ] `dojo_gym_listings.sql`
-- [ ] `dojo_gym_listings_approved_read.sql`
-- [ ] `dojo_gym_listings_manage.sql`
-- [ ] `dojo_gym_listings_featured.sql`
-- [ ] `dojo_gym_listings_photos.sql`
-- [ ] `dojo_inquiries.sql`
-- [ ] `dojo_inquiries_ledger.sql`
-- [ ] `dojo_inquiry_chat.sql`
-- [ ] `dojo_inquiry_chat_inbox.sql`
-- [ ] `dojo_exchange.sql`
-- [ ] `dojo_chat.sql`
-- [ ] `dojo_sparring_v1.sql` — 실제 라이벌 찾기를 켤 때
-- [ ] `beta_rls_hardening.sql` — 위 기능 확인 후 마지막
-- [ ] `gym_featured_pilot.sql` — 2주 추천 노출 파일럿을 시작할 때만
+| 한국어로 보면 | Table Editor에 보이는 영어 이름 |
+|---------------|--------------------------------|
+| 입점 | `dojo_gym_listings` |
+| 문의 | `dojo_gym_inquiries` |
+| 문의 대화방 | `dojo_inquiry_threads` |
+| 문의 메시지 | `dojo_inquiry_messages` |
+| 교류 일정 | `dojo_exchange_events` |
+| 교류 신청 | `dojo_exchange_applies` |
+| 교류 채팅 방 | `dojo_chat_threads` |
+| 교류 채팅 말 | `dojo_chat_messages` |
+| 라이벌 프로필 | `dojo_sparring_profiles` |
+| 라이벌 관심 | `dojo_sparring_interests` |
+| 라이벌 대화방 | `dojo_sparring_threads` |
+| 라이벌 메시지 | `dojo_sparring_messages` |
 
-공개 주소는 **Vercel 배포만** 사용한다. GitHub Pages 워크플로는 수동
-레거시 미리보기이며 Supabase 환경변수가 없을 수 있다.
+(선택) 닉네임 → `fighter_nicknames` = 13번째. 없어도 됨.
 
-`beta_rls_hardening.sql` 적용 후에는 앱에서 입점 수정·삭제, 교류 삭제,
-문의 대화 열기·목록·전송을 다시 확인한다.
+## 스니펫 전부 지우고 다시 붙일 때
 
-> **Table Editor에 보이는 장부 ≈ 6개**가 정상입니다.  
-> 아래 SQL 파일 10개는 **설치·고침 스크립트**라서 개수가 더 많습니다.  
-> (같은 장부를 여러 번 손보는 파일이 있음)
+PRIVATE 스니펫만 지운다. **Table Editor 장부는 지우지 말 것.**
 
-## 당신이 보는 것 = 장부 6개
+레포 `supabase/` 파일을 열어 복붙 → Save. **저장만 하고, 이미 돌린 건 다시 Run 하지 말 것.**
 
-Supabase → **Table Editor**
+| # | 저장 이름 | 파일 |
+|---|-----------|------|
+| 1 | `입점 · dojo_gym_listings` | `dojo_gym_listings.sql` |
+| 2 | `입점관리 · dojo_gym_listings_manage` | `dojo_gym_listings_manage.sql` |
+| 3 | `입점사진 · dojo_gym_listings_photos` | `dojo_gym_listings_photos.sql` |
+| 4 | `문의 · dojo_inquiries` | `dojo_inquiries.sql` |
+| 5 | `문의채팅 · dojo_inquiry_chat` | `dojo_inquiry_chat.sql` |
+| 6 | `문의채팅인박스 · dojo_inquiry_chat_inbox` | `dojo_inquiry_chat_inbox.sql` |
+| 7 | `교류 · dojo_exchange` | `dojo_exchange.sql` |
+| 8 | `교류채팅 · dojo_chat` | `dojo_chat.sql` |
+| 9 | `라이벌 · dojo_sparring_v1` | `dojo_sparring_v1.sql` |
+| 10 | `라이벌채팅 · dojo_sparring_chat` | `dojo_sparring_chat.sql` |
+| 11 | `베타RLS · beta_rls_hardening` | `beta_rls_hardening.sql` |
 
-| # | 한국어 | 테이블 이름 |
-|---|--------|-------------|
-| 1 | **입점** | `dojo_gym_listings` |
-| 2 | **문의** | `dojo_gym_inquiries` |
-| 3 | **교류 일정** | `dojo_exchange_events` |
-| 4 | **교류 신청** | `dojo_exchange_applies` |
-| 5 | **채팅 방** | `dojo_chat_threads` |
-| 6 | **채팅 말** | `dojo_chat_messages` |
+(나중) `supabase/later/` — 닉네임 · 추천파일럿
 
-이게 6개면 **빠진 게 아닙니다.**
+### 지금 문의 채팅만 고칠 때
 
-(나중에) **닉네임** `fighter_nicknames` 를 돌리면 7번째가 생깁니다. 지금은 없어도 입점·문의·교류는 됩니다.
+이미 5·6을 Run 했으면 → **`#11 베타RLS`만 Run.**
 
-### 입점 한 줄 운영 (장부 1번만)
+## 입점 한 줄 운영
 
 | 하고 싶은 것 | `dojo_gym_listings` 에서 |
 |--------------|--------------------------|
@@ -54,62 +57,28 @@ Supabase → **Table Editor**
 | 추천 칸 | `is_featured` = `true` |
 | 내리기 | `status` = `pending` 또는 `rejected` |
 
----
+공개 주소는 **Vercel 배포만** 사용한다.
 
-## SQL 파일 10개 ≠ 장부 10개
+`beta_rls_hardening.sql` 적용 후에는 앱에서 입점 수정·삭제, 교류 삭제,
+문의 대화 열기·목록·전송을 다시 확인한다.
 
-파일은 **「언제 돌리나」**용입니다. 새 장부를 매번 만들지 않습니다.
+## 언제 돌리나
 
-### 입점 장부 하나(`dojo_gym_listings`)를 만지는 파일 5개
-
-| 한국어 저장명 | 파일 | 새 장부? | 하는 일 |
-|---------------|------|----------|---------|
-| **입점 신청** | `dojo_gym_listings.sql` | ✅ 장부 만듦 | 테이블 + 신청 |
-| **입점 승인 읽기** | `*_approved_read.sql` | ❌ 없음 | 검색에 승인만 |
-| **입점 관리** | `*_manage.sql` | ❌ 없음 | 수정·삭제·사진·내 목록 |
-| **입점 추천** | `*_featured.sql` | ❌ 없음 | 추천 칸 컬럼 |
-| **입점 insert 고침** | `*_insert_fix.sql` | ❌ 없음 | 신청이 안 쌓일 때 |
-
-→ Table Editor에는 여전히 **입점 1줄**만 보입니다.
-
-### 나머지 기능 (장부 + SQL)
-
-| 한국어 저장명 | 파일 | Table Editor에 생기는 것 |
-|---------------|------|---------------------------|
-| **문의** | `dojo_inquiries.sql` | 문의 1개 |
-| **문의 장부** | `dojo_inquiries_ledger.sql` | ❌ 없음 (받은 문의용 RPC만) |
-| **문의 insert·장부 고침** | `dojo_inquiries_insert_fix.sql` | ❌ 없음 · 문의 안 쌓일 때 |
-| **문의 채팅** | `dojo_inquiry_chat.sql` | 대화방·메시지 2개 + RPC |
-| **문의 채팅 인박스** | `dojo_inquiry_chat_inbox.sql` | ❌ 없음 (읽음·미리보기·목록 RPC) |
-| **입점 사진 여러 장** | `dojo_gym_listings_photos.sql` | ❌ 없음 (`photo_urls` + 버킷) |
-| **교류** | `dojo_exchange.sql` | 교류 일정 + 교류 신청 = **2개** |
-| **교류 채팅** | `dojo_chat.sql` | 채팅 방 + 채팅 말 = **2개** |
-| **닉네임** | `fighter_nicknames.sql` | 닉네임 1개 (아직 안 돌려도 됨) |
-
-### 언제 돌리나
-
-- **처음 입점:** 입점 신청 → (이미 있으면) 승인 읽기 · 입점 관리 · 입점 추천
-- **고장 시만:** 입점 insert 고침 · **문의 insert·장부 고침**
-- **문의 채팅:** `문의 채팅` (`dojo_inquiry_chat.sql`) 한 번 → 안 읽음·미리보기면 `문의 채팅 인박스` (`dojo_inquiry_chat_inbox.sql`)
-- **시설 사진 여러 장:** `입점 사진 여러 장` (`dojo_gym_listings_photos.sql`) — 최대 5장 · gym-photos 버킷  
-  - 사진이 깨지면: SQL로 버킷 생성 + 앱 `img-src`에 `https:` (CSP)
-- **문의·교류·채팅·닉네임:** 그 기능 켤 때 한 번씩
-
----
-
-## 중간 점검
-
-- [ ] Table Editor에 장부 **6개** (위 표) — OK
-- [ ] 앱 등록 → **입점** 장부에 행 생김
-- [ ] `approved` → 검색 노출 / `is_featured` → 추천
-- [ ] (선택) 문의 장부 SQL · 닉네임 SQL
+- **처음 / 새 DB:** `supabase/README.md` 1→11 순서
+- **입점 수정·삭제·사진 막힘:** `#2 입점관리` (또는 `#3 입점사진`)
+- **문의·받은 문의:** `#4 문의` (장부 RPC 포함)
+- **문의 채팅 서버 미연결:** `#5` → `#6` → **`#11`**
+- **라이벌 상호 관심 채팅:** `#9` 실행 후 `#10 라이벌채팅`
+- **추천 파일럿 시작:** `later/gym_featured_pilot.sql`
 
 ## 헷갈리기 쉬운 것
 
 | 증상 | 뜻 |
 |------|-----|
-| SQL 10개인데 장부 6개 | **정상** — 패치 파일이 장부를 안 늘림 |
-| 앱 「내 등록」만 있고 입점 장부 0건 | 이 기기에만 저장 · insert 고침 후 다시 보내기 |
+| 스니펫 11개인데 장부 12개 | **정상** (SQL 하나가 장부를 둘 만들기도 함) |
+| 앱 「내 등록」만 있고 입점 장부 0건 | 이 기기에만 저장 · `#2 입점관리` 후 다시 보내기 |
 | 장부엔 있는데 검색에 안 보임 | 아직 `pending` |
+| 문의 채팅 서버 미연결 | `#11 베타RLS` 미실행 가능 |
+| 라이벌 대화 버튼이 없음 | 서로 관심 전이거나 `#10 라이벌채팅` 미실행 |
 
 상세: `docs/dojo.md` · 다음: `docs/later.md`

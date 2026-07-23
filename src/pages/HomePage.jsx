@@ -352,25 +352,28 @@ export default function HomePage({
           >
             {primaryLabel}
           </button>
-          <div className="home-scene-secondary-row">
+          <div className="home-scene-links">
+            {todaysLesson.kind === "session" ? (
+              <button
+                type="button"
+                className="home-scene-link"
+                onClick={onOpenTimer}
+              >
+                타이머만 열기
+              </button>
+            ) : null}
             <button
               type="button"
-              className="home-scene-secondary"
-              onClick={onOpenTimer}
-            >
-              타이머
-            </button>
-            <button
-              type="button"
-              className="home-scene-secondary"
+              className="home-scene-link"
               onClick={onGoProfile}
             >
-              명패
+              명패 보기
             </button>
           </div>
         </div>
       </section>
 
+      <div className="home-scene-trace" aria-label="오늘의 흔적">
       <section className="home-week-strip" aria-label="이번 주 훈련 흔적">
         <div className="home-week-strip-head">
           <p className="home-week-strip-label">이번 주</p>
@@ -421,6 +424,7 @@ export default function HomePage({
           </div>
         </div>
       </section>
+      </div>
 
       <details className="home-collapsible home-status-details">
         <summary className="home-collapsible-summary">

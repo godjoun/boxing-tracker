@@ -1,5 +1,5 @@
 -- Supabase SQL Editor에서 실행
--- 교류 채팅 1차: 신청자 ↔ 주최자 DM (실시간 없음 · 새로고침으로 확인)
+-- 모임 채팅 1차: 신청자 ↔ 주최자 DM (실시간 없음 · 새로고침으로 확인)
 
 create table if not exists public.dojo_chat_threads (
   id uuid primary key default gen_random_uuid(),

@@ -109,7 +109,8 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
   }, [userId, showPast]);
 
   useEffect(() => {
-    loadEvents();
+    const timer = window.setTimeout(loadEvents, 0);
+    return () => window.clearTimeout(timer);
   }, [loadEvents]);
 
   function updateField(field, value) {
@@ -414,8 +415,8 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
               ← 도장
             </button>
           ) : null}
-          <h1>교류</h1>
-          <p className="gym-search-context">주말 오픈 · 원정 스파링</p>
+          <h1>모임</h1>
+          <p className="gym-search-context">오픈 스파링 · 합동훈련</p>
         </header>
       ) : null}
 
@@ -487,8 +488,8 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
 
       {composing ? (
         <form className="exchange-compose" onSubmit={handleSubmit}>
-          <p className="gym-inquiry-kicker">OPEN SPARRING</p>
-          <strong>오픈 스파링 일정</strong>
+          <p className="gym-inquiry-kicker">MEETUP</p>
+          <strong>훈련 모임 일정</strong>
 
           <label className="gym-inquiry-field">
             <span>체육관 *</span>
@@ -602,7 +603,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
           <p>
             {searchQuery || dateFilter
               ? "검색어·날짜를 바꾸거나 전체를 보세요."
-              : "주말 오픈 스파링을 올려 보세요."}
+              : "첫 훈련 모임을 올려 보세요."}
           </p>
         </div>
       ) : (

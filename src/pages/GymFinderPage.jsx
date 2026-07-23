@@ -7,16 +7,16 @@ import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
 /**
  * 이름 = 하는 일
- * - 교류 = 주말 오픈 · 원정 스파링 일정
+ * - 모임 = 오픈 스파링 · 합동훈련 일정
  * - 체육관 문의·대여 = 찾기 · 체험 · 대여
  * - 라이벌 찾기 = 1:1 스파링 상대
  */
 const CATEGORIES = [
   {
     id: "exchange",
-    label: "교류",
-    hint: "주말 오픈 · 원정 스파링",
-    howTo: "오픈 스파링 일정을 보거나 올려요.",
+    label: "모임",
+    hint: "오픈 스파링 · 합동훈련",
+    howTo: "함께 훈련할 모임 일정을 보거나 올려요.",
   },
   {
     id: "gyms",
@@ -54,7 +54,11 @@ export default function GymFinderPage({
   const active = CATEGORIES.find((item) => item.id === view) || CATEGORIES[0];
 
   useEffect(() => {
-    setView(resolveView(initialView));
+    const timer = window.setTimeout(
+      () => setView(resolveView(initialView)),
+      0
+    );
+    return () => window.clearTimeout(timer);
   }, [initialView]);
 
   return (

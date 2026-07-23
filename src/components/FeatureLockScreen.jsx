@@ -70,7 +70,7 @@ export default function FeatureLockScreen({
             className="feature-lock-secondary"
             onClick={onBack}
           >
-            {embedded ? "교류로 돌아가기" : "돌아가기"}
+            {embedded ? "모임으로 돌아가기" : "돌아가기"}
           </button>
         ) : null}
       </div>

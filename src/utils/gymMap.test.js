@@ -8,7 +8,7 @@ import {
   mergeGymSearchResults,
   validateGymListingForm,
 } from "./gymListing";
-import { getDistanceKm, hasMapCoordinates } from "./gymSearch";
+import { getDistanceKm, hasMapCoordinates, isNearbyMapGym } from "./gymSearch";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -67,6 +67,19 @@ describe("지도형 체육관 검색", () => {
         address: "서울 성동구 성수동",
       }).message
     ).toContain("지도");
+  });
+
+  it("검색 반경 밖·좌표 없는 입점관은 지도에 올리지 않는다", () => {
+    const center = { lat: 37.5, lon: 127.03 };
+    expect(
+      isNearbyMapGym({ lat: null, lon: null }, center)
+    ).toBe(false);
+    expect(
+      isNearbyMapGym({ lat: 0, lon: 0 }, center)
+    ).toBe(false);
+    expect(
+      isNearbyMapGym({ lat: 37.51, lon: 127.04 }, center)
+    ).toBe(true);
   });
 
   it("찜한 체육관을 기기에 저장하고 다시 누르면 제거한다", () => {

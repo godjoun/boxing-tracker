@@ -167,10 +167,10 @@ export default function ExchangeChatModal({
       >
         <header className="exchange-chat-header">
           <div>
-            <p className="gym-inquiry-kicker">EXCHANGE CHAT</p>
+            <p className="gym-inquiry-kicker">MEETUP CHAT</p>
             <h2 id="exchange-chat-title">{peerName}</h2>
             <p className="exchange-chat-meta">
-              {[gymName, eventLabel].filter(Boolean).join(" · ") || "교류 대화"}
+              {[gymName, eventLabel].filter(Boolean).join(" · ") || "모임 대화"}
             </p>
           </div>
           <div className="exchange-chat-header-actions">

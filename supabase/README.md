@@ -13,8 +13,8 @@
 | 4 | `문의 · dojo_inquiries` | `dojo_inquiries.sql` |
 | 5 | `문의채팅 · dojo_inquiry_chat` | `dojo_inquiry_chat.sql` |
 | 6 | `문의채팅인박스 · dojo_inquiry_chat_inbox` | `dojo_inquiry_chat_inbox.sql` |
-| 7 | `교류 · dojo_exchange` | `dojo_exchange.sql` |
-| 8 | `교류채팅 · dojo_chat` | `dojo_chat.sql` |
+| 7 | `모임 · dojo_exchange` | `dojo_exchange.sql` |
+| 8 | `모임채팅 · dojo_chat` | `dojo_chat.sql` |
 | 9 | `라이벌 · dojo_sparring_v1` | `dojo_sparring_v1.sql` |
 | 10 | `라이벌채팅 · dojo_sparring_chat` | `dojo_sparring_chat.sql` |
 | 11 | `베타RLS · beta_rls_hardening` | `beta_rls_hardening.sql` ← **마지막** |

@@ -12,10 +12,10 @@
 | 문의 | `dojo_gym_inquiries` |
 | 문의 대화방 | `dojo_inquiry_threads` |
 | 문의 메시지 | `dojo_inquiry_messages` |
-| 교류 일정 | `dojo_exchange_events` |
-| 교류 신청 | `dojo_exchange_applies` |
-| 교류 채팅 방 | `dojo_chat_threads` |
-| 교류 채팅 말 | `dojo_chat_messages` |
+| 모임 일정 | `dojo_exchange_events` |
+| 모임 신청 | `dojo_exchange_applies` |
+| 모임 채팅 방 | `dojo_chat_threads` |
+| 모임 채팅 말 | `dojo_chat_messages` |
 | 라이벌 프로필 | `dojo_sparring_profiles` |
 | 라이벌 관심 | `dojo_sparring_interests` |
 | 라이벌 대화방 | `dojo_sparring_threads` |
@@ -37,8 +37,8 @@ PRIVATE 스니펫만 지운다. **Table Editor 장부는 지우지 말 것.**
 | 4 | `문의 · dojo_inquiries` | `dojo_inquiries.sql` |
 | 5 | `문의채팅 · dojo_inquiry_chat` | `dojo_inquiry_chat.sql` |
 | 6 | `문의채팅인박스 · dojo_inquiry_chat_inbox` | `dojo_inquiry_chat_inbox.sql` |
-| 7 | `교류 · dojo_exchange` | `dojo_exchange.sql` |
-| 8 | `교류채팅 · dojo_chat` | `dojo_chat.sql` |
+| 7 | `모임 · dojo_exchange` | `dojo_exchange.sql` |
+| 8 | `모임채팅 · dojo_chat` | `dojo_chat.sql` |
 | 9 | `라이벌 · dojo_sparring_v1` | `dojo_sparring_v1.sql` |
 | 10 | `라이벌채팅 · dojo_sparring_chat` | `dojo_sparring_chat.sql` |
 | 11 | `베타RLS · beta_rls_hardening` | `beta_rls_hardening.sql` |
@@ -59,7 +59,7 @@ PRIVATE 스니펫만 지운다. **Table Editor 장부는 지우지 말 것.**
 
 공개 주소는 **Vercel 배포만** 사용한다.
 
-`beta_rls_hardening.sql` 적용 후에는 앱에서 입점 수정·삭제, 교류 삭제,
+`beta_rls_hardening.sql` 적용 후에는 앱에서 입점 수정·삭제, 모임 삭제,
 문의 대화 열기·목록·전송을 다시 확인한다.
 
 ## 언제 돌리나

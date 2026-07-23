@@ -1,5 +1,5 @@
 -- Supabase SQL Editor에서 실행
--- 도장 교류: 일정·신청이 기기끼리 통하게 (소프트 론칭용)
+-- 도장 모임: 일정·신청이 기기끼리 통하게 (소프트 론칭용)
 -- 인증 전이라 RLS는 열어 둠. 스팸 막기는 auth 붙인 뒤 강화.
 
 create table if not exists public.dojo_exchange_events (

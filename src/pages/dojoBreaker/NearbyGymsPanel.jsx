@@ -17,7 +17,7 @@ import { useTraining } from "../../store/TrainingContext";
 import {
   getDistanceKm,
   getLocationSourceLabel,
-  hasMapCoordinates,
+  isNearbyMapGym,
   PRESET_AREAS,
   resolveSearchLocation,
   suggestAreas,
@@ -194,9 +194,17 @@ export default function NearbyGymsPanel() {
               };
             })
           : [];
-      const listed =
+      const listedRaw =
         listedResult.status === "fulfilled" ? listedResult.value : [];
-      const merged = mergeGymSearchResults(listed, osmGyms);
+      // 좌표 없거나 지역에서 먼 입점관은 지도·목록에 올리지 않는다.
+      // 광고(추천) 노출은 나중에 지역 배너로 붙인다.
+      const listed = listedRaw.filter((gym) =>
+        isNearbyMapGym(gym, currentPosition)
+      );
+      const nearbyOsm = osmGyms.filter((gym) =>
+        isNearbyMapGym(gym, currentPosition)
+      );
+      const merged = mergeGymSearchResults(listed, nearbyOsm);
       const featuredIds = merged
         .filter((gym) => gym.featured)
         .map((gym) => gym.id);
@@ -537,41 +545,6 @@ export default function NearbyGymsPanel() {
             지도·장소 데이터 © OpenStreetMap contributors · 실제 운영 여부와
             정보가 다를 수 있습니다.
           </p>
-
-          {gyms.some(
-            (gym) =>
-              gym.source === "listing" &&
-              !hasMapCoordinates(gym)
-          ) ? (
-            <section className="gym-unmapped-listings">
-              <div className="gym-shortlist-head">
-                <div>
-                  <p className="home-section-label">ANIMA LISTING</p>
-                  <h2>위치 확인 중인 입점관</h2>
-                </div>
-              </div>
-              <p>
-                관에서 지도 위치를 다시 저장하기 전까지 목록으로만 표시합니다.
-              </p>
-              {gyms
-                .filter(
-                  (gym) =>
-                    gym.source === "listing" &&
-                    !hasMapCoordinates(gym)
-                )
-                .map((gym, index) => (
-                  <GymResultCard
-                    key={gym.id}
-                    gym={gym}
-                    index={index}
-                    compact
-                    isOwn={isOwnListedGym(gym, userId)}
-                    onOpen={openDetail}
-                    onInquire={openInquiry}
-                  />
-                ))}
-            </section>
-          ) : null}
 
           <section className="gym-shortlist" aria-label="내가 선택한 체육관">
             <div className="gym-shortlist-head">

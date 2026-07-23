@@ -82,7 +82,7 @@ revoke all on function public.delete_my_dojo_gym_listing(uuid, text) from public
 grant execute on function public.update_my_dojo_gym_listing(uuid, text, jsonb) to anon, authenticated;
 grant execute on function public.delete_my_dojo_gym_listing(uuid, text) to anon, authenticated;
 
--- 2) 교류: 타인 일정 직접 수정/삭제 금지
+-- 2) 모임: 타인 일정 직접 수정/삭제 금지
 drop policy if exists "Public update exchange events" on public.dojo_exchange_events;
 drop policy if exists "Public delete exchange events" on public.dojo_exchange_events;
 

@@ -270,6 +270,16 @@ export function hasMapCoordinates(item) {
   );
 }
 
+/** 지도에 올릴 수 있는 국내 좌표 + 검색 반경 안인지 */
+export function isNearbyMapGym(gym, center, radiusKm = 20) {
+  if (!hasMapCoordinates(gym) || !hasMapCoordinates(center)) return false;
+  const lat = Number(gym.lat);
+  const lon = Number(gym.lon);
+  if (lat < 33 || lat > 39 || lon < 124 || lon > 132) return false;
+  const distanceKm = getDistanceKm(center.lat, center.lon, lat, lon);
+  return Number.isFinite(distanceKm) && distanceKm <= radiusKm;
+}
+
 export async function searchNearbyGyms(lat, lon) {
   return fetchGymsFromApi(lat, lon, 12);
 }

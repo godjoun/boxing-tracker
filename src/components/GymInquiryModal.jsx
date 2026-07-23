@@ -390,7 +390,7 @@ export default function GymInquiryModal({
                   <textarea
                     value={memo}
                     onChange={(event) => setMemo(event.target.value)}
-                    placeholder="링 사용 · 교류 상대 짐 등"
+                    placeholder="링 사용 · 합동훈련 등"
                     rows={3}
                   />
                 </label>

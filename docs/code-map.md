@@ -4,7 +4,7 @@
 |---|---|
 | 하단 내비 | `src/App.jsx` · 링 · 도장 · 홈 · 명패 · 더보기 |
 | 도장 탭 | `src/pages/GymFinderPage.jsx` |
-| 교류 | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
+| 모임 | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
 | 채팅 SQL | `supabase/dojo_chat.sql` |
 | 체육관 검색·카드 | `NearbyGymsPanel.jsx` · `GymResultCard.jsx` · `utils/gymPricing.js` |
 | 관 상세 | `GymDetailPanel.jsx` · `docs/dojo-ui.md` |
@@ -15,8 +15,8 @@
 | 라이벌 | `SparringPartnerPanel.jsx` · `SparringPartnerCard.jsx` · `SparringChatModal.jsx` · `api/sparringPartnerApi.js` · `api/sparringChatApi.js` |
 | 라이벌 SQL | `supabase/dojo_sparring_v1.sql` · 채팅 `dojo_sparring_chat.sql` |
 | 시드 | `src/data/localDojoData.js` |
-| API 자리 | `src/api/dojoApi.js` · 교류 `src/api/dojoExchangeApi.js` |
-| 교류 SQL | `supabase/dojo_exchange.sql` |
+| API 자리 | `src/api/dojoApi.js` · 모임 `src/api/dojoExchangeApi.js` |
+| 모임 SQL | `supabase/dojo_exchange.sql` |
 | 라운드(타이머) | `src/pages/TimerPage.jsx` |
 | 기술(4주 코스) | `src/pages/CurriculumPage.jsx` |
 | 신체(몸 만들기) | `src/pages/StrengthProgramPage.jsx` |

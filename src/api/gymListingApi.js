@@ -205,6 +205,13 @@ export async function updateRemoteGymListing(listing) {
   const full = toRemotePayload(listing);
   const withoutUrls = { ...full };
   delete withoutUrls.photo_urls;
+  const photoOnly = {
+    photo_url: full.photo_url || "",
+    photo_urls: full.photo_urls || [],
+  };
+  const photoUrlOnly = {
+    photo_url: full.photo_url || "",
+  };
 
   try {
     for (const payload of [full, withoutUrls]) {
@@ -214,7 +221,21 @@ export async function updateRemoteGymListing(listing) {
         .eq("id", listing.id)
         .eq("applicant_actor_id", listing.applicantActorId);
 
-      if (!error) return true;
+      if (!error) {
+        // 사진만 한 번 더 밀어 photo_url 누락을 막는다
+        if (full.photo_url || (full.photo_urls && full.photo_urls.length)) {
+          const photoPayload =
+            Object.prototype.hasOwnProperty.call(payload, "photo_urls")
+              ? photoOnly
+              : photoUrlOnly;
+          await supabase
+            .from("dojo_gym_listings")
+            .update(photoPayload)
+            .eq("id", listing.id)
+            .eq("applicant_actor_id", listing.applicantActorId);
+        }
+        return true;
+      }
       if (isRemoteUnavailable(error)) return false;
       console.warn("[gymListing] update failed", error.message || error);
     }

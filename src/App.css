@@ -3570,6 +3570,10 @@
   box-shadow: 0 12px 28px rgba(70, 18, 18, 0.22);
 }
 
+.gym-result-card.is-owner-preview {
+  border-color: rgba(184, 169, 154, 0.35);
+}
+
 .gym-result-card.is-tappable {
   cursor: pointer;
 }

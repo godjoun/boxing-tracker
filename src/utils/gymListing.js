@@ -119,14 +119,51 @@ export function splitFeaturedGyms(gyms) {
   return { featured, rest };
 }
 
-/** 승인된 입점관을 검색 결과용으로 로드 */
-export async function loadApprovedGymsForSearch(lat, lon) {
+/** 승인된 입점관 + (있으면) 내 관 사진/승인대기 미리보기 */
+export async function loadApprovedGymsForSearch(lat, lon, { userId } = {}) {
   if (!hasGymListingRemote()) return [];
 
   const listings = await fetchApprovedGymListings();
-  return listings
+  let gyms = listings
     .map((listing) => listingToSearchGym(listing, lat, lon))
     .filter(Boolean);
+
+  if (!userId) return gyms;
+
+  const mine = await loadMyGymListings(userId);
+  if (!mine.length) return gyms;
+
+  const mineById = new Map(mine.map((item) => [item.id, item]));
+
+  gyms = gyms.map((gym) => {
+    const own = mineById.get(gym.id);
+    if (!own) return gym;
+    const ownPhotos = normalizeGymPhotoUrls(own);
+    if (ownPhotos.length === 0) return gym;
+    if (normalizeGymPhotoUrls(gym).length > 0) return gym;
+    return {
+      ...gym,
+      photoUrl: ownPhotos[0],
+      photoUrls: ownPhotos,
+    };
+  });
+
+  const shownIds = new Set(gyms.map((gym) => gym.id));
+  const previews = [];
+  for (const listing of mine) {
+    if (shownIds.has(listing.id)) continue;
+    if (listing.status === "approved") continue;
+    const card = listingToSearchGym(listing, lat, lon);
+    if (!card) continue;
+    card.tags = [
+      "승인 대기",
+      ...(card.tags || []).filter((tag) => tag !== "입점"),
+    ];
+    card.ownerPreview = true;
+    previews.push(card);
+  }
+
+  return [...previews, ...gyms];
 }
 
 export function validateGymListingForm(form) {

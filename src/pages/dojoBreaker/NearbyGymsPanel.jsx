@@ -162,7 +162,9 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
 
       const [results, listed] = await Promise.all([
         searchNearbyGyms(currentPosition.lat, currentPosition.lon),
-        loadApprovedGymsForSearch(currentPosition.lat, currentPosition.lon),
+        loadApprovedGymsForSearch(currentPosition.lat, currentPosition.lon, {
+          userId,
+        }),
       ]);
       const merged = mergeGymSearchResults(listed, results);
 

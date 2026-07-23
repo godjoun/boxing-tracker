@@ -172,6 +172,12 @@ export default function GymMyListingsPanel({
                 </span>
               </div>
               <p>{item.address}</p>
+              {!isLocalOnly && item.status !== "approved" ? (
+                <p className="gym-listing-block-note">
+                  찾기에 모두에게 보이려면 Table Editor에서 status를 approved로
+                  바꿔 주세요. 지금은 본인 찾기에만 「승인 대기」로 미리 보입니다.
+                </p>
+              ) : null}
               {isLocalOnly && item.lastSyncError ? (
                 <p className="gym-listing-sync-hint">{item.lastSyncError}</p>
               ) : null}

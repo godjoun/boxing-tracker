@@ -23,8 +23,8 @@ export default function GymResultCard({
   return (
     <article
       className={`gym-result-card${isFeatured ? " is-featured" : ""}${
-        onOpen ? " is-tappable" : ""
-      }`}
+        gym.ownerPreview ? " is-owner-preview" : ""
+      }${onOpen ? " is-tappable" : ""}`}
       onClick={onOpen ? handleCardActivate : undefined}
       onKeyDown={
         onOpen

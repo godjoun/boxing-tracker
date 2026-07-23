@@ -9,10 +9,19 @@ export default function GymResultCard({
   onInquire,
   featured = false,
   isOwn = false,
+  compact = false,
+  onFavorite,
 }) {
   const passes = getGymPassLines(gym);
   const isFeatured = featured || Boolean(gym.featured);
-  const badge = isFeatured ? "추천" : String(index + 1).padStart(2, "0");
+  const isListing = gym.source === "listing";
+  const badge = compact
+    ? isListing
+      ? "입점"
+      : "지도"
+    : isFeatured
+      ? "추천"
+      : String(index + 1).padStart(2, "0");
   const cover = coverGymPhoto(gym);
   const photoCount = normalizeGymPhotoUrls(gym.photoUrls, gym.photoUrl).length;
 
@@ -22,7 +31,9 @@ export default function GymResultCard({
 
   return (
     <article
-      className={`gym-result-card${isFeatured ? " is-featured" : ""}${
+      className={`gym-result-card${compact ? " is-compact" : ""}${
+        isFeatured ? " is-featured" : ""
+      }${
         gym.ownerPreview ? " is-owner-preview" : ""
       }${onOpen ? " is-tappable" : ""}`}
       onClick={onOpen ? handleCardActivate : undefined}
@@ -73,17 +84,32 @@ export default function GymResultCard({
           <p className="gym-result-category">{gym.tags.join(" · ")}</p>
         ) : null}
 
-        <aside className="gym-result-passes" aria-label="이용권 가격">
-          {passes.map((pass) => (
-            <div key={pass.key} className="gym-result-pass">
-              <span>{pass.label}</span>
-              <strong>{pass.value}</strong>
-            </div>
-          ))}
-        </aside>
+        {isListing ? (
+          <aside className="gym-result-passes" aria-label="이용권 가격">
+            {passes.map((pass) => (
+              <div key={pass.key} className="gym-result-pass">
+                <span>{pass.label}</span>
+                <strong>{pass.value}</strong>
+              </div>
+            ))}
+          </aside>
+        ) : null}
 
         {isOwn ? (
           <p className="gym-result-own-hint">내 등록 · 문의 대상 아님</p>
+        ) : !isListing ? (
+          <a
+            className="gym-inquiry-button"
+            href={
+              gym.mapUrl ||
+              `https://www.openstreetmap.org/?mlat=${gym.lat}&mlon=${gym.lon}#map=17/${gym.lat}/${gym.lon}`
+            }
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            지도에서 보기
+          </a>
         ) : (
           <button
             type="button"
@@ -96,6 +122,18 @@ export default function GymResultCard({
             문의하기
           </button>
         )}
+        {compact && onFavorite ? (
+          <button
+            type="button"
+            className="gym-favorite-remove"
+            onClick={(event) => {
+              event.stopPropagation();
+              onFavorite(gym);
+            }}
+          >
+            찜 해제
+          </button>
+        ) : null}
       </div>
     </article>
   );

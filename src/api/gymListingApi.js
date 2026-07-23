@@ -34,6 +34,12 @@ function toWonOrNull(value) {
   return Math.round(n);
 }
 
+function toCoordinateOrNull(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) ? coordinate : null;
+}
+
 function coercePhotoUrlList(value) {
   if (Array.isArray(value)) {
     return value.map((item) => String(item || "").trim()).filter(Boolean);
@@ -89,6 +95,8 @@ function mapListingRow(row) {
     rentalHourWon: row.rental_hour_won ?? null,
     photoUrl: photoUrls[0] || row.photo_url || "",
     photoUrls,
+    lat: toCoordinateOrNull(row.latitude),
+    lon: toCoordinateOrNull(row.longitude),
     isFeatured: Boolean(row.is_featured),
     status: row.status || "pending",
     createdAt: row.created_at || null,
@@ -114,6 +122,8 @@ function toRemotePayload(listing, { includeStatus = false } = {}) {
     rental_hour_won: toWonOrNull(listing.rentalHourWon),
     photo_url: photoUrls[0] || "",
     photo_urls: photoUrls,
+    latitude: toCoordinateOrNull(listing.lat),
+    longitude: toCoordinateOrNull(listing.lon),
     applicant_actor_id: listing.applicantActorId || null,
     applicant_nickname: listing.applicantNickname || "",
   };
@@ -285,7 +295,7 @@ export async function fetchApprovedGymListings() {
     let { data, error } = await supabase
       .from("dojo_gym_listings")
       .select(
-        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, photo_url, photo_urls, is_featured, status, created_at, applicant_actor_id, applicant_nickname"
+        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, photo_url, photo_urls, latitude, longitude, is_featured, status, created_at, applicant_actor_id, applicant_nickname"
       )
       .eq("status", "approved")
       .order("is_featured", { ascending: false })
@@ -294,7 +304,12 @@ export async function fetchApprovedGymListings() {
 
     if (error) {
       const message = String(error.message || "").toLowerCase();
-      if (message.includes("photo_urls") || message.includes("is_featured")) {
+      if (
+        message.includes("photo_urls") ||
+        message.includes("is_featured") ||
+        message.includes("latitude") ||
+        message.includes("longitude")
+      ) {
         ({ data, error } = await supabase
           .from("dojo_gym_listings")
           .select(

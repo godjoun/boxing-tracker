@@ -10,6 +10,31 @@ alter table public.dojo_gym_listings
 alter table public.dojo_gym_listings
   add column if not exists source text not null default 'app';
 
+alter table public.dojo_gym_listings
+  add column if not exists latitude double precision,
+  add column if not exists longitude double precision;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'dojo_gym_listings_latitude_check'
+  ) then
+    alter table public.dojo_gym_listings
+      add constraint dojo_gym_listings_latitude_check
+      check (latitude is null or latitude between 33 and 39);
+  end if;
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'dojo_gym_listings_longitude_check'
+  ) then
+    alter table public.dojo_gym_listings
+      add constraint dojo_gym_listings_longitude_check
+      check (longitude is null or longitude between 124 and 132);
+  end if;
+end
+$$;
+
 -- 공개 insert (anon 키로 앱에서 신청이 막힐 때)
 drop policy if exists "Public insert gym listings" on public.dojo_gym_listings;
 create policy "Public insert gym listings"

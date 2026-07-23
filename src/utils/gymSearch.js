@@ -1,4 +1,5 @@
 import { fetchNearbyGyms as fetchGymsFromApi } from "../api/dojoApi";
+import { geocodeOsmArea } from "../api/osmGymApi";
 
 const LOCATION_STORAGE_KEY = "fitness-league-search-location";
 
@@ -133,61 +134,6 @@ function getSavedSearchLocation() {
   }
 }
 
-function getGeolocationErrorMessage(error) {
-  if (!error) return "현재 위치를 가져오지 못했습니다.";
-
-  if (error.code === 1) {
-    return "위치 권한이 거부되었습니다. 아래에서 지역을 검색해 주세요.";
-  }
-
-  if (error.code === 2) {
-    return "GPS 신호를 찾지 못했습니다. 지역을 검색해 주세요.";
-  }
-
-  if (error.code === 3) {
-    return "위치 확인 시간이 초과되었습니다. 지역을 검색해 주세요.";
-  }
-
-  return error.message || "현재 위치를 가져오지 못했습니다.";
-}
-
-function tryGeolocation(highAccuracy) {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("이 브라우저에서는 GPS를 사용할 수 없습니다."));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-          label: "현재 위치 (GPS)",
-          source: "gps",
-          accuracy: position.coords.accuracy,
-        });
-      },
-      reject,
-      {
-        enableHighAccuracy: highAccuracy,
-        timeout: highAccuracy ? 10000 : 8000,
-        maximumAge: 300000,
-      }
-    );
-  });
-}
-
-async function getGpsPosition() {
-  try {
-    return await tryGeolocation(true);
-  } catch (highAccuracyError) {
-    return tryGeolocation(false).catch(() => {
-      throw highAccuracyError;
-    });
-  }
-}
-
 /** "강남", "홍대", "부산" 등 지역 문자열 → 좌표 */
 export function findAreaByQuery(query) {
   const q = normalizeQuery(query);
@@ -227,7 +173,6 @@ export function suggestAreas(query, limit = 6) {
 
 export async function resolveSearchLocation(options = {}) {
   const {
-    preferGps = true,
     preset = null,
     query = null,
     allowFallback = true,
@@ -235,17 +180,18 @@ export async function resolveSearchLocation(options = {}) {
 
   if (query) {
     const area = findAreaByQuery(query);
-    if (!area) {
+    const resolved = area || (await geocodeOsmArea(query));
+    if (!resolved) {
       throw new Error(
-        `"${query.trim()}" 지역을 찾지 못했습니다. 예: 강남, 홍대, 잠실, 부산`
+        `"${query.trim()}" 지역을 찾지 못했습니다. 시·구·동 이름으로 다시 검색해 주세요.`
       );
     }
     const position = normalizePosition({
-      lat: area.lat,
-      lon: area.lon,
-      label: area.label,
+      lat: resolved.lat,
+      lon: resolved.lon,
+      label: resolved.label || query.trim(),
       source: "search",
-      accuracy: 1000,
+      accuracy: resolved.accuracy ?? null,
     });
     saveSearchLocation(position);
     return position;
@@ -268,18 +214,6 @@ export async function resolveSearchLocation(options = {}) {
     }
   }
 
-  if (preferGps) {
-    try {
-      const position = normalizePosition(await getGpsPosition());
-      saveSearchLocation(position);
-      return position;
-    } catch (gpsError) {
-      if (!allowFallback) {
-        throw new Error(getGeolocationErrorMessage(gpsError));
-      }
-    }
-  }
-
   const saved = getSavedSearchLocation();
   if (saved) {
     return saved;
@@ -293,6 +227,13 @@ export async function resolveSearchLocation(options = {}) {
 }
 
 export function getDistanceKm(lat1, lon1, lat2, lon2) {
+  if (
+    ![lat1, lon1, lat2, lon2].every(
+      (value) => value !== null && value !== "" && Number.isFinite(Number(value))
+    )
+  ) {
+    return Number.NaN;
+  }
   const toRadians = (value) => (value * Math.PI) / 180;
   const earthRadiusKm = 6371;
   const dLat = toRadians(lat2 - lat1);
@@ -304,6 +245,29 @@ export function getDistanceKm(lat1, lon1, lat2, lon2) {
       Math.sin(dLon / 2) ** 2;
 
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function hasMapCoordinates(item) {
+  if (
+    item?.lat === null ||
+    item?.lat === "" ||
+    item?.lat === undefined ||
+    item?.lon === null ||
+    item?.lon === "" ||
+    item?.lon === undefined
+  ) {
+    return false;
+  }
+  const lat = Number(item.lat);
+  const lon = Number(item.lon);
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lon >= -180 &&
+    lon <= 180
+  );
 }
 
 export async function searchNearbyGyms(lat, lon) {

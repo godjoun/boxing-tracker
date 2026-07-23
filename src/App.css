@@ -12039,3 +12039,279 @@
   margin: 0;
   padding: 8px 0 0;
 }
+
+/* 지도형 체육관 찾기 */
+.gym-region-entry {
+  margin: 18px 0;
+  padding: 28px 22px;
+  border: 1px solid var(--p-border);
+  border-radius: 20px;
+  background: var(--p-bg-card);
+  text-align: center;
+}
+
+.gym-region-entry h2 {
+  margin: 5px 0 10px;
+  color: var(--p-text);
+  font-size: clamp(22px, 6vw, 30px);
+}
+
+.gym-region-entry p:last-child {
+  max-width: 440px;
+  margin: 0 auto;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.gym-map-shell {
+  position: relative;
+  overflow: hidden;
+  margin-top: 14px;
+  border: 1px solid var(--p-border);
+  border-radius: 20px;
+  background: var(--p-bg-card);
+}
+
+.gym-map {
+  z-index: 0;
+  width: 100%;
+  height: min(58vh, 480px);
+  min-height: 340px;
+}
+
+.gym-map-legend {
+  position: absolute;
+  z-index: 500;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #161616;
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+}
+
+.gym-map-legend span {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.gym-map-legend i {
+  width: 9px;
+  height: 9px;
+  border: 2px solid #161616;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.gym-map-legend i.is-listed {
+  border-color: #8a2e2e;
+  background: #8a2e2e;
+}
+
+.gym-map-preview,
+.gym-map-guide {
+  position: absolute;
+  z-index: 500;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  margin: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #161616;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+.gym-map-preview {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px;
+}
+
+.gym-map-preview > div:first-child {
+  display: grid;
+  min-width: 0;
+}
+
+.gym-map-preview span,
+.gym-map-preview small {
+  overflow: hidden;
+  color: #6f6864;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gym-map-preview strong {
+  overflow: hidden;
+  margin: 2px 0;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gym-map-preview-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.gym-map-preview-actions button {
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid #d8d2ce;
+  border-radius: 10px;
+  background: #fff;
+  color: #161616;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.gym-map-preview-actions .gym-favorite-button.is-active {
+  border-color: #8a2e2e;
+  background: #8a2e2e;
+  color: #fff;
+}
+
+.gym-map-guide {
+  padding: 12px;
+  color: #59524e;
+  font-size: 11px;
+  text-align: center;
+}
+
+.gym-osm-note {
+  margin: 8px 4px 0;
+  color: var(--p-text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.gym-shortlist,
+.gym-unmapped-listings {
+  margin-top: 26px;
+}
+
+.gym-shortlist-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.gym-shortlist-head h2 {
+  margin: 3px 0 0;
+  color: var(--p-text);
+  font-size: 22px;
+}
+
+.gym-shortlist-head > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--p-action);
+  color: var(--p-action-text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.gym-shortlist-empty,
+.gym-unmapped-listings > p {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--p-border);
+  border-radius: 14px;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.gym-result-card.is-compact {
+  margin-bottom: 10px;
+}
+
+.gym-result-card.is-compact .gym-result-banner {
+  min-height: 132px;
+}
+
+.gym-result-card.is-compact .gym-result-footer {
+  padding-bottom: 12px;
+}
+
+.gym-favorite-remove {
+  width: 100%;
+  min-height: 36px;
+  margin-top: 7px;
+  border: 1px solid var(--p-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gym-listing-address-search {
+  width: 100%;
+  min-height: 42px;
+  margin: -2px 0 10px;
+  border: 1px solid var(--p-action);
+  border-radius: 11px;
+  background: var(--p-accent-bg);
+  color: var(--p-accent);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.gym-location-picker {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.gym-location-picker > p,
+.gym-location-picker > small {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.gym-location-picker-map {
+  z-index: 0;
+  width: 100%;
+  height: 280px;
+  border: 1px solid var(--p-border);
+  border-radius: 14px;
+}
+
+@media (max-width: 520px) {
+  .gym-map {
+    height: 52vh;
+    min-height: 360px;
+  }
+
+  .gym-map-preview {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .gym-map-preview-actions button {
+    flex: 1;
+  }
+}

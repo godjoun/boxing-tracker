@@ -8,6 +8,10 @@ create table if not exists public.dojo_gym_listings (
   phone text not null,
   address text not null,
   address_detail text not null default '',
+  latitude double precision
+    check (latitude is null or latitude between 33 and 39),
+  longitude double precision
+    check (longitude is null or longitude between 124 and 132),
   intro text not null default '',
   area_label text not null default '',
   day_pass_won integer check (day_pass_won is null or day_pass_won >= 0),

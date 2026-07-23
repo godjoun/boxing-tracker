@@ -8,7 +8,7 @@ import {
   uploadGymListingPhoto,
 } from "../api/gymListingApi";
 import { resolveDojoActorId } from "../api/dojoExchangeApi";
-import { findAreaByQuery, getDistanceKm } from "./gymSearch";
+import { getDistanceKm, hasMapCoordinates } from "./gymSearch";
 
 const LISTINGS_KEY = "fitness-league-gym-listings";
 export const MAX_GYM_PHOTOS = 5;
@@ -71,10 +71,8 @@ function formatDistance(km) {
 export function listingToSearchGym(listing, searchLat, searchLon) {
   if (!listing) return null;
 
-  const area =
-    findAreaByQuery(listing.areaLabel) || findAreaByQuery(listing.address);
-  const lat = area?.lat ?? searchLat;
-  const lon = area?.lon ?? searchLon;
+  const lat = hasMapCoordinates(listing) ? Number(listing.lat) : null;
+  const lon = hasMapCoordinates(listing) ? Number(listing.lon) : null;
   const distanceKm = getDistanceKm(searchLat, searchLon, lat, lon);
   const fullAddress = [listing.address, listing.addressDetail]
     .filter(Boolean)
@@ -100,7 +98,9 @@ export function listingToSearchGym(listing, searchLat, searchLon) {
     monthPassWon: listing.monthPassWon ?? null,
     rentalHourWon: listing.rentalHourWon ?? null,
     distanceKm,
-    distanceLabel: area ? formatDistance(distanceKm) : "입점",
+    distanceLabel: Number.isFinite(distanceKm)
+      ? formatDistance(distanceKm)
+      : "위치 확인 필요",
     source: "listing",
     intro: listing.intro || "",
     applicantActorId: listing.applicantActorId || null,
@@ -114,17 +114,53 @@ export function isOwnListedGym(gym, userId) {
 }
 
 export function mergeGymSearchResults(listedGyms, baseGyms) {
-  const listed = Array.isArray(listedGyms) ? listedGyms.filter(Boolean) : [];
+  const rawListed = Array.isArray(listedGyms) ? listedGyms.filter(Boolean) : [];
   const base = Array.isArray(baseGyms) ? baseGyms.filter(Boolean) : [];
+  const key = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]/gu, "");
+  const usedBaseIds = new Set();
+
+  const listed = rawListed.map((gym) => {
+    const name = key(gym.name);
+    const address = key(gym.address);
+    const match = base.find((candidate) => {
+      if (usedBaseIds.has(candidate.id)) return false;
+      const candidateName = key(candidate.name);
+      const candidateAddress = key(candidate.address);
+      return (
+        (name && candidateName && name === candidateName) ||
+        (address &&
+          candidateAddress &&
+          (address.includes(candidateAddress) ||
+            candidateAddress.includes(address)))
+      );
+    });
+    if (!match) return gym;
+    usedBaseIds.add(match.id);
+
+    const hasExactLocation = hasMapCoordinates(gym);
+    return {
+      ...match,
+      ...gym,
+      address: gym.address || match.address,
+      lat: hasExactLocation ? Number(gym.lat) : match.lat,
+      lon: hasExactLocation ? Number(gym.lon) : match.lon,
+      distanceKm: hasExactLocation ? gym.distanceKm : match.distanceKm,
+      distanceLabel: hasExactLocation
+        ? gym.distanceLabel
+        : match.distanceLabel,
+      mapUrl: match.mapUrl || gym.mapUrl,
+      source: "listing",
+    };
+  });
+
   const listedIds = new Set(listed.map((gym) => gym.id));
-  const listedNames = new Set(
-    listed.map((gym) => String(gym.name || "").trim().toLowerCase())
-  );
 
   const rest = base.filter((gym) => {
-    if (listedIds.has(gym.id)) return false;
-    const name = String(gym.name || "").trim().toLowerCase();
-    return !name || !listedNames.has(name);
+    if (listedIds.has(gym.id) || usedBaseIds.has(gym.id)) return false;
+    return true;
   });
 
   return [...listed, ...rest].sort((a, b) => {
@@ -231,6 +267,8 @@ export function validateGymListingForm(form) {
   const addressDetail = String(form.addressDetail || "").trim();
   const intro = String(form.intro || "").trim();
   const areaLabel = String(form.areaLabel || "").trim();
+  const lat = Number(form.lat);
+  const lon = Number(form.lon);
   const photoUrls = normalizeGymPhotoUrls(form.photoUrls, form.photoUrl);
 
   if (gymName.length < 2) {
@@ -247,6 +285,19 @@ export function validateGymListingForm(form) {
   }
   if (address.length < 4) {
     return { ok: false, message: "주소를 입력해 주세요." };
+  }
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lon) ||
+    lat < 33 ||
+    lat > 39 ||
+    lon < 124 ||
+    lon > 132
+  ) {
+    return {
+      ok: false,
+      message: "주소 검색 후 지도에서 체육관 위치를 선택해 주세요.",
+    };
   }
   if (intro.length > 200) {
     return { ok: false, message: "소개는 200자 이하로 적어 주세요." };
@@ -280,6 +331,8 @@ export function validateGymListingForm(form) {
       addressDetail,
       intro,
       areaLabel,
+      lat,
+      lon,
       photoUrl: photoUrls[0] || "",
       photoUrls,
       dayPassWon: day.value,

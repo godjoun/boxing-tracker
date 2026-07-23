@@ -87,7 +87,7 @@ export default function GymDetailPanel({
             <p className="gym-detail-intro is-muted">
               {isListing
                 ? "관에서 올린 소개가 아직 없습니다."
-                : "문의로 일정·가격을 확인해 보세요."}
+                : "OpenStreetMap에서 찾은 장소입니다. 지도 정보는 실제와 다를 수 있습니다."}
             </p>
           )}
           {gym.tags?.length > 0 ? (
@@ -128,7 +128,7 @@ export default function GymDetailPanel({
           >
             받은 문의 보기
           </button>
-        ) : (
+        ) : isListing ? (
           <button
             type="button"
             className="gym-listing-submit"
@@ -136,6 +136,18 @@ export default function GymDetailPanel({
           >
             문의하기
           </button>
+        ) : (
+          <a
+            className="gym-listing-submit"
+            href={
+              gym.mapUrl ||
+              `https://www.openstreetmap.org/?mlat=${gym.lat}&mlon=${gym.lon}#map=17/${gym.lat}/${gym.lon}`
+            }
+            target="_blank"
+            rel="noreferrer"
+          >
+            OpenStreetMap에서 보기
+          </a>
         )}
       </div>
     </section>

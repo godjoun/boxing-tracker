@@ -1,5 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { track } from "@vercel/analytics";
+import { geocodeOsmArea } from "../api/osmGymApi";
 import {
   hasGymListingRemote,
   MAX_GYM_PHOTOS,
@@ -7,6 +15,8 @@ import {
   submitGymListingAsync,
   updateGymListingAsync,
 } from "../utils/gymListing";
+
+const GymLocationPicker = lazy(() => import("./GymLocationPicker"));
 
 function buildEmptyForm() {
   return {
@@ -16,6 +26,8 @@ function buildEmptyForm() {
     address: "",
     addressDetail: "",
     areaLabel: "",
+    lat: null,
+    lon: null,
     dayPassWon: "",
     monthPassWon: "",
     rentalHourWon: "",
@@ -28,6 +40,20 @@ function buildEmptyForm() {
 function listingToForm(listing) {
   if (!listing) return buildEmptyForm();
   const photoUrls = normalizeGymPhotoUrls(listing);
+  const lat =
+    listing.lat !== null &&
+    listing.lat !== "" &&
+    listing.lat !== undefined &&
+    Number.isFinite(Number(listing.lat))
+      ? Number(listing.lat)
+      : null;
+  const lon =
+    listing.lon !== null &&
+    listing.lon !== "" &&
+    listing.lon !== undefined &&
+    Number.isFinite(Number(listing.lon))
+      ? Number(listing.lon)
+      : null;
   return {
     gymName: listing.gymName || "",
     ownerName: listing.ownerName || "",
@@ -35,6 +61,8 @@ function listingToForm(listing) {
     address: listing.address || "",
     addressDetail: listing.addressDetail || "",
     areaLabel: listing.areaLabel || "",
+    lat,
+    lon,
     dayPassWon:
       listing.dayPassWon === null || listing.dayPassWon === undefined
         ? ""
@@ -74,6 +102,13 @@ export default function GymListingRegisterPanel({
   const [done, setDone] = useState(false);
   const [synced, setSynced] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
+  const [locationCenter, setLocationCenter] = useState(() => {
+    const initial = listingToForm(initialListing);
+    return initial.lat && initial.lon
+      ? { lat: initial.lat, lon: initial.lon }
+      : null;
+  });
+  const [geocoding, setGeocoding] = useState(false);
 
   const remoteReady = hasGymListingRemote();
   const title = useMemo(
@@ -90,6 +125,34 @@ export default function GymListingRegisterPanel({
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function handleAddressSearch() {
+    if (!form.address.trim()) {
+      setError("먼저 도로명 주소를 입력해 주세요.");
+      return;
+    }
+    setGeocoding(true);
+    setError("");
+    try {
+      const location = await geocodeOsmArea(form.address);
+      if (!location) {
+        setError("주소 위치를 찾지 못했습니다. 시·구·도로명을 확인해 주세요.");
+        return;
+      }
+      setLocationCenter(location);
+      setForm((current) => ({
+        ...current,
+        lat: location.lat,
+        lon: location.lon,
+      }));
+    } catch (locationError) {
+      setError(
+        locationError?.message || "주소 검색이 잠시 지연되고 있습니다."
+      );
+    } finally {
+      setGeocoding(false);
+    }
   }
 
   function applyPhotoFiles(fileList) {
@@ -368,6 +431,34 @@ export default function GymListingRegisterPanel({
               required
             />
           </label>
+          <button
+            type="button"
+            className="gym-listing-address-search"
+            onClick={handleAddressSearch}
+            disabled={geocoding}
+          >
+            {geocoding ? "주소 찾는 중..." : "주소로 지도 열기"}
+          </button>
+          <Suspense fallback={<p>위치 지도를 여는 중...</p>}>
+            <GymLocationPicker
+              center={locationCenter}
+              position={
+              form.lat !== null &&
+              form.lon !== null &&
+              Number.isFinite(Number(form.lat)) &&
+              Number.isFinite(Number(form.lon))
+                  ? { lat: Number(form.lat), lon: Number(form.lon) }
+                  : null
+              }
+              onChange={(position) =>
+                setForm((current) => ({
+                  ...current,
+                  lat: position.lat,
+                  lon: position.lon,
+                }))
+              }
+            />
+          </Suspense>
           <label className="gym-inquiry-field">
             <span>상세 주소</span>
             <input

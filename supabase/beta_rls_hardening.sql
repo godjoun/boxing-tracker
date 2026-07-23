@@ -34,6 +34,8 @@ begin
     phone = coalesce(nullif(trim(p_patch->>'phone'), ''), phone),
     address = coalesce(nullif(trim(p_patch->>'address'), ''), address),
     address_detail = case when p_patch ? 'address_detail' then coalesce(p_patch->>'address_detail', '') else address_detail end,
+    latitude = case when p_patch ? 'latitude' then nullif(p_patch->>'latitude', '')::double precision else latitude end,
+    longitude = case when p_patch ? 'longitude' then nullif(p_patch->>'longitude', '')::double precision else longitude end,
     intro = case when p_patch ? 'intro' then coalesce(p_patch->>'intro', '') else intro end,
     area_label = case when p_patch ? 'area_label' then coalesce(p_patch->>'area_label', '') else area_label end,
     day_pass_won = case when p_patch ? 'day_pass_won' then nullif(p_patch->>'day_pass_won', '')::integer else day_pass_won end,

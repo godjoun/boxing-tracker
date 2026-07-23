@@ -272,7 +272,9 @@ export default function GymListingRegisterPanel({
         <fieldset className="gym-listing-block">
           <legend>사진 (최대 {MAX_GYM_PHOTOS}장)</legend>
           <p className="gym-listing-block-note">
-            1장은 간판(대표), 나머지는 링·샤워·대기실 같은 시설 사진으로 쓰세요.
+            <strong>첫 장(대표)은 복싱장 간판 사진</strong>을 올려 주세요.
+            검색·상세 배너에 크게 보입니다. 2~5장은 링·샤워·대기실 등 시설
+            사진이면 좋습니다.
           </p>
 
           <input
@@ -302,7 +304,7 @@ export default function GymListingRegisterPanel({
                 <li key={`${url}-${index}`} className="gym-listing-photo-slot">
                   <img src={url} alt="" />
                   {index === 0 ? (
-                    <span className="gym-listing-photo-cover">대표</span>
+                    <span className="gym-listing-photo-cover">간판 · 대표</span>
                   ) : null}
                   <button
                     type="button"
@@ -317,7 +319,7 @@ export default function GymListingRegisterPanel({
             </ul>
           ) : (
             <div className="gym-listing-photo-empty" aria-hidden="true">
-              간판·시설 사진을 추가하면 검색 카드에 크게 보입니다
+              첫 장은 복싱장 간판 사진을 추천합니다
             </div>
           )}
 

@@ -1517,14 +1517,13 @@
   padding: 2px 5px;
   border-radius: 999px;
   background: rgba(10, 9, 9, 0.08);
-  color: var(--p-text-faint);
-  font-size: 9px;
+  font-size: 10px;
   font-style: normal;
   font-weight: 800;
 }
 
 .theme-dark .dojo-flap-tab em {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(245, 241, 232, 0.12);
 }
 
 .dojo-flap-body {
@@ -2121,6 +2120,58 @@
   display: grid;
   gap: 10px;
   margin-top: 4px;
+}
+
+.exchange-flow-guide {
+  margin: 4px 0 14px;
+  padding: 14px 14px 12px;
+  border: 1px solid var(--p-border);
+  border-radius: 16px;
+  background: var(--p-bg-card);
+}
+
+.exchange-flow-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exchange-flow-steps li {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: var(--p-bg-subtle, rgba(0, 0, 0, 0.03));
+}
+
+.exchange-flow-steps strong {
+  color: var(--p-text);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.exchange-flow-steps span {
+  color: var(--p-text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.exchange-compose-lead {
+  margin: 0 0 10px;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+@media (max-width: 420px) {
+  .exchange-flow-steps {
+    grid-template-columns: 1fr;
+  }
 }
 
 .exchange-toolbar-simple {
@@ -9837,6 +9888,13 @@
   color: #ffffff;
 }
 
+.onboarding-page--entry {
+  padding: 0;
+  place-items: stretch;
+  background: #ffffff;
+  color: #161616;
+}
+
 .onboarding-page--street {
   padding: 0;
   place-items: stretch;
@@ -11155,7 +11213,7 @@
   font-weight: 950;
 }
 
-/* ANIMA global palette: restrained stage, clear action, small brass details */
+/* MANTLE global palette: restrained stage, clear action, small brass details */
 .home-section-label,
 .home-today-victory-kicker,
 .category-group-heading p,
@@ -11195,7 +11253,7 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* ANIMA action lock: one burgundy for start / save / inquire / apply */
+/* MANTLE action lock: one burgundy for start / save / inquire / apply */
 .home-today-card-link,
 .home-main-button,
 .backup-primary-button,

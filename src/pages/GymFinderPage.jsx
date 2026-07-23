@@ -13,22 +13,22 @@ import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
  */
 const CATEGORIES = [
   {
+    id: "sparring",
+    label: "라이벌 찾기",
+    hint: "군산부터 · 관심 보내면 대화",
+    howTo: "지역을 군산으로 적고 내 카드를 공개한 뒤, 맞는 상대에게 관심을 보내요.",
+  },
+  {
     id: "exchange",
     label: "모임",
     hint: "오픈 스파링 · 합동훈련",
-    howTo: "함께 훈련할 모임 일정을 보거나 올려요.",
+    howTo: "① 일정 올리기 → ② 참가 신청 → ③ 대화하기",
   },
   {
     id: "gyms",
     label: "체육관 문의·대여",
     hint: "찾기 · 체험 · 대여",
     howTo: "지역 검색 · 문의 · 관 운영자면 등록 신청",
-  },
-  {
-    id: "sparring",
-    label: "라이벌 찾기",
-    hint: "1:1 스파링 상대 · 관심 요청",
-    howTo: "지역·희망 시간을 적고 내 카드를 공개한 뒤 관심을 보내요.",
   },
 ];
 
@@ -39,11 +39,12 @@ function resolveView(view) {
   if (view === "sparring-lock") {
     return "sparring";
   }
-  return "gyms";
+  // 군산 소프트 론칭: 도장 기본 진입 = 라이벌 찾기
+  return "sparring";
 }
 
 export default function GymFinderPage({
-  initialView = "gyms",
+  initialView = "sparring",
   fighterLevel = 1,
   onGoBack,
   onStartTraining,

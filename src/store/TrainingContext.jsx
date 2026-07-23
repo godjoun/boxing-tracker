@@ -37,7 +37,7 @@ const TrainingContext = createContext(null);
 
 export const GUEST_USER_ID = "local-user";
 
-/** ANIMA 온보딩을 처음부터 다시 보기 위한 1회성 리셋 플래그 */
+/** MANTLE 온보딩을 처음부터 다시 보기 위한 1회성 리셋 플래그 */
 const FRESH_ONBOARDING_FLAG = "fitness-league-fresh-onboarding-v1";
 
 const LEGACY_STORAGE_KEYS = {

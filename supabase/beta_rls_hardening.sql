@@ -1,4 +1,4 @@
--- ANIMA 공개 베타 최소 권한 패치
+-- MANTLE 공개 베타 최소 권한 패치
 -- 전제: dojo_gym_listings_manage.sql, dojo_exchange.sql,
 --       dojo_inquiry_chat.sql, dojo_inquiry_chat_inbox.sql 적용 후 마지막 실행
 --

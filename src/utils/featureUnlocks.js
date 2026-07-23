@@ -1,8 +1,8 @@
 /**
- * 스파링 상대찾기만 성장 마일스톤으로 해금.
- * LV.7 링 도전자 — 일반인 단계에서 실전 스파링에 들어가는 문턱.
+ * 스파링 상대찾기.
+ * 군산 소프트 론칭: LV.1부터 열어 활성화. (예전 LV.7 게이트는 전국 확장 때 재검토)
  */
-export const SPARRING_UNLOCK_LEVEL = 7;
+export const SPARRING_UNLOCK_LEVEL = 1;
 
 /** LV.10 일반인 정점 — 기본 커리큘럼을 마친 뒤 콤보 크리에이터 해금 */
 export const COMBO_CREATOR_UNLOCK_LEVEL = 10;

@@ -39,7 +39,7 @@ export const TUTORIAL_STEPS = [
     id: "nav-dojo",
     kicker: "DOJO",
     title: "도장 — 체육관을 찾는다",
-    body: "가까운 체육관을 찾고 체험·대여를 문의하세요. 훈련 모임과 라이벌 찾기도 도장 안에 있습니다.",
+    body: "군산에서 라이벌을 찾고, 체육관 문의·모임도 도장 안에 있습니다.",
     mode: "spotlight",
     target: TUTORIAL_TARGETS.navDojo,
     placement: "top",

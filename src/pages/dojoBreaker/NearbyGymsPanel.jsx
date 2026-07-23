@@ -31,6 +31,7 @@ import {
   getFavoriteGyms,
   toggleFavoriteGym,
 } from "../../utils/gymFavorites";
+import { BRAND_NAME } from "../../utils/brand";
 import GymResultCard from "./GymResultCard";
 
 const GymMapPanel = lazy(() => import("../../components/GymMapPanel"));
@@ -220,7 +221,7 @@ export default function NearbyGymsPanel() {
       if (osmResult.status === "rejected") {
         setLocationHint(
           listed.length > 0
-            ? "지도 장소 검색이 지연되어 ANIMA 입점관만 표시합니다."
+            ? `지도 장소 검색이 지연되어 ${BRAND_NAME} 입점관만 표시합니다.`
             : ""
         );
       }
@@ -241,7 +242,7 @@ export default function NearbyGymsPanel() {
     event.preventDefault();
     const q = regionQuery.trim();
     if (!q) {
-      setError("지역을 입력해 주세요. 예: 강남, 홍대, 잠실, 부산");
+      setError("지역을 입력해 주세요. 예: 군산, 익산, 전주");
       setStatus("error");
       return;
     }
@@ -509,9 +510,9 @@ export default function NearbyGymsPanel() {
           <button
             type="button"
             className="gym-retry-button"
-            onClick={() => loadGyms({ preset: "seoul-gangnam" })}
+            onClick={() => loadGyms({ preset: "gunsan-center" })}
           >
-            서울 강남으로 재시도
+            군산으로 재시도
           </button>
         </div>
       ) : null}

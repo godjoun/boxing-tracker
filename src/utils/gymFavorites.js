@@ -1,4 +1,5 @@
-const GYM_FAVORITES_KEY = "anima-gym-favorites";
+const GYM_FAVORITES_KEY = "mantle-gym-favorites";
+const LEGACY_GYM_FAVORITES_KEY = "anima-gym-favorites";
 const MAX_FAVORITES = 30;
 
 function sanitizeGym(gym) {
@@ -35,14 +36,22 @@ function sanitizeGym(gym) {
   };
 }
 
-export function getFavoriteGyms() {
+function readRawFavorites() {
   if (typeof localStorage === "undefined") return [];
   try {
-    const parsed = JSON.parse(localStorage.getItem(GYM_FAVORITES_KEY) || "[]");
+    const raw =
+      localStorage.getItem(GYM_FAVORITES_KEY) ||
+      localStorage.getItem(LEGACY_GYM_FAVORITES_KEY) ||
+      "[]";
+    const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((gym) => gym?.id) : [];
   } catch {
     return [];
   }
+}
+
+export function getFavoriteGyms() {
+  return readRawFavorites();
 }
 
 export function toggleFavoriteGym(gym) {
@@ -61,6 +70,7 @@ export function toggleFavoriteGym(gym) {
       );
 
   localStorage.setItem(GYM_FAVORITES_KEY, JSON.stringify(next));
+  localStorage.removeItem(LEGACY_GYM_FAVORITES_KEY);
   return next;
 }
 

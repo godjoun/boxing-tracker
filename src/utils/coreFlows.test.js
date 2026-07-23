@@ -137,7 +137,7 @@ describe("백업", () => {
     const payload = createBackupPayload({
       logs: [{ id: "log-1", date: "2026-07-23", rounds: 3 }],
       feed: [],
-      profile: { nickname: "ANIMA", contact: "010-0000-0000" },
+      profile: { nickname: "MANTLE", contact: "010-0000-0000" },
       mode: "solo",
     });
     const parsed = parseBackupFileText(JSON.stringify(payload));

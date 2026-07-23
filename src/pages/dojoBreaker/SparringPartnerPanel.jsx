@@ -34,7 +34,7 @@ const DEFAULT_FORM = {
   weightClass: "라이트급",
   experience: "1년차",
   style: "미디엄",
-  area: "",
+  area: "군산",
   note: "",
   meetWhen: "",
   active: false,
@@ -57,7 +57,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
     ...DEFAULT_FORM,
     ...profileDefaults,
     ...existingListing,
-    area: existingListing?.area || profileDefaults.area || "",
+    area: existingListing?.area || profileDefaults.area || DEFAULT_FORM.area,
     note: existingListing?.note || profileDefaults.note || "",
     meetWhen: existingListing?.meetWhen || "",
   });
@@ -376,7 +376,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
           ) : null}
           <h1>라이벌 찾기</h1>
           <p className="gym-search-context">
-            체급·지역·희망 시간이 맞는 복서에게 관심을 보내요.
+            군산에서 먼저. 체급·지역·희망 시간이 맞는 복서에게 관심을 보내요.
           </p>
         </header>
       ) : null}
@@ -387,12 +387,12 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
       >
         <div className="sparring-hero-top">
           <div>
-            <p className="sparring-hero-kicker">LOOKING</p>
+            <p className="sparring-hero-kicker">GUNSAN FIRST</p>
             <strong>{looking ? "찾는 중" : "대기 중"}</strong>
             <p>
               {looking
-                ? "내 카드가 실제 라이벌 목록에 공개 중입니다."
-                : "지역과 희망 시간만 채우면 바로 공개할 수 있어요."}
+                ? "내 카드가 군산·근처 라이벌 목록에 공개 중입니다."
+                : "지역에 「군산」을 넣고 카드를 공개하면 바로 시작할 수 있어요."}
             </p>
           </div>
           <button
@@ -411,7 +411,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
               type="text"
               value={form.area}
               onChange={(event) => updateField("area", event.target.value)}
-              placeholder="예: 강남 · 홍대 · 잠실"
+              placeholder="예: 군산 · 수송동 · 익산"
               autoComplete="off"
             />
           </label>
@@ -593,7 +593,7 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
               type="search"
               value={areaFilter}
               onChange={(event) => setAreaFilter(event.target.value)}
-              placeholder={form.area || "예: 강남"}
+              placeholder={form.area || "예: 군산"}
             />
           </label>
           <label className="sparring-field">
@@ -652,8 +652,20 @@ export default function SparringPartnerPanel({ onGoBack, embedded = false }) {
 
         {status === "empty" ? (
           <div className="gym-state-card">
-            <strong>조건에 맞는 상대가 없습니다</strong>
-            <p>체급·지역·시간 조건을 넓히거나, 먼저 내 카드를 공개해 보세요.</p>
+            <strong>아직 군산에 공개된 라이벌이 없습니다</strong>
+            <p>
+              지금 내 카드를 공개하면 군산 첫 카드가 됩니다. 관심은 서로 보냈을
+              때만 대화가 열려요.
+            </p>
+            {!looking ? (
+              <button
+                type="button"
+                className="gym-retry-button"
+                onClick={handleToggleLooking}
+              >
+                내 카드 공개하기
+              </button>
+            ) : null}
           </div>
         ) : null}
 

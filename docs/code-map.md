@@ -6,7 +6,7 @@
 | 도장 탭 | `src/pages/GymFinderPage.jsx` |
 | 모임 | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
 | 채팅 SQL | `supabase/dojo_chat.sql` |
-| 체육관 검색·카드 | `NearbyGymsPanel.jsx` · `GymResultCard.jsx` · `utils/gymPricing.js` |
+| 체육관 검색·카드 | `NearbyGymsPanel.jsx` (찾기·내 문의·내 관) · `GymResultCard.jsx` · `utils/gymPricing.js` |
 | 관 상세 | `GymDetailPanel.jsx` · `docs/dojo-ui.md` |
 | 문의 | `GymInquiryModal.jsx` · `GymInquiryLedgerPanel.jsx` · `GymSentInquiriesPanel.jsx` · `GymInquiryChatModal.jsx` · `utils/gymInquiry.js` · `api/gymInquiryApi.js` · `api/gymInquiryChatApi.js` |
 | 문의 SQL | `supabase/dojo_inquiries.sql` · 채팅 `dojo_inquiry_chat.sql` · 인박스 `dojo_inquiry_chat_inbox.sql` |
@@ -22,7 +22,7 @@
 | 신체(몸 만들기) | `src/pages/StrengthProgramPage.jsx` |
 | 링 메뉴 라벨 | `src/utils/appMenu.js` |
 | 이름·슬로건 | `src/utils/brand.js` |
-| 온보딩 | `src/pages/OnboardingSetupPage.jsx` |
+| 오프닝 | `src/components/EntryBanner.jsx` · 온보딩 환영 · 세션 입장 배너 |
 | 로고 | `public/logo-mark.png` · `docs/brand/logo-locked.png` |
 
 도장 폴더 요약: `src/pages/dojoBreaker/README.md`  

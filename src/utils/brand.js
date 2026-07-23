@@ -1,5 +1,5 @@
 /** Locked brand — docs/brand.md */
-export const BRAND_NAME = "ANIMA";
+export const BRAND_NAME = "MANTLE";
 
 export const BRAND_SLOGAN_KO = "알 유 레디.";
 export const BRAND_SLOGAN_EN = "Are you ready?";

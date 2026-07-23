@@ -7,11 +7,8 @@ import {
   WEIGHT_CLASSES,
 } from "../utils/sparringPartners";
 import { suggestWeightClass } from "../data/proBoxingWeightClasses";
-import {
-  BRAND_NAME,
-  BRAND_PHILOSOPHY_EN,
-  BRAND_SLOGAN_EN,
-} from "../utils/brand";
+import EntryBanner from "../components/EntryBanner";
+import { BRAND_NAME } from "../utils/brand";
 
 const EXPERIENCE_CHIP_LABELS = {
   "초보 (6개월 미만)": "초보",
@@ -193,52 +190,8 @@ export default function OnboardingSetupPage() {
 
   if (showWelcome) {
     return (
-      <div className="onboarding-page onboarding-page--street">
-        <section className="onboarding-street" aria-label="환영">
-          <div className="onboarding-street-bg" aria-hidden="true">
-            <span className="onboarding-street-noise" />
-            <span className="onboarding-street-slash" />
-            <span className="onboarding-street-grid" />
-          </div>
-
-          <header className="onboarding-street-top">
-            <p className="onboarding-step-label" aria-label="1단계, 전체 2단계">
-              1 / 2
-            </p>
-            <div
-              className="onboarding-progress"
-              aria-hidden="true"
-            >
-              <span className="is-active" />
-              <span />
-            </div>
-          </header>
-
-          <div className="onboarding-street-body">
-            <img
-              className="onboarding-street-mark"
-              src="/logo-mark.png"
-              alt=""
-              width={120}
-              height={120}
-            />
-            <h1 className="onboarding-street-title onboarding-street-title--brand">
-              {BRAND_NAME}
-            </h1>
-            <p className="onboarding-street-slogan">{BRAND_SLOGAN_EN}</p>
-            <p className="onboarding-street-value">{BRAND_PHILOSOPHY_EN}</p>
-          </div>
-
-          <footer className="onboarding-street-footer">
-            <button
-              type="button"
-              className="onboarding-street-cta"
-              onClick={handleWelcomeNext}
-            >
-              시작하기
-            </button>
-          </footer>
-        </section>
+      <div className="onboarding-page onboarding-page--entry">
+        <EntryBanner mode="welcome" onContinue={handleWelcomeNext} />
       </div>
     );
   }

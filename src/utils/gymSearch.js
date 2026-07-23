@@ -4,18 +4,45 @@ import { geocodeOsmArea } from "../api/osmGymApi";
 const LOCATION_STORAGE_KEY = "fitness-league-search-location";
 
 export const PRESET_AREAS = [
+  { id: "gunsan-center", label: "군산", lat: 35.9676, lon: 126.7369 },
+  { id: "gunsan-transport", label: "군산 수송동", lat: 35.9745, lon: 126.715 },
+  { id: "iksan", label: "익산", lat: 35.9483, lon: 126.9578 },
+  { id: "jeonju", label: "전주", lat: 35.8242, lon: 127.148 },
   { id: "seoul-gangnam", label: "서울 강남", lat: 37.4979, lon: 127.0276 },
   { id: "seoul-hongdae", label: "서울 홍대", lat: 37.5563, lon: 126.9236 },
-  { id: "seoul-jamsil", label: "서울 잠실", lat: 37.5133, lon: 127.1028 },
-  { id: "seoul-mapo", label: "서울 마포", lat: 37.566, lon: 126.901 },
   { id: "busan-seomyeon", label: "부산 서면", lat: 35.1579, lon: 129.0595 },
-  { id: "daegu-dongseong", label: "대구 동성로", lat: 35.8694, lon: 128.5938 },
-  { id: "incheon-bupyeong", label: "인천 부평", lat: 37.507, lon: 126.7219 },
-  { id: "gwangju-sangmu", label: "광주 상무", lat: 35.1466, lon: 126.8514 },
 ];
 
 /** 직접 검색용 지역 (프리셋 + 별칭) */
 export const SEARCHABLE_AREAS = [
+  {
+    id: "gunsan-center",
+    label: "군산",
+    aliases: ["군산", "군산시", "나운", "미장", "조촌", "구암"],
+    lat: 35.9676,
+    lon: 126.7369,
+  },
+  {
+    id: "gunsan-transport",
+    label: "군산 수송동",
+    aliases: ["수송", "수송동", "군산 수송"],
+    lat: 35.9745,
+    lon: 126.715,
+  },
+  {
+    id: "iksan",
+    label: "익산",
+    aliases: ["익산", "익산시", "영등"],
+    lat: 35.9483,
+    lon: 126.9578,
+  },
+  {
+    id: "jeonju",
+    label: "전주",
+    aliases: ["전주", "전주시", "객사", "서신", "효자"],
+    lat: 35.8242,
+    lon: 127.148,
+  },
   {
     id: "seoul-gangnam",
     label: "서울 강남",
@@ -89,9 +116,9 @@ export const SEARCHABLE_AREAS = [
 ];
 
 const DEFAULT_LOCATION = {
-  lat: 37.5665,
-  lon: 126.978,
-  label: "서울 시청 (기본)",
+  lat: 35.9676,
+  lon: 126.7369,
+  label: "군산 (기본)",
   source: "default",
   accuracy: null,
 };

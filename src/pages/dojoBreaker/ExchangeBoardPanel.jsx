@@ -342,10 +342,10 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
                           applicantNickname: person.nickname || "신청자",
                         })
                       }
-                    >
-                      대화하기
-                    </button>
-                  ) : null}
+                      >
+                        ③ 대화하기
+                      </button>
+                    ) : null}
                 </li>
               ))}
             </ul>
@@ -364,7 +364,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
               onClick={() => handleRemove(item.id)}
               disabled={busy}
             >
-              삭제
+              내 일정 삭제
             </button>
           ) : item.isPast ? (
             <p className="exchange-sample-hint">지난 일정</p>
@@ -376,7 +376,11 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
                 onClick={() => handleApplyToggle(item)}
                 disabled={full || busy}
               >
-                {applied ? "신청 취소" : full ? "마감" : "참가 신청"}
+                {applied
+                  ? "신청 취소"
+                  : full
+                    ? "마감"
+                    : "② 참가 신청"}
               </button>
               {applied && item.source === "server" && item.userId ? (
                 <button
@@ -392,8 +396,12 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
                     })
                   }
                 >
-                  대화하기
+                  ③ 대화하기
                 </button>
+              ) : applied && item.source !== "server" ? (
+                <p className="exchange-sample-hint">
+                  서버 연결 후 주최자와 대화할 수 있어요.
+                </p>
               ) : null}
             </>
           )}
@@ -420,12 +428,30 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
         </header>
       ) : null}
 
+      <section className="exchange-flow-guide" aria-label="모임 이용 순서">
+        <p className="home-section-label">HOW IT WORKS</p>
+        <ol className="exchange-flow-steps">
+          <li>
+            <strong>올리기</strong>
+            <span>날짜·장소·인원을 올립니다</span>
+          </li>
+          <li>
+            <strong>참가</strong>
+            <span>카드에서 참가 신청합니다</span>
+          </li>
+          <li>
+            <strong>대화</strong>
+            <span>신청 후 주최자와 대화합니다</span>
+          </li>
+        </ol>
+      </section>
+
       <p className="exchange-limit-note">
         {remoteReady
           ? synced
             ? "일정·신청이 서버와 연결됐습니다. 다른 폰에서도 보입니다."
-            : "서버 미연결(SQL 미실행 등) — 지금은 이 기기에만 저장됩니다."
-          : "Supabase를 연결하면 다른 폰에서도 일정·신청이 보입니다."}
+            : "서버 미연결 — 지금은 이 기기에만 저장됩니다."
+          : "서버 연결 전에도 이 기기에서 올리고 신청할 수 있어요."}
       </p>
 
       <label className="exchange-search-filter">
@@ -480,7 +506,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
             if (!composing) setForm(buildDefaultForm());
           }}
         >
-          {composing ? "닫기" : "일정 올리기"}
+          {composing ? "작성 닫기" : "① 일정 올리기"}
         </button>
       </div>
 
@@ -489,7 +515,10 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
       {composing ? (
         <form className="exchange-compose" onSubmit={handleSubmit}>
           <p className="gym-inquiry-kicker">MEETUP</p>
-          <strong>훈련 모임 일정</strong>
+          <strong>훈련 모임 올리기</strong>
+          <p className="exchange-compose-lead">
+            필수만 채우면 됩니다. 올린 뒤 다른 사람이 참가 신청할 수 있어요.
+          </p>
 
           <label className="gym-inquiry-field">
             <span>체육관 *</span>
@@ -583,7 +612,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
           {error ? <p className="gym-inquiry-error">{error}</p> : null}
 
           <button type="submit" className="gym-inquiry-submit" disabled={busy}>
-            {busy ? "올리는 중..." : "올리기"}
+            {busy ? "올리는 중..." : "모임 올리기"}
           </button>
         </form>
       ) : null}
@@ -598,13 +627,26 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
           <strong>
             {searchQuery || dateFilter
               ? "조건에 맞는 일정이 없습니다"
-              : "다가오는 일정이 없습니다"}
+              : "아직 올라온 모임이 없습니다"}
           </strong>
           <p>
             {searchQuery || dateFilter
               ? "검색어·날짜를 바꾸거나 전체를 보세요."
-              : "첫 훈련 모임을 올려 보세요."}
+              : "위에서 「① 일정 올리기」로 첫 모임을 만들어 보세요."}
           </p>
+          {!searchQuery && !dateFilter ? (
+            <button
+              type="button"
+              className="gym-retry-button"
+              onClick={() => {
+                setComposing(true);
+                setError("");
+                setForm(buildDefaultForm());
+              }}
+            >
+              일정 올리기
+            </button>
+          ) : null}
         </div>
       ) : (
         <div className="exchange-feed">{visibleEvents.map(renderCard)}</div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { track } from "@vercel/analytics";
 import { TrainingProvider, useTraining } from "./store/TrainingContext";
@@ -16,6 +16,7 @@ import TrainingHubPage from "./pages/TrainingHubPage";
 import GrowthHubPage from "./pages/GrowthHubPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
+import EntryBanner from "./components/EntryBanner";
 import FirstVisitTutorial from "./components/FirstVisitTutorial";
 import MenuIcon from "./components/MenuIcon";
 import AppErrorBoundary from "./components/AppErrorBoundary";
@@ -38,18 +39,29 @@ import {
 } from "./utils/theme";
 import "./App.css";
 
-const TIMER_RETURN_PAGE_KEY = "anima-timer-return-page";
-const CURRICULUM_RETURN_STYLE_KEY = "anima-curriculum-return-style";
+const ENTRY_SPLASH_KEY = "mantle-entry-splash-seen";
+const LEGACY_ENTRY_SPLASH_KEY = "anima-entry-splash-seen";
+const TIMER_RETURN_PAGE_KEY = "mantle-timer-return-page";
+const LEGACY_TIMER_RETURN_PAGE_KEY = "anima-timer-return-page";
+const CURRICULUM_RETURN_STYLE_KEY = "mantle-curriculum-return-style";
+const LEGACY_CURRICULUM_RETURN_STYLE_KEY = "anima-curriculum-return-style";
 
 function readTimerReturnPage() {
   if (typeof sessionStorage === "undefined") return "train";
-  return sessionStorage.getItem(TIMER_RETURN_PAGE_KEY) || "train";
+  return (
+    sessionStorage.getItem(TIMER_RETURN_PAGE_KEY) ||
+    sessionStorage.getItem(LEGACY_TIMER_RETURN_PAGE_KEY) ||
+    "train"
+  );
 }
 
 function readCurriculumReturnStyle() {
   if (typeof sessionStorage === "undefined") return null;
   try {
-    return JSON.parse(sessionStorage.getItem(CURRICULUM_RETURN_STYLE_KEY));
+    const raw =
+      sessionStorage.getItem(CURRICULUM_RETURN_STYLE_KEY) ||
+      sessionStorage.getItem(LEGACY_CURRICULUM_RETURN_STYLE_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
@@ -78,10 +90,24 @@ export default function App() {
 function AppFlow() {
   const { profile } = useTraining();
   const [theme, setTheme] = useState(getStoredTheme);
+  const [showEntrySplash, setShowEntrySplash] = useState(() => {
+    if (typeof sessionStorage === "undefined") return true;
+    return (
+      sessionStorage.getItem(ENTRY_SPLASH_KEY) !== "1" &&
+      sessionStorage.getItem(LEGACY_ENTRY_SPLASH_KEY) !== "1"
+    );
+  });
 
   useEffect(() => {
     applyDocumentTheme(theme);
   }, [theme]);
+
+  const dismissEntrySplash = useCallback(() => {
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.setItem(ENTRY_SPLASH_KEY, "1");
+    }
+    setShowEntrySplash(false);
+  }, []);
 
   function toggleTheme() {
     setTheme((current) => {
@@ -99,7 +125,14 @@ function AppFlow() {
     );
   }
 
-  return <MainAppShell theme={theme} onToggleTheme={toggleTheme} />;
+  return (
+    <>
+      {showEntrySplash ? (
+        <EntryBanner mode="splash" onContinue={dismissEntrySplash} />
+      ) : null}
+      <MainAppShell theme={theme} onToggleTheme={toggleTheme} />
+    </>
+  );
 }
 
 function MainAppShell({ theme, onToggleTheme }) {
@@ -166,7 +199,7 @@ function MainAppShell({ theme, onToggleTheme }) {
     setCurrentPage("profile");
   };
 
-  const goGym = (view = "gyms") => {
+  const goGym = (view = "sparring") => {
     setGymView(view);
     setCurrentPage("gym");
   };
@@ -449,7 +482,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             type="button"
             data-tutorial-target="nav-dojo"
             className={getNavClass(currentPage === "gym")}
-            onClick={() => goGym("gyms")}
+            onClick={() => goGym("sparring")}
           >
             <span className="app-nav-icon" aria-hidden="true">
               <MenuIcon name="dojo" size={20} />

@@ -8,6 +8,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { hasMapCoordinates } from "../utils/gymSearch";
+import { BRAND_NAME } from "../utils/brand";
 
 function MapViewport({ center, selectedGym }) {
   const map = useMap();
@@ -75,7 +76,7 @@ export default function GymMapPanel({
       </MapContainer>
 
       <div className="gym-map-legend" aria-label="지도 범례">
-        <span><i className="is-listed" />ANIMA 입점관</span>
+        <span><i className="is-listed" />{BRAND_NAME} 입점관</span>
         <span><i />지도 검색</span>
       </div>
 
@@ -83,7 +84,7 @@ export default function GymMapPanel({
         <div className="gym-map-preview">
           <div>
             <span>
-              {selectedGym.source === "listing" ? "ANIMA 입점" : "지도 검색"}
+              {selectedGym.source === "listing" ? `${BRAND_NAME} 입점` : "지도 검색"}
             </span>
             <strong>{selectedGym.name}</strong>
             <small>{selectedGym.address || center.label}</small>

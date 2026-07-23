@@ -1,4 +1,5 @@
 import { Component } from "react";
+import { BRAND_NAME } from "../utils/brand";
 
 export default class AppErrorBoundary extends Component {
   constructor(props) {
@@ -11,7 +12,7 @@ export default class AppErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    console.error("[ANIMA] unrecoverable UI error", error, info);
+    console.error(`[${BRAND_NAME}] unrecoverable UI error`, error, info);
   }
 
   handleReload = () => {
@@ -35,7 +36,7 @@ export default class AppErrorBoundary extends Component {
         }}
       >
         <section style={{ maxWidth: "360px" }}>
-          <p style={{ color: "#b8a99a", fontWeight: 800 }}>ANIMA</p>
+          <p style={{ color: "#b8a99a", fontWeight: 800 }}>{BRAND_NAME}</p>
           <h1 style={{ margin: "8px 0 12px", fontSize: "24px" }}>
             화면을 다시 열어야 합니다
           </h1>

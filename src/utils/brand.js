@@ -4,8 +4,9 @@ export const BRAND_NAME = "SECUNDUS";
 export const BRAND_SLOGAN_KO = "알 유 레디.";
 export const BRAND_SLOGAN_EN = "Are you ready?";
 
-export const BRAND_PHILOSOPHY_KO = "네 길은 네가 만든다.";
-export const BRAND_PHILOSOPHY_EN = "You make your own way.";
+export const BRAND_PHILOSOPHY_KO =
+  "내면으로 뻗은 그 손길에서 모든 것이 시작된다.";
+export const BRAND_PHILOSOPHY_EN = "It starts with a reach inward.";
 
 /** 가죽 버건디 — CTA · 시작 · 저장 · 문의 · 신청 */
 export const BRAND_ACTION = "#8A2E2E";

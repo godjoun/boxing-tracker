@@ -9234,7 +9234,7 @@
 
 .onboarding-street-value {
   margin: 22px 0 0;
-  max-width: 22ch;
+  max-width: none;
   color: rgba(255, 255, 255, 0.5);
   font-size: 14px;
   line-height: 1.45;

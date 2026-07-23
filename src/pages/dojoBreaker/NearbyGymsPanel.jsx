@@ -307,7 +307,6 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   if (detailGym) {
     return (
       <>
-        {sectionNav}
         <GymDetailPanel
           gym={detailGym}
           isOwn={isOwnListedGym(detailGym, userId)}

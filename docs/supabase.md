@@ -56,6 +56,7 @@ Supabase → **Table Editor**
 | **문의 insert·장부 고침** | `dojo_inquiries_insert_fix.sql` | ❌ 없음 · 문의 안 쌓일 때 |
 | **문의 채팅** | `dojo_inquiry_chat.sql` | 대화방·메시지 2개 + RPC |
 | **문의 채팅 인박스** | `dojo_inquiry_chat_inbox.sql` | ❌ 없음 (읽음·미리보기·목록 RPC) |
+| **입점 사진 여러 장** | `dojo_gym_listings_photos.sql` | ❌ 없음 (`photo_urls` + 버킷) |
 | **교류** | `dojo_exchange.sql` | 교류 일정 + 교류 신청 = **2개** |
 | **교류 채팅** | `dojo_chat.sql` | 채팅 방 + 채팅 말 = **2개** |
 | **닉네임** | `fighter_nicknames.sql` | 닉네임 1개 (아직 안 돌려도 됨) |
@@ -65,6 +66,8 @@ Supabase → **Table Editor**
 - **처음 입점:** 입점 신청 → (이미 있으면) 승인 읽기 · 입점 관리 · 입점 추천
 - **고장 시만:** 입점 insert 고침 · **문의 insert·장부 고침**
 - **문의 채팅:** `문의 채팅` (`dojo_inquiry_chat.sql`) 한 번 → 안 읽음·미리보기면 `문의 채팅 인박스` (`dojo_inquiry_chat_inbox.sql`)
+- **시설 사진 여러 장:** `입점 사진 여러 장` (`dojo_gym_listings_photos.sql`) — 최대 5장 · gym-photos 버킷  
+  - 사진이 깨지면: SQL로 버킷 생성 + 앱 `img-src`에 `https:` (CSP)
 - **문의·교류·채팅·닉네임:** 그 기능 켤 때 한 번씩
 
 ---

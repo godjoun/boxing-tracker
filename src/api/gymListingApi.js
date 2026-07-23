@@ -34,8 +34,19 @@ function toWonOrNull(value) {
   return Math.round(n);
 }
 
+function normalizePhotoUrls(value, fallbackCover = "") {
+  const isHttpUrl = (item) => /^https?:\/\//i.test(String(item || "").trim());
+  const fromArray = Array.isArray(value)
+    ? value.map((item) => String(item || "").trim()).filter(isHttpUrl)
+    : [];
+  if (fromArray.length > 0) return fromArray.slice(0, 5);
+  const cover = String(fallbackCover || "").trim();
+  return isHttpUrl(cover) ? [cover] : [];
+}
+
 function mapListingRow(row) {
   if (!row?.id) return null;
+  const photoUrls = normalizePhotoUrls(row.photo_urls, row.photo_url);
   return {
     id: row.id,
     gymName: row.gym_name || "",
@@ -48,7 +59,8 @@ function mapListingRow(row) {
     dayPassWon: row.day_pass_won ?? null,
     monthPassWon: row.month_pass_won ?? null,
     rentalHourWon: row.rental_hour_won ?? null,
-    photoUrl: row.photo_url || "",
+    photoUrl: photoUrls[0] || row.photo_url || "",
+    photoUrls,
     isFeatured: Boolean(row.is_featured),
     status: row.status || "pending",
     createdAt: row.created_at || null,
@@ -60,6 +72,7 @@ function mapListingRow(row) {
 }
 
 function toRemotePayload(listing, { includeStatus = false } = {}) {
+  const photoUrls = normalizePhotoUrls(listing.photoUrls, listing.photoUrl);
   const payload = {
     gym_name: listing.gymName,
     owner_name: listing.ownerName || "",
@@ -71,7 +84,8 @@ function toRemotePayload(listing, { includeStatus = false } = {}) {
     day_pass_won: toWonOrNull(listing.dayPassWon),
     month_pass_won: toWonOrNull(listing.monthPassWon),
     rental_hour_won: toWonOrNull(listing.rentalHourWon),
-    photo_url: listing.photoUrl || "",
+    photo_url: photoUrls[0] || "",
+    photo_urls: photoUrls,
     applicant_actor_id: listing.applicantActorId || null,
     applicant_nickname: listing.applicantNickname || "",
   };
@@ -87,15 +101,18 @@ export async function insertRemoteGymListing(listing) {
     return { id: null, errorMessage: "서버 연결이 없습니다." };
   }
 
-  const fullPayload = {
+  const base = {
     id: listing.id,
     ...toRemotePayload(listing),
     status: listing.status || "pending",
     source: "app",
   };
 
-  const withoutPhoto = { ...fullPayload };
-  delete withoutPhoto.photo_url;
+  const withoutUrls = { ...base };
+  delete withoutUrls.photo_urls;
+
+  const withoutPhotos = { ...withoutUrls };
+  delete withoutPhotos.photo_url;
 
   const minimalPayload = {
     id: listing.id,
@@ -115,17 +132,39 @@ export async function insertRemoteGymListing(listing) {
     source: "app",
   };
 
-  const attempts = [fullPayload, withoutPhoto, minimalPayload];
+  const attempts = [base, withoutUrls, withoutPhotos, minimalPayload];
+  const wantedPhotos = normalizePhotoUrls(listing.photoUrls, listing.photoUrl);
 
   try {
     let lastError = null;
+    let savedWithoutPhotos = false;
     for (const payload of attempts) {
       const { error } = await supabase.from("dojo_gym_listings").insert(payload);
       if (!error) {
+        const droppedPhotos =
+          wantedPhotos.length > 0 &&
+          (!Object.prototype.hasOwnProperty.call(payload, "photo_url") ||
+            !payload.photo_url);
+        if (droppedPhotos) {
+          savedWithoutPhotos = true;
+          break;
+        }
         return { id: listing.id, errorMessage: "" };
       }
       lastError = error;
       console.warn("[gymListing] insert failed", error.message || error);
+    }
+
+    if (savedWithoutPhotos) {
+      const updated = await updateRemoteGymListing(listing);
+      if (updated) {
+        return { id: listing.id, errorMessage: "" };
+      }
+      return {
+        id: listing.id,
+        errorMessage:
+          "입점은 저장됐지만 사진 컬럼이 없습니다. dojo_gym_listings_photos.sql을 실행한 뒤 다시 저장해 주세요.",
+      };
     }
 
     return {
@@ -163,19 +202,23 @@ export async function updateRemoteGymListing(listing) {
   const supabase = getSupabase();
   if (!supabase || !listing?.id || !listing?.applicantActorId) return false;
 
+  const full = toRemotePayload(listing);
+  const withoutUrls = { ...full };
+  delete withoutUrls.photo_urls;
+
   try {
-    const { error } = await supabase
-      .from("dojo_gym_listings")
-      .update(toRemotePayload(listing))
-      .eq("id", listing.id)
-      .eq("applicant_actor_id", listing.applicantActorId);
+    for (const payload of [full, withoutUrls]) {
+      const { error } = await supabase
+        .from("dojo_gym_listings")
+        .update(payload)
+        .eq("id", listing.id)
+        .eq("applicant_actor_id", listing.applicantActorId);
 
-    if (error) {
+      if (!error) return true;
       if (isRemoteUnavailable(error)) return false;
-      throw error;
+      console.warn("[gymListing] update failed", error.message || error);
     }
-
-    return true;
+    return false;
   } catch (error) {
     if (isRemoteUnavailable(error)) return false;
     throw error;
@@ -214,7 +257,7 @@ export async function fetchApprovedGymListings() {
     let { data, error } = await supabase
       .from("dojo_gym_listings")
       .select(
-        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, photo_url, is_featured, status, created_at, applicant_actor_id, applicant_nickname"
+        "id, gym_name, owner_name, phone, address, address_detail, intro, area_label, day_pass_won, month_pass_won, rental_hour_won, photo_url, photo_urls, is_featured, status, created_at, applicant_actor_id, applicant_nickname"
       )
       .eq("status", "approved")
       .order("is_featured", { ascending: false })
@@ -223,7 +266,7 @@ export async function fetchApprovedGymListings() {
 
     if (error) {
       const message = String(error.message || "").toLowerCase();
-      if (message.includes("is_featured")) {
+      if (message.includes("photo_urls") || message.includes("is_featured")) {
         ({ data, error } = await supabase
           .from("dojo_gym_listings")
           .select(
@@ -269,10 +312,12 @@ export async function fetchMyGymListings(actorId) {
   }
 }
 
-/** 체육관 사진 → Storage public URL */
+/** 체육관 사진 → Storage public URL. 실패 시 메시지 포함 */
 export async function uploadGymListingPhoto(file, listingId) {
   const supabase = getSupabase();
-  if (!supabase || !file || !listingId) return null;
+  if (!supabase || !file || !listingId) {
+    return { url: null, errorMessage: "서버 연결 또는 파일이 없습니다." };
+  }
 
   const ext =
     (file.type || "").includes("png")
@@ -280,7 +325,7 @@ export async function uploadGymListingPhoto(file, listingId) {
       : (file.type || "").includes("webp")
         ? "webp"
         : "jpg";
-  const path = `${listingId}/${Date.now()}.${ext}`;
+  const path = `${listingId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
 
   try {
     const { error } = await supabase.storage
@@ -292,14 +337,25 @@ export async function uploadGymListingPhoto(file, listingId) {
       });
 
     if (error) {
-      if (isRemoteUnavailable(error)) return null;
-      throw error;
+      console.warn("[gymListing] photo upload failed", error.message || error);
+      return {
+        url: null,
+        errorMessage:
+          error.message?.includes("Bucket") || error.message?.includes("not found")
+            ? "사진 저장소(gym-photos)가 없습니다. dojo_gym_listings_photos.sql을 실행해 주세요."
+            : `사진 업로드 실패: ${error.message || "권한/버킷을 확인해 주세요."}`,
+      };
     }
 
     const { data } = supabase.storage.from("gym-photos").getPublicUrl(path);
-    return data?.publicUrl || null;
+    return { url: data?.publicUrl || null, errorMessage: "" };
   } catch (error) {
-    if (isRemoteUnavailable(error)) return null;
+    if (isRemoteUnavailable(error)) {
+      return {
+        url: null,
+        errorMessage: "사진 업로드에 실패했습니다. 네트워크·버킷을 확인해 주세요.",
+      };
+    }
     throw error;
   }
 }

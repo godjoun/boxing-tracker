@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import {
   hasGymListingRemote,
+  MAX_GYM_PHOTOS,
+  normalizeGymPhotoUrls,
   submitGymListingAsync,
   updateGymListingAsync,
 } from "../utils/gymListing";
@@ -19,11 +21,13 @@ function buildEmptyForm() {
     rentalHourWon: "",
     intro: "",
     photoUrl: "",
+    photoUrls: [],
   };
 }
 
 function listingToForm(listing) {
   if (!listing) return buildEmptyForm();
+  const photoUrls = normalizeGymPhotoUrls(listing);
   return {
     gymName: listing.gymName || "",
     ownerName: listing.ownerName || "",
@@ -44,7 +48,8 @@ function listingToForm(listing) {
         ? ""
         : String(listing.rentalHourWon),
     intro: listing.intro || "",
-    photoUrl: listing.photoUrl || "",
+    photoUrl: photoUrls[0] || "",
+    photoUrls,
   };
 }
 
@@ -58,11 +63,11 @@ export default function GymListingRegisterPanel({
   const isEdit = Boolean(initialListing?.id);
   const galleryInputRef = useRef(null);
   const cameraInputRef = useRef(null);
-  const previewObjectUrlRef = useRef("");
+  const objectUrlsRef = useRef([]);
   const [form, setForm] = useState(() => listingToForm(initialListing));
-  const [photoFile, setPhotoFile] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(
-    () => initialListing?.photoUrl || ""
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState(() =>
+    normalizeGymPhotoUrls(initialListing)
   );
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -75,12 +80,11 @@ export default function GymListingRegisterPanel({
     () => (isEdit ? "체육관 정보 수정" : "내 체육관 등록"),
     [isEdit]
   );
+  const canAddMore = previewUrls.length < MAX_GYM_PHOTOS;
 
   useEffect(() => {
     return () => {
-      if (previewObjectUrlRef.current) {
-        URL.revokeObjectURL(previewObjectUrlRef.current);
-      }
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
   }, []);
 
@@ -88,44 +92,64 @@ export default function GymListingRegisterPanel({
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function applyPhotoFile(file) {
-    if (!file) return;
-    if (!file.type?.startsWith("image/")) {
+  function applyPhotoFiles(fileList) {
+    const incoming = Array.from(fileList || []).filter((file) =>
+      file.type?.startsWith("image/")
+    );
+    if (incoming.length === 0) {
       setError("이미지 파일만 올릴 수 있습니다.");
       return;
     }
 
-    if (previewObjectUrlRef.current) {
-      URL.revokeObjectURL(previewObjectUrlRef.current);
-      previewObjectUrlRef.current = "";
+    const room = MAX_GYM_PHOTOS - previewUrls.length;
+    if (room <= 0) {
+      setError(`사진은 최대 ${MAX_GYM_PHOTOS}장까지입니다.`);
+      return;
     }
 
-    const url = URL.createObjectURL(file);
-    previewObjectUrlRef.current = url;
-    setPhotoFile(file);
-    setPhotoPreview(url);
+    const nextFiles = incoming.slice(0, room);
+    const nextObjectUrls = nextFiles.map((file) => {
+      const url = URL.createObjectURL(file);
+      objectUrlsRef.current.push(url);
+      return url;
+    });
+
+    setPendingFiles((current) => [...current, ...nextFiles]);
+    setPreviewUrls((current) => [...current, ...nextObjectUrls]);
     setError("");
   }
 
   function handlePhotoChange(event) {
-    const file = event.target.files?.[0] || null;
-    applyPhotoFile(file);
+    applyPhotoFiles(event.target.files);
     event.target.value = "";
   }
 
-  function clearPhoto() {
-    if (previewObjectUrlRef.current) {
-      URL.revokeObjectURL(previewObjectUrlRef.current);
-      previewObjectUrlRef.current = "";
+  function removePhotoAt(index) {
+    const target = previewUrls[index];
+    if (!target) return;
+
+    if (target.startsWith("blob:")) {
+      URL.revokeObjectURL(target);
+      objectUrlsRef.current = objectUrlsRef.current.filter(
+        (url) => url !== target
+      );
+      let blobIndex = 0;
+      for (let i = 0; i < index; i += 1) {
+        if (previewUrls[i]?.startsWith("blob:")) blobIndex += 1;
+      }
+      setPendingFiles((current) =>
+        current.filter((_, fileIndex) => fileIndex !== blobIndex)
+      );
     }
-    setPhotoFile(null);
-    setPhotoPreview("");
+
+    const nextPreviews = previewUrls.filter((_, i) => i !== index);
+    const savedUrls = nextPreviews.filter((url) => !url.startsWith("blob:"));
+    setPreviewUrls(nextPreviews);
     setForm((current) => ({
       ...current,
-      photoUrl: "",
+      photoUrls: savedUrls,
+      photoUrl: savedUrls[0] || "",
     }));
-    if (galleryInputRef.current) galleryInputRef.current.value = "";
-    if (cameraInputRef.current) cameraInputRef.current.value = "";
   }
 
   async function handleSubmit(event) {
@@ -135,18 +159,25 @@ export default function GymListingRegisterPanel({
     setSubmitting(true);
     setError("");
 
+    const savedUrls = previewUrls.filter((url) => !url.startsWith("blob:"));
+    const payloadForm = {
+      ...form,
+      photoUrls: savedUrls,
+      photoUrl: savedUrls[0] || "",
+    };
+
     try {
       const result = isEdit
-        ? await updateGymListingAsync(initialListing.id, form, {
+        ? await updateGymListingAsync(initialListing.id, payloadForm, {
             userId,
             nickname,
-            photoFile,
+            photoFiles: pendingFiles,
             existing: initialListing,
           })
-        : await submitGymListingAsync(form, {
+        : await submitGymListingAsync(payloadForm, {
             userId,
             nickname,
-            photoFile,
+            photoFiles: pendingFiles,
           });
 
       if (!result.ok) {
@@ -156,6 +187,7 @@ export default function GymListingRegisterPanel({
 
       track(isEdit ? "gym_listing_update" : "gym_listing_submit", {
         synced: result.synced,
+        photoCount: result.listing?.photoUrls?.length || 0,
         hasPhoto: Boolean(result.listing?.photoUrl),
         hasDay: Boolean(result.listing?.dayPassWon),
         hasMonth: Boolean(result.listing?.monthPassWon),
@@ -202,12 +234,14 @@ export default function GymListingRegisterPanel({
                 ? "운영에서 확인한 뒤, 검색 목록에 올릴 수 있습니다. 승인이 끝나면 노출됩니다."
                 : "이 기기에 저장했습니다. 서버 연결 후 다시 보내 주시면 장부에 쌓입니다."}
           </p>
-          {!synced ? (
+          {syncMessage ? (
+            <p className="gym-listing-sync-hint">{syncMessage}</p>
+          ) : null}
+          {!synced && !syncMessage ? (
             <p className="gym-listing-sync-hint">
-              {syncMessage ||
-                (remoteReady
-                  ? "서버에 안 올라갔습니다. 내 등록 관리에서 「서버로 다시 보내기」를 눌러 보세요."
-                  : "서버 연결(VITE_SUPABASE)이 없습니다.")}
+              {remoteReady
+                ? "서버에 안 올라갔습니다. 내 등록 관리에서 「서버로 다시 보내기」를 눌러 보세요."
+                : "서버 연결(VITE_SUPABASE)이 없습니다."}
             </p>
           ) : null}
           <button type="button" className="gym-listing-submit" onClick={onClose}>
@@ -229,22 +263,23 @@ export default function GymListingRegisterPanel({
         <h2>{title}</h2>
         <p>
           {isEdit
-            ? "이름·가격·사진·소개를 고칩니다. 승인된 관은 검색에도 반영됩니다."
-            : "운영 중인 관을 올리고, 복서의 문의·체험·대여를 받습니다. 승인 후 검색에 노출됩니다."}
+            ? "간판·시설 사진을 올리고 이름·가격·소개를 고칩니다."
+            : "간판·시설 사진을 올리고, 복서의 문의·체험·대여를 받습니다."}
         </p>
       </header>
 
       <form className="gym-listing-form" onSubmit={handleSubmit}>
         <fieldset className="gym-listing-block">
-          <legend>사진</legend>
+          <legend>사진 (최대 {MAX_GYM_PHOTOS}장)</legend>
           <p className="gym-listing-block-note">
-            대표 사진 1장 (선택). 앨범에서 고르거나 카메라로 찍을 수 있습니다.
+            1장은 간판(대표), 나머지는 링·샤워·대기실 같은 시설 사진으로 쓰세요.
           </p>
 
           <input
             ref={galleryInputRef}
             type="file"
             accept="image/*"
+            multiple
             onChange={handlePhotoChange}
             className="gym-listing-file-input"
             tabIndex={-1}
@@ -261,15 +296,28 @@ export default function GymListingRegisterPanel({
             aria-hidden="true"
           />
 
-          {photoPreview ? (
-            <img
-              className="gym-listing-photo-preview"
-              src={photoPreview}
-              alt="체육관 미리보기"
-            />
+          {previewUrls.length > 0 ? (
+            <ul className="gym-listing-photo-grid">
+              {previewUrls.map((url, index) => (
+                <li key={`${url}-${index}`} className="gym-listing-photo-slot">
+                  <img src={url} alt="" />
+                  {index === 0 ? (
+                    <span className="gym-listing-photo-cover">대표</span>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="gym-listing-photo-remove"
+                    onClick={() => removePhotoAt(index)}
+                    aria-label={`${index + 1}번째 사진 삭제`}
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
           ) : (
             <div className="gym-listing-photo-empty" aria-hidden="true">
-              사진을 추가하면 검색 카드에 보입니다
+              간판·시설 사진을 추가하면 검색 카드에 크게 보입니다
             </div>
           )}
 
@@ -278,6 +326,7 @@ export default function GymListingRegisterPanel({
               type="button"
               className="gym-listing-photo-button"
               onClick={() => galleryInputRef.current?.click()}
+              disabled={!canAddMore}
             >
               사진에서 선택
             </button>
@@ -285,19 +334,17 @@ export default function GymListingRegisterPanel({
               type="button"
               className="gym-listing-photo-button is-camera"
               onClick={() => cameraInputRef.current?.click()}
+              disabled={!canAddMore}
             >
               카메라로 촬영
             </button>
-            {photoPreview ? (
-              <button
-                type="button"
-                className="gym-listing-photo-button is-clear"
-                onClick={clearPhoto}
-              >
-                사진 지우기
-              </button>
-            ) : null}
           </div>
+          <p className="gym-listing-block-note">
+            {previewUrls.length}/{MAX_GYM_PHOTOS}장
+            {!remoteReady
+              ? " · 서버 연결 전에는 사진이 검색에 안 올라갈 수 있어요"
+              : ""}
+          </p>
         </fieldset>
 
         <fieldset className="gym-listing-block">

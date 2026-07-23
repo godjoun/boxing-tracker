@@ -11,8 +11,31 @@ import { resolveDojoActorId } from "../api/dojoExchangeApi";
 import { findAreaByQuery, getDistanceKm } from "./gymSearch";
 
 const LISTINGS_KEY = "fitness-league-gym-listings";
+export const MAX_GYM_PHOTOS = 5;
 
 export { hasGymListingRemote };
+
+export function normalizeGymPhotoUrls(listingOrUrls, fallbackCover = "") {
+  const isHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
+
+  if (Array.isArray(listingOrUrls)) {
+    return listingOrUrls
+      .map((item) => String(item || "").trim())
+      .filter(isHttpUrl)
+      .slice(0, MAX_GYM_PHOTOS);
+  }
+  const listing = listingOrUrls || {};
+  const fromArray = Array.isArray(listing.photoUrls)
+    ? listing.photoUrls.map((item) => String(item || "").trim()).filter(isHttpUrl)
+    : [];
+  if (fromArray.length > 0) return fromArray.slice(0, MAX_GYM_PHOTOS);
+  const cover = String(listing.photoUrl || fallbackCover || "").trim();
+  return isHttpUrl(cover) ? [cover] : [];
+}
+
+export function coverGymPhoto(listing) {
+  return normalizeGymPhotoUrls(listing)[0] || "";
+}
 
 function formatDistance(km) {
   if (!Number.isFinite(km)) return "입점";
@@ -45,7 +68,8 @@ export function listingToSearchGym(listing, searchLat, searchLon) {
     lat,
     lon,
     phone: listing.phone || "",
-    photoUrl: listing.photoUrl || "",
+    photoUrl: coverGymPhoto(listing),
+    photoUrls: normalizeGymPhotoUrls(listing),
     tags,
     featured: Boolean(listing.isFeatured),
     dayPassWon: listing.dayPassWon ?? null,
@@ -113,7 +137,7 @@ export function validateGymListingForm(form) {
   const addressDetail = String(form.addressDetail || "").trim();
   const intro = String(form.intro || "").trim();
   const areaLabel = String(form.areaLabel || "").trim();
-  const photoUrl = String(form.photoUrl || "").trim();
+  const photoUrls = normalizeGymPhotoUrls(form.photoUrls, form.photoUrl);
 
   if (gymName.length < 2) {
     return { ok: false, message: "체육관 이름을 2자 이상 입력해 주세요." };
@@ -162,7 +186,8 @@ export function validateGymListingForm(form) {
       addressDetail,
       intro,
       areaLabel,
-      photoUrl,
+      photoUrl: photoUrls[0] || "",
+      photoUrls,
       dayPassWon: day.value,
       monthPassWon: month.value,
       rentalHourWon: rental.value,
@@ -239,9 +264,15 @@ export async function loadMyGymListings(userId) {
   }
   for (const item of remote) {
     const prev = byId.get(item.id);
+    const mergedUrls = normalizeGymPhotoUrls(
+      item.photoUrls?.length ? item.photoUrls : prev?.photoUrls,
+      item.photoUrl || prev?.photoUrl
+    );
     byId.set(item.id, {
       ...prev,
       ...item,
+      photoUrls: mergedUrls,
+      photoUrl: mergedUrls[0] || item.photoUrl || prev?.photoUrl || "",
       synced: true,
       source: "server",
     });
@@ -302,15 +333,43 @@ export function compressImageFile(file, maxSide = 1280, quality = 0.82) {
 }
 
 export async function uploadListingPhotoAsync(file, listingId) {
-  if (!hasGymListingRemote()) return null;
+  if (!hasGymListingRemote()) {
+    return { url: null, errorMessage: "서버 연결이 없습니다." };
+  }
   const compressed = await compressImageFile(file);
   return uploadGymListingPhoto(compressed, listingId);
+}
+
+async function uploadPhotoFiles(files, listingId, existingUrls = []) {
+  const urls = normalizeGymPhotoUrls(existingUrls);
+  const errors = [];
+
+  for (const file of files || []) {
+    if (urls.length >= MAX_GYM_PHOTOS) break;
+    if (!file) continue;
+    try {
+      const result = await uploadListingPhotoAsync(file, listingId);
+      if (result?.url) {
+        urls.push(result.url);
+      } else if (result?.errorMessage) {
+        errors.push(result.errorMessage);
+      }
+    } catch (error) {
+      errors.push(error?.message || "사진 업로드에 실패했습니다.");
+    }
+  }
+
+  return {
+    photoUrls: urls.slice(0, MAX_GYM_PHOTOS),
+    photoUrl: urls[0] || "",
+    errorMessage: errors[0] || "",
+  };
 }
 
 /** 로컬 보관 + 가능하면 서버(입점 신청함)로 전송 */
 export async function submitGymListingAsync(
   form,
-  { userId, nickname, photoFile } = {}
+  { userId, nickname, photoFiles = [] } = {}
 ) {
   const checked = validateGymListingForm(form);
   if (!checked.ok) {
@@ -328,19 +387,22 @@ export async function submitGymListingAsync(
     ...checked.payload,
   };
 
-  if (photoFile && hasGymListingRemote()) {
-    try {
-      const url = await uploadListingPhotoAsync(photoFile, entry.id);
-      if (url) entry.photoUrl = url;
-    } catch {
-      // 사진 실패해도 신청은 진행
-    }
+  let photoWarning = "";
+  if (photoFiles.length > 0 && hasGymListingRemote()) {
+    const uploaded = await uploadPhotoFiles(photoFiles, entry.id, entry.photoUrls);
+    entry.photoUrls = uploaded.photoUrls;
+    entry.photoUrl = uploaded.photoUrl;
+    photoWarning = uploaded.errorMessage;
+  } else if (photoFiles.length > 0 && !hasGymListingRemote()) {
+    photoWarning =
+      "서버 연결이 없어 사진은 저장되지 않았습니다. 연결 후 수정에서 다시 올려 주세요.";
   }
 
   saveLocalListing(entry);
 
   if (!hasGymListingRemote()) {
-    const syncMessage = "서버 설정이 없어 이 기기에만 저장했습니다.";
+    const syncMessage =
+      photoWarning || "서버 설정이 없어 이 기기에만 저장했습니다.";
     saveLocalListing({ ...entry, lastSyncError: syncMessage });
     return {
       ok: true,
@@ -367,8 +429,13 @@ export async function submitGymListingAsync(
   return {
     ok: true,
     synced: true,
-    listing: { ...entry, synced: true, source: "server", lastSyncError: "" },
-    syncMessage: "",
+    listing: {
+      ...entry,
+      synced: true,
+      source: "server",
+      lastSyncError: photoWarning,
+    },
+    syncMessage: photoWarning,
   };
 }
 
@@ -410,7 +477,7 @@ export async function syncGymListingToServer(listing) {
 export async function updateGymListingAsync(
   listingId,
   form,
-  { userId, nickname, photoFile, existing } = {}
+  { userId, nickname, photoFiles = [], existing } = {}
 ) {
   const checked = validateGymListingForm(form);
   if (!checked.ok) {
@@ -418,15 +485,19 @@ export async function updateGymListingAsync(
   }
 
   const actorId = resolveDojoActorId(userId);
-  let photoUrl = String(checked.payload.photoUrl || "");
+  let photoUrls = normalizeGymPhotoUrls(
+    checked.payload.photoUrls,
+    checked.payload.photoUrl
+  );
+  let photoWarning = "";
 
-  if (photoFile && hasGymListingRemote()) {
-    try {
-      const url = await uploadListingPhotoAsync(photoFile, listingId);
-      if (url) photoUrl = url;
-    } catch {
-      // keep previous form value
-    }
+  if (photoFiles.length > 0 && hasGymListingRemote()) {
+    const uploaded = await uploadPhotoFiles(photoFiles, listingId, photoUrls);
+    photoUrls = uploaded.photoUrls;
+    photoWarning = uploaded.errorMessage;
+  } else if (photoFiles.length > 0 && !hasGymListingRemote()) {
+    photoWarning =
+      "서버 연결이 없어 새 사진은 저장되지 않았습니다. 연결 후 다시 저장해 주세요.";
   }
 
   const entry = {
@@ -437,27 +508,47 @@ export async function updateGymListingAsync(
     applicantActorId: existing?.applicantActorId || actorId,
     applicantNickname: nickname || existing?.applicantNickname || "",
     ...checked.payload,
-    photoUrl,
+    photoUrls,
+    photoUrl: photoUrls[0] || "",
     synced: false,
     source: "local",
+    lastSyncError: photoWarning,
   };
 
   saveLocalListing(entry);
 
   if (!hasGymListingRemote()) {
-    return { ok: true, synced: false, listing: entry };
+    return {
+      ok: true,
+      synced: false,
+      listing: entry,
+      syncMessage: photoWarning,
+    };
   }
 
   const ok = await updateRemoteGymListing(entry);
   if (!ok) {
-    return { ok: true, synced: false, listing: entry };
+    return {
+      ok: true,
+      synced: false,
+      listing: entry,
+      syncMessage:
+        photoWarning ||
+        "서버 수정에 실패했습니다. dojo_gym_listings_photos.sql 실행 여부를 확인해 주세요.",
+    };
   }
 
   markLocalSynced(entry.id);
   return {
     ok: true,
     synced: true,
-    listing: { ...entry, synced: true, source: "server" },
+    listing: {
+      ...entry,
+      synced: true,
+      source: "server",
+      lastSyncError: photoWarning,
+    },
+    syncMessage: photoWarning,
   };
 }
 

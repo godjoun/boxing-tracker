@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import {
   deleteGymListingAsync,
+  coverGymPhoto,
   hasGymListingRemote,
   listingStatusLabel,
   loadMyGymListings,
+  normalizeGymPhotoUrls,
   syncGymListingToServer,
 } from "../utils/gymListing";
 
@@ -129,19 +131,31 @@ export default function GymMyListingsPanel({
       <ul className="gym-my-listing-list">
         {items.map((item) => {
           const isLocalOnly = item.synced !== true;
+          const cover = coverGymPhoto(item);
+          const photoCount = normalizeGymPhotoUrls(item).length;
           return (
           <li key={item.id} className="gym-my-listing-card">
-            {item.photoUrl ? (
-              <img
-                className="gym-my-listing-thumb"
-                src={item.photoUrl}
-                alt=""
-              />
-            ) : (
-              <div className="gym-my-listing-thumb is-empty" aria-hidden="true">
-                사진 없음
-              </div>
-            )}
+            <div className="gym-my-listing-banner">
+              {cover ? (
+                <img
+                  className="gym-my-listing-banner-photo"
+                  src={cover}
+                  alt=""
+                />
+              ) : (
+                <div
+                  className="gym-my-listing-banner-photo is-empty"
+                  aria-hidden="true"
+                >
+                  사진 없음
+                </div>
+              )}
+              {photoCount > 1 ? (
+                <span className="gym-my-listing-photo-count">
+                  {photoCount}장
+                </span>
+              ) : null}
+            </div>
             <div className="gym-my-listing-body">
               <div className="gym-my-listing-top">
                 <strong>{item.gymName}</strong>

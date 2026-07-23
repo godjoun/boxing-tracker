@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
+import { resolveDojoActorId } from "../api/dojoExchangeApi";
 import {
   formatInquiryWhen,
   hasGymInquiryRemote,
   inquiryKindLabel,
   loadOwnerGymInquiries,
 } from "../utils/gymInquiry";
+import {
+  attachInquiryThreadMeta,
+  listInquiryThreadsAsync,
+} from "../utils/gymInquiryChat";
 import GymInquiryChatModal from "./GymInquiryChatModal";
 
 export default function GymInquiryLedgerPanel({
@@ -13,6 +18,7 @@ export default function GymInquiryLedgerPanel({
   onClose,
   onOpenManage,
   embedded = false,
+  refreshKey = 0,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,8 +30,14 @@ export default function GymInquiryLedgerPanel({
     setLoading(true);
     setError("");
     try {
-      const list = await loadOwnerGymInquiries(userId);
-      setItems(list);
+      const myActorId = resolveDojoActorId(userId);
+      const [list, threadResult] = await Promise.all([
+        loadOwnerGymInquiries(userId),
+        listInquiryThreadsAsync(userId),
+      ]);
+      setItems(
+        attachInquiryThreadMeta(list, threadResult.threads, myActorId)
+      );
     } catch {
       setError("문의를 불러오지 못했습니다.");
     } finally {
@@ -35,7 +47,7 @@ export default function GymInquiryLedgerPanel({
 
   useEffect(() => {
     refresh();
-  }, [userId]);
+  }, [userId, refreshKey]);
 
   return (
     <section className="gym-listing-panel" aria-label="받은 문의">
@@ -52,7 +64,7 @@ export default function GymInquiryLedgerPanel({
       <header className="gym-listing-hero">
         <p className="gym-listing-kicker">INQUIRY LEDGER</p>
         <h2>받은 문의</h2>
-        <p>내 관으로 온 문의입니다. 「대화하기」로 답장하세요.</p>
+        <p>안 읽은 대화가 위로 올라옵니다. 「대화하기」로 답장하세요.</p>
       </header>
 
       <div className="gym-listing-cta-actions">
@@ -83,7 +95,8 @@ export default function GymInquiryLedgerPanel({
 
       {!loading && remoteReady && items.length === 0 && !error ? (
         <p className="gym-listing-sync-hint">
-          대화까지 쓰려면 <code>dojo_inquiry_chat.sql</code> 도 실행해 주세요.
+          대화·안 읽음까지 쓰려면 <code>dojo_inquiry_chat.sql</code> 과{" "}
+          <code>dojo_inquiry_chat_inbox.sql</code> 을 실행해 주세요.
         </p>
       ) : null}
 
@@ -104,12 +117,20 @@ export default function GymInquiryLedgerPanel({
 
       <ul className="gym-inquiry-ledger-list">
         {items.map((item) => (
-          <li key={item.id} className="gym-inquiry-ledger-card">
+          <li
+            key={item.id}
+            className={`gym-inquiry-ledger-card${item.unread ? " is-unread" : ""}`}
+          >
             <div className="gym-inquiry-ledger-top">
               <span className="gym-inquiry-ledger-kind">
                 {inquiryKindLabel(item.kind)}
+                {item.unread ? (
+                  <span className="gym-inquiry-unread-dot" aria-label="안 읽음" />
+                ) : null}
               </span>
-              <time>{formatInquiryWhen(item.createdAt)}</time>
+              <time>
+                {formatInquiryWhen(item.lastMessageAt || item.createdAt)}
+              </time>
             </div>
             <strong>{item.gymName || "체육관"}</strong>
             <p className="gym-inquiry-ledger-contact">
@@ -121,18 +142,20 @@ export default function GymInquiryLedgerPanel({
               )}
               {item.nickname ? ` · ${item.nickname}` : ""}
             </p>
+            {item.lastPreview ? (
+              <p className="gym-inquiry-ledger-preview">{item.lastPreview}</p>
+            ) : item.memo ? (
+              <p className="gym-inquiry-ledger-memo">{item.memo}</p>
+            ) : null}
             {item.preferredDate ? (
               <p>희망일 {item.preferredDate}</p>
-            ) : null}
-            {item.memo ? (
-              <p className="gym-inquiry-ledger-memo">{item.memo}</p>
             ) : null}
             <button
               type="button"
               className="gym-inquiry-button"
               onClick={() => setChatItem(item)}
             >
-              대화하기
+              {item.unread ? "안 읽은 대화" : "대화하기"}
             </button>
           </li>
         ))}
@@ -140,7 +163,10 @@ export default function GymInquiryLedgerPanel({
 
       <GymInquiryChatModal
         open={Boolean(chatItem)}
-        onClose={() => setChatItem(null)}
+        onClose={() => {
+          setChatItem(null);
+          refresh();
+        }}
         userId={userId}
         nickname={nickname}
         inquiryId={chatItem?.id}

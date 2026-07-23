@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
+import { resolveDojoActorId } from "../api/dojoExchangeApi";
 import {
   formatInquiryWhen,
   hasGymInquiryRemote,
   inquiryKindLabel,
   loadSentGymInquiries,
 } from "../utils/gymInquiry";
+import {
+  attachInquiryThreadMeta,
+  listInquiryThreadsAsync,
+} from "../utils/gymInquiryChat";
 
 export default function GymSentInquiriesPanel({
   userId,
   onClose,
   onOpenChat,
   embedded = false,
+  refreshKey = 0,
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,8 +27,14 @@ export default function GymSentInquiriesPanel({
     setLoading(true);
     setError("");
     try {
-      const list = await loadSentGymInquiries(userId);
-      setItems(list);
+      const myActorId = resolveDojoActorId(userId);
+      const [list, threadResult] = await Promise.all([
+        loadSentGymInquiries(userId),
+        listInquiryThreadsAsync(userId),
+      ]);
+      setItems(
+        attachInquiryThreadMeta(list, threadResult.threads, myActorId)
+      );
     } catch {
       setError("보낸 문의를 불러오지 못했습니다.");
     } finally {
@@ -32,7 +44,7 @@ export default function GymSentInquiriesPanel({
 
   useEffect(() => {
     refresh();
-  }, [userId]);
+  }, [userId, refreshKey]);
 
   return (
     <section className="gym-listing-panel" aria-label="보낸 문의">
@@ -45,7 +57,7 @@ export default function GymSentInquiriesPanel({
       <header className="gym-listing-hero">
         <p className="gym-listing-kicker">MY INQUIRIES</p>
         <h2>보낸 문의</h2>
-        <p>내가 보낸 문의입니다. 「대화하기」로 관장과 메시지를 주고받으세요.</p>
+        <p>마지막 메시지와 안 읽은 대화를 확인하세요.</p>
       </header>
 
       <button
@@ -76,23 +88,37 @@ export default function GymSentInquiriesPanel({
 
       <ul className="gym-inquiry-ledger-list">
         {items.map((item) => (
-          <li key={item.id} className="gym-inquiry-ledger-card">
+          <li
+            key={item.id}
+            className={`gym-inquiry-ledger-card${item.unread ? " is-unread" : ""}`}
+          >
             <div className="gym-inquiry-ledger-top">
               <span className="gym-inquiry-ledger-kind">
                 {inquiryKindLabel(item.kind)}
+                {item.unread ? (
+                  <span className="gym-inquiry-unread-dot" aria-label="안 읽음" />
+                ) : null}
               </span>
-              <time>{formatInquiryWhen(item.createdAt)}</time>
+              <time>
+                {formatInquiryWhen(item.lastMessageAt || item.createdAt)}
+              </time>
             </div>
             <strong>{item.gymName || "체육관"}</strong>
-            {item.memo ? (
+            {item.lastPreview ? (
+              <p className="gym-inquiry-ledger-preview">{item.lastPreview}</p>
+            ) : item.memo ? (
               <p className="gym-inquiry-ledger-memo">{item.memo}</p>
-            ) : null}
+            ) : (
+              <p className="gym-inquiry-ledger-preview is-empty">
+                아직 대화가 없습니다
+              </p>
+            )}
             <button
               type="button"
               className="gym-inquiry-button"
               onClick={() => onOpenChat?.(item)}
             >
-              대화하기
+              {item.unread ? "안 읽은 대화" : "대화하기"}
             </button>
           </li>
         ))}

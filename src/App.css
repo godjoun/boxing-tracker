@@ -1487,6 +1487,22 @@
   font-weight: 900;
   letter-spacing: -0.03em;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.gym-role-tab-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #8a2e2e;
+  color: #f5f1e8;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 18px;
 }
 
 .gym-role-tab.is-active {
@@ -3263,12 +3279,44 @@
 }
 
 .gym-inquiry-ledger-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 8px;
   border-radius: 999px;
   background: rgba(138, 46, 46, 0.22);
   color: #e8b4b4;
   font-size: 11px;
   font-weight: 800;
+}
+
+.gym-inquiry-unread-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8a2e2e;
+  box-shadow: 0 0 0 2px rgba(138, 46, 46, 0.25);
+}
+
+.gym-inquiry-ledger-card.is-unread {
+  border-color: rgba(138, 46, 46, 0.45);
+  background: rgba(138, 46, 46, 0.08);
+}
+
+.gym-inquiry-ledger-preview {
+  margin: 0;
+  color: var(--p-text-body, rgba(245, 241, 232, 0.88));
+  font-size: 13px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gym-inquiry-ledger-preview.is-empty {
+  color: var(--p-text-muted);
+  font-weight: 650;
 }
 
 .gym-inquiry-ledger-top time {

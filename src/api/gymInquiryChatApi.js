@@ -37,6 +37,11 @@ function mapThread(row) {
     inquirerNickname: row.inquirer_nickname || "",
     gymName: row.gym_name || "",
     inquiryLabel: row.inquiry_label || "",
+    lastMessageAt: row.last_message_at || null,
+    lastMessagePreview: row.last_message_preview || "",
+    lastSenderActorId: row.last_sender_actor_id || "",
+    ownerLastReadAt: row.owner_last_read_at || null,
+    inquirerLastReadAt: row.inquirer_last_read_at || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     source: "server",
@@ -171,6 +176,53 @@ export async function fetchSentGymInquiries(actorId) {
     return data || [];
   } catch (error) {
     if (isRemoteUnavailable(error)) return [];
+    throw error;
+  }
+}
+
+export async function fetchRemoteInquiryThreads(actorId) {
+  const supabase = getSupabase();
+  if (!supabase || !actorId) return [];
+
+  try {
+    const { data, error } = await supabase.rpc(
+      "list_dojo_inquiry_threads_for_actor",
+      { p_actor_id: actorId }
+    );
+
+    if (error) {
+      if (isRemoteUnavailable(error)) return [];
+      throw error;
+    }
+
+    return (data || []).map(mapThread).filter(Boolean);
+  } catch (error) {
+    if (isRemoteUnavailable(error)) return [];
+    throw error;
+  }
+}
+
+export async function markRemoteInquiryThreadRead({ threadId, actorId }) {
+  const supabase = getSupabase();
+  if (!supabase || !threadId || !actorId) return false;
+
+  try {
+    const { data, error } = await supabase.rpc(
+      "mark_dojo_inquiry_thread_read",
+      {
+        p_thread_id: threadId,
+        p_actor_id: actorId,
+      }
+    );
+
+    if (error) {
+      if (isRemoteUnavailable(error)) return false;
+      throw error;
+    }
+
+    return Boolean(data);
+  } catch (error) {
+    if (isRemoteUnavailable(error)) return false;
     throw error;
   }
 }

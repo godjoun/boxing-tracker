@@ -3,6 +3,7 @@ import { track } from "@vercel/analytics";
 import {
   hasInquiryChatRemote,
   listInquiryChatMessagesAsync,
+  markInquiryThreadReadAsync,
   openInquiryChatAsync,
   peerLabelForInquiryThread,
   sendInquiryChatMessageAsync,
@@ -43,12 +44,15 @@ export default function GymInquiryChatModal({
   const peerName = peerLabelForInquiryThread(thread, myActorId);
   const remoteReady = hasInquiryChatRemote();
 
-  const loadMessages = useCallback(async (threadId) => {
+  const loadMessages = useCallback(async (threadId, options = {}) => {
     if (!threadId) return;
     const result = await listInquiryChatMessagesAsync(threadId);
     setMessages(result.messages);
     setSynced(result.synced);
-  }, []);
+    if (options.markRead && userId) {
+      await markInquiryThreadReadAsync({ userId, threadId });
+    }
+  }, [userId]);
 
   useEffect(() => {
     if (!open || !inquiryId) return undefined;
@@ -81,7 +85,7 @@ export default function GymInquiryChatModal({
         setMyActorId(opened.myActorId);
         setSynced(opened.synced);
         threadIdRef.current = opened.thread.id;
-        await loadMessages(opened.thread.id);
+        await loadMessages(opened.thread.id, { markRead: true });
         track("gym_inquiry_chat_open", {
           inquiryId,
           synced: opened.synced,
@@ -103,7 +107,7 @@ export default function GymInquiryChatModal({
     if (!open) return undefined;
     const timer = window.setInterval(() => {
       if (threadIdRef.current) {
-        loadMessages(threadIdRef.current);
+        loadMessages(threadIdRef.current, { markRead: true });
       }
     }, 4000);
     return () => window.clearInterval(timer);

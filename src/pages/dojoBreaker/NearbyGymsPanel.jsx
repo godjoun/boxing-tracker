@@ -8,6 +8,10 @@ import GymSentInquiriesPanel from "../../components/GymSentInquiriesPanel";
 import GymListingRegisterPanel from "../../components/GymListingRegisterPanel";
 import GymMyListingsPanel from "../../components/GymMyListingsPanel";
 import { inquiryKindLabel } from "../../utils/gymInquiry";
+import {
+  countUnreadInquiryThreads,
+  listInquiryThreadsAsync,
+} from "../../utils/gymInquiryChat";
 import { useTraining } from "../../store/TrainingContext";
 import {
   getGymDataSourceLabel,
@@ -48,6 +52,36 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
   const [activePreset, setActivePreset] = useState(null);
   const [regionQuery, setRegionQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [unreadSent, setUnreadSent] = useState(0);
+  const [unreadOwner, setUnreadOwner] = useState(0);
+  const [inboxRefreshKey, setInboxRefreshKey] = useState(0);
+
+  async function refreshUnreadBadges() {
+    if (!userId) {
+      setUnreadSent(0);
+      setUnreadOwner(0);
+      return;
+    }
+    try {
+      const { threads, myActorId } = await listInquiryThreadsAsync(userId);
+      setUnreadSent(countUnreadInquiryThreads(threads, myActorId, "inquirer"));
+      setUnreadOwner(countUnreadInquiryThreads(threads, myActorId, "owner"));
+    } catch {
+      /* 배지는 실패해도 무시 */
+    }
+  }
+
+  useEffect(() => {
+    refreshUnreadBadges();
+    const timer = window.setInterval(refreshUnreadBadges, 12000);
+    return () => window.clearInterval(timer);
+  }, [userId]);
+
+  function closeChatAndRefresh() {
+    setChatInquiry(null);
+    setInboxRefreshKey((value) => value + 1);
+    refreshUnreadBadges();
+  }
 
   function switchSection(next) {
     track("gym_section_tab", { section: next });
@@ -164,16 +198,25 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
 
   const sectionNav = (
     <nav className="gym-role-tabs" aria-label="체육관 역할">
-      {SECTIONS.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          className={`gym-role-tab${section === item.id ? " is-active" : ""}`}
-          onClick={() => switchSection(item.id)}
-        >
-          {item.label}
-        </button>
-      ))}
+      {SECTIONS.map((item) => {
+        const unread =
+          item.id === "sent" ? unreadSent : item.id === "owner" ? unreadOwner : 0;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className={`gym-role-tab${section === item.id ? " is-active" : ""}`}
+            onClick={() => switchSection(item.id)}
+          >
+            <span>{item.label}</span>
+            {unread > 0 ? (
+              <span className="gym-role-tab-badge" aria-label={`안 읽음 ${unread}`}>
+                {unread > 9 ? "9+" : unread}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
     </nav>
   );
 
@@ -184,11 +227,12 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
         <GymSentInquiriesPanel
           userId={userId}
           embedded
+          refreshKey={inboxRefreshKey}
           onOpenChat={openInquiryChat}
         />
         <GymInquiryChatModal
           open={Boolean(chatInquiry)}
-          onClose={() => setChatInquiry(null)}
+          onClose={closeChatAndRefresh}
           userId={userId}
           nickname={profile?.nickname || ""}
           inquiryId={chatInquiry?.id}
@@ -208,6 +252,7 @@ export default function NearbyGymsPanel({ onGoBack, embedded = false }) {
             userId={userId}
             nickname={profile?.nickname || ""}
             embedded
+            refreshKey={inboxRefreshKey}
             onClose={() => setOwnerMode(null)}
             onOpenManage={() => setOwnerMode(null)}
           />

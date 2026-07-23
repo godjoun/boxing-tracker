@@ -10,6 +10,19 @@ import {
   syncGymListingToServer,
 } from "../utils/gymListing";
 
+function statusHint(item, isLocalOnly) {
+  if (isLocalOnly) {
+    return "아직 서버에 안 올라갔습니다. 「서버로 보내기」를 눌러 주세요.";
+  }
+  if (item.status === "approved") {
+    return "찾기 검색에 노출 중입니다.";
+  }
+  if (item.status === "rejected") {
+    return "반려되었습니다. 수정 후 다시 신청해 주세요.";
+  }
+  return "승인 대기 중 · 본인 찾기에는 미리 보입니다.";
+}
+
 export default function GymMyListingsPanel({
   userId,
   nickname = "",
@@ -82,38 +95,45 @@ export default function GymMyListingsPanel({
   }
 
   return (
-    <section className="gym-listing-panel" aria-label="내 등록 관리">
+    <section className="gym-listing-panel gym-owner-panel" aria-label="내 관 운영">
       {!embedded && onClose ? (
         <button type="button" className="gym-listing-back" onClick={onClose}>
           ← 목록으로
         </button>
       ) : null}
 
-      <header className="gym-listing-hero">
+      <header className="gym-owner-hero">
         <p className="gym-listing-kicker">MY GYM</p>
         <h2>내 관</h2>
         <p>
-          체육관 등록·수정·삭제를 하고, 받은 문의에 답장합니다.
-          {nickname ? ` (${nickname})` : ""}
-          {!remoteReady
-            ? " 서버 연결이 없어 지금은 이 기기에만 저장됩니다."
-            : ""}
+          간판을 올리고, 문의에 답합니다.
+          {nickname ? ` · ${nickname}` : ""}
         </p>
+        {!remoteReady ? (
+          <p className="gym-listing-sync-hint">
+            서버 연결이 없어 지금은 이 기기에만 저장됩니다.
+          </p>
+        ) : null}
       </header>
 
-      <button type="button" className="gym-listing-submit" onClick={onCreate}>
-        새 체육관 등록
-      </button>
-
-      {onOpenLedger ? (
+      <div className="gym-owner-actions">
+        {onOpenLedger ? (
+          <button
+            type="button"
+            className="gym-listing-submit"
+            onClick={onOpenLedger}
+          >
+            받은 문의
+          </button>
+        ) : null}
         <button
           type="button"
-          className="gym-listing-manage-button"
-          onClick={onOpenLedger}
+          className={`gym-listing-manage-button${onOpenLedger ? "" : " is-primary"}`}
+          onClick={onCreate}
         >
-          받은 문의 보기
+          새 관 등록
         </button>
-      ) : null}
+      </div>
 
       {loading ? (
         <p className="gym-listing-block-note">불러오는 중…</p>
@@ -123,9 +143,13 @@ export default function GymMyListingsPanel({
 
       {!loading && items.length === 0 ? (
         <div className="gym-listing-empty">
-          <strong>아직 등록한 체육관이 없습니다</strong>
-          <p>「새 체육관 등록」으로 입점 신청을 남겨 보세요.</p>
+          <strong>등록한 관이 없습니다</strong>
+          <p>간판 사진과 함께 「새 관 등록」으로 시작해 보세요.</p>
         </div>
+      ) : null}
+
+      {!loading && items.length > 0 ? (
+        <p className="gym-owner-list-label">내 등록 {items.length}</p>
       ) : null}
 
       <ul className="gym-my-listing-list">
@@ -133,84 +157,89 @@ export default function GymMyListingsPanel({
           const isLocalOnly = item.synced !== true;
           const cover = coverGymPhoto(item);
           const photoCount = normalizeGymPhotoUrls(item).length;
+          const statusClass = isLocalOnly
+            ? "is-local"
+            : `is-${item.status || "pending"}`;
+
           return (
-          <li key={item.id} className="gym-my-listing-card">
-            <div className="gym-my-listing-banner">
-              {cover ? (
-                <img
-                  className="gym-my-listing-banner-photo"
-                  src={cover}
-                  alt=""
-                />
-              ) : (
-                <div
-                  className="gym-my-listing-banner-photo is-empty"
-                  aria-hidden="true"
-                >
-                  사진 없음
-                </div>
-              )}
-              {photoCount > 1 ? (
-                <span className="gym-my-listing-photo-count">
-                  {photoCount}장
-                </span>
-              ) : null}
-            </div>
-            <div className="gym-my-listing-body">
-              <div className="gym-my-listing-top">
-                <strong>{item.gymName}</strong>
-                <span
-                  className={`gym-my-listing-status ${
-                    isLocalOnly
-                      ? "is-local"
-                      : `is-${item.status || "pending"}`
-                  }`}
-                >
+            <li key={item.id} className="gym-my-listing-card">
+              <button
+                type="button"
+                className="gym-my-listing-banner is-tappable"
+                onClick={() => onEdit?.(item)}
+                disabled={Boolean(busyId)}
+                aria-label={`${item.gymName} 수정`}
+              >
+                {cover ? (
+                  <img
+                    className="gym-my-listing-banner-photo"
+                    src={cover}
+                    alt=""
+                  />
+                ) : (
+                  <div
+                    className="gym-my-listing-banner-photo is-empty"
+                    aria-hidden="true"
+                  />
+                )}
+                <span className="gym-my-listing-banner-fade" aria-hidden="true" />
+                <span className={`gym-my-listing-status ${statusClass}`}>
                   {isLocalOnly
                     ? "이 기기에만"
                     : listingStatusLabel(item.status)}
                 </span>
-              </div>
-              <p>{item.address}</p>
-              {!isLocalOnly && item.status !== "approved" ? (
-                <p className="gym-listing-block-note">
-                  찾기에 모두에게 보이려면 Table Editor에서 status를 approved로
-                  바꿔 주세요. 지금은 본인 찾기에만 「승인 대기」로 미리 보입니다.
+                {photoCount > 0 ? (
+                  <span className="gym-my-listing-photo-count">
+                    {photoCount}장
+                  </span>
+                ) : (
+                  <span className="gym-my-listing-photo-count is-warn">
+                    간판 없음
+                  </span>
+                )}
+                <span className="gym-my-listing-banner-copy">
+                  <strong>{item.gymName}</strong>
+                  {item.address ? <span>{item.address}</span> : null}
+                </span>
+              </button>
+
+              <div className="gym-my-listing-body">
+                <p className="gym-my-listing-hint">
+                  {statusHint(item, isLocalOnly)}
                 </p>
-              ) : null}
-              {isLocalOnly && item.lastSyncError ? (
-                <p className="gym-listing-sync-hint">{item.lastSyncError}</p>
-              ) : null}
-              <div className="gym-my-listing-actions">
-                {isLocalOnly && remoteReady ? (
+                {isLocalOnly && item.lastSyncError ? (
+                  <p className="gym-listing-sync-hint">{item.lastSyncError}</p>
+                ) : null}
+                <div className="gym-my-listing-actions">
+                  {isLocalOnly && remoteReady ? (
+                    <button
+                      type="button"
+                      className="gym-inquiry-button"
+                      onClick={() => handleResync(item)}
+                      disabled={busyId === item.id}
+                    >
+                      {busyId === item.id ? "전송 중…" : "서버로 보내기"}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="gym-inquiry-button"
-                    onClick={() => handleResync(item)}
+                    onClick={() => onEdit?.(item)}
+                    disabled={Boolean(busyId)}
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    className="gym-inquiry-button gym-inquiry-button-secondary"
+                    onClick={() => handleDelete(item)}
                     disabled={busyId === item.id}
                   >
-                    {busyId === item.id ? "전송 중…" : "서버로 다시 보내기"}
+                    {busyId === item.id ? "삭제 중…" : "삭제"}
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="gym-inquiry-button"
-                  onClick={() => onEdit?.(item)}
-                  disabled={Boolean(busyId)}
-                >
-                  수정
-                </button>
-                <button
-                  type="button"
-                  className="gym-inquiry-button gym-inquiry-button-secondary"
-                  onClick={() => handleDelete(item)}
-                  disabled={busyId === item.id}
-                >
-                  {busyId === item.id ? "삭제 중…" : "삭제"}
-                </button>
+                </div>
               </div>
-            </div>
-          </li>
+            </li>
           );
         })}
       </ul>

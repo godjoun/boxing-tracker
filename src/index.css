@@ -3,12 +3,12 @@
 }
 
 :root {
-  color-scheme: dark;
-  --root-bg: #0a0909;
-  --root-text: #f5f1e8;
-  --root-control-bg: #120e10;
-  --root-control-text: #f5f1e8;
-  --root-placeholder: rgba(184, 169, 154, 0.62);
+  color-scheme: light;
+  --root-bg: #ffffff;
+  --root-text: #0a0909;
+  --root-control-bg: #ffffff;
+  --root-control-text: #0a0909;
+  --root-placeholder: rgba(10, 9, 9, 0.42);
 }
 
 :root[data-theme="light"] {

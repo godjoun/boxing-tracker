@@ -16,11 +16,27 @@
   overflow: hidden;
 }
 
-.entry-banner.is-splash {
-  position: fixed;
-  inset: 0;
-  cursor: pointer;
-  animation: entry-banner-fade-in 280ms ease both;
+.entry-banner.is-splash .entry-banner-mark,
+.entry-banner.is-splash .entry-banner-name {
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+.entry-banner.is-splash .entry-banner-kicker {
+  animation-delay: 40ms;
+}
+
+.entry-banner.is-splash .entry-banner-slogan {
+  animation-delay: 80ms;
+}
+
+.entry-banner.is-splash .entry-banner-philosophy {
+  animation-delay: 140ms;
+}
+
+.entry-banner.is-splash .entry-banner-skip {
+  animation-delay: 400ms;
 }
 
 .entry-banner-stage {
@@ -140,15 +156,6 @@
   }
 }
 
-@keyframes entry-banner-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .entry-banner-mark,
   .entry-banner-kicker,
@@ -156,8 +163,7 @@
   .entry-banner-slogan,
   .entry-banner-philosophy,
   .entry-banner-footer,
-  .entry-banner-skip,
-  .entry-banner.is-splash {
+  .entry-banner-skip {
     animation: none;
     opacity: 1;
     transform: none;

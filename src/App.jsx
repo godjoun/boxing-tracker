@@ -37,6 +37,7 @@ import {
   getStoredTheme,
   setStoredTheme,
 } from "./utils/theme";
+import { dismissBootSplash } from "./utils/bootSplash";
 import "./App.css";
 
 const ENTRY_SPLASH_KEY = "mantle-entry-splash-seen";
@@ -97,10 +98,29 @@ function AppFlow() {
       sessionStorage.getItem(LEGACY_ENTRY_SPLASH_KEY) !== "1"
     );
   });
+  const onboarding = needsOnboarding(profile);
 
   useEffect(() => {
     applyDocumentTheme(theme);
   }, [theme]);
+
+  // HTML 부트 스플래시 → React 첫 화면이 덮은 뒤 제거 (앱이 먼저 비치지 않게)
+  useEffect(() => {
+    let timeoutId;
+    const frame = window.requestAnimationFrame(() => {
+      if (onboarding || showEntrySplash) {
+        dismissBootSplash({ fade: false });
+        return;
+      }
+      timeoutId = window.setTimeout(() => dismissBootSplash({ fade: true }), 420);
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+    // Cold-boot handoff only — initial cover state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dismissEntrySplash = useCallback(() => {
     if (typeof sessionStorage !== "undefined") {
@@ -117,7 +137,7 @@ function AppFlow() {
     });
   }
 
-  if (needsOnboarding(profile)) {
+  if (onboarding) {
     return (
       <div className={`app-shell theme-${theme}`}>
         <OnboardingSetupPage />
@@ -125,14 +145,11 @@ function AppFlow() {
     );
   }
 
-  return (
-    <>
-      {showEntrySplash ? (
-        <EntryBanner mode="splash" onContinue={dismissEntrySplash} />
-      ) : null}
-      <MainAppShell theme={theme} onToggleTheme={toggleTheme} />
-    </>
-  );
+  if (showEntrySplash) {
+    return <EntryBanner mode="splash" onContinue={dismissEntrySplash} />;
+  }
+
+  return <MainAppShell theme={theme} onToggleTheme={toggleTheme} />;
 }
 
 function MainAppShell({ theme, onToggleTheme }) {

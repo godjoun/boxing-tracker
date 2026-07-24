@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { track } from "@vercel/analytics";
 import { TrainingProvider, useTraining } from "./store/TrainingContext";
@@ -16,7 +16,6 @@ import TrainingHubPage from "./pages/TrainingHubPage";
 import GrowthHubPage from "./pages/GrowthHubPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
-import EntryBanner from "./components/EntryBanner";
 import FirstVisitTutorial from "./components/FirstVisitTutorial";
 import MenuIcon from "./components/MenuIcon";
 import AppErrorBoundary from "./components/AppErrorBoundary";
@@ -40,8 +39,6 @@ import {
 import { dismissBootSplash } from "./utils/bootSplash";
 import "./App.css";
 
-const ENTRY_SPLASH_KEY = "mantle-entry-splash-seen";
-const LEGACY_ENTRY_SPLASH_KEY = "anima-entry-splash-seen";
 const TIMER_RETURN_PAGE_KEY = "mantle-timer-return-page";
 const LEGACY_TIMER_RETURN_PAGE_KEY = "anima-timer-return-page";
 const CURRICULUM_RETURN_STYLE_KEY = "mantle-curriculum-return-style";
@@ -78,6 +75,9 @@ const FULLSCREEN_PAGES = new Set([
   "growth",
 ]);
 
+/** 하단 탭은 유지하되 본문을 끝까지 채우는 지도형 화면 */
+const EDGE_TO_NAV_PAGES = new Set(["gym"]);
+
 export default function App() {
   return (
     <AppErrorBoundary>
@@ -91,13 +91,6 @@ export default function App() {
 function AppFlow() {
   const { profile } = useTraining();
   const [theme, setTheme] = useState(getStoredTheme);
-  const [showEntrySplash, setShowEntrySplash] = useState(() => {
-    if (typeof sessionStorage === "undefined") return true;
-    return (
-      sessionStorage.getItem(ENTRY_SPLASH_KEY) !== "1" &&
-      sessionStorage.getItem(LEGACY_ENTRY_SPLASH_KEY) !== "1"
-    );
-  });
   const onboarding = needsOnboarding(profile);
 
   useEffect(() => {
@@ -108,7 +101,7 @@ function AppFlow() {
   useEffect(() => {
     let timeoutId;
     const frame = window.requestAnimationFrame(() => {
-      if (onboarding || showEntrySplash) {
+      if (onboarding) {
         dismissBootSplash({ fade: false });
         return;
       }
@@ -120,13 +113,6 @@ function AppFlow() {
     };
     // Cold-boot handoff only — initial cover state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const dismissEntrySplash = useCallback(() => {
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.setItem(ENTRY_SPLASH_KEY, "1");
-    }
-    setShowEntrySplash(false);
   }, []);
 
   function toggleTheme() {
@@ -145,19 +131,15 @@ function AppFlow() {
     );
   }
 
-  if (showEntrySplash) {
-    return <EntryBanner mode="splash" onContinue={dismissEntrySplash} />;
-  }
-
   return <MainAppShell theme={theme} onToggleTheme={toggleTheme} />;
 }
 
 function MainAppShell({ theme, onToggleTheme }) {
   const { logs, profile, grantFighterLevel } = useTraining();
   const [currentPage, setCurrentPage] = useState("home");
-  const [showTutorial, setShowTutorial] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialComplete());
   const [tutorialSession, setTutorialSession] = useState(0);
-  const [gymView, setGymView] = useState("hub");
+  const [gymView, setGymView] = useState("gyms");
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
@@ -174,12 +156,7 @@ function MainAppShell({ theme, onToggleTheme }) {
   const isFullscreenPage =
     FULLSCREEN_PAGES.has(currentPage) ||
     (currentPage === "profile" && profileStudioOpen);
-
-  useEffect(() => {
-    if (!isTutorialComplete()) {
-      setShowTutorial(true);
-    }
-  }, []);
+  const isEdgeToNavPage = EDGE_TO_NAV_PAGES.has(currentPage);
 
   useEffect(() => {
     recordAppOpen();
@@ -216,7 +193,7 @@ function MainAppShell({ theme, onToggleTheme }) {
     setCurrentPage("profile");
   };
 
-  const goGym = (view = "sparring") => {
+  const goGym = (view = "gyms") => {
     setGymView(view);
     setCurrentPage("gym");
   };
@@ -325,7 +302,7 @@ function MainAppShell({ theme, onToggleTheme }) {
     <div
       className={`app-shell theme-${theme}${
         isFullscreenPage ? " is-fullscreen" : ""
-      }`}
+      }${isEdgeToNavPage ? " is-edge-to-nav" : ""}`}
     >
       <main className="app-main">
         {currentPage === "home" && (
@@ -391,7 +368,7 @@ function MainAppShell({ theme, onToggleTheme }) {
               home: "홈",
               curriculum: "기술",
               strength: "신체",
-              gym: "도장",
+              gym: "짐",
               profile: "명패",
               growth: "성장",
             }[timerReturnPage] || "링"}
@@ -499,12 +476,12 @@ function MainAppShell({ theme, onToggleTheme }) {
             type="button"
             data-tutorial-target="nav-dojo"
             className={getNavClass(currentPage === "gym")}
-            onClick={() => goGym("sparring")}
+            onClick={() => goGym("gyms")}
           >
             <span className="app-nav-icon" aria-hidden="true">
               <MenuIcon name="dojo" size={20} />
             </span>
-            <span className="app-nav-label">도장</span>
+            <span className="app-nav-label">짐</span>
           </button>
 
           <button

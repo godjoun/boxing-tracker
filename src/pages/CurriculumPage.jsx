@@ -179,7 +179,7 @@ export default function CurriculumPage({
   );
 
   const sessions = useMemo(() => getAllCurriculumSessions(), []);
-  const weekOverviews = useMemo(() => getCurriculumWeekOverviews(), [progress]);
+  const weekOverviews = useMemo(() => getCurriculumWeekOverviews(), []);
   const techniqueCatalog = useMemo(() => getTechniqueCatalog(), []);
   const [selectedStyleId, setSelectedStyleId] = useState(initialStyleId);
   const [selectedCategoryId, setSelectedCategoryId] =
@@ -211,18 +211,18 @@ export default function CurriculumPage({
       return;
     }
 
-    setActiveTab("program");
-    setOpenWeekId(session.weekId);
+    const frameId = requestAnimationFrame(() => {
+      setActiveTab("program");
+      setOpenWeekId(session.weekId);
 
-    if (focusOpenDrills) {
-      setExpandedDrillId(focusSessionId);
-    }
+      if (focusOpenDrills) {
+        setExpandedDrillId(focusSessionId);
+      }
 
-    if (focusOpenVideo) {
-      setExpandedVideoId(focusSessionId);
-    }
+      if (focusOpenVideo) {
+        setExpandedVideoId(focusSessionId);
+      }
 
-    requestAnimationFrame(() => {
       const scrollTarget = document.getElementById(
         `curriculum-week-${session.weekId}`
       );
@@ -233,6 +233,8 @@ export default function CurriculumPage({
       });
       onFocusConsumed?.();
     });
+
+    return () => cancelAnimationFrame(frameId);
   }, [
     focusSessionId,
     focusOpenDrills,

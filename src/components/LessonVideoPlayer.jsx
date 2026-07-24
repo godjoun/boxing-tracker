@@ -1,4 +1,4 @@
-export function getLessonEmbedUrl(videoUrl) {
+function getLessonEmbedUrl(videoUrl) {
   if (!videoUrl) return null;
 
   const youtubeMatch = videoUrl.match(

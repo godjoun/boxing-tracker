@@ -107,7 +107,8 @@ export function saveSessionOverride(sessionId, override) {
 
 export function clearSessionOverride(sessionId) {
   const settings = getCurriculumSettings();
-  const { [sessionId]: _removed, ...rest } = settings.sessionOverrides;
+  const rest = { ...settings.sessionOverrides };
+  delete rest[sessionId];
 
   return saveCurriculumSettings({ sessionOverrides: rest });
 }

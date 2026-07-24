@@ -9,6 +9,7 @@ import {
   validateGymListingForm,
 } from "./gymListing";
 import { getDistanceKm, hasMapCoordinates, isNearbyMapGym } from "./gymSearch";
+import { groupRivalsByArea } from "./rivalAreaMap";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -82,6 +83,23 @@ describe("지도형 체육관 검색", () => {
     ).toBe(true);
   });
 
+  it("사용자 장소 제보는 관장 연락처 없이 좌표만으로 접수한다", () => {
+    const result = validateGymListingForm({
+      submissionKind: "community",
+      gymName: "성수 복싱",
+      address: "서울 성동구 성수동",
+      lat: 37.55,
+      lon: 127.04,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.payload).toMatchObject({
+      ownerName: "사용자 제보",
+      phone: "",
+      submissionKind: "community",
+    });
+  });
+
   it("찜한 체육관을 기기에 저장하고 다시 누르면 제거한다", () => {
     const values = new Map();
     vi.stubGlobal("localStorage", {
@@ -100,5 +118,21 @@ describe("지도형 체육관 검색", () => {
 
     toggleFavoriteGym({ id: "osm-node-1", name: "성수 복싱" });
     expect(getFavoriteGyms()).toEqual([]);
+  });
+
+  it("라이벌은 정확 좌표 없이 같은 활동 권역으로 묶는다", () => {
+    const areas = groupRivalsByArea([
+      { id: "rival-1", area: "성수동" },
+      { id: "rival-2", area: "서울 성수" },
+      { id: "rival-3", area: "알 수 없는 지역" },
+    ]);
+
+    expect(areas).toEqual([
+      expect.objectContaining({
+        id: "seoul-sungsu",
+        label: "서울 성수",
+        count: 2,
+      }),
+    ]);
   });
 });

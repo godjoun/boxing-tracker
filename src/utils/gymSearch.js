@@ -4,13 +4,11 @@ import { geocodeOsmArea } from "../api/osmGymApi";
 const LOCATION_STORAGE_KEY = "fitness-league-search-location";
 
 export const PRESET_AREAS = [
-  { id: "gunsan-center", label: "군산", lat: 35.9676, lon: 126.7369 },
-  { id: "gunsan-transport", label: "군산 수송동", lat: 35.9745, lon: 126.715 },
-  { id: "iksan", label: "익산", lat: 35.9483, lon: 126.9578 },
-  { id: "jeonju", label: "전주", lat: 35.8242, lon: 127.148 },
   { id: "seoul-gangnam", label: "서울 강남", lat: 37.4979, lon: 127.0276 },
   { id: "seoul-hongdae", label: "서울 홍대", lat: 37.5563, lon: 126.9236 },
   { id: "busan-seomyeon", label: "부산 서면", lat: 35.1579, lon: 129.0595 },
+  { id: "daegu-dongseong", label: "대구 동성로", lat: 35.8694, lon: 128.5938 },
+  { id: "gwangju-sangmu", label: "광주 상무", lat: 35.1466, lon: 126.8514 },
 ];
 
 /** 직접 검색용 지역 (프리셋 + 별칭) */
@@ -114,14 +112,6 @@ export const SEARCHABLE_AREAS = [
     lon: 126.8514,
   },
 ];
-
-const DEFAULT_LOCATION = {
-  lat: 35.9676,
-  lon: 126.7369,
-  label: "군산 (기본)",
-  source: "default",
-  accuracy: null,
-};
 
 function normalizeQuery(value) {
   return String(value || "")
@@ -246,11 +236,11 @@ export async function resolveSearchLocation(options = {}) {
     return saved;
   }
 
-  if (allowFallback) {
-    return normalizePosition(DEFAULT_LOCATION);
-  }
-
-  throw new Error("위치를 확인할 수 없습니다.");
+  throw new Error(
+    allowFallback
+      ? "검색할 지역을 선택해 주세요."
+      : "위치를 확인할 수 없습니다."
+  );
 }
 
 export function getDistanceKm(lat1, lon1, lat2, lon2) {
@@ -330,8 +320,6 @@ export function getLocationSourceLabel(source) {
       return "지역 선택";
     case "search":
       return "지역 검색";
-    case "default":
-      return "기본 위치";
     default:
       return "저장된 위치";
   }

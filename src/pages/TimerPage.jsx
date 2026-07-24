@@ -626,10 +626,12 @@ export default function TimerPage({
       markCurriculumSessionComplete(curriculumSessionId);
     }
 
-    setCompletionResult(getCompletionDelta(logs, savedLog));
-    setCompletedLogId(savedLog.id);
-    setCompletedAt(new Date());
-    setHasSavedLog(true);
+    window.setTimeout(() => {
+      setCompletionResult(getCompletionDelta(logs, savedLog));
+      setCompletedLogId(savedLog.id);
+      setCompletedAt(new Date());
+      setHasSavedLog(true);
+    }, 0);
   }, [
     phase,
     hasSavedLog,
@@ -642,6 +644,8 @@ export default function TimerPage({
     logs,
     curriculumLogType,
     curriculumSessionId,
+    activePrepSeconds,
+    isCurriculumSession,
   ]);
 
   const resetTimerState = (nextWorkSeconds = workSecondsSetting) => {
@@ -752,8 +756,14 @@ export default function TimerPage({
       return;
     }
 
-    applyLaunchConfig(launchConfig);
-    onLaunchConsumed?.();
+    const timeoutId = window.setTimeout(() => {
+      applyLaunchConfig(launchConfig);
+      onLaunchConsumed?.();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+    // Apply each launch payload once; applyLaunchConfig is stable enough for this handoff.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [launchConfig]);
 
   const handleStart = async () => {

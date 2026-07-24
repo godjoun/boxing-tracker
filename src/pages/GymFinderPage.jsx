@@ -1,58 +1,38 @@
 import { useEffect, useState } from "react";
 import FeatureLockScreen from "../components/FeatureLockScreen";
 import { getUnlockLevel, isSparringUnlocked } from "../utils/featureUnlocks";
-import ExchangeBoardPanel from "./dojoBreaker/ExchangeBoardPanel";
 import NearbyGymsPanel from "./dojoBreaker/NearbyGymsPanel";
 import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
-/**
- * 이름 = 하는 일
- * - 모임 = 오픈 스파링 · 합동훈련 일정
- * - 체육관 문의·대여 = 찾기 · 체험 · 대여
- * - 라이벌 찾기 = 1:1 스파링 상대
- */
-const CATEGORIES = [
-  {
-    id: "sparring",
-    label: "라이벌 찾기",
-    hint: "군산부터 · 관심 보내면 대화",
-    howTo: "지역을 군산으로 적고 내 카드를 공개한 뒤, 맞는 상대에게 관심을 보내요.",
-  },
-  {
-    id: "exchange",
-    label: "모임",
-    hint: "오픈 스파링 · 합동훈련",
-    howTo: "① 일정 올리기 → ② 참가 신청 → ③ 대화하기",
-  },
-  {
-    id: "gyms",
-    label: "체육관 문의·대여",
-    hint: "찾기 · 체험 · 대여",
-    howTo: "지역 검색 · 문의 · 관 운영자면 등록 신청",
-  },
+/** 지도 위 탐색 필터 — 검색창 오른쪽 칩 */
+const MAP_FILTERS = [
+  { id: "gyms", label: "체육관" },
+  { id: "sparring", label: "라이벌" },
 ];
 
 function resolveView(view) {
-  if (view === "gyms" || view === "sparring" || view === "exchange") {
+  if (view === "gyms" || view === "sparring" || view === "favorites") {
     return view;
   }
   if (view === "sparring-lock") {
     return "sparring";
   }
-  // 군산 소프트 론칭: 도장 기본 진입 = 라이벌 찾기
-  return "sparring";
+  return "gyms";
 }
 
 export default function GymFinderPage({
-  initialView = "sparring",
+  initialView = "gyms",
   fighterLevel = 1,
-  onGoBack,
   onStartTraining,
 }) {
   const [view, setView] = useState(() => resolveView(initialView));
+  const [rivals, setRivals] = useState([]);
   const sparringLocked = !isSparringUnlocked(fighterLevel);
   const sparringLevel = getUnlockLevel("sparring");
-  const active = CATEGORIES.find((item) => item.id === view) || CATEGORIES[0];
+  const activeLabel =
+    view === "favorites"
+      ? "찜"
+      : MAP_FILTERS.find((item) => item.id === view)?.label || "체육관";
 
   useEffect(() => {
     const timer = window.setTimeout(
@@ -62,63 +42,51 @@ export default function GymFinderPage({
     return () => window.clearTimeout(timer);
   }, [initialView]);
 
-  return (
-    <main className="gym-page gym-page-flap">
-      <header className="dojo-flap-header">
-        {onGoBack ? (
-          <button className="category-back" type="button" onClick={onGoBack}>
-            ← 뒤로
+  const categoryNav = (
+    <nav className="gym-map-category-tabs is-search-row" aria-label="짐 필터">
+      {MAP_FILTERS.map((item) => {
+        const isSparring = item.id === "sparring";
+        const locked = isSparring && sparringLocked;
+        const active = view === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className={`gym-map-category-tab${active ? " is-active" : ""}${
+              locked ? " is-locked" : ""
+            }`}
+            aria-current={active ? "page" : undefined}
+            onClick={() => setView(item.id)}
+          >
+            {item.label}
+            {locked ? <em>LV.{sparringLevel}</em> : null}
           </button>
-        ) : null}
-        <div className="dojo-flap-heading">
-          <p className="gym-unified-kicker">DOJO</p>
-          <h1>도장</h1>
-          <p>{active.hint}</p>
-        </div>
+        );
+      })}
+    </nav>
+  );
 
-        <nav className="dojo-flap-tabs" aria-label="도장 카테고리">
-          {CATEGORIES.map((item) => {
-            const isSparring = item.id === "sparring";
-            const locked = isSparring && sparringLocked;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                className={`dojo-flap-tab${
-                  view === item.id ? " is-active" : ""
-                }${locked ? " is-locked" : ""}`}
-                aria-current={view === item.id ? "page" : undefined}
-                onClick={() => setView(item.id)}
-              >
-                {item.label}
-                {locked ? <em>LV.{sparringLevel}</em> : null}
-              </button>
-            );
-          })}
-        </nav>
-
-        {view !== "gyms" ? <p className="dojo-howto">{active.howTo}</p> : null}
-      </header>
-
-      <section className="dojo-flap-body" aria-label={active.label}>
-        {view === "exchange" ? <ExchangeBoardPanel embedded /> : null}
-
-        {view === "gyms" ? <NearbyGymsPanel embedded /> : null}
-
-        {view === "sparring" && sparringLocked ? (
-          <FeatureLockScreen
-            featureId="sparring"
-            currentLevel={fighterLevel}
-            onBack={() => setView("exchange")}
-            onStartTraining={onStartTraining}
-            embedded
-          />
-        ) : null}
-
-        {view === "sparring" && !sparringLocked ? (
-          <SparringPartnerPanel embedded />
-        ) : null}
-      </section>
+  return (
+    <main className="gym-map-service" aria-label={activeLabel}>
+      <NearbyGymsPanel
+        activeLayer={view}
+        categoryNav={categoryNav}
+        onSelectLayer={setView}
+        rivals={rivals}
+        rivalContent={
+          view === "sparring" && sparringLocked ? (
+            <FeatureLockScreen
+              featureId="sparring"
+              currentLevel={fighterLevel}
+              onBack={() => setView("gyms")}
+              onStartTraining={onStartTraining}
+              embedded
+            />
+          ) : view === "sparring" ? (
+            <SparringPartnerPanel embedded onPartnersChange={setRivals} />
+          ) : null
+        }
+      />
     </main>
   );
 }

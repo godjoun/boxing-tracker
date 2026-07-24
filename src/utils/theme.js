@@ -10,7 +10,7 @@ export function getStoredTheme() {
     // ignore
   }
 
-  return "dark";
+  return "light";
 }
 
 export function setStoredTheme(theme) {

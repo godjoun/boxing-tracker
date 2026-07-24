@@ -70,10 +70,10 @@ const SHORTCUTS = {
   gyms: {
     id: "gyms",
     icon: "dojo",
-    title: "도장",
-    description: "라이벌 찾기 · 모임 · 체육관",
+    title: "짐",
+    description: "체육관 지도 · 라이벌 · 찜",
     route: "gym",
-    gymView: "sparring",
+    gymView: "gyms",
     accent: "slate",
   },
   backup: {

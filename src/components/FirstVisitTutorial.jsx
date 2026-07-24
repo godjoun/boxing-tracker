@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { completeTutorial } from "../utils/tutorial";
 import {
   getTutorialTargetSelector,
@@ -126,7 +126,7 @@ export default function FirstVisitTutorial({
     [spotlightRect, step.placement],
   );
 
-  function updateSpotlightRects() {
+  const updateSpotlightRects = useCallback(() => {
     if (!isSpotlight) {
       setSpotlightRect(null);
       return;
@@ -138,7 +138,7 @@ export default function FirstVisitTutorial({
       : null;
 
     setSpotlightRect(mergeRects(primaryRect, secondaryRect));
-  }
+  }, [isSpotlight, step.target, step.secondaryTarget, step.id]);
 
   useEffect(() => {
     if (step.ensurePage) {
@@ -147,23 +147,23 @@ export default function FirstVisitTutorial({
   }, [step.ensurePage, stepIndex, onEnsurePage]);
 
   useLayoutEffect(() => {
-    updateSpotlightRects();
-
     const handleLayoutChange = () => {
       updateSpotlightRects();
     };
 
+    const frameId = window.requestAnimationFrame(handleLayoutChange);
     const timerId = window.setTimeout(handleLayoutChange, 120);
 
     window.addEventListener("resize", handleLayoutChange);
     window.addEventListener("scroll", handleLayoutChange, true);
 
     return () => {
+      window.cancelAnimationFrame(frameId);
       window.clearTimeout(timerId);
       window.removeEventListener("resize", handleLayoutChange);
       window.removeEventListener("scroll", handleLayoutChange, true);
     };
-  }, [stepIndex, step.target, step.secondaryTarget, isSpotlight]);
+  }, [stepIndex, updateSpotlightRects]);
 
   function finish() {
     completeTutorial();

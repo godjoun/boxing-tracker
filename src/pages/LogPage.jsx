@@ -115,7 +115,7 @@ function OptionButton({ isActive, title, description, onClick }) {
   );
 }
 
-export default function LogPage({ onGoProfileCardMaker, onGoProfile, fighterLevel = 1 } = {}) {
+export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const {
     logs,
     addLog,

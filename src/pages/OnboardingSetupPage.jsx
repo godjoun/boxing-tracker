@@ -41,15 +41,6 @@ export default function OnboardingSetupPage() {
   const nicknameCheckSeq = useRef(0);
 
   useEffect(() => {
-    if (weightClassTouched || !form.weightKg) return;
-
-    setForm((current) => ({
-      ...current,
-      weightClass: suggestWeightClass(current.weightKg),
-    }));
-  }, [form.weightKg, weightClassTouched]);
-
-  useEffect(() => {
     if (showWelcome) return;
     const timer = window.setTimeout(() => {
       nicknameInputRef.current?.focus();
@@ -58,7 +49,13 @@ export default function OnboardingSetupPage() {
   }, [showWelcome]);
 
   function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+      ...(field === "weightKg" && !weightClassTouched
+        ? { weightClass: suggestWeightClass(value) }
+        : {}),
+    }));
     if (field === "nickname") {
       setVerifiedNickname("");
       setNicknameNotice("");
@@ -191,7 +188,11 @@ export default function OnboardingSetupPage() {
   if (showWelcome) {
     return (
       <div className="onboarding-page onboarding-page--entry">
-        <EntryBanner mode="welcome" onContinue={handleWelcomeNext} />
+        <EntryBanner
+          mode="welcome"
+          onContinue={handleWelcomeNext}
+          welcomeSupport="라운드를 돌리면 오늘의 기록이 남습니다."
+        />
       </div>
     );
   }

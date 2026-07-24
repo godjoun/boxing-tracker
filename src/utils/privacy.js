@@ -10,6 +10,9 @@ const PROFILE_STORAGE_KEYS = [
   "experience",
   "sparringStyle",
   "area",
+  "homeGymId",
+  "homeGymName",
+  "homeGymAddress",
   "contact",
   "onboardingComplete",
 ];
@@ -49,7 +52,17 @@ export function sanitizeProfileForStorage(profile) {
       return safe;
     }
 
-    safe[key] = key === "photo" ? sanitizePhotoValue(profile[key]) : profile[key];
+    if (key === "photo") {
+      safe[key] = sanitizePhotoValue(profile[key]);
+    } else if (key === "homeGymId") {
+      safe[key] = String(profile[key] || "").trim().slice(0, 120);
+    } else if (key === "homeGymName") {
+      safe[key] = String(profile[key] || "").trim().slice(0, 80);
+    } else if (key === "homeGymAddress") {
+      safe[key] = String(profile[key] || "").trim().slice(0, 200);
+    } else {
+      safe[key] = profile[key];
+    }
 
     return safe;
   }, {});

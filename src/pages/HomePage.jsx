@@ -140,13 +140,11 @@ function buildMonthDays(now = new Date()) {
 }
 
 export default function HomePage({
-  fighterLevel: _fighterLevel = 1,
   timerSummary = null,
   onStartTraining,
   onOpenTimer,
   onGoProfile,
   onNavigate,
-  onNavigateGym: _onNavigateGym,
   onOpenCardMaker,
   onOpenCurriculum,
   onReadLesson,
@@ -206,7 +204,7 @@ export default function HomePage({
       monthDays: buildMonthDays(),
       weekStrip: buildWeekStrip(trainingByDate),
     };
-  }, [logs, weeklyScore]);
+  }, [logs]);
 
   const selectedDayTraining = selectedDate
     ? dashboard.trainingByDate[selectedDate]

@@ -129,7 +129,6 @@ export function reconcileTimerSession(session, now = Date.now()) {
 
     if (next.remainingTime > elapsed) {
       next.remainingTime -= elapsed;
-      elapsed = 0;
       break;
     }
 

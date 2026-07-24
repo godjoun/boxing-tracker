@@ -34,8 +34,7 @@ import { registerNickname } from "../api/nicknameApi";
 import { resetTutorial } from "../utils/tutorial";
 
 const TrainingContext = createContext(null);
-
-export const GUEST_USER_ID = "local-user";
+const GUEST_USER_ID = "local-user";
 
 /** MANTLE 온보딩을 처음부터 다시 보기 위한 1회성 리셋 플래그 */
 const FRESH_ONBOARDING_FLAG = "fitness-league-fresh-onboarding-v1";
@@ -58,6 +57,9 @@ const DEFAULT_PROFILE = {
   experience: "1년차",
   sparringStyle: "미디엄",
   area: "",
+  homeGymId: "",
+  homeGymName: "",
+  homeGymAddress: "",
   contact: "",
   onboardingComplete: false,
 };
@@ -231,20 +233,21 @@ export function TrainingProvider({
   children,
   userId = getDevUserId() || GUEST_USER_ID,
 }) {
+  return (
+    <TrainingProviderState key={userId} userId={userId}>
+      {children}
+    </TrainingProviderState>
+  );
+}
+
+function TrainingProviderState({ children, userId }) {
   const storageKeys = useMemo(() => getStorageKeys(userId), [userId]);
+  const [initialState] = useState(() => loadUserState(userId));
 
-  const [logs, setLogs] = useState(() => loadUserState(userId).logs);
-  const [feed, setFeed] = useState(() => loadUserState(userId).feed);
-  const [profile, setProfile] = useState(() => loadUserState(userId).profile);
-  const [mode, setMode] = useState(() => loadUserState(userId).mode);
-
-  useEffect(() => {
-    const nextState = loadUserState(userId);
-    setLogs(nextState.logs);
-    setFeed(nextState.feed);
-    setProfile(nextState.profile);
-    setMode(nextState.mode);
-  }, [userId]);
+  const [logs, setLogs] = useState(initialState.logs);
+  const [feed, setFeed] = useState(initialState.feed);
+  const [profile, setProfile] = useState(initialState.profile);
+  const [mode, setMode] = useState(initialState.mode);
 
   useEffect(() => {
     localStorage.setItem(storageKeys.logs, JSON.stringify(logs));
@@ -623,6 +626,8 @@ export function TrainingProvider({
   );
 }
 
+// The hook is intentionally colocated with its provider so consumers share this context.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTraining() {
   const context = useContext(TrainingContext);
 

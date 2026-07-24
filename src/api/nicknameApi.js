@@ -142,13 +142,12 @@ export async function checkNicknameAvailability(nickname, userId) {
     };
   }
 
-  let remoteResult = null;
+  let remoteResult;
 
   try {
     remoteResult = await checkRemoteNickname(trimmed);
   } catch (error) {
     console.warn("닉네임 원격 확인 실패, 로컬 확인으로 진행:", error);
-    remoteResult = null;
   }
 
   if (remoteResult) {

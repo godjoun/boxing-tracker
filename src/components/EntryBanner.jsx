@@ -15,6 +15,7 @@ export default function EntryBanner({
   mode = "splash",
   onContinue,
   durationMs = 1800,
+  welcomeSupport = "",
 }) {
   const isWelcome = mode === "welcome";
 
@@ -44,6 +45,9 @@ export default function EntryBanner({
         <h1 className="entry-banner-name">{BRAND_NAME}</h1>
         <p className="entry-banner-slogan">{BRAND_SLOGAN_EN}</p>
         <p className="entry-banner-philosophy">{BRAND_PHILOSOPHY_EN}</p>
+        {isWelcome && welcomeSupport ? (
+          <p className="entry-banner-welcome-support">{welcomeSupport}</p>
+        ) : null}
       </div>
 
       {isWelcome ? (

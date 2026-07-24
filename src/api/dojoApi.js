@@ -31,7 +31,7 @@ function withDistance(items, lat, lon, mapper) {
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
-function searchLocalGyms(_lat, _lon, _radiusKm = 12) {
+function searchLocalGyms() {
   // 시드(예시) 체육관은 운영 목록에서 제외. 입점(approved)만 NearbyGymsPanel에서 합침.
   return [];
 }

@@ -455,7 +455,6 @@ function writeProgress(progress) {
 export function getCurriculumProgress() {
   const progress = readProgress();
   const sessions = getAllCurriculumSessions();
-  const completedSet = new Set(progress.completedSessionIds);
 
   return {
     ...progress,

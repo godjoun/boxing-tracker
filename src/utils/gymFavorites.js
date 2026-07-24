@@ -70,7 +70,7 @@ export function toggleFavoriteGym(gym) {
       );
 
   localStorage.setItem(GYM_FAVORITES_KEY, JSON.stringify(next));
-  localStorage.removeItem(LEGACY_GYM_FAVORITES_KEY);
+  localStorage.removeItem?.(LEGACY_GYM_FAVORITES_KEY);
   return next;
 }
 

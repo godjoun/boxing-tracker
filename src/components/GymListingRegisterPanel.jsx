@@ -85,14 +85,20 @@ export default function GymListingRegisterPanel({
   userId,
   nickname = "",
   initialListing = null,
+  submissionKind = "owner",
   onClose,
   onSaved,
 }) {
   const isEdit = Boolean(initialListing?.id);
+  const isCommunitySubmission =
+    !isEdit && submissionKind === "community";
   const galleryInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const objectUrlsRef = useRef([]);
-  const [form, setForm] = useState(() => listingToForm(initialListing));
+  const [form, setForm] = useState(() => ({
+    ...listingToForm(initialListing),
+    submissionKind: isCommunitySubmission ? "community" : "owner",
+  }));
   const [pendingFiles, setPendingFiles] = useState([]);
   const [previewUrls, setPreviewUrls] = useState(() =>
     normalizeGymPhotoUrls(initialListing)
@@ -112,8 +118,13 @@ export default function GymListingRegisterPanel({
 
   const remoteReady = hasGymListingRemote();
   const title = useMemo(
-    () => (isEdit ? "체육관 정보 수정" : "내 체육관 등록"),
-    [isEdit]
+    () =>
+      isEdit
+        ? "체육관 정보 수정"
+        : isCommunitySubmission
+          ? "새 체육관 등록"
+          : "관장 입점 신청",
+    [isCommunitySubmission, isEdit]
   );
   const canAddMore = previewUrls.length < MAX_GYM_PHOTOS;
 
@@ -225,6 +236,7 @@ export default function GymListingRegisterPanel({
     const savedUrls = previewUrls.filter((url) => !url.startsWith("blob:"));
     const payloadForm = {
       ...form,
+      submissionKind: isCommunitySubmission ? "community" : "owner",
       photoUrls: savedUrls,
       photoUrl: savedUrls[0] || "",
     };
@@ -284,6 +296,10 @@ export default function GymListingRegisterPanel({
               ? synced
                 ? "수정이 반영되었습니다"
                 : "이 기기에 수정했습니다"
+              : isCommunitySubmission
+                ? synced
+                  ? "체육관 제보가 도착했습니다"
+                  : "체육관 제보를 저장했습니다"
               : synced
                 ? "등록 신청이 도착했습니다"
                 : "등록 신청을 접수했습니다"}
@@ -293,6 +309,10 @@ export default function GymListingRegisterPanel({
               ? synced
                 ? "승인된 관이면 검색에도 곧바로 반영됩니다."
                 : "서버 연결 후 다시 저장하면 장부에 맞춰집니다."
+              : isCommunitySubmission
+                ? synced
+                  ? "장소를 확인한 뒤 지도 검색에 반영합니다."
+                  : "이 기기에 저장했습니다. 서버 연결 후 등록 관리에서 다시 보내 주세요."
               : synced
                 ? "운영에서 확인한 뒤, 검색 목록에 올릴 수 있습니다. 승인이 끝나면 노출됩니다."
                 : "이 기기에 저장했습니다. 서버 연결 후 다시 보내 주시면 장부에 쌓입니다."}
@@ -327,13 +347,34 @@ export default function GymListingRegisterPanel({
         <p>
           {isEdit
             ? "간판·시설 사진을 올리고 이름·가격·소개를 고칩니다."
-            : "간판·시설 사진을 올리고, 복서의 문의·체험·대여를 받습니다."}
+            : isCommunitySubmission
+              ? "지도에 없는 체육관을 알려 주세요. 위치를 확인한 뒤 검색에 반영합니다."
+              : "간판·시설 사진을 올리고, 복서의 문의·체험·대여를 받습니다."}
         </p>
       </header>
 
-      <form className="gym-listing-form" onSubmit={handleSubmit}>
-        <fieldset className="gym-listing-block">
-          <legend>사진 (최대 {MAX_GYM_PHOTOS}장)</legend>
+      <form
+        className={`gym-listing-form${
+          isCommunitySubmission ? " is-community-submission" : ""
+        }`}
+        onSubmit={handleSubmit}
+      >
+        <details
+          className={`gym-listing-optional-details${
+            isCommunitySubmission ? " is-community" : ""
+          }`}
+          open={!isCommunitySubmission}
+        >
+          <summary>
+            {isCommunitySubmission
+              ? "사진과 소개 추가하기 (선택)"
+              : "사진 (최대 5장)"}
+          </summary>
+          {isCommunitySubmission ? (
+            <p>장소를 알아보기 쉬운 간판·입구 사진이 있으면 함께 보내 주세요.</p>
+          ) : null}
+          <fieldset className="gym-listing-block gym-listing-photos">
+            <legend>사진 (최대 {MAX_GYM_PHOTOS}장)</legend>
           <p className="gym-listing-block-note">
             <strong>첫 장(대표)은 복싱장 간판 사진</strong>을 올려 주세요.
             검색·상세 배너에 크게 보입니다. 2~5장은 링·샤워·대기실 등 시설
@@ -410,9 +451,10 @@ export default function GymListingRegisterPanel({
               ? " · 서버 연결 전에는 사진이 검색에 안 올라갈 수 있어요"
               : ""}
           </p>
-        </fieldset>
+          </fieldset>
+        </details>
 
-        <fieldset className="gym-listing-block">
+        <fieldset className="gym-listing-block gym-listing-location">
           <legend>장소</legend>
           <label className="gym-inquiry-field">
             <span>체육관 이름 *</span>
@@ -479,75 +521,91 @@ export default function GymListingRegisterPanel({
           </label>
         </fieldset>
 
-        <fieldset className="gym-listing-block">
-          <legend>연락</legend>
-          <label className="gym-inquiry-field">
-            <span>담당자 *</span>
-            <input
-              value={form.ownerName}
-              onChange={(event) => updateField("ownerName", event.target.value)}
-              required
-            />
-          </label>
-          <label className="gym-inquiry-field">
-            <span>전화 *</span>
-            <input
-              value={form.phone}
-              onChange={(event) => updateField("phone", event.target.value)}
-              inputMode="tel"
-              required
-            />
-          </label>
-        </fieldset>
+        {!isCommunitySubmission ? (
+          <>
+            <fieldset className="gym-listing-block">
+              <legend>연락</legend>
+              <label className="gym-inquiry-field">
+                <span>담당자 *</span>
+                <input
+                  value={form.ownerName}
+                  onChange={(event) =>
+                    updateField("ownerName", event.target.value)
+                  }
+                  required
+                />
+              </label>
+              <label className="gym-inquiry-field">
+                <span>전화 *</span>
+                <input
+                  value={form.phone}
+                  onChange={(event) => updateField("phone", event.target.value)}
+                  inputMode="tel"
+                  required
+                />
+              </label>
+            </fieldset>
 
-        <fieldset className="gym-listing-block">
-          <legend>가격 (선택)</legend>
-          <div className="gym-listing-price-row">
-            <label className="gym-inquiry-field">
-              <span>일일권</span>
-              <input
-                value={form.dayPassWon}
-                onChange={(event) =>
-                  updateField("dayPassWon", event.target.value)
-                }
-                inputMode="numeric"
-              />
-            </label>
-            <label className="gym-inquiry-field">
-              <span>한달권</span>
-              <input
-                value={form.monthPassWon}
-                onChange={(event) =>
-                  updateField("monthPassWon", event.target.value)
-                }
-                inputMode="numeric"
-              />
-            </label>
-            <label className="gym-inquiry-field">
-              <span>대여/시간</span>
-              <input
-                value={form.rentalHourWon}
-                onChange={(event) =>
-                  updateField("rentalHourWon", event.target.value)
-                }
-                inputMode="numeric"
-              />
-            </label>
-          </div>
-        </fieldset>
+            <fieldset className="gym-listing-block">
+              <legend>가격 (선택)</legend>
+              <div className="gym-listing-price-row">
+                <label className="gym-inquiry-field">
+                  <span>일일권</span>
+                  <input
+                    value={form.dayPassWon}
+                    onChange={(event) =>
+                      updateField("dayPassWon", event.target.value)
+                    }
+                    inputMode="numeric"
+                  />
+                </label>
+                <label className="gym-inquiry-field">
+                  <span>한달권</span>
+                  <input
+                    value={form.monthPassWon}
+                    onChange={(event) =>
+                      updateField("monthPassWon", event.target.value)
+                    }
+                    inputMode="numeric"
+                  />
+                </label>
+                <label className="gym-inquiry-field">
+                  <span>대여/시간</span>
+                  <input
+                    value={form.rentalHourWon}
+                    onChange={(event) =>
+                      updateField("rentalHourWon", event.target.value)
+                    }
+                    inputMode="numeric"
+                  />
+                </label>
+              </div>
+            </fieldset>
+          </>
+        ) : null}
 
-        <fieldset className="gym-listing-block">
-          <legend>소개</legend>
-          <label className="gym-inquiry-field">
-            <span>한 줄 소개</span>
-            <textarea
-              value={form.intro}
-              onChange={(event) => updateField("intro", event.target.value)}
-              maxLength={200}
-              rows={3}
-            />
-          </label>
-        </fieldset>
+        <details
+          className={`gym-listing-optional-details${
+            isCommunitySubmission ? " is-community" : ""
+          }`}
+          open={!isCommunitySubmission}
+        >
+          <summary>
+            {isCommunitySubmission ? "한 줄 소개 추가하기 (선택)" : "소개"}
+          </summary>
+          <fieldset className="gym-listing-block">
+            <legend>소개</legend>
+            <label className="gym-inquiry-field">
+              <span>한 줄 소개</span>
+              <textarea
+                value={form.intro}
+                onChange={(event) => updateField("intro", event.target.value)}
+                maxLength={200}
+                rows={3}
+              />
+            </label>
+          </fieldset>
+        </details>
 
         {error ? <p className="gym-inquiry-error">{error}</p> : null}
 
@@ -560,13 +618,17 @@ export default function GymListingRegisterPanel({
             ? "보내는 중..."
             : isEdit
               ? "수정 저장"
+              : isCommunitySubmission
+                ? "체육관 제보하기"
               : "등록 신청하기"}
         </button>
 
         <p className="gym-listing-foot">
           {isEdit
             ? "삭제는 「내 등록 관리」에서 할 수 있습니다."
-            : "신청만 접수됩니다. 승인·과금·사업자 확인은 다음 단계에서 연결합니다."}
+            : isCommunitySubmission
+              ? "제보는 승인 전까지 검색에 바로 노출되지 않습니다."
+              : "신청만 접수됩니다. 승인·과금·사업자 확인은 다음 단계에서 연결합니다."}
         </p>
       </form>
     </section>

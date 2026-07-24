@@ -10,16 +10,23 @@ import "leaflet/dist/leaflet.css";
 import { hasMapCoordinates } from "../utils/gymSearch";
 import { BRAND_NAME } from "../utils/brand";
 
-function MapViewport({ center, selectedGym }) {
+function MapViewport({ center, selectedGym, selectedRivalArea }) {
   const map = useMap();
 
   useEffect(() => {
-    const target = selectedGym || center;
+    const target = selectedGym || selectedRivalArea || center;
     if (!target) return;
-    map.flyTo([target.lat, target.lon], selectedGym ? 15 : 13, {
-      duration: 0.45,
-    });
-  }, [center, map, selectedGym]);
+    map.flyTo(
+      [target.lat, target.lon],
+      selectedGym ? 15 : selectedRivalArea ? 12 : target.source === "overview" ? 7 : 13,
+      { duration: 0.45 }
+    );
+  }, [center, map, selectedGym, selectedRivalArea]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => map.invalidateSize());
+    return () => window.cancelAnimationFrame(frame);
+  }, [map, center]);
 
   return null;
 }
@@ -27,87 +34,96 @@ function MapViewport({ center, selectedGym }) {
 export default function GymMapPanel({
   center,
   gyms = [],
+  rivalAreas = [],
   selectedGym = null,
-  favoriteIds = [],
+  selectedRivalArea = null,
+  overlay = null,
   onSelect,
-  onToggleFavorite,
-  onOpen,
+  onSelectRival,
 }) {
   if (!center) return null;
-  const favorites = new Set(favoriteIds);
 
   return (
-    <section className="gym-map-shell" aria-label="지역 체육관 지도">
+    <section className="gym-map-shell is-service" aria-label="지역 체육관 지도">
       <MapContainer
-        className="gym-map"
+        className="gym-map is-service"
         center={[center.lat, center.lon]}
-        zoom={13}
+        zoom={center.source === "overview" ? 7 : 13}
+        zoomControl={false}
         scrollWheelZoom
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapViewport center={center} selectedGym={selectedGym} />
-        {gyms
-          .filter(hasMapCoordinates)
-          .map((gym) => {
-            const listed = gym.source === "listing";
-            const selected = selectedGym?.id === gym.id;
-            return (
-              <CircleMarker
-                key={gym.id}
-                center={[gym.lat, gym.lon]}
-                radius={selected ? 11 : listed ? 9 : 7}
-                pathOptions={{
-                  color: listed ? "#8a2e2e" : "#161616",
-                  fillColor: listed ? "#8a2e2e" : "#ffffff",
-                  fillOpacity: selected ? 1 : 0.86,
-                  weight: selected ? 4 : 2,
-                }}
-                eventHandlers={{ click: () => onSelect?.(gym) }}
-              >
-                <Tooltip direction="top" offset={[0, -8]}>
-                  {gym.name}
-                </Tooltip>
-              </CircleMarker>
-            );
-          })}
+        <MapViewport
+          center={center}
+          selectedGym={selectedGym}
+          selectedRivalArea={selectedRivalArea}
+        />
+        {gyms.filter(hasMapCoordinates).map((gym) => {
+          const listed = gym.source === "listing";
+          const selected = selectedGym?.id === gym.id;
+          return (
+            <CircleMarker
+              key={gym.id}
+              center={[gym.lat, gym.lon]}
+              radius={selected ? 11 : listed ? 9 : 7}
+              pathOptions={{
+                color: listed ? "#8a2e2e" : "#161616",
+                fillColor: listed ? "#8a2e2e" : "#ffffff",
+                fillOpacity: selected ? 1 : 0.86,
+                weight: selected ? 4 : 2,
+              }}
+              eventHandlers={{ click: () => onSelect?.(gym) }}
+            >
+              <Tooltip direction="top" offset={[0, -8]}>
+                {gym.name}
+              </Tooltip>
+            </CircleMarker>
+          );
+        })}
+        {rivalAreas.map((area) => {
+          const selected = selectedRivalArea?.id === area.id;
+          return (
+            <CircleMarker
+              key={`rival-${area.id}`}
+              center={[area.lat, area.lon]}
+              radius={selected ? 22 : 17}
+              pathOptions={{
+                color: "#8a2e2e",
+                fillColor: "#8a2e2e",
+                fillOpacity: selected ? 0.72 : 0.48,
+                weight: selected ? 3 : 2,
+              }}
+              eventHandlers={{ click: () => onSelectRival?.(area) }}
+            >
+              <Tooltip direction="top" offset={[0, -8]}>
+                {area.label} · 라이벌 {area.count}명
+              </Tooltip>
+            </CircleMarker>
+          );
+        })}
       </MapContainer>
 
-      <div className="gym-map-legend" aria-label="지도 범례">
-        <span><i className="is-listed" />{BRAND_NAME} 입점관</span>
-        <span><i />지도 검색</span>
-      </div>
+      {overlay ? <div className="gym-map-overlay">{overlay}</div> : null}
 
-      {selectedGym ? (
-        <div className="gym-map-preview">
-          <div>
-            <span>
-              {selectedGym.source === "listing" ? `${BRAND_NAME} 입점` : "지도 검색"}
-            </span>
-            <strong>{selectedGym.name}</strong>
-            <small>{selectedGym.address || center.label}</small>
-          </div>
-          <div className="gym-map-preview-actions">
-            <button
-              type="button"
-              className={`gym-favorite-button${
-                favorites.has(selectedGym.id) ? " is-active" : ""
-              }`}
-              onClick={() => onToggleFavorite?.(selectedGym)}
-              aria-pressed={favorites.has(selectedGym.id)}
-            >
-              {favorites.has(selectedGym.id) ? "♥ 찜됨" : "♡ 찜"}
-            </button>
-            <button type="button" onClick={() => onOpen?.(selectedGym)}>
-              자세히
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p className="gym-map-guide">지도에서 체육관 핀을 눌러 보세요.</p>
-      )}
+      <div className="gym-map-legend" aria-label="지도 범례">
+        <span>
+          <i className="is-listed" />
+          {BRAND_NAME} 입점관
+        </span>
+        <span>
+          <i />
+          지도 검색
+        </span>
+        {rivalAreas.length > 0 ? (
+          <span>
+            <i className="is-rival" />
+            라이벌 권역
+          </span>
+        ) : null}
+      </div>
     </section>
   );
 }

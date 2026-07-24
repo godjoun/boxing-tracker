@@ -420,7 +420,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
               type="button"
               onClick={onGoBack}
             >
-              ← 도장
+              ← 짐
             </button>
           ) : null}
           <h1>모임</h1>

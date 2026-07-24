@@ -153,7 +153,7 @@ export function getDrillDisplayDuration(drill, session) {
   return synced?.displayDuration || drill.duration;
 }
 
-function getDrillRoundLabel(drill, totalRounds) {
+function getDrillRoundLabel(drill) {
   if (!drill) return null;
 
   if (Number.isFinite(drill.roundFrom) && Number.isFinite(drill.roundTo)) {

@@ -2,11 +2,11 @@
 
 | 하고 싶은 일 | 파일 |
 |---|---|
-| 하단 내비 | `src/App.jsx` · 링 · 도장 · 홈 · 명패 · 더보기 |
-| 도장 탭 | `src/pages/GymFinderPage.jsx` |
-| 모임 | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
+| 하단 내비 | `src/App.jsx` · 링 · 짐 · 홈 · 명패 · 더보기 |
+| 짐 탭 | `src/pages/GymFinderPage.jsx` · 체육관 · 라이벌 찾기 · 찜 |
+| 모임(보류) | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
 | 채팅 SQL | `supabase/dojo_chat.sql` |
-| 체육관 검색·카드 | `NearbyGymsPanel.jsx` (찾기·내 문의·내 관) · `GymResultCard.jsx` · `utils/gymPricing.js` |
+| 체육관 검색·카드 | `NearbyGymsPanel.jsx` (지도·찜·내 문의·등록 관리) · `GymResultCard.jsx` · `utils/gymPricing.js` |
 | 관 상세 | `GymDetailPanel.jsx` · `docs/dojo-ui.md` |
 | 문의 | `GymInquiryModal.jsx` · `GymInquiryLedgerPanel.jsx` · `GymSentInquiriesPanel.jsx` · `GymInquiryChatModal.jsx` · `utils/gymInquiry.js` · `api/gymInquiryApi.js` · `api/gymInquiryChatApi.js` |
 | 문의 SQL | `supabase/dojo_inquiries.sql` · 채팅 `dojo_inquiry_chat.sql` · 인박스 `dojo_inquiry_chat_inbox.sql` |
@@ -25,5 +25,5 @@
 | 오프닝 | `src/components/EntryBanner.jsx` · 온보딩 환영 · 세션 입장 배너 |
 | 로고 | `public/logo-mark.png` · `docs/brand/logo-locked.png` |
 
-도장 폴더 요약: `src/pages/dojoBreaker/README.md`  
+짐 구현 폴더 요약: `src/pages/dojoBreaker/README.md`
 나중에: `docs/later.md`

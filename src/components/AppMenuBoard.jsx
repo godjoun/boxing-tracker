@@ -35,7 +35,7 @@ export default function AppMenuBoard({
     }
 
     if (item.route === "gym") {
-      onNavigateGym?.(item.gymView || "hub");
+      onNavigateGym?.(item.gymView || "gyms");
       return;
     }
 
@@ -135,7 +135,7 @@ export default function AppMenuBoard({
         <div className="app-menu-unlock">
           <span>라이벌 찾기 해금</span>
           <p>
-            도장 → 라이벌 찾기 · LV.{sparringProgress.unlockLevel}{" "}
+            짐 → 라이벌 찾기 · LV.{sparringProgress.unlockLevel}{" "}
             <strong>{sparringTitleLabel}</strong> · {sparringProgress.levelsToGo}
             레벨 남음
           </p>

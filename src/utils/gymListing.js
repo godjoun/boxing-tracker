@@ -260,8 +260,11 @@ export async function loadApprovedGymsForSearch(lat, lon, { userId } = {}) {
 }
 
 export function validateGymListingForm(form) {
+  const isCommunitySubmission = form.submissionKind === "community";
   const gymName = String(form.gymName || "").trim();
-  const ownerName = String(form.ownerName || "").trim();
+  const ownerName =
+    String(form.ownerName || "").trim() ||
+    (isCommunitySubmission ? "사용자 제보" : "");
   const phone = String(form.phone || "").trim();
   const address = String(form.address || "").trim();
   const addressDetail = String(form.addressDetail || "").trim();
@@ -277,10 +280,10 @@ export function validateGymListingForm(form) {
   if (gymName.length > 40) {
     return { ok: false, message: "체육관 이름은 40자 이하로 입력해 주세요." };
   }
-  if (!ownerName) {
+  if (!isCommunitySubmission && !ownerName) {
     return { ok: false, message: "담당자(대표) 이름을 입력해 주세요." };
   }
-  if (!phone || phone.length < 8) {
+  if (!isCommunitySubmission && (!phone || phone.length < 8)) {
     return { ok: false, message: "연락 가능한 전화번호를 입력해 주세요." };
   }
   if (address.length < 4) {
@@ -338,6 +341,7 @@ export function validateGymListingForm(form) {
       dayPassWon: day.value,
       monthPassWon: month.value,
       rentalHourWon: rental.value,
+      submissionKind: isCommunitySubmission ? "community" : "owner",
     },
   };
 }
@@ -529,7 +533,10 @@ export async function submitGymListingAsync(
     status: "pending",
     synced: false,
     source: "local",
-    applicantActorId: resolveDojoActorId(userId),
+    applicantActorId:
+      checked.payload.submissionKind === "community"
+        ? null
+        : resolveDojoActorId(userId),
     applicantNickname: nickname || "",
     ...checked.payload,
   };

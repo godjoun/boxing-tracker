@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import {
   deleteGymListingAsync,
@@ -37,7 +37,7 @@ export default function GymMyListingsPanel({
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -48,11 +48,15 @@ export default function GymMyListingsPanel({
     } finally {
       setLoading(false);
     }
-  }
+  }, [userId]);
 
   useEffect(() => {
-    refresh();
-  }, [userId]);
+    const timerId = window.setTimeout(() => {
+      refresh();
+    }, 0);
+
+    return () => window.clearTimeout(timerId);
+  }, [refresh]);
 
   const remoteReady = hasGymListingRemote();
 
@@ -95,7 +99,7 @@ export default function GymMyListingsPanel({
   }
 
   return (
-    <section className="gym-listing-panel gym-owner-panel" aria-label="내 관 운영">
+    <section className="gym-listing-panel gym-owner-panel" aria-label="체육관 등록 관리">
       {!embedded && onClose ? (
         <button type="button" className="gym-listing-back" onClick={onClose}>
           ← 목록으로
@@ -103,10 +107,10 @@ export default function GymMyListingsPanel({
       ) : null}
 
       <header className="gym-owner-hero">
-        <p className="gym-listing-kicker">MY GYM</p>
-        <h2>내 관</h2>
+        <p className="gym-listing-kicker">GYM LISTINGS</p>
+        <h2>체육관 등록·관리</h2>
         <p>
-          간판을 올리고, 문의에 답합니다.
+          장소 제보와 관장 입점 신청을 확인합니다.
           {nickname ? ` · ${nickname}` : ""}
         </p>
         {!remoteReady ? (
@@ -131,7 +135,7 @@ export default function GymMyListingsPanel({
           className={`gym-listing-manage-button${onOpenLedger ? "" : " is-primary"}`}
           onClick={onCreate}
         >
-          새 관 등록
+          관장 입점 신청
         </button>
       </div>
 
@@ -143,8 +147,8 @@ export default function GymMyListingsPanel({
 
       {!loading && items.length === 0 ? (
         <div className="gym-listing-empty">
-          <strong>등록한 관이 없습니다</strong>
-          <p>간판 사진과 함께 「새 관 등록」으로 시작해 보세요.</p>
+          <strong>등록한 체육관이 없습니다</strong>
+          <p>지도에 없는 장소는 체육관 화면에서 제보할 수 있습니다.</p>
         </div>
       ) : null}
 

@@ -1,7 +1,7 @@
 import { getGymPassLines } from "../../utils/gymPricing";
 import { coverGymPhoto, normalizeGymPhotoUrls } from "../../utils/gymListing";
 
-/** 검색 카드 — 간판(배너) 사진이 주인공 */
+/** 검색 카드 — 목록은 썸네일 행, 기본은 간판 배너 */
 export default function GymResultCard({
   gym,
   index,
@@ -29,11 +29,66 @@ export default function GymResultCard({
     onOpen?.(gym);
   }
 
+  if (compact) {
+    return (
+      <article
+        className={`gym-result-row${isFeatured ? " is-featured" : ""}${
+          onOpen ? " is-tappable" : ""
+        }`}
+        onClick={onOpen ? handleCardActivate : undefined}
+        onKeyDown={
+          onOpen
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleCardActivate();
+                }
+              }
+            : undefined
+        }
+        role={onOpen ? "button" : undefined}
+        tabIndex={onOpen ? 0 : undefined}
+      >
+        <div className="gym-result-row-copy">
+          <span className="gym-result-row-badge">{badge}</span>
+          <strong>{gym.name}</strong>
+          {gym.address ? <p>{gym.address}</p> : null}
+          {gym.distanceLabel || gym.tags?.length ? (
+            <small>
+              {[gym.distanceLabel, gym.tags?.slice(0, 2).join(" · ")]
+                .filter(Boolean)
+                .join(" · ")}
+            </small>
+          ) : null}
+          {isOwn ? <em>내 등록</em> : null}
+          {compact && onFavorite ? (
+            <button
+              type="button"
+              className="gym-favorite-remove is-inline"
+              onClick={(event) => {
+                event.stopPropagation();
+                onFavorite(gym);
+              }}
+            >
+              찜 해제
+            </button>
+          ) : null}
+        </div>
+        <div className="gym-result-row-thumb" aria-hidden="true">
+          {cover ? (
+            <img src={cover} alt="" loading="lazy" />
+          ) : (
+            <span className="is-empty" />
+          )}
+          {photoCount > 1 ? <em>{photoCount}</em> : null}
+        </div>
+      </article>
+    );
+  }
+
   return (
     <article
-      className={`gym-result-card${compact ? " is-compact" : ""}${
-        isFeatured ? " is-featured" : ""
-      }${
+      className={`gym-result-card${isFeatured ? " is-featured" : ""}${
         gym.ownerPreview ? " is-owner-preview" : ""
       }${onOpen ? " is-tappable" : ""}`}
       onClick={onOpen ? handleCardActivate : undefined}
@@ -122,18 +177,6 @@ export default function GymResultCard({
             문의하기
           </button>
         )}
-        {compact && onFavorite ? (
-          <button
-            type="button"
-            className="gym-favorite-remove"
-            onClick={(event) => {
-              event.stopPropagation();
-              onFavorite(gym);
-            }}
-          >
-            찜 해제
-          </button>
-        ) : null}
       </div>
     </article>
   );

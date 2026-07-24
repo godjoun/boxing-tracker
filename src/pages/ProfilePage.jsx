@@ -37,8 +37,6 @@ import {
 export default function ProfilePage({
   scrollTarget,
   cardMakerFocusLogId = null,
-  fighterLevel = 1,
-  onStartTraining,
   onStudioModeChange,
 }) {
   const {
@@ -83,10 +81,13 @@ export default function ProfilePage({
   const [heightCm, setHeightCm] = useState(profile.heightCm || "");
   const [weightKg, setWeightKg] = useState(profile.weightKg || "");
   const [reachCm, setReachCm] = useState(profile.reachCm || "");
-  const [weightClass, setWeightClass] = useState(profile.weightClass || "라이트급");
+  const [weightClass, setWeightClass] = useState(
+    profile.weightClass ||
+      (profile.weightKg ? suggestWeightClass(profile.weightKg) : "라이트급")
+  );
   const [experience, setExperience] = useState(profile.experience || "1년차");
   const [area, setArea] = useState(profile.area || "");
-  const [weightClassTouched, setWeightClassTouched] = useState(false);
+  const weightClassTouchedRef = useRef(false);
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -104,13 +105,24 @@ export default function ProfilePage({
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showComment, setShowComment] = useState(true);
   const [customTrainingTitle, setCustomTrainingTitle] = useState("");
-  const [levelUpLevel, setLevelUpLevel] = useState("56");
+  const [levelUpLevel, setLevelUpLevel] = useState(() =>
+    String(getFighterProgress(logs).level)
+  );
   const [levelUpSlogan, setLevelUpSlogan] = useState("ONE ROUND AT A TIME");
   const [cardStyle, setCardStyle] = useState("basic");
   const cardStyleRef = useRef("basic");
   const exportGenerationRef = useRef(0);
-  const [posterMainName, setPosterMainName] = useState("");
-  const [posterSubtitle, setPosterSubtitle] = useState("THE ROOKIE");
+  const [posterMainName, setPosterMainName] = useState(() =>
+    (profile.nickname || "나").trim()
+  );
+  const [posterSubtitle, setPosterSubtitle] = useState(() => {
+    const fighterProgress = getFighterProgress(logs);
+    return (
+      fighterProgress.fighterTitleEn ||
+      fighterProgress.fighterTitle ||
+      "RING ENTRANT"
+    );
+  });
   const [posterEventTitle, setPosterEventTitle] = useState("TRAINING DAY");
   const [posterDateText, setPosterDateText] = useState("JUNE 27");
   const [posterMetaText, setPosterMetaText] = useState(
@@ -166,21 +178,22 @@ export default function ProfilePage({
   const [exportPreview, setExportPreview] = useState(null);
 
   useEffect(() => {
-    setNickname(profile.nickname || "나");
-    setBio(profile.bio || "아직 초보지만 링에 계속 올라가는 중");
-    setHeightCm(profile.heightCm || "");
-    setWeightKg(profile.weightKg || "");
-    setReachCm(profile.reachCm || "");
-    setWeightClass(profile.weightClass || "라이트급");
-    setExperience(profile.experience || "1년차");
-    setArea(profile.area || "");
+    const timer = setTimeout(() => {
+      setNickname(profile.nickname || "나");
+      setBio(profile.bio || "아직 초보지만 링에 계속 올라가는 중");
+      setHeightCm(profile.heightCm || "");
+      setWeightKg(profile.weightKg || "");
+      setReachCm(profile.reachCm || "");
+      setWeightClass(
+        profile.weightClass ||
+          (profile.weightKg ? suggestWeightClass(profile.weightKg) : "라이트급")
+      );
+      setExperience(profile.experience || "1년차");
+      setArea(profile.area || "");
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [profile]);
-
-  useEffect(() => {
-    if (weightClassTouched || !weightKg) return;
-
-    setWeightClass(suggestWeightClass(weightKg));
-  }, [weightKg, weightClassTouched]);
 
   const profileSpecSummary = useMemo(() => {
     const parts = [];
@@ -265,31 +278,35 @@ export default function ProfilePage({
   }, [logs]);
 
   useEffect(() => {
-    setSelectedLogIds((prev) => {
-      if (logs.length === 0) {
-        return prev.length > 0 ? prev : [];
-      }
+    const timer = setTimeout(() => {
+      setSelectedLogIds((prev) => {
+        if (logs.length === 0) {
+          return prev.length > 0 ? prev : [];
+        }
 
-      if (
-        cardMakerFocusLogId &&
-        logs.some((log) => log.id === cardMakerFocusLogId)
-      ) {
-        return [cardMakerFocusLogId];
-      }
+        if (
+          cardMakerFocusLogId &&
+          logs.some((log) => log.id === cardMakerFocusLogId)
+        ) {
+          return [cardMakerFocusLogId];
+        }
 
-      if (prev.length === 0) {
-        return [logs[0].id];
-      }
+        if (prev.length === 0) {
+          return [logs[0].id];
+        }
 
-      const logIds = new Set(logs.map((log) => log.id));
-      const validIds = prev.filter((id) => logIds.has(id));
+        const logIds = new Set(logs.map((log) => log.id));
+        const validIds = prev.filter((id) => logIds.has(id));
 
-      if (validIds.length === 0) {
-        return [logs[0].id];
-      }
+        if (validIds.length === 0) {
+          return [logs[0].id];
+        }
 
-      return validIds;
-    });
+        return validIds;
+      });
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [logs, cardMakerFocusLogId]);
 
   useEffect(() => {
@@ -303,26 +320,28 @@ export default function ProfilePage({
   useEffect(() => {
     if (scrollTarget !== "cardMaker") return;
 
-    setProfileView("studio");
-
-    if (cardMakerFocusLogId) {
-      setIsQuickCardFlow(true);
-      setStudioTab("design");
-      setSelectedLogIds([cardMakerFocusLogId]);
-      track("card_maker_quick_flow", { hasFocusLog: true });
-    } else {
-      setIsQuickCardFlow(false);
-      setStudioTab("select");
-    }
-
     if (typeof window !== "undefined") {
-      window.requestAnimationFrame(() => {
+      const frame = window.requestAnimationFrame(() => {
+        setProfileView("studio");
+
+        if (cardMakerFocusLogId) {
+          setIsQuickCardFlow(true);
+          setStudioTab("design");
+          setSelectedLogIds([cardMakerFocusLogId]);
+          track("card_maker_quick_flow", { hasFocusLog: true });
+        } else {
+          setIsQuickCardFlow(false);
+          setStudioTab("select");
+        }
+
         window.scrollTo({ top: 0, behavior: "smooth" });
         cardMakerRef.current?.scrollIntoView({
           behavior: "smooth",
           block: "start",
         });
       });
+
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [scrollTarget, cardMakerFocusLogId]);
 
@@ -341,6 +360,7 @@ export default function ProfilePage({
     preparingExportKeyRef.current = "";
     setExportPreview(null);
     setCardStyle(styleId);
+    updateShowComment(styleId !== "poster");
 
     // LEVEL UP 카드는 사진에 levelup 필터만 적용한다.
     if (styleId === "basic") {
@@ -353,18 +373,6 @@ export default function ProfilePage({
   useEffect(() => {
     cardStyleRef.current = cardStyle;
     posterExportRef.current.cardStyle = cardStyle;
-  }, [cardStyle]);
-
-  useEffect(() => {
-    if (cardStyle === "poster") {
-      posterExportRef.current.showComment = false;
-      setShowComment(false);
-      return;
-    }
-
-    // 포스터에서 꺼진 뒤 LEVEL UP / STORY로 오면 코멘트 표시를 다시 켠다.
-    posterExportRef.current.showComment = true;
-    setShowComment(true);
   }, [cardStyle]);
 
   const activePhotoFilterId =
@@ -425,9 +433,6 @@ export default function ProfilePage({
     ? selectedLogIds.includes(latestLog.id)
     : false;
 
-  const visibleCardLogs = selectedLogs.slice(0, 3);
-  const hiddenCardLogCount = Math.max(0, selectedLogs.length - 3);
-
   const cardTotalRounds = selectedLogs.reduce((sum, log) => {
     return sum + getRounds(log);
   }, 0);
@@ -446,23 +451,24 @@ export default function ProfilePage({
   const levelUpStreakDays = getTrainingStreak(logs);
 
   useEffect(() => {
-    setLevelUpLevel(String(profileStats.level));
+    const timer = setTimeout(() => {
+      setLevelUpLevel(String(profileStats.level));
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [profileStats.level]);
 
   useEffect(() => {
-    setPosterSubtitle(
-      profileStats.fighterTitleEn ||
-        profileStats.fighterTitle ||
-        "RING ENTRANT"
-    );
-  }, [profileStats.fighterTitle, profileStats.fighterTitleEn]);
+    const timer = setTimeout(() => {
+      setPosterSubtitle(
+        profileStats.fighterTitleEn ||
+          profileStats.fighterTitle ||
+          "RING ENTRANT"
+      );
+    }, 0);
 
-  useEffect(() => {
-    setPosterMainName((current) => {
-      if (current.trim()) return current;
-      return (profile.nickname || "나").trim();
-    });
-  }, [profile.nickname]);
+    return () => clearTimeout(timer);
+  }, [profileStats.fighterTitle, profileStats.fighterTitleEn]);
 
   function scrollToCardMaker() {
     setProfileView("studio");
@@ -530,15 +536,6 @@ export default function ProfilePage({
     posterMetaText.trim() || "BOXING TRAINING POSTER | RISING FIGHTER";
   const posterFooterTextValue =
     posterFooterText.trim() || "EVERY ROUND WRITES YOUR STORY";
-
-  const posterTextLines = [
-    posterVisible.mainName ? posterMainNameText : "",
-    posterVisible.subtitle ? posterSubtitleText : "",
-    posterVisible.eventTitle ? posterEventTitleText : "",
-    posterVisible.date ? posterDateTextValue : "",
-    posterVisible.meta ? posterMetaTextValue : "",
-    posterVisible.footer ? posterFooterTextValue : "",
-  ].filter(Boolean);
 
   function getCardExportKey() {
     return JSON.stringify({
@@ -1147,107 +1144,7 @@ export default function ProfilePage({
     ctx.restore();
   }
 
-  function drawPosterOverlay(ctx, width, height, theme) {
-    const overlay = ctx.createLinearGradient(0, 0, 0, height);
-    overlay.addColorStop(0, theme.overlayTop);
-    overlay.addColorStop(0.32, theme.overlayMid);
-    overlay.addColorStop(0.62, "rgba(0, 0, 0, 0.34)");
-    overlay.addColorStop(1, theme.overlayBottom);
-    ctx.fillStyle = overlay;
-    ctx.fillRect(0, 0, width, height);
-
-    const lowerGlow = ctx.createRadialGradient(
-      width * 0.5,
-      height * 0.73,
-      10,
-      width * 0.5,
-      height * 0.73,
-      width * 0.78
-    );
-    lowerGlow.addColorStop(0, theme.accentSoft);
-    lowerGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.fillStyle = lowerGlow;
-    ctx.fillRect(0, 0, width, height);
-
-    if (theme.spotlight) {
-      const vignette = ctx.createRadialGradient(
-        width * 0.5,
-        height * 0.3,
-        width * 0.08,
-        width * 0.5,
-        height * 0.3,
-        width * 0.78
-      );
-      vignette.addColorStop(0, "rgba(255, 255, 255, 0.1)");
-      vignette.addColorStop(0.28, "rgba(255, 255, 255, 0)");
-      vignette.addColorStop(0.62, "rgba(0, 0, 0, 0.18)");
-      vignette.addColorStop(1, "rgba(0, 0, 0, 0.72)");
-      ctx.fillStyle = vignette;
-      ctx.fillRect(0, 0, width, height);
-    }
-  }
-
-  function drawSocialMoodOverlay(ctx, width, height, theme, hasPhoto, natural = false) {
-    const mood = ctx.createLinearGradient(0, 0, 0, height);
-
-    if (natural) {
-      mood.addColorStop(0, hasPhoto ? "rgba(0, 0, 0, 0.1)" : "rgba(0, 0, 0, 0.06)");
-      mood.addColorStop(0.35, "rgba(0, 0, 0, 0.03)");
-      mood.addColorStop(0.68, "rgba(0, 0, 0, 0.1)");
-      mood.addColorStop(1, hasPhoto ? "rgba(0, 0, 0, 0.28)" : "rgba(0, 0, 0, 0.18)");
-    } else {
-      mood.addColorStop(0, hasPhoto ? "rgba(0, 0, 0, 0.28)" : "rgba(0, 0, 0, 0.12)");
-      mood.addColorStop(0.35, "rgba(0, 0, 0, 0.08)");
-      mood.addColorStop(0.68, "rgba(0, 0, 0, 0.24)");
-      mood.addColorStop(1, "rgba(0, 0, 0, 0.64)");
-    }
-  
-    ctx.fillStyle = mood;
-    ctx.fillRect(0, 0, width, height);
-  
-    const accentGlow = ctx.createRadialGradient(
-      width * 0.82,
-      height * 0.12,
-      10,
-      width * 0.82,
-      height * 0.12,
-      width * 0.72
-    );
-  
-    accentGlow.addColorStop(0, theme.accentSoft);
-    accentGlow.addColorStop(0.38, "rgba(0, 0, 0, 0)");
-    accentGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
-
-    if (!natural) {
-      ctx.fillStyle = accentGlow;
-      ctx.fillRect(0, 0, width, height);
-    } else {
-      ctx.save();
-      ctx.globalAlpha = 0.55;
-      ctx.fillStyle = accentGlow;
-      ctx.fillRect(0, 0, width, height);
-      ctx.restore();
-    }
-
-    const vignette = ctx.createRadialGradient(
-      width * 0.5,
-      height * 0.45,
-      width * 0.2,
-      width * 0.5,
-      height * 0.45,
-      width * 0.9
-    );
-
-    vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
-    vignette.addColorStop(0.72, natural ? "rgba(0, 0, 0, 0.04)" : "rgba(0, 0, 0, 0.08)");
-    vignette.addColorStop(1, natural ? "rgba(0, 0, 0, 0.14)" : "rgba(0, 0, 0, 0.42)");
-  
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, width, height);
-  }
-
-  
-  function drawPosterDivider(ctx, y, width, centerX, theme) {
+  function drawPosterDivider(ctx, y, width) {
     ctx.save();
     ctx.fillStyle = "rgba(255, 255, 255, 0.72)";
     ctx.fillRect(190, y, 270, 3);
@@ -1494,7 +1391,7 @@ export default function ProfilePage({
     }
   
     if ((exportVisible.eventTitle || exportVisible.date) && mainY < mainBottomLimit) {
-      drawPosterDivider(ctx, mainY + 10, width, centerX, theme);
+      drawPosterDivider(ctx, mainY + 10, width);
       mainY += 58;
     }
   
@@ -2076,7 +1973,7 @@ export default function ProfilePage({
     try {
       const blob = dataUrlToBlob(dataUrl);
       return new File([blob], filename, { type: "image/png" });
-    } catch (error) {
+    } catch {
       // 일부 브라우저/인앱 웹뷰에서 base64 파싱이 막히는 경우가 있어 fetch로 폴백한다.
       const response = await fetch(dataUrl);
       const blob = await response.blob();
@@ -2288,12 +2185,16 @@ export default function ProfilePage({
   }
 
   useEffect(() => {
-    setExportPreview(null);
+    const previewTimer = setTimeout(() => {
+      setExportPreview(null);
+    }, 0);
 
-    if (cardMediaType === "video") return;
+    if (cardMediaType === "video") {
+      return () => clearTimeout(previewTimer);
+    }
 
     if (cardMediaType === "image" && cardMedia && !cardMediaReady) {
-      return;
+      return () => clearTimeout(previewTimer);
     }
 
     const timer = setTimeout(() => {
@@ -2305,8 +2206,11 @@ export default function ProfilePage({
     }, 650);
 
     return () => {
+      clearTimeout(previewTimer);
       clearTimeout(timer);
     };
+    // Preview cache rebuilds on export inputs; prepareCardExport is intentionally omitted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentExportKey, cardMediaReady, cardMediaType, cardMedia]);
 
   const cardPreviewHeight =
@@ -2465,7 +2369,14 @@ export default function ProfilePage({
                     max="200"
                     step="0.1"
                     value={weightKg}
-                    onChange={(event) => setWeightKg(event.target.value)}
+                    onChange={(event) => {
+                      const nextWeightKg = event.target.value;
+                      setWeightKg(nextWeightKg);
+
+                      if (!weightClassTouchedRef.current && nextWeightKg) {
+                        setWeightClass(suggestWeightClass(nextWeightKg));
+                      }
+                    }}
                     placeholder="70"
                     style={styles.input}
                   />
@@ -2492,7 +2403,7 @@ export default function ProfilePage({
                 <select
                   value={weightClass}
                   onChange={(event) => {
-                    setWeightClassTouched(true);
+                    weightClassTouchedRef.current = true;
                     setWeightClass(event.target.value);
                   }}
                   style={styles.input}
@@ -2532,6 +2443,18 @@ export default function ProfilePage({
                   style={styles.input}
                 />
               </label>
+              {profile.homeGymName ? (
+                <div style={styles.fieldLabel}>
+                  내 체육관
+                  <span style={styles.fieldHint}>
+                    짐 지도에서 변경할 수 있습니다
+                  </span>
+                  <strong>{profile.homeGymName}</strong>
+                  {profile.homeGymAddress ? (
+                    <span style={styles.fieldHint}>{profile.homeGymAddress}</span>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <div style={styles.profileSaveFooter}>

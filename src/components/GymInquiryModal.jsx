@@ -48,8 +48,9 @@ export default function GymInquiryModal({
   onClose,
   userId = null,
   nickname = "",
+  initialKind = "trial",
 }) {
-  const [kind, setKind] = useState("trial");
+  const [kind, setKind] = useState(initialKind);
   const [contact, setContact] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
@@ -233,7 +234,7 @@ export default function GymInquiryModal({
             ) : null}
             {gym.phone ? (
               <a className="gym-inquiry-call" href={`tel:${gym.phone}`}>
-                도장에 직접 전화하기
+                체육관에 직접 전화하기
               </a>
             ) : null}
             <button

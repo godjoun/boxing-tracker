@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { getFighterProgress } from "../utils/fighterProgress";
-import { getLevelTitle, getNextTitleMilestone } from "../utils/fighterTitles";
+import { getNextTitleMilestone } from "../utils/fighterTitles";
 import { buildWeeklyReport } from "../utils/trainingStats";
 
 export default function WeeklyReportPage({ onGoBack }) {

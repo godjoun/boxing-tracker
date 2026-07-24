@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { resolveDojoActorId } from "../api/dojoExchangeApi";
 import {
   formatInquiryWhen,
@@ -26,7 +26,7 @@ export default function GymInquiryLedgerPanel({
   const [chatItem, setChatItem] = useState(null);
   const remoteReady = hasGymInquiryRemote();
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -43,11 +43,15 @@ export default function GymInquiryLedgerPanel({
     } finally {
       setLoading(false);
     }
-  }
+  }, [userId]);
 
   useEffect(() => {
-    refresh();
-  }, [userId, refreshKey]);
+    const timerId = window.setTimeout(() => {
+      refresh();
+    }, 0);
+
+    return () => window.clearTimeout(timerId);
+  }, [refresh, refreshKey]);
 
   return (
     <section className="gym-listing-panel" aria-label="받은 문의">

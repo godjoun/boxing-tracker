@@ -104,6 +104,16 @@
   animation: entry-banner-rise 780ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both;
 }
 
+.entry-banner-welcome-support {
+  margin: 18px 0 0;
+  color: #5c5652;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  opacity: 0;
+  animation: entry-banner-rise 780ms cubic-bezier(0.22, 1, 0.36, 1) 460ms both;
+}
+
 .entry-banner-footer {
   display: grid;
   gap: 10px;
@@ -162,6 +172,7 @@
   .entry-banner-name,
   .entry-banner-slogan,
   .entry-banner-philosophy,
+  .entry-banner-welcome-support,
   .entry-banner-footer,
   .entry-banner-skip {
     animation: none;

@@ -105,7 +105,7 @@ function AppFlow() {
         dismissBootSplash({ fade: false });
         return;
       }
-      timeoutId = window.setTimeout(() => dismissBootSplash({ fade: true }), 420);
+      timeoutId = window.setTimeout(() => dismissBootSplash({ fade: true }), 1100);
     });
     return () => {
       window.cancelAnimationFrame(frame);
@@ -190,6 +190,13 @@ function MainAppShell({ theme, onToggleTheme }) {
   const goProfileCardMaker = (logId = null) => {
     setCardMakerLogId(logId || null);
     setProfileScrollTarget("cardMaker");
+    setCurrentPage("profile");
+  };
+
+  const goRivalProfile = () => {
+    setProfileScrollTarget("rivalCard");
+    setCardMakerLogId(null);
+    setProfileStudioOpen(false);
     setCurrentPage("profile");
   };
 
@@ -337,6 +344,8 @@ function MainAppShell({ theme, onToggleTheme }) {
           <GymFinderPage
             initialView={gymView}
             fighterLevel={fighterLevel}
+            onGoHome={() => goPage("home")}
+            onGoRivalProfile={goRivalProfile}
             onStartTraining={() => openTimerFrom("gym")}
           />
         )}

@@ -105,28 +105,36 @@ export async function playTimerBeep(soundMode = "basic", type = "work") {
   if (soundMode === "basic") {
     const isRest = type === "rest";
     const isDone = type === "done";
-    const baseFrequencies = isRest ? [520, 1040, 1560] : [740, 1480, 2220];
-    const duration = isDone ? 0.95 : 0.72;
-    const volume = isDone ? 0.34 : 0.28;
+    const baseFrequencies = isRest ? [440, 660, 880] : [740, 1480, 2220];
+    const duration = isDone ? 0.95 : isRest ? 0.82 : 0.72;
+    const volume = isDone ? 0.34 : isRest ? 0.36 : 0.28;
 
-    baseFrequencies.forEach((frequency, index) => {
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
+    const playTone = (offsetSeconds = 0) => {
+      const start = now + offsetSeconds;
+      baseFrequencies.forEach((frequency, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
 
-      oscillator.type = "sine";
-      oscillator.frequency.setValueAtTime(frequency, now);
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(
-        volume / (index + 1),
-        now + 0.015
-      );
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        oscillator.type = isRest ? "triangle" : "sine";
+        oscillator.frequency.setValueAtTime(frequency, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(
+          volume / (index + 1),
+          start + 0.015
+        );
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
 
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start(now);
-      oscillator.stop(now + duration);
-    });
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(start);
+        oscillator.stop(start + duration);
+      });
+    };
+
+    playTone(0);
+    if (isRest) {
+      playTone(0.42);
+    }
 
     return;
   }
@@ -143,7 +151,7 @@ export async function playTimerBeep(soundMode = "basic", type = "work") {
   const durationMap = {
     prep: 0.26,
     work: 0.3,
-    rest: 0.34,
+    rest: 0.42,
     cooldown: 0.34,
     done: 0.46,
   };

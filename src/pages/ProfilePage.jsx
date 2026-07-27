@@ -33,6 +33,7 @@ import {
   getCardPreviewOverlay,
   getImageFilter,
 } from "./profilePage/cardConfig";
+import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
 export default function ProfilePage({
   scrollTarget,
@@ -53,6 +54,7 @@ export default function ProfilePage({
   const cardMediaInputRef = useRef(null);
   const trainingCardRef = useRef(null);
   const cardMakerRef = useRef(null);
+  const rivalCardRef = useRef(null);
   const videoObjectUrlRef = useRef(null);
 
   const startsInQuickCardFlow =
@@ -344,6 +346,22 @@ export default function ProfilePage({
       return () => window.cancelAnimationFrame(frame);
     }
   }, [scrollTarget, cardMakerFocusLogId]);
+
+  useEffect(() => {
+    if (scrollTarget !== "rivalCard") return;
+
+    if (typeof window !== "undefined") {
+      const frame = window.requestAnimationFrame(() => {
+        setProfileView("nameplate");
+        rivalCardRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, [scrollTarget]);
 
   function handleSelectCardStyle(styleId) {
     cardStyleRef.current = styleId;
@@ -2472,6 +2490,22 @@ export default function ProfilePage({
           </div>
         ) : null}
       </FighterSpecCard>
+
+      <section
+        id="profile-rival-card"
+        ref={rivalCardRef}
+        className="profile-rival-card-section"
+        aria-label="라이벌 찾기 카드"
+      >
+        <div className="profile-rival-card-head">
+          <p className="home-section-label">RIVAL</p>
+          <h2 style={styles.sectionTitle}>라이벌 찾기 카드</h2>
+          <p className="profile-rival-card-desc">
+            체급·지역·희망 시간을 공개하면 짐 지도에서 라이벌로 표시됩니다.
+          </p>
+        </div>
+        <SparringPartnerPanel variant="profile" embedded />
+      </section>
 
       <section style={styles.statGrid}>
         <div style={styles.statBox}>

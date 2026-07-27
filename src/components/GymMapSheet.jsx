@@ -1,6 +1,5 @@
 /**
- * 하단 결과 시트 — 목록 / 미리보기 / 상세.
- * 높이는 핸들·헤더 탭으로만 조절 (접기/펼치기 버튼 없음).
+ * 하단 결과 시트 — 지도 앱형 (핸들로 높이 조절).
  */
 const SNAP_CYCLE = {
   peek: "half",
@@ -9,10 +8,12 @@ const SNAP_CYCLE = {
 };
 
 export default function GymMapSheet({
-  snap = "half",
+  snap = "peek",
   title = "결과",
   count = 0,
   subtitle = "",
+  showBack = false,
+  onBack,
   onSnapChange,
   children,
 }) {
@@ -20,9 +21,13 @@ export default function GymMapSheet({
     onSnapChange?.(SNAP_CYCLE[snap] || "half");
   }
 
+  const isPeek = snap === "peek";
+
   return (
     <section
-      className={`gym-map-sheet is-${snap}${snap === "full" ? " is-detail-height" : ""}`}
+      className={`gym-map-sheet is-${snap}${
+        snap === "full" ? " is-detail-height" : ""
+      }`}
       aria-label={title}
     >
       <div className="gym-map-sheet-chrome">
@@ -41,22 +46,36 @@ export default function GymMapSheet({
           <span />
         </button>
 
-        <button
-          type="button"
-          className="gym-map-sheet-head"
-          onClick={cycleSnap}
-          aria-label={`${title}, 시트 높이 조절`}
-        >
-          <div>
-            <h2>{title}</h2>
-            {subtitle ? (
-              <p className="gym-map-sheet-caption">{subtitle}</p>
+        <div className="gym-map-sheet-head-row">
+          {showBack ? (
+            <button
+              type="button"
+              className="gym-map-sheet-back"
+              aria-label="뒤로"
+              onClick={onBack}
+            >
+              ←
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="gym-map-sheet-head"
+            onClick={cycleSnap}
+            aria-label={`${title}, 시트 높이 조절`}
+          >
+            <div>
+              <h2>{title}</h2>
+              {!isPeek && subtitle ? (
+                <p className="gym-map-sheet-caption">{subtitle}</p>
+              ) : null}
+            </div>
+            {count > 0 ? (
+              <span className="gym-map-sheet-count" aria-hidden="true">
+                {count}
+              </span>
             ) : null}
-          </div>
-          <span className="gym-map-sheet-count" aria-hidden="true">
-            {count}
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
       <div className="gym-map-sheet-body">{children}</div>
     </section>

@@ -506,44 +506,16 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                 </div>
               )}
 
-              <div className="log-grid-2">
-                <div className="log-field">
-                  <label className="log-label">운동 시간 (분)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={form.minutes}
-                    onChange={(event) =>
-                      updateFormField("minutes", event.target.value)
-                    }
-                    placeholder="15"
-                    className="log-input"
-                  />
-                </div>
-
-                <div className="log-field">
-                  <label className="log-label">라운드 (R)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.rounds}
-                    onChange={(event) =>
-                      updateFormField("rounds", event.target.value)
-                    }
-                    placeholder="5"
-                    className="log-input"
-                  />
-                </div>
-              </div>
-
               <div className="log-field">
-                <label className="log-label">날짜</label>
+                <label className="log-label">운동 시간 (분)</label>
                 <input
-                  type="date"
-                  value={form.date}
+                  type="number"
+                  min="1"
+                  value={form.minutes}
                   onChange={(event) =>
-                    updateFormField("date", event.target.value)
+                    updateFormField("minutes", event.target.value)
                   }
+                  placeholder="15"
                   className="log-input"
                 />
               </div>
@@ -554,12 +526,46 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
               className="log-advanced-toggle"
               onClick={() => setShowAdvancedWrite((prev) => !prev)}
             >
-              {showAdvancedWrite ? "옵션 접기" : "옵션 더보기 (강도·컨디션·메모)"}
+              {showAdvancedWrite
+                ? "옵션 접기"
+                : "옵션 더보기 (라운드·날짜·강도·메모)"}
               <span aria-hidden="true">{showAdvancedWrite ? " ↑" : " ↓"}</span>
             </button>
 
             {showAdvancedWrite ? (
               <>
+                <div className="log-form-block">
+                  <p className="log-form-block-title">라운드 · 날짜</p>
+
+                  <div className="log-grid-2">
+                    <div className="log-field">
+                      <label className="log-label">라운드 (R)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={form.rounds}
+                        onChange={(event) =>
+                          updateFormField("rounds", event.target.value)
+                        }
+                        placeholder="5"
+                        className="log-input"
+                      />
+                    </div>
+
+                    <div className="log-field">
+                      <label className="log-label">날짜</label>
+                      <input
+                        type="date"
+                        value={form.date}
+                        onChange={(event) =>
+                          updateFormField("date", event.target.value)
+                        }
+                        className="log-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="log-form-block">
                   <p className="log-form-block-title">강도 · 컨디션</p>
 

@@ -4,10 +4,11 @@ import { getUnlockLevel, isSparringUnlocked } from "../utils/featureUnlocks";
 import NearbyGymsPanel from "./dojoBreaker/NearbyGymsPanel";
 import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
-/** 지도 위 탐색 필터 — 검색창 오른쪽 칩 */
+/** 지도 위 탐색 필터 — 검색창 아래 카테고리 칩 */
 const MAP_FILTERS = [
   { id: "gyms", label: "체육관" },
   { id: "sparring", label: "라이벌" },
+  { id: "meeting", label: "모임" },
 ];
 
 function resolveView(view) {
@@ -23,10 +24,14 @@ function resolveView(view) {
 export default function GymFinderPage({
   initialView = "gyms",
   fighterLevel = 1,
+  onGoHome,
+  onGoRivalProfile,
   onStartTraining,
 }) {
   const [view, setView] = useState(() => resolveView(initialView));
   const [rivals, setRivals] = useState([]);
+  const [rivalBridge, setRivalBridge] = useState(null);
+  const [meetingRequest, setMeetingRequest] = useState(0);
   const sparringLocked = !isSparringUnlocked(fighterLevel);
   const sparringLevel = getUnlockLevel("sparring");
   const activeLabel =
@@ -43,20 +48,27 @@ export default function GymFinderPage({
   }, [initialView]);
 
   const categoryNav = (
-    <nav className="gym-map-category-tabs is-search-row" aria-label="짐 필터">
+    <nav className="gym-map-category-chips" aria-label="짐 카테고리">
       {MAP_FILTERS.map((item) => {
         const isSparring = item.id === "sparring";
         const locked = isSparring && sparringLocked;
-        const active = view === item.id;
+        const isMeeting = item.id === "meeting";
+        const active = !isMeeting && view === item.id;
         return (
           <button
             key={item.id}
             type="button"
-            className={`gym-map-category-tab${active ? " is-active" : ""}${
+            className={`gym-map-category-chip${active ? " is-active" : ""}${
               locked ? " is-locked" : ""
             }`}
             aria-current={active ? "page" : undefined}
-            onClick={() => setView(item.id)}
+            onClick={() => {
+              if (isMeeting) {
+                setMeetingRequest((value) => value + 1);
+                return;
+              }
+              setView(item.id);
+            }}
           >
             {item.label}
             {locked ? <em>LV.{sparringLevel}</em> : null}
@@ -72,7 +84,11 @@ export default function GymFinderPage({
         activeLayer={view}
         categoryNav={categoryNav}
         onSelectLayer={setView}
+        onGoHome={onGoHome}
+        onGoRivalProfile={onGoRivalProfile}
+        meetingRequest={meetingRequest}
         rivals={rivals}
+        rivalBridge={rivalBridge}
         rivalContent={
           view === "sparring" && sparringLocked ? (
             <FeatureLockScreen
@@ -83,7 +99,12 @@ export default function GymFinderPage({
               embedded
             />
           ) : view === "sparring" ? (
-            <SparringPartnerPanel embedded onPartnersChange={setRivals} />
+            <SparringPartnerPanel
+              embedded
+              variant="bridge"
+              onPartnersChange={setRivals}
+              onBridgeReady={setRivalBridge}
+            />
           ) : null
         }
       />

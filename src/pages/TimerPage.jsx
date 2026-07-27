@@ -256,6 +256,7 @@ export default function TimerPage({
   const savedLogRef = useRef(initialTimerState.hasSavedLog);
   const previousPhaseRef = useRef(initialTimerState.phase);
   const lastTapRef = useRef(0);
+  const wakeLockRef = useRef(null);
 
   const workSeconds = workSecondsSetting;
   const restSeconds = restSecondsSetting;
@@ -444,6 +445,54 @@ export default function TimerPage({
     startTimerAudioSession();
     return undefined;
   }, [hasStartedSession, phase, soundMode]);
+
+  useEffect(() => {
+    if (!isRunning || typeof navigator === "undefined" || !navigator.wakeLock) {
+      return undefined;
+    }
+
+    let disposed = false;
+
+    async function requestWakeLock() {
+      if (disposed || document.visibilityState !== "visible" || wakeLockRef.current) {
+        return;
+      }
+
+      try {
+        const lock = await navigator.wakeLock.request("screen");
+        if (disposed) {
+          await lock.release();
+          return;
+        }
+
+        wakeLockRef.current = lock;
+        lock.addEventListener("release", () => {
+          if (wakeLockRef.current === lock) {
+            wakeLockRef.current = null;
+          }
+        });
+      } catch {
+        // 기기/브라우저가 화면 유지 요청을 거부해도 시간 복구 로직은 계속 동작한다.
+      }
+    }
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") {
+        requestWakeLock();
+      }
+    }
+
+    requestWakeLock();
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      disposed = true;
+      document.removeEventListener("visibilitychange", handleVisibility);
+      const lock = wakeLockRef.current;
+      wakeLockRef.current = null;
+      lock?.release().catch(() => {});
+    };
+  }, [isRunning]);
 
   useEffect(() => {
     function handleVisibility() {
@@ -1353,7 +1402,9 @@ export default function TimerPage({
         onClick={isFocusMode ? handleTimerSurfaceTap : undefined}
       >
         {isFocusMode ? (
-          <p className="timer-focus-hint">더블 탭 · 일시정지 / 재개</p>
+          <p className="timer-focus-hint">
+            더블 탭 · 일시정지 / 재개 · 복귀 시 실제 시간으로 이어집니다
+          </p>
         ) : null}
 
         {!isComplete ? (

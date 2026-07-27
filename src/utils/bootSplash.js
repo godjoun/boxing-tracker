@@ -16,5 +16,5 @@ export function dismissBootSplash({ fade = true } = {}) {
   }
 
   el.classList.add("is-leaving");
-  window.setTimeout(remove, 280);
+  window.setTimeout(remove, 380);
 }

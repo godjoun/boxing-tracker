@@ -314,19 +314,14 @@ function MainAppShell({ theme, onToggleTheme }) {
       <main className="app-main">
         {currentPage === "home" && (
           <HomePage
-            fighterLevel={fighterLevel}
             timerSummary={timerSummary}
             onStartTraining={() => goPage("train")}
             onOpenTimer={() => goDefaultTimer("home")}
-            onGoProfile={goProfile}
             onNavigate={goPage}
             onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
             onOpenCurriculum={goCurriculum}
             onReadLesson={goReadLesson}
-            theme={theme}
-            onToggleTheme={onToggleTheme}
-            onReplayTutorial={openTutorial}
           />
         )}
 
@@ -347,7 +342,6 @@ function MainAppShell({ theme, onToggleTheme }) {
           <GymFinderPage
             initialView={gymView}
             fighterLevel={fighterLevel}
-            onGoHome={() => goPage("home")}
             onGoRivalProfile={goRivalProfile}
             onStartTraining={() => openTimerFrom("gym")}
           />

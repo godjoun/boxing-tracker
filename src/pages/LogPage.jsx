@@ -133,8 +133,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const [editForm, setEditForm] = useState(createEmptyForm);
   const [reward, setReward] = useState(null);
   const [logView, setLogView] = useState("write");
-  const [showAdvancedWrite, setShowAdvancedWrite] = useState(false);
+  const [writeStep, setWriteStep] = useState(1);
   const [historyLimit, setHistoryLimit] = useState(5);
+  const WRITE_STEP_TOTAL = 3;
 
   const weekSummary = useMemo(() => {
     const weekLogs = logs.filter((log) => isThisWeek(log.date));
@@ -227,7 +228,27 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     });
 
     setForm(createEmptyForm());
-    setShowAdvancedWrite(false);
+    setWriteStep(1);
+  }
+
+  function handleWriteNext() {
+    if (writeStep === 1) {
+      const finalExerciseName = getFinalExerciseName(form);
+      if (!finalExerciseName) {
+        alert("운동 종류를 입력해줘!");
+        return;
+      }
+      if (!form.minutes || Number(form.minutes) <= 0) {
+        alert("운동 시간을 입력해줘!");
+        return;
+      }
+    }
+
+    setWriteStep((step) => Math.min(step + 1, WRITE_STEP_TOTAL));
+  }
+
+  function handleWriteBack() {
+    setWriteStep((step) => Math.max(step - 1, 1));
   }
 
   function handleStartEdit(log) {
@@ -476,106 +497,121 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
         <section className="log-card log-form-card">
           <form onSubmit={handleSubmit}>
-            <div className="log-form-block">
-              <p className="log-form-block-title">오늘 무엇을 했어?</p>
-
-              <div
-                className="log-quick-choice-grid"
-                role="group"
-                aria-label="자주 하는 운동"
-              >
-                {QUICK_EXERCISE_OPTIONS.map((exercise) => (
-                  <button
-                    key={exercise}
-                    type="button"
-                    className={`log-quick-choice${
-                      form.type === exercise ? " is-active" : ""
-                    }`}
-                    aria-pressed={form.type === exercise}
-                    onClick={() => handleTypeChange(exercise)}
-                  >
-                    {exercise}
-                  </button>
-                ))}
-              </div>
-
-              <div className="log-field">
-                <label className="log-label">다른 운동을 했다면</label>
-                <select
-                  value={form.type}
-                  onChange={(event) => handleTypeChange(event.target.value)}
-                  className="log-input"
-                >
-                  {EXERCISE_OPTIONS.map((exercise) => (
-                    <option key={exercise} value={exercise}>
-                      {exercise}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {form.type === CUSTOM_EXERCISE_VALUE && (
-                <div className="log-field">
-                  <label className="log-label">운동 이름 직접 작성</label>
-                  <input
-                    value={form.customType}
-                    onChange={(event) =>
-                      updateFormField("customType", event.target.value)
+            <div className="log-write-steps" aria-label="기록 작성 단계">
+              <p className="log-write-step-label">
+                {writeStep} / {WRITE_STEP_TOTAL}
+              </p>
+              <div className="log-write-step-progress" aria-hidden="true">
+                {Array.from({ length: WRITE_STEP_TOTAL }, (_, index) => (
+                  <span
+                    key={index}
+                    className={
+                      index + 1 < writeStep
+                        ? "is-done"
+                        : index + 1 === writeStep
+                          ? "is-active"
+                          : ""
                     }
-                    placeholder="예: 샌드백 집중 훈련"
-                    className="log-input"
                   />
-                  <p className="log-hint">카드와 기록에 이 이름으로 표시돼요.</p>
-                </div>
-              )}
-
-              <div className="log-field">
-                <label className="log-label">얼마나 했어?</label>
-                <div
-                  className="log-quick-choice-grid log-duration-presets"
-                  role="group"
-                  aria-label="운동 시간 빠른 선택"
-                >
-                  {DURATION_PRESETS.map((minutes) => (
-                    <button
-                      key={minutes}
-                      type="button"
-                      className={`log-quick-choice${
-                        Number(form.minutes) === minutes ? " is-active" : ""
-                      }`}
-                      aria-pressed={Number(form.minutes) === minutes}
-                      onClick={() => updateFormField("minutes", String(minutes))}
-                    >
-                      {minutes}분
-                    </button>
-                  ))}
-                </div>
-                <input
-                  type="number"
-                  min="1"
-                  value={form.minutes}
-                  onChange={(event) =>
-                    updateFormField("minutes", event.target.value)
-                  }
-                  placeholder="15"
-                  className="log-input"
-                />
-                <p className="log-hint">버튼으로 고르거나 시간을 직접 입력하세요.</p>
+                ))}
               </div>
             </div>
 
-            <button
-              type="button"
-              className="log-advanced-toggle"
-              onClick={() => setShowAdvancedWrite((prev) => !prev)}
-            >
-              {showAdvancedWrite
-                ? "옵션 접기"
-                : "옵션 더보기 (라운드·날짜·강도·메모)"}
-              <span aria-hidden="true">{showAdvancedWrite ? " ↑" : " ↓"}</span>
-            </button>
+            {writeStep === 1 ? (
+              <div className="log-form-block">
+                <p className="log-form-block-title">오늘 무엇을 했어?</p>
 
-            {showAdvancedWrite ? (
+                <div
+                  className="log-quick-choice-grid"
+                  role="group"
+                  aria-label="자주 하는 운동"
+                >
+                  {QUICK_EXERCISE_OPTIONS.map((exercise) => (
+                    <button
+                      key={exercise}
+                      type="button"
+                      className={`log-quick-choice${
+                        form.type === exercise ? " is-active" : ""
+                      }`}
+                      aria-pressed={form.type === exercise}
+                      onClick={() => handleTypeChange(exercise)}
+                    >
+                      {exercise}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="log-field">
+                  <label className="log-label">다른 운동을 했다면</label>
+                  <select
+                    value={form.type}
+                    onChange={(event) => handleTypeChange(event.target.value)}
+                    className="log-input"
+                  >
+                    {EXERCISE_OPTIONS.map((exercise) => (
+                      <option key={exercise} value={exercise}>
+                        {exercise}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {form.type === CUSTOM_EXERCISE_VALUE && (
+                  <div className="log-field">
+                    <label className="log-label">운동 이름 직접 작성</label>
+                    <input
+                      value={form.customType}
+                      onChange={(event) =>
+                        updateFormField("customType", event.target.value)
+                      }
+                      placeholder="예: 샌드백 집중 훈련"
+                      className="log-input"
+                    />
+                    <p className="log-hint">카드와 기록에 이 이름으로 표시돼요.</p>
+                  </div>
+                )}
+
+                <div className="log-field">
+                  <label className="log-label">얼마나 했어?</label>
+                  <div
+                    className="log-quick-choice-grid log-duration-presets"
+                    role="group"
+                    aria-label="운동 시간 빠른 선택"
+                  >
+                    {DURATION_PRESETS.map((minutes) => (
+                      <button
+                        key={minutes}
+                        type="button"
+                        className={`log-quick-choice${
+                          Number(form.minutes) === minutes ? " is-active" : ""
+                        }`}
+                        aria-pressed={Number(form.minutes) === minutes}
+                        onClick={() =>
+                          updateFormField("minutes", String(minutes))
+                        }
+                      >
+                        {minutes}분
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    value={form.minutes}
+                    onChange={(event) =>
+                      updateFormField("minutes", event.target.value)
+                    }
+                    placeholder="15"
+                    className="log-input"
+                  />
+                  <p className="log-hint">
+                    버튼으로 고르거나 시간을 직접 입력하세요.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {writeStep === 2 ? (
               <>
                 <div className="log-form-block">
                   <p className="log-form-block-title">라운드 · 날짜</p>
@@ -621,7 +657,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                           isActive={form.difficulty === option.id}
                           title={option.label}
                           description={option.description}
-                          onClick={() => updateFormField("difficulty", option.id)}
+                          onClick={() =>
+                            updateFormField("difficulty", option.id)
+                          }
                         />
                       ))}
                     </div>
@@ -636,41 +674,45 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                           isActive={form.condition === option.id}
                           title={option.label}
                           description="훈련 당시 몸 상태"
-                          onClick={() => updateFormField("condition", option.id)}
+                          onClick={() =>
+                            updateFormField("condition", option.id)
+                          }
                         />
                       ))}
                     </div>
                   </div>
                 </div>
-
-                <div className="log-form-block">
-                  <p className="log-form-block-title">메모</p>
-
-                  <div className="log-field">
-                    <label className="log-label">내 메모</label>
-                    <input
-                      value={form.memo}
-                      onChange={(event) =>
-                        updateFormField("memo", event.target.value)
-                      }
-                      placeholder="예: 오늘 샌드백 위주로 했다"
-                      className="log-input"
-                    />
-                  </div>
-
-                  <div className="log-field">
-                    <label className="log-label">공개용 코멘트</label>
-                    <textarea
-                      value={form.publicComment}
-                      onChange={(event) =>
-                        updateFormField("publicComment", event.target.value)
-                      }
-                      placeholder="예: 오늘 첫 5라운드 완주. 마지막 라운드는 진짜 힘들었지만 버텼다."
-                      className="log-textarea"
-                    />
-                  </div>
-                </div>
               </>
+            ) : null}
+
+            {writeStep === 3 ? (
+              <div className="log-form-block">
+                <p className="log-form-block-title">메모 · 저장</p>
+
+                <div className="log-field">
+                  <label className="log-label">내 메모</label>
+                  <input
+                    value={form.memo}
+                    onChange={(event) =>
+                      updateFormField("memo", event.target.value)
+                    }
+                    placeholder="예: 오늘 샌드백 위주로 했다"
+                    className="log-input"
+                  />
+                </div>
+
+                <div className="log-field">
+                  <label className="log-label">공개용 코멘트</label>
+                  <textarea
+                    value={form.publicComment}
+                    onChange={(event) =>
+                      updateFormField("publicComment", event.target.value)
+                    }
+                    placeholder="예: 오늘 첫 5라운드 완주. 마지막 라운드는 진짜 힘들었지만 버텼다."
+                    className="log-textarea"
+                  />
+                </div>
+              </div>
             ) : null}
           </form>
         </section>
@@ -678,18 +720,43 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         )}
 
         {logView === "write" ? (
-          <div className="log-write-dock">
-            <div className="log-write-dock-exp">
-              <span>하루 최대 {dailyScoreLimit}</span>
-              <strong>+{previewScore}</strong>
-            </div>
-            <button
-              type="button"
-              className="log-submit"
-              onClick={handleSubmit}
-            >
-              저장
-            </button>
+          <div
+            className={`log-write-dock${
+              writeStep === WRITE_STEP_TOTAL ? " is-final" : ""
+            }`}
+          >
+            {writeStep > 1 ? (
+              <button
+                type="button"
+                className="log-write-dock-back"
+                onClick={handleWriteBack}
+              >
+                이전
+              </button>
+            ) : null}
+            {writeStep === 1 || writeStep === WRITE_STEP_TOTAL ? (
+              <div className="log-write-dock-exp">
+                <span>하루 최대 {dailyScoreLimit}</span>
+                <strong>+{previewScore}</strong>
+              </div>
+            ) : null}
+            {writeStep < WRITE_STEP_TOTAL ? (
+              <button
+                type="button"
+                className="log-submit"
+                onClick={handleWriteNext}
+              >
+                다음
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="log-submit"
+                onClick={handleSubmit}
+              >
+                저장
+              </button>
+            )}
           </div>
         ) : null}
 

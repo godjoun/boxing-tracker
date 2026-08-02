@@ -68,6 +68,8 @@ export default function GymInquiryModal({
   const [submitting, setSubmitting] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [inquiryStep, setInquiryStep] = useState(1);
+  const INQUIRY_STEP_TOTAL = 3;
 
   const kindMeta =
     KIND_OPTIONS.find((item) => item.id === kind) || KIND_OPTIONS[0];
@@ -82,8 +84,34 @@ export default function GymInquiryModal({
     setMemo("");
   }
 
+  function handleInquiryNext() {
+    setError("");
+
+    if (inquiryStep === 2) {
+      if (kind === "reservation" && !preferredDate.trim()) {
+        setError("희망 날짜를 입력해 주세요.");
+        return;
+      }
+      if (kind === "rental" && !preferredDate.trim()) {
+        setError("희망 대여 일정을 입력해 주세요.");
+        return;
+      }
+    }
+
+    setInquiryStep((step) => Math.min(step + 1, INQUIRY_STEP_TOTAL));
+  }
+
+  function handleInquiryBack() {
+    setError("");
+    setInquiryStep((step) => Math.max(step - 1, 1));
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
+    if (inquiryStep !== INQUIRY_STEP_TOTAL) {
+      handleInquiryNext();
+      return;
+    }
     if (submitting) return;
 
     const trimmedContact = contact.trim();
@@ -262,47 +290,64 @@ export default function GymInquiryModal({
             <p className="gym-inquiry-kicker">GYM INQUIRY</p>
             <h2 id="gym-inquiry-title">{gym.name} 문의</h2>
 
-            <div className="gym-inquiry-pass-strip" aria-label="가격 참고">
-              {passes.map((pass) => (
-                <div key={pass.key}>
-                  <span>{pass.label}</span>
-                  <strong>{pass.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="gym-inquiry-kind" role="group" aria-label="문의 종류">
-              <span className="gym-inquiry-kind-label">문의 종류 *</span>
-              <div className="gym-inquiry-kind-row gym-inquiry-kind-row--3">
-                {KIND_OPTIONS.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className={`gym-inquiry-kind-btn${
-                      kind === option.id ? " is-active" : ""
-                    }`}
-                    onClick={() => switchKind(option.id)}
-                    aria-pressed={kind === option.id}
-                  >
-                    {option.label}
-                  </button>
+            <div className="gym-inquiry-steps" aria-label="문의 작성 단계">
+              <p className="gym-inquiry-step-label">
+                {inquiryStep} / {INQUIRY_STEP_TOTAL}
+              </p>
+              <div className="gym-inquiry-step-progress" aria-hidden="true">
+                {Array.from({ length: INQUIRY_STEP_TOTAL }, (_, index) => (
+                  <span
+                    key={index}
+                    className={
+                      index + 1 < inquiryStep
+                        ? "is-done"
+                        : index + 1 === inquiryStep
+                          ? "is-active"
+                          : ""
+                    }
+                  />
                 ))}
               </div>
-              <p className="gym-inquiry-kind-hint">{kindMeta.hint}</p>
             </div>
 
-            <label className="gym-inquiry-field">
-              <span>연락처 *</span>
-              <input
-                type="text"
-                value={contact}
-                onChange={(event) => setContact(event.target.value)}
-                placeholder="010-0000-0000 또는 카카오 ID"
-                autoComplete="tel"
-              />
-            </label>
+            {inquiryStep === 1 ? (
+              <>
+                <div className="gym-inquiry-pass-strip" aria-label="가격 참고">
+                  {passes.map((pass) => (
+                    <div key={pass.key}>
+                      <span>{pass.label}</span>
+                      <strong>{pass.value}</strong>
+                    </div>
+                  ))}
+                </div>
 
-            {kind === "trial" ? (
+                <div
+                  className="gym-inquiry-kind"
+                  role="group"
+                  aria-label="문의 종류"
+                >
+                  <span className="gym-inquiry-kind-label">문의 종류 *</span>
+                  <div className="gym-inquiry-kind-row gym-inquiry-kind-row--3">
+                    {KIND_OPTIONS.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={`gym-inquiry-kind-btn${
+                          kind === option.id ? " is-active" : ""
+                        }`}
+                        onClick={() => switchKind(option.id)}
+                        aria-pressed={kind === option.id}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="gym-inquiry-kind-hint">{kindMeta.hint}</p>
+                </div>
+              </>
+            ) : null}
+
+            {inquiryStep === 2 && kind === "trial" ? (
               <div className="gym-inquiry-branch" key="trial">
                 <div
                   className="gym-inquiry-chip-group"
@@ -349,7 +394,7 @@ export default function GymInquiryModal({
               </div>
             ) : null}
 
-            {kind === "rental" ? (
+            {inquiryStep === 2 && kind === "rental" ? (
               <div className="gym-inquiry-branch" key="rental">
                 <label className="gym-inquiry-field">
                   <span>희망 대여 일정 *</span>
@@ -398,7 +443,7 @@ export default function GymInquiryModal({
               </div>
             ) : null}
 
-            {kind === "reservation" ? (
+            {inquiryStep === 2 && kind === "reservation" ? (
               <div className="gym-inquiry-branch" key="reservation">
                 <div
                   className="gym-inquiry-chip-group"
@@ -467,34 +512,74 @@ export default function GymInquiryModal({
               </div>
             ) : null}
 
-            <label className="gym-inquiry-consent">
-              <input
-                type="checkbox"
-                checked={privacyAgreed}
-                onChange={(event) => setPrivacyAgreed(event.target.checked)}
-              />
-              <span>
-                문의 전달을 위해 연락처와 입력 내용을 선택한 체육관에 제공하는
-                데 동의합니다.{" "}
-                <button
-                  type="button"
-                  className="gym-inquiry-privacy-link"
-                  onClick={() => setPrivacyOpen(true)}
-                >
-                  개인정보 안내
-                </button>
-              </span>
-            </label>
+            {inquiryStep === 3 ? (
+              <>
+                <label className="gym-inquiry-field">
+                  <span>연락처 *</span>
+                  <input
+                    type="text"
+                    value={contact}
+                    onChange={(event) => setContact(event.target.value)}
+                    placeholder="010-0000-0000 또는 카카오 ID"
+                    autoComplete="tel"
+                  />
+                </label>
+
+                <label className="gym-inquiry-consent">
+                  <input
+                    type="checkbox"
+                    checked={privacyAgreed}
+                    onChange={(event) =>
+                      setPrivacyAgreed(event.target.checked)
+                    }
+                  />
+                  <span>
+                    문의 전달을 위해 연락처와 입력 내용을 선택한 체육관에
+                    제공하는 데 동의합니다.{" "}
+                    <button
+                      type="button"
+                      className="gym-inquiry-privacy-link"
+                      onClick={() => setPrivacyOpen(true)}
+                    >
+                      개인정보 안내
+                    </button>
+                  </span>
+                </label>
+              </>
+            ) : null}
 
             {error ? <p className="gym-inquiry-error">{error}</p> : null}
 
-            <button
-              type="submit"
-              className="gym-inquiry-submit"
-              disabled={submitting || !privacyAgreed}
-            >
-              {submitting ? "보내는 중..." : kindMeta.submitLabel}
-            </button>
+            <div className="gym-inquiry-step-actions">
+              {inquiryStep > 1 ? (
+                <button
+                  type="button"
+                  className="gym-inquiry-step-back"
+                  onClick={handleInquiryBack}
+                >
+                  이전
+                </button>
+              ) : (
+                <span />
+              )}
+              {inquiryStep < INQUIRY_STEP_TOTAL ? (
+                <button
+                  type="button"
+                  className="gym-inquiry-submit"
+                  onClick={handleInquiryNext}
+                >
+                  다음
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="gym-inquiry-submit"
+                  disabled={submitting || !privacyAgreed}
+                >
+                  {submitting ? "보내는 중..." : kindMeta.submitLabel}
+                </button>
+              )}
+            </div>
           </form>
         )}
       </div>

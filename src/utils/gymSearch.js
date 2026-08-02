@@ -141,6 +141,10 @@ function saveSearchLocation(position) {
   }
 }
 
+export function saveGymSearchLocation(position) {
+  saveSearchLocation(position);
+}
+
 function getSavedSearchLocation() {
   try {
     const raw = localStorage.getItem(LOCATION_STORAGE_KEY);

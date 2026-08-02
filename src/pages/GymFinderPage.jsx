@@ -25,7 +25,6 @@ function resolveView(view) {
 export default function GymFinderPage({
   initialView = "gyms",
   fighterLevel = 1,
-  onGoHome,
   onGoRivalProfile,
   onStartTraining,
 }) {
@@ -91,7 +90,6 @@ export default function GymFinderPage({
           setView(layer);
         }}
         onMeetingSectionChange={setMeetingActive}
-        onGoHome={onGoHome}
         onGoRivalProfile={onGoRivalProfile}
         meetingRequest={meetingRequest}
         rivals={rivals}

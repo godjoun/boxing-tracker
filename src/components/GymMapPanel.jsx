@@ -10,6 +10,15 @@ import "leaflet/dist/leaflet.css";
 import { hasMapCoordinates } from "../utils/gymSearch";
 import { BRAND_NAME } from "../utils/brand";
 
+function formatWalkHint(gym) {
+  const km = Number(gym?.distanceKm);
+  if (Number.isFinite(km) && km >= 0) {
+    const minutes = Math.max(1, Math.round(km * 12));
+    return `도보 ${minutes}분`;
+  }
+  return gym?.distanceLabel || "";
+}
+
 function MapViewport({ center, selectedGym, selectedRivalArea }) {
   const map = useMap();
 
@@ -64,21 +73,31 @@ export default function GymMapPanel({
         {gyms.filter(hasMapCoordinates).map((gym) => {
           const listed = gym.source === "listing";
           const selected = selectedGym?.id === gym.id;
+          const walkHint = formatWalkHint(gym);
           return (
             <CircleMarker
               key={gym.id}
               center={[gym.lat, gym.lon]}
-              radius={selected ? 11 : listed ? 9 : 7}
+              radius={selected ? 12 : listed ? 9 : 7}
               pathOptions={{
-                color: listed ? "#8a2e2e" : "#161616",
-                fillColor: listed ? "#8a2e2e" : "#ffffff",
-                fillOpacity: selected ? 1 : 0.86,
+                color: listed || selected ? "#8a2e2e" : "#161616",
+                fillColor: selected ? "#8a2e2e" : listed ? "#8a2e2e" : "#ffffff",
+                fillOpacity: selected ? 1 : 0.88,
                 weight: selected ? 4 : 2,
               }}
               eventHandlers={{ click: () => onSelect?.(gym) }}
             >
-              <Tooltip direction="top" offset={[0, -8]}>
-                {gym.name}
+              <Tooltip
+                className="gym-map-pin-tooltip"
+                direction="top"
+                offset={[0, -10]}
+                permanent={selected || listed}
+                opacity={1}
+              >
+                <span className="gym-map-pin-label">
+                  <strong>{gym.name}</strong>
+                  {walkHint ? <small>{walkHint}</small> : null}
+                </span>
               </Tooltip>
             </CircleMarker>
           );

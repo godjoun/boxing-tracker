@@ -89,6 +89,24 @@
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
 }
 
+.log-write-dock.is-final {
+  grid-template-columns: auto auto 1fr;
+}
+
+.log-write-dock-back {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .log-write-dock-exp {
   display: grid;
   gap: 2px;
@@ -109,6 +127,37 @@
 .log-write-dock .log-submit {
   margin: 0;
   min-height: 44px;
+}
+
+.log-write-steps {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.log-write-step-label {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.log-write-step-progress {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.log-write-step-progress span {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--p-border-soft);
+}
+
+.log-write-step-progress span.is-active,
+.log-write-step-progress span.is-done {
+  background: #8a2e2e;
 }
 
 .log-view-tabs {

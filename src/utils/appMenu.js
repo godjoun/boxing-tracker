@@ -7,7 +7,7 @@ export const TIMER_MENU_CARD = {
   accent: "red",
 };
 
-/** 홈 대시보드 · 더보기에서 공유하는 바로가기 정의 */
+/** 더보기 메뉴 바로가기 정의 */
 const SHORTCUTS = {
   timer: TIMER_MENU_CARD,
   "fighter-card": {

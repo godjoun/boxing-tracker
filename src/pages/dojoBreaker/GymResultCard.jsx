@@ -11,6 +11,7 @@ export default function GymResultCard({
   isOwn = false,
   compact = false,
   onFavorite,
+  isFavorite = false,
 }) {
   const passes = getGymPassLines(gym);
   const isFeatured = featured || Boolean(gym.featured);
@@ -30,9 +31,22 @@ export default function GymResultCard({
   }
 
   if (compact) {
+    const walkHint = (() => {
+      const km = Number(gym.distanceKm);
+      if (Number.isFinite(km) && km >= 0) {
+        return `도보 ${Math.max(1, Math.round(km * 12))}분`;
+      }
+      return "";
+    })();
+    const tag = isListing
+      ? isFeatured
+        ? "추천"
+        : gym.tags?.find((item) => item !== "입점") || "입점"
+      : "지도";
+
     return (
       <article
-        className={`gym-result-row${isFeatured ? " is-featured" : ""}${
+        className={`gym-result-row is-discovery${isFeatured ? " is-featured" : ""}${
           onOpen ? " is-tappable" : ""
         }`}
         onClick={onOpen ? handleCardActivate : undefined}
@@ -49,39 +63,41 @@ export default function GymResultCard({
         role={onOpen ? "button" : undefined}
         tabIndex={onOpen ? 0 : undefined}
       >
-        <div className="gym-result-row-copy">
-          <span className="gym-result-row-badge">{badge}</span>
-          <strong>{gym.name}</strong>
-          {gym.address ? <p>{gym.address}</p> : null}
-          {gym.distanceLabel || gym.tags?.length ? (
-            <small>
-              {[gym.distanceLabel, gym.tags?.slice(0, 2).join(" · ")]
-                .filter(Boolean)
-                .join(" · ")}
-            </small>
-          ) : null}
-          {isOwn ? <em>내 등록</em> : null}
-          {compact && onFavorite ? (
-            <button
-              type="button"
-              className="gym-favorite-remove is-inline"
-              onClick={(event) => {
-                event.stopPropagation();
-                onFavorite(gym);
-              }}
-            >
-              찜 해제
-            </button>
-          ) : null}
-        </div>
         <div className="gym-result-row-thumb" aria-hidden="true">
           {cover ? (
             <img src={cover} alt="" loading="lazy" />
           ) : (
             <span className="is-empty" />
           )}
-          {photoCount > 1 ? <em>{photoCount}</em> : null}
         </div>
+        <div className="gym-result-row-copy">
+          <strong>{gym.name}</strong>
+          <p className="gym-result-row-meta">
+            <em className="gym-result-row-tag">{tag}</em>
+            {[walkHint, gym.distanceLabel].filter(Boolean).join(" · ")}
+          </p>
+          {gym.tags?.length > 0 ? (
+            <small className="gym-result-row-amenities">
+              {gym.tags.slice(0, 3).join(" · ")}
+            </small>
+          ) : gym.address ? (
+            <small>{gym.address}</small>
+          ) : null}
+          {isOwn ? <em>내 등록</em> : null}
+        </div>
+        {onFavorite ? (
+          <button
+            type="button"
+            className={`gym-result-row-bookmark${isFavorite ? " is-active" : ""}`}
+            aria-label={isFavorite ? "찜 해제" : "찜하기"}
+            onClick={(event) => {
+              event.stopPropagation();
+              onFavorite(gym);
+            }}
+          >
+            {isFavorite ? "★" : "☆"}
+          </button>
+        ) : null}
       </article>
     );
   }

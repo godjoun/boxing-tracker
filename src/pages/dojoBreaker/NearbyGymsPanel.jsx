@@ -12,10 +12,12 @@ import ExchangeBoardPanel from "./ExchangeBoardPanel";
 import GymInquiryChatModal from "../../components/GymInquiryChatModal";
 import GymInquiryModal from "../../components/GymInquiryModal";
 import GymInquiryLedgerPanel from "../../components/GymInquiryLedgerPanel";
+import GymMapSheet from "../../components/GymMapSheet";
 import GymMapSidePanel from "../../components/GymMapSidePanel";
 import GymSentInquiriesPanel from "../../components/GymSentInquiriesPanel";
 import GymListingRegisterPanel from "../../components/GymListingRegisterPanel";
 import GymMyListingsPanel from "../../components/GymMyListingsPanel";
+import GymResultCard from "./GymResultCard";
 import { searchOsmBoxingGyms } from "../../api/osmGymApi";
 import { inquiryKindLabel } from "../../utils/gymInquiry";
 import { useTraining } from "../../store/TrainingContext";
@@ -55,6 +57,7 @@ export default function NearbyGymsPanel({
   categoryNav = null,
   activeLayer = "gyms",
   onSelectLayer,
+  onMeetingSectionChange,
   onGoHome,
   onGoRivalProfile,
   meetingRequest = 0,
@@ -84,6 +87,7 @@ export default function NearbyGymsPanel({
   const [suggestions, setSuggestions] = useState([]);
   const [inboxRefreshKey, setInboxRefreshKey] = useState(0);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
+  const [sheetSnap, setSheetSnap] = useState("peek");
   const initialAreaLoaded = useRef(false);
   const prevLayerRef = useRef(activeLayer);
 
@@ -120,15 +124,32 @@ export default function NearbyGymsPanel({
       setSelectedRivalArea(null);
       setSelectedRivalPartner(null);
       setHomeGymNotice("");
+      setSheetSnap("peek");
+      setSection("find");
+      onMeetingSectionChange?.(false);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [activeLayer]);
+  }, [activeLayer, onMeetingSectionChange]);
 
   useEffect(() => {
     if (!meetingRequest) return;
-    switchSection("meeting");
-    closeSidePanel();
-  }, [meetingRequest]);
+    const timer = window.setTimeout(() => {
+      track("gym_section_tab", { section: "meeting" });
+      setSection("meeting");
+      setInquiryGym(null);
+      setChatInquiry(null);
+      setOwnerMode(null);
+      setEditingListing(null);
+      setSideMenuOpen(false);
+      onMeetingSectionChange?.(true);
+      setSelectedGym(null);
+      setDetailGym(null);
+      setSelectedRivalPartner(null);
+      setSelectedRivalArea(null);
+      setHomeGymNotice("");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [meetingRequest, onMeetingSectionChange]);
 
   function closeChatAndRefresh() {
     setChatInquiry(null);
@@ -143,6 +164,10 @@ export default function NearbyGymsPanel({
     setOwnerMode(null);
     setEditingListing(null);
     setSideMenuOpen(false);
+    onMeetingSectionChange?.(next === "meeting");
+    if (next === "find") {
+      setSheetSnap("peek");
+    }
   }
 
   function closeSidePanel() {
@@ -406,12 +431,14 @@ export default function NearbyGymsPanel({
     setSelectedRivalArea(null);
     setSelectedRivalPartner(null);
     setDetailGym(null);
+    setSheetSnap((snap) => (snap === "peek" ? "half" : snap));
   }
 
   function selectRivalOnMap(area) {
     setSelectedRivalArea(area);
     setSelectedGym(null);
     setDetailGym(null);
+    setSheetSnap((snap) => (snap === "peek" ? "half" : snap));
 
     const inArea = rivals.filter((partner) => {
       const resolved = findAreaByQuery(partner.area);
@@ -448,43 +475,22 @@ export default function NearbyGymsPanel({
           autoComplete="off"
           enterKeyHint="search"
         />
-          <button type="submit" disabled={status === "loading"} aria-label="검색">
-            {status === "loading" ? "…" : "찾기"}
-          </button>
+        <button
+          type="button"
+          className={`gym-map-search-inbox${
+            section === "sent" ? " is-active" : ""
+          }`}
+          aria-label="내 문의"
+          title="내 문의"
+          onClick={() => switchSection("sent")}
+        >
+          <span aria-hidden="true">✉</span>
+        </button>
+        <button type="submit" disabled={status === "loading"} aria-label="검색">
+          {status === "loading" ? "…" : "찾기"}
+        </button>
       </form>
       {categoryNav}
-      {activeLayer === "gyms" && popularGyms.length > 0 ? (
-        <section className="gym-map-popular" aria-label="지금 주변 인기 체육관">
-          <div className="gym-map-popular-head">
-            <strong>지금 주변 인기 체육관</strong>
-            <span>입점관</span>
-          </div>
-          <div className="gym-map-popular-scroll">
-            {popularGyms.map((gym, index) => {
-              const cover = coverGymPhoto(gym);
-              return (
-                <button
-                  key={gym.id}
-                  type="button"
-                  className="gym-map-popular-card"
-                  onClick={() => selectGymOnMap(gym)}
-                >
-                  <span className="gym-map-popular-rank">{index + 1}</span>
-                  {cover ? <img src={cover} alt="" loading="lazy" /> : null}
-                  <span>
-                    <strong>{gym.name}</strong>
-                    <small>
-                      {[gym.distanceLabel, gym.address]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </small>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
       {suggestions.length > 0 ? (
         <div className="gym-map-region-suggestions" role="listbox">
           {suggestions.map((area) => (
@@ -540,50 +546,123 @@ export default function NearbyGymsPanel({
     </aside>
   );
 
-  const bottomDock = (
-    <nav className="gym-map-bottom-dock" aria-label="짐 메뉴">
-      <button
-        type="button"
-        className={activeLayer === "gyms" && section === "find" ? "is-active" : ""}
-        onClick={() => {
-          onSelectLayer?.("gyms");
-          switchSection("find");
-          closeSidePanel();
-        }}
+  const sheetTitle =
+    activeLayer === "favorites"
+      ? "찜한 체육관"
+      : activeLayer === "sparring"
+        ? "라이벌"
+        : "주변 체육관";
+  const sheetCount =
+    activeLayer === "sparring"
+      ? rivals.length
+      : activeLayer === "favorites"
+        ? favoriteGyms.length
+        : gyms.length;
+  const sheetSubtitle =
+    position?.label && position.source !== "overview"
+      ? position.label
+      : status === "loading"
+        ? "검색 중"
+        : status === "empty"
+          ? "결과 없음"
+          : status === "error"
+            ? "다시 검색해 주세요"
+            : "지도에서 고르거나 목록을 펼치세요";
+
+  const resultSheet =
+    section === "find" ? (
+      <GymMapSheet
+        snap={sheetSnap}
+        title={sheetTitle}
+        count={sheetCount}
+        subtitle={sheetSubtitle}
+        onSnapChange={setSheetSnap}
       >
-        <span aria-hidden="true">⌖</span>
-        <small>발견</small>
-      </button>
-      <button
-        type="button"
-        className={section === "sent" ? "is-active" : ""}
-        onClick={() => switchSection("sent")}
-      >
-        <span aria-hidden="true">✉</span>
-        <small>문의</small>
-      </button>
-      <button
-        type="button"
-        className={section === "meeting" ? "is-active" : ""}
-        onClick={() => switchSection("meeting")}
-      >
-        <span aria-hidden="true">◌</span>
-        <small>모임</small>
-      </button>
-      <button
-        type="button"
-        className={activeLayer === "favorites" ? "is-active" : ""}
-        onClick={() => {
-          onSelectLayer?.("favorites");
-          switchSection("find");
-          closeSidePanel();
-        }}
-      >
-        <span aria-hidden="true">☆</span>
-        <small>저장</small>
-      </button>
-    </nav>
-  );
+        {activeLayer === "gyms" && popularGyms.length > 0 ? (
+          <section className="gym-map-popular is-in-sheet" aria-label="인기 입점관">
+            <div className="gym-map-popular-head">
+              <strong>인기 입점관</strong>
+              <span>추천</span>
+            </div>
+            <div className="gym-map-popular-scroll">
+              {popularGyms.map((gym, index) => {
+                const cover = coverGymPhoto(gym);
+                return (
+                  <button
+                    key={gym.id}
+                    type="button"
+                    className="gym-map-popular-card"
+                    onClick={() => {
+                      selectGymOnMap(gym);
+                      setSheetSnap("half");
+                    }}
+                  >
+                    <span className="gym-map-popular-rank">{index + 1}</span>
+                    {cover ? <img src={cover} alt="" loading="lazy" /> : null}
+                    <span>
+                      <strong>{gym.name}</strong>
+                      <small>
+                        {[gym.distanceLabel, gym.address]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {activeLayer === "sparring" ? (
+          rivals.length === 0 ? (
+            <div className="gym-state-card">
+              <strong>공개 중인 라이벌이 없습니다</strong>
+              <p>명패에서 라이벌 카드를 공개하면 지도에 표시됩니다.</p>
+            </div>
+          ) : (
+            <div className="gym-result-list">
+              {rivals.map((partner) => renderRivalRow(partner))}
+            </div>
+          )
+        ) : mapGyms.length === 0 ? (
+          <div className="gym-state-card">
+            <strong>
+              {activeLayer === "favorites"
+                ? "찜한 체육관이 없습니다"
+                : status === "loading"
+                  ? "체육관을 찾는 중"
+                  : "이 지역 결과가 없습니다"}
+            </strong>
+            <p>
+              {activeLayer === "favorites"
+                ? "지도에서 마음에 드는 관을 찜해 보세요."
+                : "지역을 검색하거나 지도를 옮겨 다시 찾아보세요."}
+            </p>
+          </div>
+        ) : (
+          <div className="gym-result-list">
+            {mapGyms.map((gym, index) => (
+              <GymResultCard
+                key={gym.id}
+                gym={gym}
+                index={index}
+                compact
+                featured={Boolean(gym.featured)}
+                isOwn={isOwnListedGym(gym, userId)}
+                onOpen={(item) => {
+                  selectGymOnMap(item);
+                  setSheetSnap("half");
+                }}
+                onFavorite={
+                  activeLayer === "favorites" ? handleToggleFavorite : undefined
+                }
+              />
+            ))}
+          </div>
+        )}
+      </GymMapSheet>
+    ) : null;
 
   const sideMenu = sideMenuOpen ? (
     <>
@@ -1028,7 +1107,7 @@ export default function NearbyGymsPanel({
       </Suspense>
 
       {sideRail}
-      {bottomDock}
+      {resultSheet}
       {sideMenu}
       {activeLayer === "sparring" && rivalContent ? (
         <div className="gym-rival-bridge-host" aria-hidden="true">

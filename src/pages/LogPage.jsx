@@ -31,6 +31,9 @@ const EXERCISE_OPTIONS = [
   CUSTOM_EXERCISE_VALUE,
 ];
 
+const QUICK_EXERCISE_OPTIONS = ["복싱", "샌드백", "쉐도우복싱", "스파링", "러닝"];
+const DURATION_PRESETS = [30, 60, 90];
+
 const DIFFICULTY_OPTIONS = [
   { id: "easy", label: "가볍게", description: "가볍게 움직인 날" },
   { id: "normal", label: "보통", description: "평소처럼 훈련한 날" },
@@ -474,10 +477,30 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         <section className="log-card log-form-card">
           <form onSubmit={handleSubmit}>
             <div className="log-form-block">
-              <p className="log-form-block-title">오늘 훈련</p>
+              <p className="log-form-block-title">오늘 무엇을 했어?</p>
+
+              <div
+                className="log-quick-choice-grid"
+                role="group"
+                aria-label="자주 하는 운동"
+              >
+                {QUICK_EXERCISE_OPTIONS.map((exercise) => (
+                  <button
+                    key={exercise}
+                    type="button"
+                    className={`log-quick-choice${
+                      form.type === exercise ? " is-active" : ""
+                    }`}
+                    aria-pressed={form.type === exercise}
+                    onClick={() => handleTypeChange(exercise)}
+                  >
+                    {exercise}
+                  </button>
+                ))}
+              </div>
 
               <div className="log-field">
-                <label className="log-label">운동 종류</label>
+                <label className="log-label">다른 운동을 했다면</label>
                 <select
                   value={form.type}
                   onChange={(event) => handleTypeChange(event.target.value)}
@@ -507,7 +530,26 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
               )}
 
               <div className="log-field">
-                <label className="log-label">운동 시간 (분)</label>
+                <label className="log-label">얼마나 했어?</label>
+                <div
+                  className="log-quick-choice-grid log-duration-presets"
+                  role="group"
+                  aria-label="운동 시간 빠른 선택"
+                >
+                  {DURATION_PRESETS.map((minutes) => (
+                    <button
+                      key={minutes}
+                      type="button"
+                      className={`log-quick-choice${
+                        Number(form.minutes) === minutes ? " is-active" : ""
+                      }`}
+                      aria-pressed={Number(form.minutes) === minutes}
+                      onClick={() => updateFormField("minutes", String(minutes))}
+                    >
+                      {minutes}분
+                    </button>
+                  ))}
+                </div>
                 <input
                   type="number"
                   min="1"
@@ -518,6 +560,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                   placeholder="15"
                   className="log-input"
                 />
+                <p className="log-hint">버튼으로 고르거나 시간을 직접 입력하세요.</p>
               </div>
             </div>
 

@@ -54,6 +54,7 @@ import {
   INTERVAL_TIMER_PRESET,
   getTimerPresetById,
 } from "../utils/timerPresets";
+import { BRAND_NAME } from "../utils/brand";
 import "./TimerPage.css";
 
 const MATCH_PRESETS = [
@@ -1488,66 +1489,80 @@ export default function TimerPage({
         ) : null}
 
         {phase === "done" && (
-          <div className="timer-still">
-            <p className="timer-still-kicker">ROUND COMPLETE</p>
+          <div className="timer-still" aria-live="polite">
+            <div className="timer-still-poster">
+              <p className="timer-still-kicker">ROUND COMPLETE</p>
 
-            <div className="timer-still-headline">
-              <span className="timer-still-rounds">{stillCountLabel}</span>
-              <span className="timer-still-duration">
-                {formatTime(totalWorkSeconds)}
-              </span>
-            </div>
-
-            <div className="timer-still-meta">
-              <span>{completedDateLabel}</span>
-              <span className="timer-still-meta-dot" aria-hidden="true">
-                ·
-              </span>
-              <span>{completedTimeLabel}</span>
-              {stillPlace ? (
-                <span className="timer-still-place">{stillPlace}.</span>
-              ) : null}
-            </div>
-
-            {trainingStreak >= 2 ? (
-              <p className="timer-still-streak">{trainingStreak}일 연속</p>
-            ) : null}
-
-            <p className="timer-still-slogan">오늘도 벨은 울렸다.</p>
-
-            <div className="timer-still-trace">
-              <strong className="timer-still-bell">
-                {cumulativeRounds}번째 벨.
-              </strong>
-              <span className="timer-still-hours">
-                링 위에서 {cumulativeTimeLabel}
-              </span>
-            </div>
-
-            {completionResult?.didLevelUp && completionResult.newTitle ? (
-              <p className="timer-still-chapter">
-                새 이름 · {completionResult.newTitle.ko}
+              <p className="timer-still-credit">
+                {(profile?.nickname || "나").trim()}
+                {stillPlace ? ` · ${stillPlace}` : ""}
               </p>
-            ) : null}
 
-            <button
-              type="button"
-              className="timer-complete-card-cta"
-              onClick={handleGoProfile}
-            >
-              인증 카드 만들기
-            </button>
+              <div className="timer-still-headline">
+                <span className="timer-still-rounds">{stillCountLabel}</span>
+                <span className="timer-still-duration">
+                  {formatTime(totalWorkSeconds)}
+                </span>
+              </div>
 
-            <div className="timer-complete-links">
-              <button type="button" onClick={handleStart}>
-                다시 시작
+              <p className="timer-still-slogan">오늘도 벨은 울렸다.</p>
+
+              <div className="timer-still-meta">
+                <span>{completedDateLabel}</span>
+                <span className="timer-still-meta-dot" aria-hidden="true">
+                  ·
+                </span>
+                <span>{completedTimeLabel}</span>
+                {trainingStreak >= 2 ? (
+                  <>
+                    <span className="timer-still-meta-dot" aria-hidden="true">
+                      ·
+                    </span>
+                    <span>{trainingStreak}일 연속</span>
+                  </>
+                ) : null}
+              </div>
+
+              <div className="timer-still-trace">
+                <strong className="timer-still-bell">
+                  {cumulativeRounds}번째 벨
+                </strong>
+                <span className="timer-still-hours">
+                  링 위에서 {cumulativeTimeLabel}
+                </span>
+              </div>
+
+              {completionResult?.didLevelUp && completionResult.newTitle ? (
+                <p className="timer-still-chapter">
+                  새 이름 · {completionResult.newTitle.ko}
+                </p>
+              ) : null}
+
+              <p className="timer-still-brand" aria-hidden="true">
+                {BRAND_NAME}
+              </p>
+            </div>
+
+            <div className="timer-still-actions">
+              <button
+                type="button"
+                className="timer-complete-card-cta"
+                onClick={handleGoProfile}
+              >
+                인증 카드 만들기
               </button>
-              <button type="button" onClick={() => onGoHome?.()}>
-                홈으로
-              </button>
-              <button type="button" onClick={() => onGoLog?.()}>
-                기록 보기
-              </button>
+
+              <div className="timer-complete-links">
+                <button type="button" onClick={handleStart}>
+                  다시 시작
+                </button>
+                <button type="button" onClick={() => onGoHome?.()}>
+                  홈으로
+                </button>
+                <button type="button" onClick={() => onGoLog?.()}>
+                  기록 보기
+                </button>
+              </div>
             </div>
           </div>
         )}

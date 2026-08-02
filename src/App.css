@@ -11476,7 +11476,7 @@
 }
 
 /* MANTLE action lock: one burgundy for start / save / inquire / apply */
-.home-today-card-link,
+.home-scene-primary,
 .home-main-button,
 .backup-primary-button,
 .gym-inquiry-submit,
@@ -11495,7 +11495,7 @@
   box-shadow: 0 10px 24px rgba(70, 18, 18, 0.22);
 }
 
-.theme-dark .home-today-card-link,
+.theme-dark .home-scene-primary,
 .theme-dark .home-main-button,
 .theme-dark .backup-primary-button,
 .theme-dark .gym-inquiry-submit,
@@ -11512,7 +11512,7 @@
   color: var(--p-action-text, #f5f1e8);
 }
 
-.home-today-card-link:hover,
+.home-scene-primary:hover,
 .home-main-button:hover,
 .backup-primary-button:hover,
 .gym-inquiry-submit:hover,
@@ -11527,7 +11527,7 @@
   background: var(--p-action-hover, #742525);
 }
 
-.home-today-card-link:active,
+.home-scene-primary:active,
 .home-main-button:active,
 .backup-primary-button:active,
 .gym-inquiry-submit:active,
@@ -14211,12 +14211,256 @@
   z-index: 850;
   inset: 0;
   overflow: auto;
-  padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  padding:
+    calc(max(var(--app-safe-top, 0px), 12px) + 10px)
+    16px
+    calc(18px + env(safe-area-inset-bottom, 0px));
   background: var(--p-bg-page, #fff);
+}
+
+.gym-utility-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0 0 12px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--p-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gym-utility-back:active {
+  opacity: 0.65;
 }
 
 .theme-dark .gym-map-utility-overlay {
   background: #0a0a0a;
+}
+
+/* Home feature hub: every existing route is visible without leaving the home tab. */
+.home-feature-hub {
+  margin: 28px 0 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--p-border);
+}
+
+.home-feature-hub-heading {
+  display: grid;
+  gap: 3px;
+  margin: 0 2px 16px;
+}
+
+.home-feature-hub-heading p {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.home-feature-hub-heading h2 {
+  margin: 0;
+  color: var(--p-text);
+  font-size: 20px;
+  letter-spacing: -0.035em;
+}
+
+.home-feature-hub-heading span {
+  color: var(--p-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.home-feature-hub .app-menu-sections {
+  gap: 20px;
+}
+
+.home-feature-hub .app-menu-section h2 {
+  margin-bottom: 8px;
+  color: var(--p-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.home-feature-hub .app-menu-grid {
+  gap: 8px;
+}
+
+.home-feature-hub .app-menu-tile {
+  min-height: 82px;
+  border: 1px solid var(--p-border);
+  background: var(--p-bg-subtle);
+}
+
+.home-feature-hub .app-menu-tile-icon {
+  background: var(--p-bg-card);
+}
+
+.home-feature-hub .app-menu-tile:active {
+  transform: scale(0.99);
+}
+
+.home-trace-heading {
+  display: grid;
+  gap: 2px;
+  margin: 0 2px 14px;
+}
+
+.home-trace-heading p {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.home-trace-heading h2 {
+  margin: 0;
+  color: var(--p-text);
+  font-size: 18px;
+  letter-spacing: -0.03em;
+}
+
+.theme-dark .home-feature-hub .app-menu-tile {
+  border-color: rgba(245, 241, 232, 0.1);
+  background: #1a1214;
+}
+
+@media (min-width: 721px) {
+  .home-feature-hub .app-menu-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Home spacing rhythm: action, discovery, then reflection. */
+.home-scene-card {
+  margin-bottom: clamp(40px, 8vw, 56px);
+}
+
+.home-feature-hub {
+  margin: 0 0 clamp(44px, 9vw, 64px);
+  padding-top: 0;
+  border-top: 0;
+}
+
+.home-feature-hub-heading {
+  gap: 5px;
+  margin-bottom: 22px;
+}
+
+.home-feature-hub .app-menu-sections {
+  gap: 28px;
+}
+
+.home-feature-hub .app-menu-section h2 {
+  margin-bottom: 11px;
+}
+
+.home-feature-hub .app-menu-grid {
+  gap: 10px;
+}
+
+.home-feature-hub .app-menu-tile {
+  min-height: 92px;
+  gap: 6px;
+  padding: 14px;
+}
+
+.home-feature-hub .app-menu-tile-icon {
+  margin-bottom: 2px;
+}
+
+.home-scene-trace {
+  gap: 0;
+  margin-top: 0;
+  padding-top: 28px;
+  border-top: 1px solid var(--p-border);
+}
+
+.home-trace-heading {
+  margin-bottom: 20px;
+}
+
+.home-week-strip {
+  padding-bottom: 20px;
+}
+
+.home-recent-line {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.home-trace-stats {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.home-collapsible {
+  margin-top: 12px;
+}
+
+.home-collapsible[open] > :not(summary) {
+  margin-top: 8px;
+}
+
+/* Button hierarchy: only the home scene CTA stays burgundy. */
+.home-today-card-link,
+.home-secondary-button,
+.home-today-task-link,
+.home-today-task-link-block {
+  width: auto;
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.home-today-card-link:hover,
+.home-secondary-button:hover,
+.home-today-task-link:hover,
+.home-today-task-link-block:hover,
+.home-today-card-link:active,
+.home-secondary-button:active,
+.home-today-task-link:active,
+.home-today-task-link-block:active {
+  background: transparent;
+  color: var(--p-text);
+}
+
+.levelup-timer-preset:not(.is-primary) {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--p-text-muted);
+  box-shadow: none;
+}
+
+.levelup-timer-preset:not(.is-primary) strong {
+  color: var(--p-text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.levelup-timer-preset:not(.is-primary) small {
+  color: var(--p-text-muted);
+}
+
+.levelup-timer-open {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .gym-map-loading {
@@ -14263,4 +14507,316 @@
   .gym-map-shell.is-service .gym-map-legend {
     bottom: calc(42% + 14px);
   }
+}
+
+/* Home: the daily scene owns the first viewport; traces remain available below it. */
+.home-scene-card {
+  margin-bottom: 28px;
+}
+
+.home-scene-accent {
+  margin-bottom: 6px;
+  color: var(--p-text-muted);
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.home-scene-trace {
+  gap: 0;
+  margin-top: 0;
+}
+
+.home-week-strip,
+.home-recent-line,
+.home-trace-stats {
+  border-bottom: 1px solid var(--p-border);
+}
+
+.home-week-strip {
+  padding: 0 2px 14px;
+}
+
+.home-week-calendar-link,
+.home-recent-line {
+  color: var(--p-text-muted);
+}
+
+.home-week-calendar-link {
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-recent-line {
+  margin-top: 0;
+  padding: 16px 2px;
+}
+
+.home-recent-line strong {
+  font-size: 14px;
+}
+
+.home-trace-stats {
+  margin: 0;
+  padding: 16px 2px;
+}
+
+.home-trace-stats-label {
+  margin-bottom: 8px;
+}
+
+.home-trace-stats-grid {
+  gap: 0;
+}
+
+.home-trace-stats-grid > div {
+  padding: 2px 6px;
+}
+
+.home-trace-stats-grid strong {
+  margin-top: 3px;
+  font-size: 15px;
+}
+
+.home-collapsible {
+  margin-top: 8px;
+  border-radius: 14px;
+  background: transparent;
+}
+
+.home-collapsible-summary {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 2px;
+}
+
+.home-collapsible-summary strong {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.home-section-label {
+  color: var(--p-text-muted);
+  font-size: 10px;
+}
+
+.theme-dark .home-section-label,
+.theme-light .home-section-label {
+  color: var(--p-text-muted);
+}
+
+/* Ring: choose one bell first; the rest remain available as quieter routes. */
+.levelup-timer-hero {
+  margin-bottom: 24px;
+}
+
+.levelup-timer-presets {
+  grid-template-columns: 1fr;
+  margin-bottom: 8px;
+}
+
+.levelup-timer-preset {
+  min-height: 52px;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.levelup-timer-preset strong {
+  font-size: 15px;
+}
+
+.levelup-timer-preset small {
+  text-align: right;
+}
+
+.levelup-timer-preset.is-primary {
+  border-color: var(--p-action, #8a2e2e);
+  background: var(--p-action, #8a2e2e);
+  color: var(--p-action-text, #f5f1e8);
+  box-shadow: 0 10px 24px rgba(70, 18, 18, 0.2);
+}
+
+.levelup-timer-preset.is-primary small {
+  color: rgba(245, 241, 232, 0.72);
+}
+
+.levelup-timer-open {
+  min-height: 38px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Gym: search owns the map; category and result chrome guide without competing. */
+.gym-map-overlay-controls {
+  gap: 10px;
+}
+
+.gym-map-category-chips {
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.gym-map-category-chip {
+  min-height: 34px;
+  padding: 0 13px;
+  border-color: transparent;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.08);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.gym-map-category-chip.is-active {
+  border-color: rgba(10, 10, 10, 0.56);
+  background: rgba(255, 255, 255, 0.98);
+  color: #0a0a0a;
+}
+
+.theme-dark .gym-map-category-chip.is-active {
+  border-color: rgba(245, 241, 232, 0.58);
+  background: #1a1214;
+  color: #f5f1e8;
+}
+
+.gym-map-sheet {
+  box-shadow: 0 -6px 26px rgba(0, 0, 0, 0.14);
+}
+
+.gym-map-sheet-chrome {
+  padding-right: 16px;
+  padding-left: 16px;
+}
+
+.gym-map-sheet-head h2 {
+  font-size: 16px;
+}
+
+.gym-map-sheet-count,
+.gym-map-sheet-caption {
+  color: var(--p-text-muted);
+  font-size: 12px;
+}
+
+/* Nameplate: the personal card is the scene; management and metrics follow it. */
+.profile-page {
+  padding-top: var(--app-top-total) !important;
+}
+
+.profile-rival-card-section {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--p-border);
+}
+
+.profile-rival-card-head h2 {
+  font-size: 17px;
+}
+
+.profile-trace-stats {
+  margin-top: 24px;
+  gap: 0 !important;
+  border-top: 1px solid var(--p-border);
+  border-bottom: 1px solid var(--p-border);
+}
+
+.profile-trace-stats > div {
+  padding: 12px 6px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.profile-trace-stats strong {
+  font-size: 16px !important;
+}
+
+.profile-studio-entry {
+  margin-top: 24px;
+}
+
+.profile-proof {
+  margin-top: 12px !important;
+  background: transparent !important;
+  border-top: 1px solid var(--p-border) !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  border-left: 0 !important;
+  box-shadow: none !important;
+}
+
+.profile-page .studio-tabs {
+  border-bottom: 1px solid var(--p-border);
+}
+
+/* Shared chrome: navigation stays present without competing with page actions. */
+.app-bottom-nav {
+  gap: 0;
+  padding: 4px;
+  border-radius: 18px;
+  box-shadow: 0 6px 18px rgba(10, 9, 9, 0.08);
+}
+
+.app-nav-button {
+  min-height: 48px;
+  border-radius: 14px;
+  color: var(--p-text-muted);
+  font-weight: 700;
+}
+
+.app-nav-button.is-active,
+.app-nav-button.is-nav-home.is-active,
+.theme-dark .app-nav-button.is-active,
+.theme-dark .app-nav-button.is-nav-home.is-active {
+  background: var(--p-text);
+  color: var(--p-bg-page);
+}
+
+.category-backup-banner {
+  gap: 6px;
+  margin-bottom: 20px;
+  padding: 10px 2px;
+  border: 0;
+  border-left: 2px solid var(--p-border);
+  border-radius: 0;
+  background: transparent;
+}
+
+.category-backup-banner button {
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.app-menu-sections {
+  gap: 22px;
+}
+
+.app-menu-tile {
+  min-height: 76px;
+  padding: 11px;
+  border-color: transparent;
+  border-radius: 14px;
+}
+
+.app-menu-tile-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
 }

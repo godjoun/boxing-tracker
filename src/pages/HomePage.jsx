@@ -10,6 +10,7 @@ import {
 import { getTodaysLessonPreview } from "../utils/dailyLesson";
 import { getFirstWeekChallengeStatus } from "../utils/retentionMetrics";
 import { BRAND_NAME } from "../utils/brand";
+import AppMenuBoard from "../components/AppMenuBoard";
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
@@ -143,11 +144,15 @@ export default function HomePage({
   timerSummary = null,
   onStartTraining,
   onOpenTimer,
-  onGoProfile,
   onNavigate,
+  onNavigateGym,
   onOpenCardMaker,
   onOpenCurriculum,
   onReadLesson,
+  fighterLevel = 1,
+  theme,
+  onToggleTheme,
+  onReplayTutorial,
 }) {
   const { logs = [], profile, weeklyScore } = useTraining();
   const [selectedDate, setSelectedDate] = useState("");
@@ -221,7 +226,6 @@ export default function HomePage({
     [logs]
   );
 
-  const topTrainingType = trainingBreakdown[0]?.type || null;
   const todayKey = getTodayKey();
   const todayRounds = dashboard.trainingByDate[todayKey]?.rounds || 0;
   const nickname = profile?.nickname || "나";
@@ -274,11 +278,6 @@ export default function HomePage({
     onNavigate?.("log");
   }
 
-  const now = new Date();
-  const monthTitle = `${now.getFullYear()}. ${String(
-    now.getMonth() + 1
-  ).padStart(2, "0")}`;
-
   return (
     <main className="home-page">
       {timerSummary?.isActive ? (
@@ -316,9 +315,7 @@ export default function HomePage({
           </div>
           <div className="home-scene-header-copy">
             <p className="home-scene-brand">{BRAND_NAME}</p>
-            <p className="home-scene-meta">
-              {nickname} · LV.{dashboard.level} · {dashboard.fighterTitle}
-            </p>
+            <p className="home-scene-meta">{nickname}의 오늘</p>
           </div>
         </div>
       </header>
@@ -326,15 +323,12 @@ export default function HomePage({
       <section className="home-scene-card" aria-label="오늘의 장면">
         <div className="home-scene-card-top">
           <p className="home-scene-kicker">TODAY</p>
-          <p className="home-scene-date">
-            {sceneDateLabel}
-            {dashboard.streakDays > 0
-              ? ` · 연속 ${dashboard.streakDays}일`
-              : ""}
-          </p>
+          <p className="home-scene-date">{sceneDateLabel}</p>
         </div>
 
-        <p className="home-scene-accent">ARE YOU READY?</p>
+        {!dashboard.trainedToday ? (
+          <p className="home-scene-accent">ARE YOU READY?</p>
+        ) : null}
         <h1 className="home-scene-title">{sceneTitle}</h1>
         <p className="home-scene-copy">{sceneCopy}</p>
 
@@ -359,29 +353,33 @@ export default function HomePage({
           >
             {primaryLabel}
           </button>
-          <div className="home-scene-links">
-            {todaysLesson.kind === "session" ? (
-              <button
-                type="button"
-                className="home-scene-link"
-                onClick={onOpenTimer}
-              >
-                타이머만 열기
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="home-scene-link"
-              onClick={onGoProfile}
-            >
-              명패 보기
-            </button>
-          </div>
         </div>
       </section>
 
+      <section className="home-feature-hub" aria-labelledby="home-feature-hub-title">
+        <div className="home-feature-hub-heading">
+          <p>ALL FEATURES</p>
+          <h2 id="home-feature-hub-title">무엇을 할까요?</h2>
+          <span>기록부터 다음 훈련까지, 여기서 바로 시작하세요.</span>
+        </div>
+        <AppMenuBoard
+          variant="home"
+          fighterLevel={fighterLevel}
+          onNavigate={onNavigate}
+          onNavigateGym={onNavigateGym}
+          onOpenCardMaker={onOpenCardMaker}
+          onReplayTutorial={onReplayTutorial}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+        />
+      </section>
+
       <div className="home-scene-trace" aria-label="오늘의 흔적">
-      <section className="home-week-strip" aria-label="이번 주 훈련 흔적">
+        <div className="home-trace-heading">
+          <p>TRAINING HISTORY</p>
+          <h2>내 훈련 기록</h2>
+        </div>
+        <section className="home-week-strip" aria-label="이번 주 훈련 흔적">
         <div className="home-week-strip-head">
           <p className="home-week-strip-label">이번 주</p>
           <div className="home-week-strip-actions">
@@ -411,43 +409,41 @@ export default function HomePage({
             </div>
           ))}
         </div>
-      </section>
+        </section>
 
-      <button
-        type="button"
-        className="home-recent-line"
-        onClick={handleRecentClick}
-      >
-        <span className="home-recent-line-kicker">최근</span>
-        <strong>{recentLine.title}</strong>
-        <em>{recentLine.copy}</em>
-      </button>
+        <button
+          type="button"
+          className="home-recent-line"
+          onClick={handleRecentClick}
+        >
+          <span className="home-recent-line-kicker">최근</span>
+          <strong>{recentLine.title}</strong>
+          <em>{recentLine.copy}</em>
+        </button>
 
-      <section className="home-trace-stats" aria-label="흔적">
-        <p className="home-trace-stats-label">흔적</p>
-        <div className="home-trace-stats-grid">
-          <div>
-            <span>오늘</span>
-            <strong>{todayRounds}R</strong>
+        <section className="home-trace-stats" aria-label="흔적">
+          <p className="home-trace-stats-label">흔적</p>
+          <div className="home-trace-stats-grid">
+            <div>
+              <span>오늘</span>
+              <strong>{todayRounds}R</strong>
+            </div>
+            <div>
+              <span>연속</span>
+              <strong>{dashboard.streakDays}일</strong>
+            </div>
+            <div>
+              <span>누적</span>
+              <strong>{dashboard.totalRounds}R</strong>
+            </div>
           </div>
-          <div>
-            <span>연속</span>
-            <strong>{dashboard.streakDays}일</strong>
-          </div>
-          <div>
-            <span>누적</span>
-            <strong>{dashboard.totalRounds}R</strong>
-          </div>
-        </div>
-      </section>
+        </section>
       </div>
 
       <details className="home-collapsible home-status-details">
         <summary className="home-collapsible-summary">
           <span className="home-section-label">내 현황</span>
-          <strong>
-            누적 {dashboard.totalRounds}R · {dashboard.trendSummary.label}
-          </strong>
+          <strong>훈련의 흔적</strong>
         </summary>
 
         <div className="home-status-details-body">
@@ -548,7 +544,7 @@ export default function HomePage({
         <details className="home-collapsible">
           <summary className="home-collapsible-summary">
             <span className="home-section-label">주간 성장</span>
-            <strong>주간 라운드 추이 · {weeklyScore} EXP</strong>
+            <strong>주간 라운드 추이</strong>
           </summary>
           <section className="home-weekly-trend" aria-label="주간 라운드 추이">
             <div className="home-section-heading">
@@ -580,9 +576,7 @@ export default function HomePage({
       <details className="home-collapsible">
         <summary className="home-collapsible-summary">
           <span className="home-section-label">훈련 구성</span>
-          <strong>
-            {topTrainingType ? `TOP · ${topTrainingType}` : "내 훈련 구성"}
-          </strong>
+          <strong>내 훈련 구성</strong>
         </summary>
         <section className="home-training-breakdown">
           <div className="home-section-heading">
@@ -623,7 +617,7 @@ export default function HomePage({
       >
         <summary className="home-collapsible-summary">
           <span className="home-section-label">캘린더</span>
-          <strong>이번 달 훈련 · {monthTitle}</strong>
+          <strong>이번 달 훈련</strong>
         </summary>
         <section className="training-calendar">
           <div className="home-section-heading">

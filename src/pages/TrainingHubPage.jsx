@@ -78,9 +78,7 @@ export default function TrainingHubPage({
     <main className="hub-page levelup-page">
       <header className="levelup-header">
         <h1 className="levelup-title">링</h1>
-        <p className="levelup-subtitle">
-          라운드로 남기고, 기술·신체를 이어가세요.
-        </p>
+        <p className="levelup-subtitle">오늘의 벨을 울리세요.</p>
       </header>
 
       <section className="levelup-timer-hero" aria-label="라운드">
@@ -98,11 +96,13 @@ export default function TrainingHubPage({
         </div>
 
         <div className="levelup-timer-presets">
-          {MATCH_TIMER_PRESETS.map((preset) => (
+          {MATCH_TIMER_PRESETS.map((preset, index) => (
             <button
               key={preset.id}
               type="button"
-              className="levelup-timer-preset"
+              className={`levelup-timer-preset${
+                index === 0 ? " is-primary" : ""
+              }`}
               onClick={() => onStartPreset?.(preset)}
             >
               <strong>{preset.title}</strong>

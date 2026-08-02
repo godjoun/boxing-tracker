@@ -324,6 +324,9 @@ function MainAppShell({ theme, onToggleTheme }) {
             onOpenCardMaker={goProfileCardMaker}
             onOpenCurriculum={goCurriculum}
             onReadLesson={goReadLesson}
+            theme={theme}
+            onToggleTheme={onToggleTheme}
+            onReplayTutorial={openTutorial}
           />
         )}
 

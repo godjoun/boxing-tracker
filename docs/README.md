@@ -20,6 +20,7 @@ Boxing Tracker의 인증·데이터베이스·Storage·권한 기준은 **Supaba
 | `brand.md` | 이름·슬로건·로고·색 잠금 |
 | `branding-phase1.md` | 소프트 론칭 브랜딩 1차 전략 |
 | `product-philosophy.md` | 화면·카피 판단 |
+| `ui-ux-hierarchy.md` | 기존 화면의 행동·시각 계층 기준 |
 | `dojo.md` | 모임·문의·라이벌 규칙 |
 | `supabase.md` | Supabase 장부·RLS·운영 점검 |
 | `monetization.md` | 수익화 (체육관이 낸다) |

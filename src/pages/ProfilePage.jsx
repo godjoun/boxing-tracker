@@ -2507,7 +2507,7 @@ export default function ProfilePage({
         <SparringPartnerPanel variant="profile" embedded />
       </section>
 
-      <section style={styles.statGrid}>
+      <section className="profile-trace-stats" style={styles.statGrid}>
         <div style={styles.statBox}>
           <span style={styles.statLabel}>누적 라운드</span>
           <strong style={styles.statValue}>{profileStats.totalRounds}R</strong>
@@ -2531,6 +2531,7 @@ export default function ProfilePage({
 
       <button
         type="button"
+        className="profile-studio-entry"
         style={styles.cardStudioEntry}
         onClick={scrollToCardMaker}
       >
@@ -2542,7 +2543,7 @@ export default function ProfilePage({
         <span style={styles.cardStudioEntryCta}>명패 공유 열기 →</span>
       </button>
 
-      <section style={styles.sectionCard}>
+      <section className="profile-proof" style={styles.sectionCard}>
         <p style={styles.kicker}>PROOF OF TRAINING</p>
         <h2 style={styles.sectionTitle}>훈련 증명</h2>
 

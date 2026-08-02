@@ -117,6 +117,37 @@
   color: var(--p-text-muted);
 }
 
+.growth-hub-season-award {
+  margin: 0 0 10px;
+  padding: 18px;
+  border: 1px solid rgba(138, 46, 46, 0.45);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(138, 46, 46, 0.25), transparent 68%),
+    var(--p-bg-deep);
+}
+
+.growth-hub-season-award p {
+  margin: 0 0 5px;
+  color: var(--p-accent);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.growth-hub-season-award h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+.growth-hub-season-award span {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .growth-hub-card {
   display: block;
   width: 100%;
@@ -127,6 +158,94 @@
   background: var(--p-bg-deep);
   color: var(--p-text);
   text-align: left;
+}
+
+.growth-hub-season {
+  background:
+    linear-gradient(145deg, rgba(138, 46, 46, 0.15), transparent 56%),
+    var(--p-bg-deep);
+}
+
+.growth-hub-season-stage {
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(138, 46, 46, 0.42);
+  border-radius: 999px;
+  background: rgba(138, 46, 46, 0.14);
+  color: var(--p-text);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.growth-hub-season-current {
+  margin: 0;
+  color: var(--p-text-soft);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.growth-hub-season-current strong {
+  color: var(--p-accent);
+  font-weight: 900;
+}
+
+.growth-hub-tier-table {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--p-border-soft);
+}
+
+.growth-hub-tier-row {
+  display: grid;
+  grid-template-columns: minmax(64px, 0.9fr) minmax(78px, 1fr) minmax(96px, 1.5fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: var(--p-text-muted);
+  font-size: 12px;
+}
+
+.growth-hub-tier-row strong {
+  color: var(--p-text-soft);
+  font-size: 13px;
+}
+
+.growth-hub-tier-row span {
+  font-variant-numeric: tabular-nums;
+}
+
+.growth-hub-tier-row small {
+  overflow: hidden;
+  color: var(--p-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.growth-hub-tier-row em {
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.growth-hub-tier-row.is-current {
+  border-color: rgba(138, 46, 46, 0.55);
+  background: rgba(138, 46, 46, 0.14);
+  color: var(--p-text);
+}
+
+.growth-hub-tier-row.is-current strong,
+.growth-hub-tier-row.is-current em,
+.growth-hub-tier-row.is-current small {
+  color: var(--p-accent);
 }
 
 .growth-hub-card.is-clickable {

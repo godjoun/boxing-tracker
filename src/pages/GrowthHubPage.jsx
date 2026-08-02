@@ -1,7 +1,16 @@
 import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { buildJourneyAchievements } from "../utils/fighterJourney";
-import { getFighterProgress } from "../utils/fighterProgress";
+import {
+  getFighterLevel,
+  getFighterProgress,
+  getTotalExp,
+} from "../utils/fighterProgress";
+import {
+  getMonthlySeasonSummary,
+  MONTHLY_TIER_REWARDS,
+  settleMonthlyLevelAwards,
+} from "../utils/monthlySeason";
 import { getTitleCollection } from "../utils/fighterTitles";
 import { getCurriculumProgress } from "../utils/homeCurriculum";
 import {
@@ -29,6 +38,11 @@ export default function GrowthHubPage({
 }) {
   const { logs, weeklyScore } = useTraining();
   const [weeklyGoal, setWeeklyGoal] = useState(readWeeklyRoundGoal);
+  const [seasonSettlement] = useState(() =>
+    settleMonthlyLevelAwards(logs, (logsThroughMonth) =>
+      getFighterLevel(getTotalExp(logsThroughMonth))
+    )
+  );
   const [isTitleCollectionOpen, setIsTitleCollectionOpen] = useState(false);
   const [isVeteranPerksOpen, setIsVeteranPerksOpen] = useState(false);
   const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
@@ -64,6 +78,11 @@ export default function GrowthHubPage({
   const nextTitle = titleCollection.find((item) => item.isNext);
   const currentTitle = titleCollection.find((item) => item.isCurrent);
   const nextPerk = veteranPerks.find((item) => item.isNext);
+  const seasonSummary = getMonthlySeasonSummary(fighter.level);
+  const currentTierIndex = MONTHLY_TIER_REWARDS.findIndex(
+    (tier) => tier.stage === seasonSummary.stage
+  );
+  const nextTier = MONTHLY_TIER_REWARDS[currentTierIndex + 1] || null;
 
   function handleCycleWeeklyGoal() {
     const nextGoal = getNextWeeklyRoundGoal(weeklyGoal);
@@ -125,6 +144,59 @@ export default function GrowthHubPage({
       <p className="growth-hub-exp-hint">
         주간 EXP = 이번 주 획득한 경험치 합계입니다.
       </p>
+
+      {seasonSettlement.newlyAwarded.length > 0 ? (
+        <section className="growth-hub-season-award" aria-label="월간 보너스 레벨">
+          <p>SEASON CLOSED</p>
+          <h2>
+            {seasonSettlement.newlyAwarded
+              .map((award) => `${award.stage} +${award.levels} LV`)
+              .join(" · ")}
+          </h2>
+          <span>지난 시즌에 남긴 훈련을 커리어에 더했습니다.</span>
+        </section>
+      ) : null}
+
+      <section className="growth-hub-card growth-hub-season" aria-label="월간 커리어 리그">
+        <div className="growth-hub-card-head">
+          <div>
+            <p className="growth-hub-kicker">MONTHLY CAREER</p>
+            <h2 className="growth-hub-card-title">이번 달의 리그</h2>
+          </div>
+          <strong className="growth-hub-season-stage">{seasonSummary.stage}</strong>
+        </div>
+
+        <p className="growth-hub-season-current">
+          LV. {seasonSummary.from}–{seasonSummary.to} · 시즌 완료 시{" "}
+          <strong>+{seasonSummary.levels} LV</strong>
+        </p>
+        <p className="growth-hub-card-note">
+          {seasonSummary.endsOn}에 이번 달 최고 리그를 기준으로 영구 보너스 레벨을
+          지급합니다.
+          {nextTier
+            ? ` 다음 ${nextTier.stage}: LV. ${nextTier.from}부터`
+            : " 레전드의 기록은 계속됩니다."}
+        </p>
+
+        <div className="growth-hub-tier-table" aria-label="월간 리그 보너스 표">
+          {MONTHLY_TIER_REWARDS.map((tier) => {
+            const isCurrent = tier.stage === seasonSummary.stage;
+            return (
+              <div
+                className={`growth-hub-tier-row${isCurrent ? " is-current" : ""}`}
+                key={tier.stage}
+              >
+                <strong>{tier.stage}</strong>
+                <span>
+                  LV. {tier.from}–{tier.to}
+                </span>
+                <small>{tier.unlock}</small>
+                <em>+{tier.levels} LV</em>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="growth-hub-card growth-hub-weekly-goal">
         <div className="growth-hub-card-head">

@@ -40,22 +40,22 @@ export const VETERAN_PERKS = [
   },
   {
     id: "champion_frame",
-    level: 85,
+    level: 76,
     kind: "frame",
     label: "챔피언 명패",
     description: "명패 골드 테두리가 강화됩니다.",
   },
   {
     id: "card_goat",
-    level: 100,
+    level: 96,
     kind: "card_filter",
     filterId: "goat",
     label: "GOAT 카드",
-    description: "백 단계 정점만 쓸 수 있는 전설 카드 필터.",
+    description: "레전드 구간부터 쓸 수 있는 전설 카드 필터.",
   },
   {
     id: "hall_of_fame",
-    level: 100,
+    level: 96,
     kind: "badge",
     label: "명예의 전당",
     description: "레전드 인증 배지가 영구 표시됩니다.",
@@ -123,9 +123,8 @@ export function getVeteranBadges(level) {
 export function getNameplateTier(level) {
   const safeLevel = clampLevel(level);
 
-  if (safeLevel >= 100) return "goat";
-  if (safeLevel >= 85) return "champion-gold";
-  if (safeLevel >= 76) return "champion";
+  if (safeLevel >= 96) return "goat";
+  if (safeLevel >= 76) return "champion-gold";
   if (safeLevel >= 51) return "pro";
   if (safeLevel >= 16) return "amateur";
 
@@ -163,7 +162,7 @@ export const SPARRING_PRIORITY_LEVEL = 51;
 export function getSparringPriorityBoostKm(level) {
   const safeLevel = clampLevel(level);
 
-  if (safeLevel >= 100) return 2;
+  if (safeLevel >= 96) return 2;
   if (safeLevel >= 76) return 1.5;
   if (safeLevel >= SPARRING_PRIORITY_LEVEL) return 0.8;
 

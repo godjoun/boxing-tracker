@@ -11,6 +11,7 @@ import {
   isTitleMilestoneLevel,
   MAX_FIGHTER_LEVEL,
 } from "./fighterTitles";
+import { getAccumulatedSeasonLevels } from "./monthlySeason";
 
 export { MAX_FIGHTER_LEVEL };
 
@@ -99,10 +100,14 @@ export function getFighterTitle(level) {
   return getFighterTitleKo(level);
 }
 
-export function getLevelProgress(totalExp) {
+export function getLevelProgress(totalExp, bonusLevels = 0) {
   const safeExp = Math.max(0, Number(totalExp || 0));
-  const level = getFighterLevel(safeExp);
-  const expAtLevelStart = getCumulativeExpForLevel(level);
+  const baseLevel = getFighterLevel(safeExp);
+  const level = Math.min(
+    MAX_FIGHTER_LEVEL,
+    baseLevel + Math.max(0, Math.floor(Number(bonusLevels) || 0))
+  );
+  const expAtLevelStart = getCumulativeExpForLevel(baseLevel);
   const currentLevelExp = safeExp - expAtLevelStart;
 
   if (level >= MAX_FIGHTER_LEVEL) {
@@ -121,6 +126,8 @@ export function getLevelProgress(totalExp) {
 
   return {
     level,
+    baseLevel,
+    bonusLevels: Math.max(0, Math.floor(Number(bonusLevels) || 0)),
     currentLevelExp,
     xpToNextLevel,
     progressPercent: Math.min(
@@ -138,7 +145,8 @@ export function getFighterProgress(logs = []) {
   const totalRounds = getTotalRoundsFromLogs(safeLogs);
   const totalMinutes = getTotalMinutesFromLogs(safeLogs);
   const totalLogs = safeLogs.length;
-  const levelProgress = getLevelProgress(totalExp);
+  const seasonBonusLevels = getAccumulatedSeasonLevels();
+  const levelProgress = getLevelProgress(totalExp, seasonBonusLevels);
   const weekly = buildWeeklyReport(safeLogs);
   const titleInfo = getLevelTitle(levelProgress.level);
 
@@ -148,6 +156,7 @@ export function getFighterProgress(logs = []) {
     totalRounds,
     totalMinutes,
     totalLogs,
+    seasonBonusLevels,
     weeklyRounds: weekly.totalRounds,
     weeklyExp: weekly.totalScore,
     levelLabel: `LV. ${levelProgress.level}`,
@@ -166,8 +175,9 @@ export function getCompletionDelta(logsBefore = [], newLog) {
   const logsAfter = [...logsBefore, newLog];
   const expAfter = getTotalExp(logsAfter);
   const weeklyAfter = buildWeeklyReport(logsAfter).totalRounds;
-  const levelBefore = getLevelProgress(expBefore);
-  const levelAfter = getLevelProgress(expAfter);
+  const seasonBonusLevels = getAccumulatedSeasonLevels();
+  const levelBefore = getLevelProgress(expBefore, seasonBonusLevels);
+  const levelAfter = getLevelProgress(expAfter, seasonBonusLevels);
   const didLevelUp = levelAfter.level > levelBefore.level;
   const newTitle =
     didLevelUp && isTitleMilestoneLevel(levelAfter.level)

@@ -48,8 +48,8 @@ export const CARD_FILTERS = [
   {
     id: "goat",
     name: "BOXING GOAT",
-    description: "백 단계 전설 필터",
-    veteranLevel: 100,
+    description: "레전드 전용 필터",
+    veteranLevel: 96,
     group: "베테랑 전용",
   },
 ];

@@ -184,6 +184,15 @@
   font-weight: 700;
 }
 
+.growth-hub-tier-progress {
+  margin-top: 14px;
+}
+
+.growth-hub-season-current.is-season-reward {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
 .growth-hub-season-current strong {
   color: var(--p-accent);
   font-weight: 900;
@@ -198,28 +207,43 @@
 }
 
 .growth-hub-tier-row {
-  display: grid;
-  grid-template-columns: minmax(64px, 0.9fr) minmax(78px, 1fr) minmax(96px, 1.5fr) auto;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 38px;
-  padding: 0 10px;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
   border: 1px solid transparent;
   border-radius: 10px;
   color: var(--p-text-muted);
   font-size: 12px;
+  opacity: 0.48;
 }
 
-.growth-hub-tier-row strong {
+.growth-hub-tier-name {
+  display: grid;
+  flex: 0 0 76px;
+  gap: 3px;
+}
+
+.growth-hub-tier-name strong {
   color: var(--p-text-soft);
   font-size: 13px;
 }
 
-.growth-hub-tier-row span {
+.growth-hub-tier-name span {
   font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  font-weight: 800;
 }
 
-.growth-hub-tier-row small {
+.growth-hub-tier-reward {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 3px;
+}
+
+.growth-hub-tier-reward small {
   overflow: hidden;
   color: var(--p-text-muted);
   font-size: 10px;
@@ -228,7 +252,7 @@
   white-space: nowrap;
 }
 
-.growth-hub-tier-row em {
+.growth-hub-tier-reward em {
   color: var(--p-text-muted);
   font-size: 11px;
   font-style: normal;
@@ -236,16 +260,39 @@
   white-space: nowrap;
 }
 
+.growth-hub-tier-row b {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.growth-hub-tier-row.is-complete {
+  opacity: 0.78;
+  background: rgba(255, 255, 255, 0.025);
+}
+
 .growth-hub-tier-row.is-current {
   border-color: rgba(138, 46, 46, 0.55);
   background: rgba(138, 46, 46, 0.14);
   color: var(--p-text);
+  opacity: 1;
 }
 
-.growth-hub-tier-row.is-current strong,
-.growth-hub-tier-row.is-current em,
-.growth-hub-tier-row.is-current small {
+.growth-hub-tier-row.is-current .growth-hub-tier-name strong,
+.growth-hub-tier-row.is-current .growth-hub-tier-reward em,
+.growth-hub-tier-row.is-current b {
   color: var(--p-accent);
+}
+
+@media (max-width: 360px) {
+  .growth-hub-tier-row {
+    gap: 7px;
+    padding-inline: 8px;
+  }
+
+  .growth-hub-tier-name {
+    flex-basis: 66px;
+  }
 }
 
 .growth-hub-card.is-clickable {
@@ -388,6 +435,140 @@
   gap: 10px;
 }
 
-.growth-hub-collections .journey-card {
+.growth-collection-card {
+  overflow: hidden;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 18px;
+  background: var(--p-bg-deep);
+}
+
+.growth-collection-card-button {
+  display: block;
+  width: 100%;
+  padding: 16px 18px;
+  border: 0;
+  background: transparent;
+  color: var(--p-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.growth-collection-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.growth-collection-card-head p,
+.growth-collection-sheet-head p {
+  margin: 0 0 4px;
+  color: var(--p-accent);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.growth-collection-card-head h2,
+.growth-collection-sheet-head h2 {
   margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.growth-collection-card-head > span {
+  flex: 0 0 auto;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.growth-collection-card strong {
+  display: block;
+  margin-top: 14px;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.growth-collection-card p {
+  margin: 5px 0 0;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.growth-collection-card em {
+  display: block;
+  margin-top: 12px;
+  color: var(--p-text-soft);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.growth-collection-sheet {
+  position: fixed;
+  z-index: 1600;
+  inset: 0;
+}
+
+.growth-collection-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(10, 10, 10, 0.56);
+  cursor: pointer;
+}
+
+.growth-collection-sheet-panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: min(78dvh, 720px);
+  overflow: auto;
+  padding: 8px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  border-radius: 22px 22px 0 0;
+  background: var(--p-bg-card, #fff);
+  box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.28);
+}
+
+.theme-dark .growth-collection-sheet-panel {
+  background: #1a1214;
+}
+
+.growth-collection-sheet-handle {
+  display: grid;
+  min-height: 18px;
+  place-items: center;
+}
+
+.growth-collection-sheet-handle span {
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(154, 149, 143, 0.45);
+}
+
+.growth-collection-sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 8px 0 16px;
+}
+
+.growth-collection-sheet-head > button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--p-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--p-text);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
 }

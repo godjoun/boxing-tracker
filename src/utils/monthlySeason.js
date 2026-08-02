@@ -1,45 +1,33 @@
-import { getCareerStage, MAX_FIGHTER_LEVEL } from "./fighterTitles";
+import {
+  CAREER_STAGE_RANGES,
+  getCareerStage,
+  MAX_FIGHTER_LEVEL,
+} from "./fighterTitles";
+import { VETERAN_PERKS } from "./veteranPerks";
 
 const STORAGE_KEY = "mantle-monthly-level-awards-v1";
 
-export const MONTHLY_TIER_REWARDS = [
-  { stage: "일반인", from: 1, to: 15, levels: 1, unlock: "기록 시작" },
-  {
-    stage: "아마추어",
-    from: 16,
-    to: 35,
-    levels: 1,
-    unlock: "아마추어 인증",
-  },
-  {
-    stage: "세미프로",
-    from: 36,
-    to: 50,
-    levels: 2,
-    unlock: "세미프로 카드",
-  },
-  {
-    stage: "프로",
-    from: 51,
-    to: 75,
-    levels: 2,
-    unlock: "프로 인증 · 우선 노출",
-  },
-  {
-    stage: "챔피언",
-    from: 76,
-    to: 95,
-    levels: 3,
-    unlock: "챔피언 카드 · 명패",
-  },
-  {
-    stage: "레전드",
-    from: 96,
-    to: 100,
-    levels: 3,
-    unlock: "GOAT 카드 · 명예의 전당",
-  },
-];
+const MONTHLY_LEVEL_BONUSES = {
+  일반인: 1,
+  아마추어: 1,
+  세미프로: 2,
+  프로: 2,
+  챔피언: 3,
+  레전드: 3,
+};
+
+/**
+ * One shared table for career tiers, season rewards, and real unlocks.
+ * Tier boundaries come from fighterTitles; unlocks come from veteranPerks.
+ */
+export const MONTHLY_TIER_REWARDS = CAREER_STAGE_RANGES.map((stage) => ({
+  stage: stage.stageKo,
+  stageEn: stage.stageEn,
+  from: stage.from,
+  to: stage.to,
+  levels: MONTHLY_LEVEL_BONUSES[stage.stageKo] || 0,
+  perks: VETERAN_PERKS.filter((perk) => perk.level === stage.from),
+}));
 
 function getMonthKey(date = new Date()) {
   const year = date.getFullYear();
@@ -98,6 +86,42 @@ function getRewardForLevel(level) {
     MONTHLY_TIER_REWARDS.find((item) => item.stage === stage.stageKo) ||
     MONTHLY_TIER_REWARDS[0]
   );
+}
+
+export function getCareerTierState(level) {
+  const safeLevel = Math.min(
+    MAX_FIGHTER_LEVEL,
+    Math.max(1, Math.floor(Number(level) || 1))
+  );
+  const current = getRewardForLevel(safeLevel);
+  const currentIndex = MONTHLY_TIER_REWARDS.findIndex(
+    (tier) => tier.stage === current.stage
+  );
+  const next = MONTHLY_TIER_REWARDS[currentIndex + 1] || null;
+  const levelsToNextTier = next ? Math.max(0, next.from - safeLevel) : 0;
+  const progressPercent = next
+    ? Math.round(
+        ((safeLevel - current.from) / (next.from - current.from)) * 100
+      )
+    : 100;
+
+  return {
+    current,
+    next,
+    level: safeLevel,
+    levelsToNextTier,
+    progressPercent: Math.min(100, Math.max(0, progressPercent)),
+    isMaxTier: !next,
+    tiers: MONTHLY_TIER_REWARDS.map((tier, index) => ({
+      ...tier,
+      status:
+        index < currentIndex
+          ? "complete"
+          : index === currentIndex
+            ? "current"
+            : "locked",
+    })),
+  };
 }
 
 export function getAccumulatedSeasonLevels() {
@@ -171,7 +195,7 @@ export function settleMonthlyLevelAwards(
 }
 
 export function getMonthlySeasonSummary(level) {
-  const reward = getRewardForLevel(level);
+  const reward = getCareerTierState(level).current;
   const now = new Date();
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 

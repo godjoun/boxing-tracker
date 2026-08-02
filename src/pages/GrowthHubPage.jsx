@@ -7,21 +7,12 @@ import {
   getTotalExp,
 } from "../utils/fighterProgress";
 import {
+  getCareerTierState,
   getMonthlySeasonSummary,
-  MONTHLY_TIER_REWARDS,
   settleMonthlyLevelAwards,
 } from "../utils/monthlySeason";
 import { getTitleCollection } from "../utils/fighterTitles";
-import { getCurriculumProgress } from "../utils/homeCurriculum";
-import {
-  getNextGrowthMilestone,
-  getNextWeeklyRoundGoal,
-  getWeeklyGoalStatus,
-  readWeeklyRoundGoal,
-  writeWeeklyRoundGoal,
-} from "../utils/growthGoals";
 import { getVeteranPerkCollection } from "../utils/veteranPerks";
-import { buildAllTimeStats, buildWeeklyReport } from "../utils/trainingStats";
 import "./GrowthHubPage.css";
 import "./JourneyPage.css";
 
@@ -32,44 +23,30 @@ const PERK_KIND_LABEL = {
 };
 
 export default function GrowthHubPage({
-  onOpenCurriculum,
   onStartTraining,
   onGoBack,
 }) {
-  const { logs, weeklyScore } = useTraining();
-  const [weeklyGoal, setWeeklyGoal] = useState(readWeeklyRoundGoal);
+  const { logs } = useTraining();
   const [seasonSettlement] = useState(() =>
     settleMonthlyLevelAwards(logs, (logsThroughMonth) =>
       getFighterLevel(getTotalExp(logsThroughMonth))
     )
   );
-  const [isTitleCollectionOpen, setIsTitleCollectionOpen] = useState(false);
-  const [isVeteranPerksOpen, setIsVeteranPerksOpen] = useState(false);
-  const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
+  const [activeCollection, setActiveCollection] = useState(null);
 
   const {
     fighter,
-    stats,
-    curriculum,
-    weeklyGoalStatus,
-    milestone,
-    weeklyReport,
     titleCollection,
     veteranPerks,
     achievements,
   } = useMemo(() => {
     return {
       fighter: getFighterProgress(logs),
-      stats: buildAllTimeStats(logs),
-      curriculum: getCurriculumProgress(),
-      weeklyGoalStatus: getWeeklyGoalStatus(logs, weeklyGoal),
-      milestone: getNextGrowthMilestone(logs),
-      weeklyReport: buildWeeklyReport(logs),
       titleCollection: getTitleCollection(getFighterProgress(logs).level),
       veteranPerks: getVeteranPerkCollection(getFighterProgress(logs).level),
       achievements: buildJourneyAchievements(logs),
     };
-  }, [logs, weeklyGoal]);
+  }, [logs]);
 
   const isEmpty = fighter.totalLogs === 0;
   const unlockedTitleCount = titleCollection.filter((item) => item.unlocked).length;
@@ -78,17 +55,131 @@ export default function GrowthHubPage({
   const nextTitle = titleCollection.find((item) => item.isNext);
   const currentTitle = titleCollection.find((item) => item.isCurrent);
   const nextPerk = veteranPerks.find((item) => item.isNext);
+  const nextAchievement = achievements.find((item) => !item.unlocked);
+  const tierState = getCareerTierState(fighter.level);
   const seasonSummary = getMonthlySeasonSummary(fighter.level);
-  const currentTierIndex = MONTHLY_TIER_REWARDS.findIndex(
-    (tier) => tier.stage === seasonSummary.stage
-  );
-  const nextTier = MONTHLY_TIER_REWARDS[currentTierIndex + 1] || null;
 
-  function handleCycleWeeklyGoal() {
-    const nextGoal = getNextWeeklyRoundGoal(weeklyGoal);
-    writeWeeklyRoundGoal(nextGoal);
-    setWeeklyGoal(nextGoal);
-  }
+  const collectionSheet = activeCollection ? (
+    <div className="growth-collection-sheet" role="dialog" aria-modal="true">
+      <button
+        type="button"
+        className="growth-collection-sheet-backdrop"
+        aria-label="상세 닫기"
+        onClick={() => setActiveCollection(null)}
+      />
+      <section className="growth-collection-sheet-panel">
+        <div className="growth-collection-sheet-handle" aria-hidden="true">
+          <span />
+        </div>
+        <header className="growth-collection-sheet-head">
+          <div>
+            <p>
+              {activeCollection === "titles"
+                ? "TITLES"
+                : activeCollection === "perks"
+                  ? "VETERAN"
+                  : "ACHIEVEMENTS"}
+            </p>
+            <h2>
+              {activeCollection === "titles"
+                ? "칭호 도감"
+                : activeCollection === "perks"
+                  ? "베테랑 혜택"
+                  : "업적"}
+            </h2>
+          </div>
+          <button
+            type="button"
+            aria-label="상세 닫기"
+            onClick={() => setActiveCollection(null)}
+          >
+            ×
+          </button>
+        </header>
+
+        {activeCollection === "titles" ? (
+          <>
+            <p className="journey-title-next">
+              {nextTitle ? (
+                <>
+                  다음 칭호 <strong>{nextTitle.ko}</strong> · LV. {nextTitle.level}
+                </>
+              ) : (
+                "모든 칭호를 획득했습니다."
+              )}
+            </p>
+            <div className="journey-title-list">
+              {titleCollection.map((title) => (
+                <article
+                  className={`journey-title-item is-${title.status}`}
+                  key={title.level}
+                >
+                  <div className="journey-title-badge" aria-hidden="true">
+                    {title.isCurrent
+                      ? "장착"
+                      : title.unlocked
+                        ? "획득"
+                        : title.isNext
+                          ? "다음"
+                          : "잠김"}
+                  </div>
+                  <div className="journey-title-copy">
+                    <div className="journey-title-top">
+                      <strong>{title.ko}</strong>
+                      <span>LV. {title.level}</span>
+                    </div>
+                    <p className="journey-title-en">{title.en}</p>
+                    <p className="journey-title-flavor">{title.flavor}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
+        ) : null}
+
+        {activeCollection === "perks" ? (
+          <div className="journey-title-list">
+            {veteranPerks.map((perk) => (
+              <article className={`journey-title-item is-${perk.status}`} key={perk.id}>
+                <div className="journey-title-badge" aria-hidden="true">
+                  {perk.unlocked ? "해금" : perk.isNext ? "다음" : "잠김"}
+                </div>
+                <div className="journey-title-copy">
+                  <div className="journey-title-top">
+                    <strong>{perk.label}</strong>
+                    <span>LV. {perk.level}</span>
+                  </div>
+                  <p className="journey-title-en">
+                    {PERK_KIND_LABEL[perk.kind] || "혜택"}
+                  </p>
+                  <p className="journey-title-flavor">{perk.description}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        {activeCollection === "achievements" ? (
+          <div className="journey-achievement-list">
+            {achievements.map((achievement) => (
+              <div
+                className={`journey-achievement${
+                  achievement.unlocked ? " is-unlocked" : ""
+                }`}
+                key={achievement.id}
+              >
+                <span>{achievement.unlocked ? "완료" : "잠김"}</span>
+                <div>
+                  <strong>{achievement.title}</strong>
+                  <p>{achievement.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </section>
+    </div>
+  ) : null;
 
   return (
     <main className="hub-page growth-hub-page">
@@ -104,7 +195,7 @@ export default function GrowthHubPage({
       <header className="growth-hub-header">
         <h1 className="growth-hub-title">성장</h1>
         <p className="growth-hub-subtitle">
-          목표를 채우고 칭호·업적을 모아 보세요.
+          지금까지 쌓은 훈련의 흔적을 확인하세요.
         </p>
       </header>
 
@@ -126,25 +217,6 @@ export default function GrowthHubPage({
         </section>
       ) : null}
 
-      <section className="growth-hub-summary" aria-label="성장 요약">
-        <div className="growth-hub-summary-item">
-          <span>레벨</span>
-          <strong>LV.{fighter.level}</strong>
-        </div>
-        <div className="growth-hub-summary-item">
-          <span>누적 라운드</span>
-          <strong>{stats.totalRounds}R</strong>
-        </div>
-        <div className="growth-hub-summary-item">
-          <span>이번 주 EXP</span>
-          <strong>{weeklyScore}</strong>
-        </div>
-      </section>
-
-      <p className="growth-hub-exp-hint">
-        주간 EXP = 이번 주 획득한 경험치 합계입니다.
-      </p>
-
       {seasonSettlement.newlyAwarded.length > 0 ? (
         <section className="growth-hub-season-award" aria-label="월간 보너스 레벨">
           <p>SEASON CLOSED</p>
@@ -161,360 +233,153 @@ export default function GrowthHubPage({
         <div className="growth-hub-card-head">
           <div>
             <p className="growth-hub-kicker">MONTHLY CAREER</p>
-            <h2 className="growth-hub-card-title">이번 달의 리그</h2>
+            <h2 className="growth-hub-card-title">지금의 커리어</h2>
           </div>
-          <strong className="growth-hub-season-stage">{seasonSummary.stage}</strong>
+          <strong className="growth-hub-season-stage">{tierState.current.stage}</strong>
         </div>
 
         <p className="growth-hub-season-current">
-          LV. {seasonSummary.from}–{seasonSummary.to} · 시즌 완료 시{" "}
+          LV. {fighter.level} · {tierState.current.from}–{tierState.current.to} 구간
+        </p>
+        <div className="growth-hub-tier-progress">
+          <div className="growth-hub-progress-meta">
+            <strong>
+              {tierState.isMaxTier
+                ? "커리어 최고 구간"
+                : `${tierState.next.stage}까지 ${tierState.levelsToNextTier} LV`}
+            </strong>
+            <span>
+              {tierState.isMaxTier
+                ? "LV. 100"
+                : `LV. ${tierState.next.from} 조건`}
+            </span>
+          </div>
+          <div className="growth-hub-progress-track" aria-hidden="true">
+            <div
+              className="growth-hub-progress-fill"
+              style={{ width: `${tierState.progressPercent}%` }}
+            />
+          </div>
+        </div>
+        <p className="growth-hub-season-current is-season-reward">
+          이번 달 기록을 마치면{" "}
           <strong>+{seasonSummary.levels} LV</strong>
         </p>
         <p className="growth-hub-card-note">
           {seasonSummary.endsOn}에 이번 달 최고 리그를 기준으로 영구 보너스 레벨을
           지급합니다.
-          {nextTier
-            ? ` 다음 ${nextTier.stage}: LV. ${nextTier.from}부터`
+          {tierState.next
+            ? ` 다음 구간은 ${tierState.next.stage}입니다.`
             : " 레전드의 기록은 계속됩니다."}
         </p>
 
-        <div className="growth-hub-tier-table" aria-label="월간 리그 보너스 표">
-          {MONTHLY_TIER_REWARDS.map((tier) => {
-            const isCurrent = tier.stage === seasonSummary.stage;
+        <div className="growth-hub-tier-table" aria-label="전체 커리어 티어표">
+          {tierState.tiers.map((tier) => {
             return (
               <div
-                className={`growth-hub-tier-row${isCurrent ? " is-current" : ""}`}
+                className={`growth-hub-tier-row is-${tier.status}`}
                 key={tier.stage}
               >
-                <strong>{tier.stage}</strong>
-                <span>
-                  LV. {tier.from}–{tier.to}
-                </span>
-                <small>{tier.unlock}</small>
-                <em>+{tier.levels} LV</em>
+                <div className="growth-hub-tier-name">
+                  <strong>{tier.stage}</strong>
+                  <span>LV. {tier.from}–{tier.to}</span>
+                </div>
+                <div className="growth-hub-tier-reward">
+                  <small>
+                    {tier.perks.length > 0
+                      ? tier.perks.map((perk) => perk.label).join(" · ")
+                      : "해금 보상 없음"}
+                  </small>
+                  <em>월간 +{tier.levels} LV</em>
+                </div>
+                <b aria-label={`${tier.stage} ${tier.status}`}>
+                  {tier.status === "complete"
+                    ? "완료"
+                    : tier.status === "current"
+                      ? "현재"
+                      : "잠김"}
+                </b>
               </div>
             );
           })}
         </div>
       </section>
 
-      <section className="growth-hub-card growth-hub-weekly-goal">
-        <div className="growth-hub-card-head">
-          <div>
-            <p className="growth-hub-kicker">WEEKLY GOAL</p>
-            <h2 className="growth-hub-card-title">이번 주 목표</h2>
-          </div>
-          <button
-            type="button"
-            className="growth-hub-goal-target"
-            onClick={handleCycleWeeklyGoal}
-            aria-label={`주간 목표 변경, 현재 ${weeklyGoal}라운드`}
-          >
-            {weeklyGoal}R
-          </button>
-        </div>
-
-        <div className="growth-hub-progress-meta">
-          <strong>
-            {weeklyGoalStatus.currentRounds}/{weeklyGoalStatus.targetRounds}R
-          </strong>
-          <span>
-            {weeklyGoalStatus.isComplete
-              ? "목표 달성"
-              : `${weeklyGoalStatus.remainingRounds}R 남음`}
-          </span>
-        </div>
-
-        <div className="growth-hub-progress-track" aria-hidden="true">
-          <div
-            className={`growth-hub-progress-fill${
-              weeklyGoalStatus.isComplete ? " is-complete" : ""
-            }`}
-            style={{ width: `${weeklyGoalStatus.progressPercent}%` }}
-          />
-        </div>
-
-        <p className="growth-hub-card-note">
-          {weeklyGoalStatus.isComplete
-            ? "이번 주 목표를 달성했어요. 다음 주에도 이어가 보세요."
-            : "목표 숫자를 눌러 9R · 12R · 15R · 21R 중에서 바꿀 수 있어요."}
-        </p>
-      </section>
-
-      {!isEmpty && weeklyReport.highlights.length > 0 ? (
-        <section className="growth-hub-card growth-hub-weekly-report">
-          <div className="growth-hub-card-head">
-            <div>
-              <p className="growth-hub-kicker">WEEKLY REPORT</p>
-              <h2 className="growth-hub-card-title">이번 주 한 줄</h2>
-            </div>
-            <span className="growth-hub-weekly-report-label">{weeklyReport.weekLabel}</span>
-          </div>
-
-          <ul className="growth-hub-weekly-report-list">
-            {weeklyReport.highlights.slice(0, 3).map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-
-          <p className="growth-hub-card-note">
-            {weeklyReport.totalRounds}R · {weeklyReport.totalSessions}회 ·{" "}
-            {weeklyReport.totalMinutes}분 훈련
-          </p>
-        </section>
-      ) : null}
-
-      {milestone ? (
-        <section className="growth-hub-card growth-hub-milestone">
-          <div className="growth-hub-card-head">
-            <div>
-              <p className="growth-hub-kicker">{milestone.kicker}</p>
-              <h2 className="growth-hub-card-title">다음 마일스톤</h2>
-            </div>
-          </div>
-
-          <strong className="growth-hub-milestone-name">{milestone.title}</strong>
-          <p className="growth-hub-milestone-desc">{milestone.description}</p>
-
-          <div className="growth-hub-progress-meta">
-            <strong>{milestone.progressPercent}%</strong>
-            <span>{milestone.remainingLabel}</span>
-          </div>
-
-          <div className="growth-hub-progress-track" aria-hidden="true">
-            <div
-              className="growth-hub-progress-fill is-gold"
-              style={{ width: `${milestone.progressPercent}%` }}
-            />
-          </div>
-        </section>
-      ) : null}
-
-      <button
-        type="button"
-        className="growth-hub-card growth-hub-curriculum is-clickable"
-        onClick={onOpenCurriculum}
-      >
-        <div className="growth-hub-card-head">
-          <div>
-            <p className="growth-hub-kicker">LEARN</p>
-            <strong className="growth-hub-card-title">
-              {curriculum.isComplete
-                ? "프로그램 완주"
-                : `기술 ${curriculum.completedCount}/${curriculum.totalSessions}`}
-            </strong>
-            <small className="growth-hub-card-desc">
-              {curriculum.isComplete
-                ? "4주 프로그램을 모두 마쳤어요"
-                : "4주 코스에서 영상·훈련을 이어갈 수 있어요"}
-            </small>
-          </div>
-          <span className="growth-hub-card-arrow" aria-hidden="true">
-            →
-          </span>
-        </div>
-
-        <div className="growth-hub-progress-track" aria-hidden="true">
-          <div
-            className="growth-hub-progress-fill"
-            style={{ width: `${curriculum.progressPercent}%` }}
-          />
-        </div>
-      </button>
-
       <div className="growth-hub-collections">
-        <section
-          className={`journey-card journey-title-card${
-            isTitleCollectionOpen ? " is-open" : ""
-          }`}
-        >
+        <section className="growth-collection-card">
           <button
             type="button"
-            className="journey-title-toggle"
-            onClick={() => setIsTitleCollectionOpen((open) => !open)}
-            aria-expanded={isTitleCollectionOpen}
+            className="growth-collection-card-button"
+            onClick={() => setActiveCollection("titles")}
           >
-            <div className="journey-section-head">
+            <div className="growth-collection-card-head">
               <div>
-                <p className="journey-section-label">TITLES</p>
+                <p>TITLES</p>
                 <h2>칭호 도감</h2>
               </div>
-              <div className="journey-title-toggle-meta">
-                <span className="journey-count">
-                  {unlockedTitleCount}/{titleCollection.length}
-                </span>
-                <span className="journey-title-toggle-action">
-                  {isTitleCollectionOpen ? "접기 ▲" : "펼치기 ▼"}
-                </span>
-              </div>
+              <span>{unlockedTitleCount}/{titleCollection.length}</span>
             </div>
-            {!isTitleCollectionOpen ? (
-              <p className="journey-title-collapsed-hint">
-                {nextTitle
-                  ? `장착 ${currentTitle?.ko ?? fighter.fighterTitle} · 다음 ${nextTitle.ko} (LV. ${nextTitle.level})`
-                  : `장착 ${currentTitle?.ko ?? fighter.fighterTitle} · 모든 칭호 획득`}
-              </p>
-            ) : null}
+            <strong>
+              {currentTitle?.ko ?? fighter.fighterTitle}
+            </strong>
+            <p>
+              {nextTitle
+                ? `다음 ${nextTitle.ko} · LV. ${nextTitle.level}`
+                : "모든 칭호를 획득했습니다"}
+            </p>
+            <em>도감 보기 →</em>
           </button>
-
-          {isTitleCollectionOpen ? (
-            <div className="journey-title-body-panel">
-              {nextTitle ? (
-                <p className="journey-title-next">
-                  다음 칭호 <strong>{nextTitle.ko}</strong> · LV. {nextTitle.level}
-                </p>
-              ) : (
-                <p className="journey-title-next">모든 칭호를 획득했습니다.</p>
-              )}
-
-              <div className="journey-title-list">
-                {titleCollection.map((title) => (
-                  <article
-                    className={`journey-title-item is-${title.status}`}
-                    key={title.level}
-                  >
-                    <div className="journey-title-badge" aria-hidden="true">
-                      {title.isCurrent
-                        ? "장착"
-                        : title.unlocked
-                          ? "획득"
-                          : title.isNext
-                            ? "다음"
-                            : "잠김"}
-                    </div>
-                    <div className="journey-title-copy">
-                      <div className="journey-title-top">
-                        <strong>{title.ko}</strong>
-                        <span>LV. {title.level}</span>
-                      </div>
-                      <p className="journey-title-en">{title.en}</p>
-                      <p className="journey-title-flavor">{title.flavor}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          ) : null}
         </section>
 
-        <section
-          className={`journey-card journey-perk-card${
-            isVeteranPerksOpen ? " is-open" : ""
-          }`}
-        >
+        <section className="growth-collection-card">
           <button
             type="button"
-            className="journey-title-toggle"
-            onClick={() => setIsVeteranPerksOpen((open) => !open)}
-            aria-expanded={isVeteranPerksOpen}
+            className="growth-collection-card-button"
+            onClick={() => setActiveCollection("perks")}
           >
-            <div className="journey-section-head">
+            <div className="growth-collection-card-head">
               <div>
-                <p className="journey-section-label">VETERAN</p>
+                <p>VETERAN</p>
                 <h2>베테랑 혜택</h2>
               </div>
-              <div className="journey-title-toggle-meta">
-                <span className="journey-count">
-                  {unlockedPerkCount}/{veteranPerks.length}
-                </span>
-                <span className="journey-title-toggle-action">
-                  {isVeteranPerksOpen ? "접기 ▲" : "펼치기 ▼"}
-                </span>
-              </div>
+              <span>{unlockedPerkCount}/{veteranPerks.length}</span>
             </div>
-            {!isVeteranPerksOpen ? (
-              <p className="journey-title-collapsed-hint">
-                {nextPerk
-                  ? `다음 혜택 ${nextPerk.label} · LV. ${nextPerk.level}`
-                  : "모든 베테랑 혜택을 해금했습니다"}
-              </p>
-            ) : null}
+            <strong>{nextPerk ? nextPerk.label : "모든 혜택 해금"}</strong>
+            <p>
+              {nextPerk
+                ? `다음 해금 LV. ${nextPerk.level} · ${PERK_KIND_LABEL[nextPerk.kind] || "혜택"}`
+                : "명패와 카드에서 적용 중입니다"}
+            </p>
+            <em>혜택 보기 →</em>
           </button>
-
-          {isVeteranPerksOpen ? (
-            <div className="journey-title-body-panel">
-              <div className="journey-title-list">
-                {veteranPerks.map((perk) => (
-                  <article
-                    className={`journey-title-item is-${perk.status}`}
-                    key={perk.id}
-                  >
-                    <div className="journey-title-badge" aria-hidden="true">
-                      {perk.unlocked ? "해금" : perk.isNext ? "다음" : "잠김"}
-                    </div>
-                    <div className="journey-title-copy">
-                      <div className="journey-title-top">
-                        <strong>{perk.label}</strong>
-                        <span>LV. {perk.level}</span>
-                      </div>
-                      <p className="journey-title-en">
-                        {PERK_KIND_LABEL[perk.kind] || "혜택"}
-                      </p>
-                      <p className="journey-title-flavor">{perk.description}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          ) : null}
         </section>
 
-        <section
-          className={`journey-card journey-achievement-card${
-            isAchievementsOpen ? " is-open" : ""
-          }`}
-        >
+        <section className="growth-collection-card">
           <button
             type="button"
-            className="journey-title-toggle"
-            onClick={() => setIsAchievementsOpen((open) => !open)}
-            aria-expanded={isAchievementsOpen}
+            className="growth-collection-card-button"
+            onClick={() => setActiveCollection("achievements")}
           >
-            <div className="journey-section-head">
+            <div className="growth-collection-card-head">
               <div>
-                <p className="journey-section-label">ACHIEVEMENTS</p>
+                <p>ACHIEVEMENTS</p>
                 <h2>업적</h2>
               </div>
-              <div className="journey-title-toggle-meta">
-                <span className="journey-count">
-                  {unlockedAchievementCount}/{achievements.length}
-                </span>
-                <span className="journey-title-toggle-action">
-                  {isAchievementsOpen ? "접기 ▲" : "펼치기 ▼"}
-                </span>
-              </div>
+              <span>{unlockedAchievementCount}/{achievements.length}</span>
             </div>
-            {!isAchievementsOpen ? (
-              <p className="journey-title-collapsed-hint">
-                {unlockedAchievementCount === achievements.length
-                  ? "모든 업적을 달성했습니다"
-                  : `달성 ${unlockedAchievementCount}개 · 아래에서 전체 목록 확인`}
-              </p>
-            ) : null}
+            <strong>
+              {nextAchievement ? nextAchievement.title : "모든 업적 달성"}
+            </strong>
+            <p>
+              {nextAchievement
+                ? nextAchievement.description
+                : "지나온 훈련의 장면을 모두 남겼습니다"}
+            </p>
+            <em>업적 보기 →</em>
           </button>
-
-          {isAchievementsOpen ? (
-            <div className="journey-title-body-panel">
-              <div className="journey-achievement-list">
-                {achievements.map((achievement) => (
-                  <div
-                    className={`journey-achievement${
-                      achievement.unlocked ? " is-unlocked" : ""
-                    }`}
-                    key={achievement.id}
-                  >
-                    <span>{achievement.unlocked ? "완료" : "잠김"}</span>
-                    <div>
-                      <strong>{achievement.title}</strong>
-                      <p>{achievement.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
         </section>
       </div>
+      {collectionSheet}
     </main>
   );
 }

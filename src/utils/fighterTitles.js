@@ -4,7 +4,7 @@
  */
 export const MAX_FIGHTER_LEVEL = 100;
 
-const CAREER_STAGE_RANGES = [
+export const CAREER_STAGE_RANGES = [
   { from: 1, to: 15, stageKo: "일반인", stageEn: "CIVILIAN" },
   { from: 16, to: 35, stageKo: "아마추어", stageEn: "AMATEUR" },
   { from: 36, to: 50, stageKo: "세미프로", stageEn: "SEMI-PRO" },

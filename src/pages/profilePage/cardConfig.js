@@ -1,5 +1,24 @@
 export const CARD_FILTER_GROUPS = ["기본", "베테랑 전용"];
 
+/** 첫 사용자용 단순 스타일 3개 — 기존 필터 ID를 재사용한다. */
+export const SIMPLE_CARD_LOOKS = [
+  {
+    id: "mono",
+    name: "MONO",
+    description: "흑백 스트릿",
+  },
+  {
+    id: "relentless",
+    name: "FILM",
+    description: "필름 포스터",
+  },
+  {
+    id: "levelup",
+    name: "DARK",
+    description: "다크 골드",
+  },
+];
+
 export const CARD_FILTERS = [
   {
     id: "levelup",

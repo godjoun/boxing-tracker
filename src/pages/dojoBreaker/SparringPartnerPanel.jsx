@@ -81,6 +81,7 @@ export default function SparringPartnerPanel({
   const [chatPartner, setChatPartner] = useState(null);
 
   const looking = Boolean(form.active || saved?.active);
+  const [isCardEditing, setIsCardEditing] = useState(false);
   const sentInterests = useMemo(
     () => interests.filter((item) => item.direction === "sent"),
     [interests]
@@ -277,12 +278,13 @@ export default function SparringPartnerPanel({
   async function handleSaveDetails() {
     const wasLooking = looking;
     const listing = await saveProfile(true);
-    if (!listing) return;
+    if (!listing) return false;
     showNotice(
       wasLooking
         ? "공개 카드 정보를 저장했습니다."
         : "카드를 저장하고 공개했습니다."
     );
+    return true;
   }
 
   async function handleToggleLooking() {
@@ -407,6 +409,42 @@ export default function SparringPartnerPanel({
     .filter(Boolean)
     .join(" · ");
 
+  const cardPreview = (
+    <section
+      className={`sparring-card-preview${looking ? " is-on" : ""}`}
+      aria-label="라이벌 카드 미리보기"
+    >
+      <div className="sparring-card-preview-body">
+        <span className="sparring-me-mark" aria-hidden="true">
+          {(profile.nickname || "나").slice(0, 1)}
+        </span>
+        <div>
+          <p className="sparring-hero-kicker">MY RIVAL CARD</p>
+          <strong>{profile.nickname || "나"}</strong>
+          <p>
+            {saved
+              ? looking
+                ? "공개 중"
+                : "비공개"
+              : "아직 카드가 없습니다"}
+            {summaryLine ? ` · ${summaryLine}` : ""}
+            {` · LV.${fighterLevel}`}
+          </p>
+          {saved?.meetWhen ? (
+            <p className="sparring-card-preview-meta">{saved.meetWhen}</p>
+          ) : null}
+        </div>
+      </div>
+      <button
+        type="button"
+        className="sparring-save-button"
+        onClick={() => setIsCardEditing(true)}
+      >
+        {saved ? "카드 수정" : "카드 만들기"}
+      </button>
+    </section>
+  );
+
   const cardEditor = (
       <section
         className={`sparring-card-editor${looking ? " is-on" : ""}`}
@@ -435,6 +473,16 @@ export default function SparringPartnerPanel({
             {looking ? "공개 끄기" : "공개하기"}
           </button>
         </div>
+
+        {variant === "profile" ? (
+          <button
+            type="button"
+            className="sparring-card-editor-back"
+            onClick={() => setIsCardEditing(false)}
+          >
+            ← 미리보기로
+          </button>
+        ) : null}
 
         <p className="sparring-card-editor-lead">
           내 정보와 스펙을 한곳에 적어 두고, 공개하면 지도·목록에 올라갑니다.
@@ -526,7 +574,10 @@ export default function SparringPartnerPanel({
           <button
             type="button"
             className="sparring-save-button"
-            onClick={handleSaveDetails}
+            onClick={async () => {
+              const ok = await handleSaveDetails();
+              if (ok && variant === "profile") setIsCardEditing(false);
+            }}
           >
             {looking ? "카드 저장" : "저장 후 공개"}
           </button>
@@ -815,7 +866,11 @@ export default function SparringPartnerPanel({
         </header>
       ) : null}
 
-      {showCardEditor ? cardEditor : null}
+      {showCardEditor
+        ? variant === "profile" && !isCardEditing
+          ? cardPreview
+          : cardEditor
+        : null}
       {showFeed ? feedSection : null}
       {showFeed ? interestSection : null}
 

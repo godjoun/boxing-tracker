@@ -14,6 +14,8 @@ export default function FighterSpecCard({
   onUploadPhoto,
   onRemovePhoto,
   showSpecChips = true,
+  showProgress = true,
+  showStats = true,
   children,
 }) {
   const [showCareerScene, setShowCareerScene] = useState(false);
@@ -141,44 +143,48 @@ export default function FighterSpecCard({
           </p>
         ) : null}
 
-        <div className="fighter-nameplate-progress">
-          <div className="fighter-nameplate-progress-head">
-            <span>{fighter.levelLabel}</span>
-            <span>
+        {showProgress ? (
+          <div className="fighter-nameplate-progress">
+            <div className="fighter-nameplate-progress-head">
+              <span>{fighter.levelLabel}</span>
+              <span>
+                {fighter.isMaxLevel
+                  ? "MAX LEVEL"
+                  : `${fighter.currentLevelExp} / ${fighter.nextLevelExp} EXP`}
+              </span>
+            </div>
+            <div className="fighter-nameplate-bar" aria-hidden="true">
+              <div style={{ width: `${fighter.progressPercent}%` }} />
+            </div>
+            <p className="fighter-nameplate-exp-note">
               {fighter.isMaxLevel
-                ? "MAX LEVEL"
-                : `${fighter.currentLevelExp} / ${fighter.nextLevelExp} EXP`}
-            </span>
+                ? "최대 레벨 달성"
+                : `다음 레벨까지 ${fighter.xpToNextLevel} EXP`}
+            </p>
           </div>
-          <div className="fighter-nameplate-bar" aria-hidden="true">
-            <div style={{ width: `${fighter.progressPercent}%` }} />
-          </div>
-          <p className="fighter-nameplate-exp-note">
-            {fighter.isMaxLevel
-              ? "최대 레벨 달성"
-              : `다음 레벨까지 ${fighter.xpToNextLevel} EXP`}
-          </p>
-        </div>
+        ) : null}
 
-        <div className="fighter-nameplate-grid">
-          <div className="fighter-nameplate-stat">
-            <span>이번 주</span>
-            <strong>{fighter.weeklyRounds}R</strong>
+        {showStats ? (
+          <div className="fighter-nameplate-grid">
+            <div className="fighter-nameplate-stat">
+              <span>이번 주</span>
+              <strong>{fighter.weeklyRounds}R</strong>
+            </div>
+            <div className="fighter-nameplate-stat">
+              <span>누적</span>
+              <strong>{fighter.totalRounds}R</strong>
+            </div>
+            <div className="fighter-nameplate-stat">
+              <span>총 EXP</span>
+              <strong>{fighter.totalExp}</strong>
+            </div>
+            <div className="fighter-nameplate-stat">
+              <span>주간 EXP</span>
+              <strong>{weeklyScore ?? 0}</strong>
+              {streakDays > 0 ? <small>{streakDays}일 연속</small> : null}
+            </div>
           </div>
-          <div className="fighter-nameplate-stat">
-            <span>누적</span>
-            <strong>{fighter.totalRounds}R</strong>
-          </div>
-          <div className="fighter-nameplate-stat">
-            <span>총 EXP</span>
-            <strong>{fighter.totalExp}</strong>
-          </div>
-          <div className="fighter-nameplate-stat">
-            <span>주간 EXP</span>
-            <strong>{weeklyScore ?? 0}</strong>
-            {streakDays > 0 ? <small>{streakDays}일 연속</small> : null}
-          </div>
-        </div>
+        ) : null}
 
         {hasEditor ? (
           <div className="fighter-nameplate-editor">{children}</div>

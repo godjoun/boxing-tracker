@@ -409,6 +409,8 @@ function MainAppShell({ theme, onToggleTheme }) {
             fighterLevel={fighterLevel}
             onStartTraining={() => openTimerFrom("profile")}
             onStudioModeChange={setProfileStudioOpen}
+            onOpenGrowth={() => goPage("growth")}
+            onGoLog={() => goPage("log")}
           />
         )}
 

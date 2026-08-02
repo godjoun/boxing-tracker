@@ -1,9 +1,9 @@
 export const styles = {
   page: {
     width: "100%",
-    maxWidth: "720px",
+    maxWidth: "1040px",
     margin: "0 auto",
-    padding: "18px 16px 110px",
+    padding: "18px 16px calc(110px + env(safe-area-inset-bottom, 0px))",
     color: "var(--p-text)",
     boxSizing: "border-box",
   },

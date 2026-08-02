@@ -3,6 +3,7 @@ import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import FighterSpecCard from "../components/FighterSpecCard";
 import { getFighterProgress } from "../utils/fighterProgress";
+import { getCareerTierState } from "../utils/monthlySeason";
 import { isVeteranFilterUnlocked } from "../utils/veteranPerks";
 import { buildWeeklyReport } from "../utils/trainingStats";
 import { validateBodySpecFields } from "../utils/bodySpecs";
@@ -25,9 +26,7 @@ import {
   resizeImage,
 } from "./profilePage/profileCardUtils";
 import {
-  CARD_FILTERS,
-  CARD_FILTER_GROUPS,
-  CARD_STYLES,
+  SIMPLE_CARD_LOOKS,
   applyPixelImageFilter,
   getCardBackground,
   getCardPreviewOverlay,
@@ -39,6 +38,8 @@ export default function ProfilePage({
   scrollTarget,
   cardMakerFocusLogId = null,
   onStudioModeChange,
+  onOpenGrowth,
+  onGoLog,
 }) {
   const {
     logs,
@@ -72,10 +73,13 @@ export default function ProfilePage({
     return () => onStudioModeChange?.(false);
   }, [onStudioModeChange]);
 
-  const [studioTab, setStudioTab] = useState(
-    startsInQuickCardFlow ? "design" : "select"
-  );
-  const [isQuickCardFlow, setIsQuickCardFlow] = useState(startsInQuickCardFlow);
+  const [studioPanel, setStudioPanel] = useState(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showCardDate, setShowCardDate] = useState(true);
+  const [showCardGym, setShowCardGym] = useState(true);
+  const [showCardRounds, setShowCardRounds] = useState(true);
+  const [savedShareReady, setSavedShareReady] = useState(false);
+  const [, setIsQuickCardFlow] = useState(startsInQuickCardFlow);
   const [nickname, setNickname] = useState(profile.nickname || "나");
   const [bio, setBio] = useState(
     profile.bio || "아직 초보지만 링에 계속 올라가는 중"
@@ -100,18 +104,18 @@ export default function ProfilePage({
   const [cardMedia, setCardMedia] = useState("");
   const [cardMediaType, setCardMediaType] = useState("");
   const [cardMediaReady, setCardMediaReady] = useState(true);
-  const [selectedFilter, setSelectedFilter] = useState("levelup");
-  const selectedFilterRef = useRef("levelup");
-  const [filterIntensity, setFilterIntensity] = useState(75);
-  const [photoScale, setPhotoScale] = useState(100);
+  const [selectedFilter, setSelectedFilter] = useState("mono");
+  const selectedFilterRef = useRef("mono");
+  const [filterIntensity] = useState(75);
+  const [photoScale] = useState(100);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [showComment, setShowComment] = useState(true);
-  const [customTrainingTitle, setCustomTrainingTitle] = useState("");
+  const [customTrainingTitle] = useState("");
   const [levelUpLevel, setLevelUpLevel] = useState(() =>
     String(getFighterProgress(logs).level)
   );
   const [levelUpSlogan, setLevelUpSlogan] = useState("ONE ROUND AT A TIME");
-  const [cardStyle, setCardStyle] = useState("basic");
+  const [cardStyle] = useState("basic");
   const cardStyleRef = useRef("basic");
   const exportGenerationRef = useRef(0);
   const [posterMainName, setPosterMainName] = useState(() =>
@@ -126,14 +130,14 @@ export default function ProfilePage({
     );
   });
   const [posterEventTitle, setPosterEventTitle] = useState("TRAINING DAY");
-  const [posterDateText, setPosterDateText] = useState("JUNE 27");
+  const [posterDateText, setPosterDateText] = useState("");
   const [posterMetaText, setPosterMetaText] = useState(
     "BOXING TRAINING POSTER | RISING FIGHTER"
   );
   const [posterFooterText, setPosterFooterText] = useState(
     "EVERY ROUND WRITES YOUR STORY"
   );
-  const [posterVisible, setPosterVisible] = useState({
+  const [posterVisible] = useState({
     mainName: true,
     subtitle: true,
     eventTitle: true,
@@ -143,7 +147,7 @@ export default function ProfilePage({
   });
 
   const posterExportRef = useRef({
-    selectedFilter: "levelup",
+    selectedFilter: "mono",
     filterIntensity: 75,
     photoScale: 100,
     cardMedia: "",
@@ -153,7 +157,7 @@ export default function ProfilePage({
       mainName: "",
       subtitle: "THE ROOKIE",
       eventTitle: "TRAINING DAY",
-      date: "JUNE 27",
+      date: "",
       meta: "BOXING TRAINING POSTER | RISING FIGHTER",
       footer: "EVERY ROUND WRITES YOUR STORY",
     },
@@ -328,12 +332,12 @@ export default function ProfilePage({
 
         if (cardMakerFocusLogId) {
           setIsQuickCardFlow(true);
-          setStudioTab("design");
+          setStudioPanel(null);
           setSelectedLogIds([cardMakerFocusLogId]);
           track("card_maker_quick_flow", { hasFocusLog: true });
         } else {
           setIsQuickCardFlow(false);
-          setStudioTab("select");
+          setStudioPanel(null);
         }
 
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -363,38 +367,13 @@ export default function ProfilePage({
     }
   }, [scrollTarget]);
 
-  function handleSelectCardStyle(styleId) {
-    cardStyleRef.current = styleId;
-    posterExportRef.current.cardStyle = styleId;
-    exportGenerationRef.current += 1;
-    exportCacheRef.current = {
-      key: "",
-      style: "",
-      dataUrl: "",
-      file: null,
-      filename: "",
-      promise: null,
-    };
-    preparingExportKeyRef.current = "";
-    setExportPreview(null);
-    setCardStyle(styleId);
-    updateShowComment(styleId !== "poster");
-
-    // LEVEL UP 카드는 사진에 levelup 필터만 적용한다.
-    if (styleId === "basic") {
-      selectedFilterRef.current = "levelup";
-      posterExportRef.current.selectedFilter = "levelup";
-      setSelectedFilter("levelup");
-    }
-  }
 
   useEffect(() => {
     cardStyleRef.current = cardStyle;
     posterExportRef.current.cardStyle = cardStyle;
   }, [cardStyle]);
 
-  const activePhotoFilterId =
-    cardStyle === "basic" ? "levelup" : selectedFilter;
+  const activePhotoFilterId = selectedFilter;
 
   useEffect(() => {
     selectedFilterRef.current = selectedFilter;
@@ -413,15 +392,7 @@ export default function ProfilePage({
     setSelectedFilter(filterId);
   }
 
-  function updateFilterIntensity(value) {
-    posterExportRef.current.filterIntensity = value;
-    setFilterIntensity(value);
-  }
 
-  function updatePhotoScale(value) {
-    posterExportRef.current.photoScale = value;
-    setPhotoScale(value);
-  }
 
   function updateShowComment(checked) {
     posterExportRef.current.showComment = checked;
@@ -447,9 +418,6 @@ export default function ProfilePage({
   }, [logs, selectedLogIds]);
 
   const latestLog = logs[0];
-  const isLatestLogSelected = latestLog
-    ? selectedLogIds.includes(latestLog.id)
-    : false;
 
   const cardTotalRounds = selectedLogs.reduce((sum, log) => {
     return sum + getRounds(log);
@@ -491,7 +459,8 @@ export default function ProfilePage({
   function scrollToCardMaker() {
     setProfileView("studio");
     setIsQuickCardFlow(false);
-    setStudioTab("select");
+    setStudioPanel(null);
+    setSavedShareReady(false);
 
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -545,15 +514,27 @@ export default function ProfilePage({
       .find(Boolean) ||
     "BOXING TRAINING";
 
-  const posterMainNameText =
-    posterMainName.trim() || profile.nickname || "JO WOON";
-  const posterSubtitleText = posterSubtitle.trim() || "THE ROOKIE";
-  const posterEventTitleText = posterEventTitle.trim() || "TRAINING DAY";
-  const posterDateTextValue = posterDateText.trim() || "JUNE 27";
-  const posterMetaTextValue =
-    posterMetaText.trim() || "BOXING TRAINING POSTER | RISING FIGHTER";
-  const posterFooterTextValue =
-    posterFooterText.trim() || "EVERY ROUND WRITES YOUR STORY";
+  const cardGymLabel =
+    profile.homeGymName || profile.area || "";
+  const cardDateLabel = useMemo(() => {
+    const raw = selectedLogs[0]?.date || latestLog?.date || "";
+    if (!raw) return "";
+    const parts = String(raw).split("-");
+    if (parts.length !== 3) return raw;
+    return `${Number(parts[1])}월 ${Number(parts[2])}일`;
+  }, [selectedLogs, latestLog]);
+
+  useEffect(() => {
+    if (!cardDateLabel) return;
+    const timer = setTimeout(() => {
+      if (!posterDateText.trim()) {
+        updatePosterField("date", cardDateLabel);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+    // Only seed empty date once from the selected training log.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardDateLabel]);
 
   function getCardExportKey() {
     return JSON.stringify({
@@ -568,6 +549,11 @@ export default function ProfilePage({
       levelUpLevel,
       levelUpSlogan,
       showComment,
+      showCardDate,
+      showCardGym,
+      showCardRounds,
+      cardDateLabel,
+      cardGymLabel,
       profileNickname: profile.nickname || "",
       profileTier: profileStats.levelLabel,
       cardTotalRounds,
@@ -594,17 +580,6 @@ export default function ProfilePage({
 
   const currentExportKey = getCardExportKey();
 
-  function handlePosterVisibleChange(field, checked) {
-    posterExportRef.current.visible = {
-      ...posterExportRef.current.visible,
-      [field]: checked,
-    };
-
-    setPosterVisible((prev) => ({
-      ...prev,
-      [field]: checked,
-    }));
-  }
 
   function clearVideoObjectUrl() {
     if (videoObjectUrlRef.current) {
@@ -1629,9 +1604,8 @@ export default function ProfilePage({
       selectedFilterRef.current ||
       selectedFilter ||
       "levelup";
-    // LEVEL UP 카드 저장 시 사진은 levelup 필터만. 테마 색은 선택한 테마를 따른다.
-    const exportPhotoFilterId =
-      exportStyleId === "basic" ? "levelup" : rawExportFilterId;
+    // LEVEL UP도 선택한 MONO/FILM/DARK 사진 필터를 그대로 쓴다.
+    const exportPhotoFilterId = rawExportFilterId;
     const exportFilterIntensity =
       typeof exportSnapshot.filterIntensity === "number"
         ? exportSnapshot.filterIntensity
@@ -2147,6 +2121,7 @@ export default function ProfilePage({
 
     const styleToExport = cardStyleRef.current || cardStyle;
     track("card_save", { style: styleToExport });
+    setSavedShareReady(false);
 
     if (!trainingCardRef.current) {
       alert("저장할 카드가 아직 준비되지 않았어.");
@@ -2161,6 +2136,21 @@ export default function ProfilePage({
     const key = getCardExportKey();
     const cache = exportCacheRef.current;
 
+    async function finishSave(readyCache) {
+      // 저장 = 파일 확보. 공유는 저장 후 별도 버튼으로 연다.
+      if (isIOSLikeDevice()) {
+        showExportPreview(readyCache);
+      } else {
+        const link = document.createElement("a");
+        link.download = readyCache.filename;
+        link.href = readyCache.dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+      setSavedShareReady(true);
+    }
+
     if (
       cache.key === key &&
       cache.style === styleToExport &&
@@ -2168,10 +2158,11 @@ export default function ProfilePage({
       cache.dataUrl
     ) {
       try {
-        shareOrDownloadPreparedExport(cache);
+        await finishSave(cache);
       } catch (error) {
         console.error(error);
         showExportPreview(cache);
+        setSavedShareReady(true);
       }
       return;
     }
@@ -2179,7 +2170,7 @@ export default function ProfilePage({
     try {
       setIsSavingImage(true);
       const freshCache = await prepareCardExport({ force: true });
-      shareOrDownloadPreparedExport(freshCache);
+      await finishSave(freshCache);
     } catch (error) {
       if (error?.message === "EXPORT_STALE") {
         return;
@@ -2194,12 +2185,22 @@ export default function ProfilePage({
         fallback.key === key
       ) {
         showExportPreview(fallback);
+        setSavedShareReady(true);
       } else {
         alert("이미지를 만들지 못했어. 사진과 설정을 확인한 뒤 다시 시도해줘.");
       }
     } finally {
       setIsSavingImage(false);
     }
+  }
+
+  function handleShareSavedCard() {
+    const cache = exportCacheRef.current;
+    if (!cache?.dataUrl || !cache?.file) {
+      alert("먼저 명패를 저장해 주세요.");
+      return;
+    }
+    shareOrDownloadPreparedExport(cache);
   }
 
   useEffect(() => {
@@ -2238,33 +2239,25 @@ export default function ProfilePage({
         ? undefined
         : "560px";
 
-  const posterPreviewTheme = getPosterCanvasTheme(selectedFilter);
-  const posterPreviewAccent = posterPreviewTheme.accent;
-  const posterPreviewLine = `linear-gradient(90deg, transparent, ${posterPreviewAccent}, transparent)`;
-
   const isCardImagePreparing =
     cardMediaType === "image" && Boolean(cardMedia) && !cardMediaReady;
 
   const isSaveCardDisabled =
     cardMediaType === "video" || isSavingImage || isCardImagePreparing;
 
-  const activeCardStyle =
-    CARD_STYLES.find((style) => style.id === cardStyle) || CARD_STYLES[0];
-  const baseCardSaveLabel =
-    cardStyle === "social"
-      ? "STORY 카드 저장 (9:16)"
-      : cardStyle === "poster"
-      ? "POSTER 카드 저장"
-      : "LEVEL UP 카드 저장";
-  const cardSaveLabel =
-    isQuickCardFlow && cardMedia
-      ? `인증 카드 저장·공유하기`
-      : baseCardSaveLabel;
+  const cardSaveLabel = "명패 저장하기";
+  const activeSimpleLook =
+    SIMPLE_CARD_LOOKS.find((look) => look.id === selectedFilter) ||
+    SIMPLE_CARD_LOOKS[0];
+  const tierState = getCareerTierState(profileStats.level);
+  const recentLogs = logs.slice(0, 3);
 
   return (
     <main style={styles.page} className="profile-page">
       {profileView === "nameplate" && (
         <>
+      <div className="profile-hub-layout">
+      <div className="profile-hub-primary">
       <FighterSpecCard
         profile={{
           ...profile,
@@ -2285,6 +2278,8 @@ export default function ProfilePage({
         onUploadPhoto={() => fileInputRef.current?.click()}
         onRemovePhoto={handleRemovePhoto}
         showSpecChips={!isProfileEditOpen}
+        showProgress={false}
+        showStats={false}
       >
         <input
           ref={fileInputRef}
@@ -2302,7 +2297,7 @@ export default function ProfilePage({
           aria-expanded={isProfileEditOpen}
         >
           <div style={styles.profileEditToggleCopy}>
-            <p style={styles.profileEditToggleTitle}>프로필 · 신체 스펙 수정</p>
+            <p style={styles.profileEditToggleTitle}>프로필 수정</p>
             <span
               className="profile-edit-toggle-hint"
               style={styles.profileEditToggleHint}
@@ -2310,14 +2305,14 @@ export default function ProfilePage({
               {isProfileEditOpen
                 ? "닉네임, 소개, 키·체중·체급 등을 수정할 수 있어요."
                 : profileSpecSummary ||
-                  "탭해서 프로필과 신체 스펙을 수정하세요."}
+                  "사진 · 닉네임 · 지역 · 스펙을 수정하세요."}
             </span>
           </div>
           <span
             className="profile-edit-toggle-action"
             style={styles.profileEditToggleAction}
           >
-            {isProfileEditOpen ? "접기 ▲" : "펼치기 ▼"}
+            {isProfileEditOpen ? "접기 ▲" : "수정 →"}
           </span>
         </button>
 
@@ -2490,79 +2485,126 @@ export default function ProfilePage({
           </div>
         ) : null}
       </FighterSpecCard>
+      </div>
+
+      <div className="profile-hub-secondary">
+      <section className="profile-hub-card profile-growth-summary" aria-label="성장 요약">
+        <p className="home-section-label">GROWTH</p>
+        <h2>성장 요약</h2>
+        <div className="profile-growth-grid">
+          <div>
+            <span>누적 라운드</span>
+            <strong>{profileStats.totalRounds}R</strong>
+          </div>
+          <div>
+            <span>총 운동 시간</span>
+            <strong>{profileStats.totalMinutes}분</strong>
+          </div>
+          <div>
+            <span>연속 훈련</span>
+            <strong>{levelUpStreakDays || 0}일</strong>
+          </div>
+          <div>
+            <span>현재 레벨</span>
+            <strong>LV.{profileStats.level}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="profile-hub-card profile-season-summary" aria-label="이번 시즌">
+        <div className="profile-season-head">
+          <div>
+            <p className="home-section-label">SEASON</p>
+            <h2>이번 시즌</h2>
+          </div>
+          <strong className="profile-season-stage">{tierState.current.stage}</strong>
+        </div>
+        <p className="profile-season-copy">
+          {tierState.isMaxTier
+            ? "커리어 최고 구간에 있습니다."
+            : `${tierState.next.stage}까지 ${tierState.levelsToNextTier} LV · LV. ${tierState.next.from}`}
+        </p>
+        <div className="growth-hub-progress-track" aria-hidden="true">
+          <div
+            className="growth-hub-progress-fill"
+            style={{ width: `${tierState.progressPercent}%` }}
+          />
+        </div>
+        {onOpenGrowth ? (
+          <button
+            type="button"
+            className="profile-section-link"
+            onClick={onOpenGrowth}
+          >
+            성장 화면 보기 →
+          </button>
+        ) : null}
+      </section>
+      </div>
+      </div>
 
       <section
         id="profile-rival-card"
         ref={rivalCardRef}
-        className="profile-rival-card-section"
-        aria-label="라이벌 찾기 카드"
+        className="profile-hub-card profile-rival-card-section"
+        aria-label="라이벌 카드"
       >
         <div className="profile-rival-card-head">
           <p className="home-section-label">RIVAL</p>
-          <h2 style={styles.sectionTitle}>라이벌 찾기 카드</h2>
+          <h2>라이벌 카드</h2>
           <p className="profile-rival-card-desc">
-            체급·지역·희망 시간을 공개하면 짐 지도에서 라이벌로 표시됩니다.
+            완성된 카드만 먼저 보고, 필요할 때 수정합니다.
           </p>
         </div>
         <SparringPartnerPanel variant="profile" embedded />
       </section>
 
-      <section className="profile-trace-stats" style={styles.statGrid}>
-        <div style={styles.statBox}>
-          <span style={styles.statLabel}>누적 라운드</span>
-          <strong style={styles.statValue}>{profileStats.totalRounds}R</strong>
-        </div>
-
-        <div style={styles.statBox}>
-          <span style={styles.statLabel}>훈련 기록</span>
-          <strong style={styles.statValue}>{profileStats.totalLogs}회</strong>
-        </div>
-
-        <div style={styles.statBox}>
-          <span style={styles.statLabel}>운동 시간</span>
-          <strong style={styles.statValue}>{profileStats.totalMinutes}분</strong>
-        </div>
-
-        <div style={styles.statBox}>
-          <span style={styles.statLabel}>오늘 완료</span>
-          <strong style={styles.statValue}>{profileStats.todayCount}회</strong>
-        </div>
-      </section>
-
       <button
         type="button"
-        className="profile-studio-entry"
+        className="profile-studio-entry profile-hub-card"
         style={styles.cardStudioEntry}
         onClick={scrollToCardMaker}
       >
-        <span style={styles.cardStudioEntryKicker}>NAMEPLATE · CARD MAKER</span>
-        <strong style={styles.cardStudioEntryTitle}>명패 공유하기</strong>
+        <span style={styles.cardStudioEntryKicker}>NAMEPLATE</span>
+        <strong style={styles.cardStudioEntryTitle}>명패 만들기</strong>
         <span style={styles.cardStudioEntryDesc}>
-          사진 없이도 기록·레벨·라운드만으로 멋진 카드를 만들 수 있어요.
+          사진 · 문구 · 스타일로 오늘의 명패를 남깁니다.
         </span>
-        <span style={styles.cardStudioEntryCta}>명패 공유 열기 →</span>
+        <span style={styles.cardStudioEntryCta}>명패 만들기 →</span>
       </button>
 
-      <section className="profile-proof" style={styles.sectionCard}>
-        <p style={styles.kicker}>PROOF OF TRAINING</p>
-        <h2 style={styles.sectionTitle}>훈련 증명</h2>
-
-        <div style={styles.proofBox}>
-          <p style={styles.proofText}>
-            나는 지금까지 총{" "}
-            <strong style={styles.redText}>
-              {profileStats.totalRounds}라운드
-            </strong>
-            를 버텼고,{" "}
-            <strong style={styles.redText}>{profileStats.totalLogs}번</strong>의
-            훈련 기록을 남겼다.
-          </p>
-
-          <p style={styles.proofSmallText}>
-            자동 기록 {profileStats.timerCount}개 · 수동 기록{" "}
-            {profileStats.manualCount}개
-          </p>
+      <section className="profile-hub-card profile-recent-logs" aria-label="최근 운동 기록">
+        <div className="profile-season-head">
+          <div>
+            <p className="home-section-label">RECENT</p>
+            <h2>최근 운동 기록</h2>
+          </div>
+          {onGoLog ? (
+            <button
+              type="button"
+              className="profile-section-link is-inline"
+              onClick={onGoLog}
+            >
+              전체 기록 보기
+            </button>
+          ) : null}
         </div>
+
+        {recentLogs.length === 0 ? (
+          <p className="profile-rival-card-desc">아직 기록이 없습니다.</p>
+        ) : (
+          <ul className="profile-recent-list">
+            {recentLogs.map((log) => (
+              <li key={log.id}>
+                <strong>{log.type || "훈련"}</strong>
+                <span>
+                  {getRounds(log)}R · {log.minutes || log.duration || 0}분 ·{" "}
+                  {log.date}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
         </>
       )}
@@ -2577,553 +2619,66 @@ export default function ProfilePage({
         ← 명패로 돌아가기
       </button>
 
-      <section ref={cardMakerRef} style={styles.cardMakerSection}>
-        <p style={styles.kicker}>NAMEPLATE · CARD MAKER</p>
-        <h2 style={styles.sectionTitle}>명패 공유하기</h2>
-
+      <section ref={cardMakerRef} style={styles.cardMakerSection} className="nameplate-simple-studio">
+        <p style={styles.kicker}>NAMEPLATE</p>
+        <h2 style={styles.sectionTitle}>명패 만들기</h2>
         <p style={styles.cardMakerNameplateNote}>
-          명패 스펙 {profileStats.levelLabel} · 이번 주 {profileStats.weeklyRounds}R ·
-          누적 {profileStats.totalRounds}R가 카드에 반영됩니다.
+          사진 → 문구 → 스타일 → 저장. 필요한 것만 남겼습니다.
         </p>
-
-        <div className="studio-tabs" style={styles.studioTabs} role="tablist" aria-label="카드 만들기 단계">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={studioTab === "select"}
-            onClick={() => setStudioTab("select")}
-            className="studio-tab"
-            style={{
-              ...styles.studioTab,
-              ...(studioTab === "select" ? styles.studioTabActive : {}),
-            }}
-          >
-            1) 운동
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={studioTab === "design"}
-            onClick={() => setStudioTab("design")}
-            className="studio-tab"
-            style={{
-              ...styles.studioTab,
-              ...(studioTab === "design" ? styles.studioTabActive : {}),
-            }}
-          >
-            2) 디자인·저장
-          </button>
-        </div>
-
-        {latestLog && isLatestLogSelected ? (
-          <div style={styles.recentTrainingNotice}>
-            <span style={styles.recentTrainingBadge}>최근 훈련 선택됨</span>
-
-            <div>
-              <strong style={styles.recentTrainingTitle}>{latestLog.type}</strong>
-
-              <p style={styles.recentTrainingText}>
-                {getRounds(latestLog)}R ·{" "}
-                {latestLog.minutes || latestLog.duration}min 훈련이 카드에
-                자동 선택됐어요. 사진 없이 바로 저장하거나 원하는 사진을
-                추가해보세요.
-              </p>
-            </div>
-          </div>
-        ) : null}
 
         {logs.length === 0 ? (
           <div style={styles.emptyFeaturedLog}>
-            아직 선택할 운동 기록이 없어. 타이머를 완료하거나 기록 화면에서
-            운동을 직접 작성해줘.
+            아직 훈련 기록이 없어요. 타이머를 완료하거나 기록에서 운동을 남기면
+            날짜·라운드가 자동으로 채워집니다.
           </div>
-        ) : (
-          <>
-              <p style={styles.cardMakerHelp}>
-                카드 하단에 이번 주 {profileStats.weeklyRounds}R · 누적{" "}
-                {profileStats.totalRounds}R가 표시됩니다.
-              </p>
+        ) : null}
 
-              {studioTab === "select" ? (
-              <div style={styles.selectorSection}>
-              <p style={styles.cardMakerLabel}>1. 운동 여러 개 선택</p>
-              <p style={styles.cardMakerHelp}>
-                카드에 넣고 싶은 운동을 여러 개 선택해. 마지막 1개는 해제되지
-                않게 해둘게.
-              </p>
-
-              <div style={styles.logSelectList}>
-                {logs.slice(0, 10).map((log) => {
-                  const isSelected = selectedLogIds.includes(log.id);
-
-                  return (
-                    <button
-                      key={log.id}
-                      type="button"
-                      onClick={() => toggleLogSelection(log.id)}
-                      style={{
-                        ...styles.logSelectItem,
-                        ...(isSelected ? styles.logSelectItemActive : {}),
-                      }}
-                    >
-                      <div style={styles.logSelectCheck}>
-                        {isSelected ? "·" : ""}
-                      </div>
-
-                      <div style={{ flex: 1 }}>
-                        <strong style={styles.logSelectTitle}>{log.type}</strong>
-                        <p style={styles.logSelectMeta}>
-                          {getRounds(log)}R · {log.minutes || log.duration}min ·{" "}
-                          {log.conditionLabel || "보통"} · {log.date}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-              ) : null}
-
-            {studioTab === "design" ? (
-              <>
-            <div style={styles.cardPhotoBox}>
-              <div>
-                <p style={styles.cardMakerLabel}>2. 카드 배경 선택 (선택)</p>
-                <p style={styles.cardMakerHelp}>
-                  사진이 없어도 {BRAND_NAME} 그래픽 카드로 바로 저장할 수 있어요.
-                  원할 때만 훈련 사진을 추가하세요. (지금은 사진만 저장됩니다.)
-                </p>
-              </div>
-
-              <input
-                ref={cardMediaInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleCardMediaChange}
-                style={{ display: "none" }}
-              />
-
-              <div style={styles.cardPhotoButtonRow}>
-                <button
-                  type="button"
-                  style={styles.photoButton}
-                  onClick={() => cardMediaInputRef.current?.click()}
-                >
-                  사진 추가하기
-                </button>
-
-                {cardMedia && (
-                  <button
-                    type="button"
-                    style={styles.darkButton}
-                    onClick={handleRemoveCardMedia}
-                  >
-                    선택한 사진 지우기
-                  </button>
-                )}
-              </div>
-
-              {cardMediaType === "video" && (
-                <p style={styles.videoNotice}>
-                  예전에 고른 영상이 남아 있어요. 지금은 사진만 저장할 수 있으니
-                  지우고 사진으로 바꿔 주세요.
-                </p>
-              )}
-            </div>
-
-            <div style={styles.filterSection}>
-              <p style={styles.cardMakerLabel}>3. 카드 스타일 선택</p>
-
-              <div className="card-style-grid" style={styles.cardStyleGrid}>
-                {CARD_STYLES.map((style) => (
-                  <button
-                    key={style.id}
-                    type="button"
-                    style={{
-                      ...styles.cardStyleButton,
-                      ...(cardStyle === style.id
-                        ? styles.activeCardStyleButton
-                        : {}),
-                    }}
-                    onClick={() => handleSelectCardStyle(style.id)}
-                  >
-                    <strong>{style.name}</strong>
-                    <span>{style.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={styles.filterSection}>
-              <p style={styles.cardMakerLabel}>4. 카드 테마 선택</p>
-              {cardStyle === "basic" ? (
-                <p style={styles.cardMakerHelp}>
-                  LEVEL UP 카드는 사진에 GOLD 필터만 적용돼. 아래 테마는 숫자·강조 색만 바꿔.
-                </p>
-              ) : null}
-
-              {CARD_FILTER_GROUPS.map((groupName) => {
-                const groupFilters = CARD_FILTERS.filter(
-                  (filter) => (filter.group || "기본") === groupName
-                );
-
-                if (groupFilters.length === 0) return null;
-
-                return (
-                  <div key={groupName} style={styles.filterGroup}>
-                    <p style={styles.filterGroupLabel}>{groupName}</p>
-                    <div className="filter-grid" style={styles.filterGrid}>
-                      {groupFilters.map((filter) => {
-                        const isLocked = !isVeteranFilterUnlocked(
-                          filter.id,
-                          profileStats.level
-                        );
-
-                        return (
-                          <button
-                            key={filter.id}
-                            type="button"
-                            style={{
-                              ...styles.filterButton,
-                              ...(selectedFilter === filter.id
-                                ? styles.activeFilterButton
-                                : {}),
-                              ...(isLocked ? styles.lockedFilterButton : {}),
-                            }}
-                            onClick={() => handleSelectFilter(filter.id)}
-                            disabled={isLocked}
-                          >
-                            <strong style={styles.filterChipTitle}>{filter.name}</strong>
-                            {isLocked ? (
-                              <span style={styles.filterChipLock}>
-                                LV. {filter.veteranLevel} 해금
-                              </span>
-                            ) : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div style={styles.adjustSection}>
-              <p style={styles.cardMakerLabel}>5. 사진 조절</p>
-
-              <label style={styles.rangeLabel}>
-                <span>테마 강도</span>
-                <strong>{filterIntensity}%</strong>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={filterIntensity}
-                onChange={(event) =>
-                  updateFilterIntensity(Number(event.target.value))
-                }
-                style={styles.rangeInput}
-              />
-
-              <label style={styles.rangeLabel}>
-                <span>사진 크기</span>
-                <strong>{photoScale}%</strong>
-              </label>
-              <input
-                type="range"
-                min="85"
-                max="120"
-                value={photoScale}
-                onChange={(event) => updatePhotoScale(Number(event.target.value))}
-                style={styles.rangeInput}
-              />
-
-              <label style={styles.commentToggle}>
-                <input
-                  type="checkbox"
-                  checked={showComment}
-                  onChange={(event) => updateShowComment(event.target.checked)}
-                  style={styles.commentCheckbox}
-                  disabled={cardStyle === "poster"}
-                />
-
-                <span>카드에 코멘트 표시하기</span>
-              </label>
-
-              <p style={styles.commentToggleHelp}>
-                {cardStyle === "poster"
-                  ? "POSTER는 포스터 문구만 쓰고, 훈련 코멘트는 넣지 않아."
-                  : "끄면 카드 미리보기·저장 이미지에서 훈련 코멘트가 사라져."}
-              </p>
-
-              {cardStyle === "basic" ? (
-                <div style={styles.levelUpInputBox}>
-                  <p style={styles.cardMakerLabel}>LEVEL UP 입력</p>
-                  <p style={styles.cardMakerHelp}>
-                    업로드한 사진 위에 표시할 레벨과 한 줄 문구를 정해줘.
-                  </p>
-
-                  <label style={styles.label}>
-                    레벨
-                    <input
-                      value={levelUpLevel}
-                      onChange={(event) =>
-                        setLevelUpLevel(
-                          event.target.value.replace(/[^0-9]/g, "").slice(0, 3)
-                        )
-                      }
-                      placeholder="예: 56"
-                      inputMode="numeric"
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <label style={{ ...styles.label, marginTop: "12px" }}>
-                    카드 문구
-                    <input
-                      value={levelUpSlogan}
-                      onChange={(event) => setLevelUpSlogan(event.target.value)}
-                      placeholder="예: ONE ROUND AT A TIME"
-                      style={styles.input}
-                    />
-                  </label>
-                </div>
-              ) : (
-                <>
-                  <label style={{ ...styles.label, marginTop: "16px" }}>
-                    카드에 보여줄 이름
-                    <input
-                      value={customTrainingTitle}
-                      onChange={(event) =>
-                        setCustomTrainingTitle(event.target.value)
-                      }
-                      placeholder="예: 아침 샌드백"
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <p style={styles.commentToggleHelp}>
-                    비워두면 “직접 설정 루틴”은 카드에 표시되지 않아. 이름을 쓰면
-                    카드와 공유 문구에 그 이름이 표시돼.
-                  </p>
-                </>
-              )}
-
-              {cardStyle === "poster" && (
-                <div style={styles.posterInputBox}>
-                  <p style={styles.cardMakerLabel}>POSTER 입력</p>
-                  <p style={styles.cardMakerHelp}>
-                    사진은 자동으로 깔리고, 아래 글자만 바꾸면 한 사람 주인공
-                    포스터처럼 만들어져.
-                  </p>
-
-                  <div style={styles.posterInputGrid}>
-                    <div style={styles.posterInputRow}>
-                      <label style={styles.posterInputLabel}>
-                        <span style={styles.posterInputLabelText}>메인 이름</span>
-                        <input
-                          value={posterMainName}
-                          onChange={(event) =>
-                            updatePosterField("mainName", event.target.value)
-                          }
-                          placeholder={profile.nickname || "JO WOON"}
-                          style={styles.posterInput}
-                        />
-                      </label>
-
-                      <label style={styles.posterToggleLabel}>
-                        <input
-                          type="checkbox"
-                          checked={posterVisible.mainName}
-                          onChange={(event) =>
-                            handlePosterVisibleChange(
-                              "mainName",
-                              event.target.checked
-                            )
-                          }
-                          style={styles.posterToggleCheckbox}
-                        />
-                        표시
-                      </label>
-                    </div>
-
-                    <div style={styles.posterInputRow}>
-                      <label style={styles.posterInputLabel}>
-                        <span style={styles.posterInputLabelText}>서브 문구</span>
-                        <input
-                          value={posterSubtitle}
-                          onChange={(event) =>
-                            updatePosterField("subtitle", event.target.value)
-                          }
-                          placeholder="THE ROOKIE"
-                          style={styles.posterInput}
-                        />
-                      </label>
-
-                      <label style={styles.posterToggleLabel}>
-                        <input
-                          type="checkbox"
-                          checked={posterVisible.subtitle}
-                          onChange={(event) =>
-                            handlePosterVisibleChange(
-                              "subtitle",
-                              event.target.checked
-                            )
-                          }
-                          style={styles.posterToggleCheckbox}
-                        />
-                        표시
-                      </label>
-                    </div>
-
-                    <div style={styles.posterInputRow}>
-                      <label style={styles.posterInputLabel}>
-                        <span style={styles.posterInputLabelText}>이벤트</span>
-                        <input
-                          value={posterEventTitle}
-                          onChange={(event) =>
-                            updatePosterField("eventTitle", event.target.value)
-                          }
-                          placeholder="TRAINING DAY"
-                          style={styles.posterInput}
-                        />
-                      </label>
-
-                      <label style={styles.posterToggleLabel}>
-                        <input
-                          type="checkbox"
-                          checked={posterVisible.eventTitle}
-                          onChange={(event) =>
-                            handlePosterVisibleChange(
-                              "eventTitle",
-                              event.target.checked
-                            )
-                          }
-                          style={styles.posterToggleCheckbox}
-                        />
-                        표시
-                      </label>
-                    </div>
-
-                    <div style={styles.posterInputRow}>
-                      <label style={styles.posterInputLabel}>
-                        <span style={styles.posterInputLabelText}>날짜</span>
-                        <input
-                          value={posterDateText}
-                          onChange={(event) =>
-                            updatePosterField("date", event.target.value)
-                          }
-                          placeholder="JUNE 27"
-                          style={styles.posterInput}
-                        />
-                      </label>
-
-                      <label style={styles.posterToggleLabel}>
-                        <input
-                          type="checkbox"
-                          checked={posterVisible.date}
-                          onChange={(event) =>
-                            handlePosterVisibleChange("date", event.target.checked)
-                          }
-                          style={styles.posterToggleCheckbox}
-                        />
-                        표시
-                      </label>
-                    </div>
-
-                    <div style={styles.posterInputRow}>
-                      <label style={styles.posterInputLabel}>
-                        <span style={styles.posterInputLabelText}>보조 문구</span>
-                        <input
-                          value={posterMetaText}
-                          onChange={(event) =>
-                            updatePosterField("meta", event.target.value)
-                          }
-                          placeholder="BOXING TRAINING POSTER | RISING FIGHTER"
-                          style={styles.posterInput}
-                        />
-                      </label>
-
-                      <label style={styles.posterToggleLabel}>
-                        <input
-                          type="checkbox"
-                          checked={posterVisible.meta}
-                          onChange={(event) =>
-                            handlePosterVisibleChange("meta", event.target.checked)
-                          }
-                          style={styles.posterToggleCheckbox}
-                        />
-                        표시
-                      </label>
-                    </div>
-
-                    <div style={styles.posterInputRow}>
-                      <label style={styles.posterInputLabel}>
-                        <span style={styles.posterInputLabelText}>하단 문구</span>
-                        <input
-                          value={posterFooterText}
-                          onChange={(event) =>
-                            updatePosterField("footer", event.target.value)
-                          }
-                          placeholder="EVERY ROUND WRITES YOUR STORY"
-                          style={styles.posterInput}
-                        />
-                      </label>
-
-                      <label style={styles.posterToggleLabel}>
-                        <input
-                          type="checkbox"
-                          checked={posterVisible.footer}
-                          onChange={(event) =>
-                            handlePosterVisibleChange("footer", event.target.checked)
-                          }
-                          style={styles.posterToggleCheckbox}
-                        />
-                        표시
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="training-card-preview-wrap" style={styles.livePreviewSection}>
-              <div style={styles.livePreviewHeader}>
-                <p style={styles.cardMakerLabel}>결과 미리보기</p>
-                <p style={styles.cardMakerHelp}>
-                  선택한 카드 스타일(레벨업·스토리·포스터)이 아래에 그대로 반영됩니다.
-                </p>
-              </div>
+        <div className="nameplate-preview-stage" style={styles.livePreviewSection}>
+          <button
+            type="button"
+            className="nameplate-preview-hit"
+            aria-label="사진 변경"
+            onClick={() => {
+              setStudioPanel("photo");
+              cardMediaInputRef.current?.click();
+            }}
+            style={{
+              display: "block",
+              width: "100%",
+              padding: 0,
+              border: 0,
+              background: "transparent",
+              cursor: "pointer",
+              textAlign: "left",
+            }}
+          >
             <div
               ref={trainingCardRef}
               style={{
                 ...styles.trainingCard,
                 background: getCardBackground(selectedFilter),
+                pointerEvents: "none",
               }}
             >
               <div
                 style={{
                   ...styles.trainingCardPhotoArea,
-                  ...(cardStyle === "social"
-                    ? { minHeight: 0, aspectRatio: "9 / 16" }
-                    : { minHeight: cardPreviewHeight }),
+                  minHeight: cardPreviewHeight,
                 }}
               >
-                {cardMediaType === "image" && cardMedia && (
+                {cardMediaType === "image" && cardMedia ? (
                   <img
                     src={cardMedia}
                     alt="훈련 카드"
                     onLoad={async (event) => {
                       const image = event.currentTarget;
-
                       if (image.decode) {
                         try {
                           await image.decode();
                         } catch {
-                          // decode 실패해도 렌더링은 완료된 것으로 처리
+                          // ignore decode failures
                         }
                       }
-
                       setCardMediaReady(true);
                     }}
                     onError={() => setCardMediaReady(true)}
@@ -3131,32 +2686,10 @@ export default function ProfilePage({
                       ...styles.trainingCardImage,
                       objectFit: "cover",
                       filter: getImageFilter(activePhotoFilterId, filterIntensity),
-                      transform:
-                        cardStyle === "social"
-                          ? `scale(${photoScale / 100})`
-                          : `scale(${Math.max(photoScale, 100) / 100})`,
-                                          }}
-                  />
-                )}
-
-                {cardMediaType === "video" && cardMedia && (
-                  <video
-                    src={cardMedia}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    style={{
-                      ...styles.trainingCardImage,
-                      objectFit: "cover",
-                      filter: getImageFilter(activePhotoFilterId, filterIntensity),
-                      transform:
-                        cardStyle === "social"
-                          ? `scale(${photoScale / 100})`
-                          : `scale(${Math.max(photoScale, 100) / 100})`,
+                      transform: `scale(${Math.max(photoScale, 100) / 100})`,
                     }}
                   />
-                )}
+                ) : null}
 
                 {!cardMedia ? (
                   <div
@@ -3186,331 +2719,396 @@ export default function ProfilePage({
                   }}
                 />
 
-                {cardStyle === "basic" ? (
-                  <div
-                    className="level-up-performance-card"
-                    style={{
-                      borderColor: levelUpAccentSoft,
-                      boxShadow: `inset 0 0 32px ${levelUpAccentSoft}`,
-                    }}
-                  >
-                    <div className="level-up-performance-brand">
-                      <strong>{BRAND_NAME}</strong>
-                      <span>TRAINING RESULT</span>
-                    </div>
+                <div
+                  className="level-up-performance-card"
+                  style={{
+                    borderColor: levelUpAccentSoft,
+                    boxShadow: `inset 0 0 32px ${levelUpAccentSoft}`,
+                  }}
+                >
+                  <div className="level-up-performance-brand">
+                    <strong>{BRAND_NAME}</strong>
+                    <span>TRAINING RESULT</span>
+                  </div>
 
-                    <div className="level-up-performance-profile">
-                      <div
-                        className="level-up-card-avatar"
-                        style={{
-                          borderColor: levelUpAccent,
-                          boxShadow: `0 0 24px ${levelUpAccentSoft}`,
-                        }}
-                      >
-                        {profile.photo ? (
-                          <img src={profile.photo} alt="" />
-                        ) : (
-                          <span style={{ color: levelUpAccent }}>
-                            {(profile.nickname || "R").slice(0, 1)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="level-up-card-identity">
-                        <span>{profile.nickname || "나"}</span>
-                        <small style={{ color: levelUpAccent }}>
-                          {profileStats.levelLabel} ·{" "}
-                          {profileStats.fighterTitleEn || "FIGHTER"}
-                        </small>
-                      </div>
-                    </div>
-
-                    <div className="level-up-performance-main">
-                      <div className="level-up-performance-title-row">
-                        <h2>{primaryCardTitle}</h2>
+                  <div className="level-up-performance-profile">
+                    <div
+                      className="level-up-card-avatar"
+                      style={{
+                        borderColor: levelUpAccent,
+                        boxShadow: `0 0 24px ${levelUpAccentSoft}`,
+                      }}
+                    >
+                      {profile.photo ? (
+                        <img src={profile.photo} alt="" />
+                      ) : (
                         <span style={{ color: levelUpAccent }}>
-                          LV.{levelUpDisplayLevel}
+                          {(profile.nickname || "R").slice(0, 1)}
                         </span>
-                      </div>
+                      )}
+                    </div>
+                    <div className="level-up-card-identity">
+                      <span>{profile.nickname || "나"}</span>
+                      <small style={{ color: levelUpAccent }}>
+                        {profileStats.levelLabel} ·{" "}
+                        {profileStats.fighterTitleEn || "FIGHTER"}
+                      </small>
+                    </div>
+                  </div>
 
-                      <p className="level-up-performance-label">
-                        ROUNDS COMPLETED
-                      </p>
-                      <strong
-                        className="level-up-performance-value"
-                        style={{
-                          color: levelUpAccent,
-                          textShadow: `0 0 26px ${levelUpAccentSoft}`,
-                        }}
-                      >
-                        +{cardTotalRounds}R
-                      </strong>
+                  <div className="level-up-performance-main">
+                    <div className="level-up-performance-title-row">
+                      <h2>{primaryCardTitle}</h2>
+                      <span style={{ color: levelUpAccent }}>
+                        LV.{levelUpDisplayLevel}
+                      </span>
+                    </div>
 
-                      <div className="level-up-performance-details">
+                    {showCardRounds ? (
+                      <>
+                        <p className="level-up-performance-label">
+                          ROUNDS COMPLETED
+                        </p>
+                        <strong
+                          className="level-up-performance-value"
+                          style={{
+                            color: levelUpAccent,
+                            textShadow: `0 0 26px ${levelUpAccentSoft}`,
+                          }}
+                        >
+                          +{cardTotalRounds}R
+                        </strong>
+                      </>
+                    ) : null}
+
+                    <div className="level-up-performance-details">
+                      {showCardDate ? (
+                        <div>
+                          <span>DATE</span>
+                          <strong>{cardDateLabel || "—"}</strong>
+                        </div>
+                      ) : null}
+                      {showCardGym ? (
+                        <div>
+                          <span>GYM</span>
+                          <strong>{cardGymLabel || "—"}</strong>
+                        </div>
+                      ) : null}
+                      {!showCardDate && !showCardGym ? (
                         <div>
                           <span>TRAINING TIME</span>
                           <strong>{cardTotalMinutes} MIN</strong>
                         </div>
-                        <div>
-                          <span>CAREER ROUNDS</span>
-                          <strong>{profileStats.totalRounds} R</strong>
-                        </div>
-                      </div>
-
-                      <div
-                        className="level-up-performance-arrow"
-                        style={{ color: levelUpAccent }}
-                        aria-hidden="true"
-                      >
-                        ↑
-                      </div>
-                    </div>
-
-                    {showComment ? (
-                      <p className="level-up-performance-comment">{mainComment}</p>
-                    ) : null}
-
-                    <div className="level-up-performance-footer">
-                      <span>{levelUpDisplaySlogan}</span>
-                      <strong>{levelUpStreakDays || 1} DAY STREAK</strong>
+                      ) : null}
                     </div>
                   </div>
-                ) : cardStyle === "poster" ? (
-                  <div
-                    style={{
-                      ...styles.posterCardTextLayer,
-                      minHeight: cardPreviewHeight,
-                    }}
-                  >
-                    <div style={styles.posterHeader}>
-                      <span
-                        style={{
-                          ...styles.posterHeaderLine,
-                          background: posterPreviewLine,
-                        }}
-                      />
-                      <strong>FIGHTER PROFILE</strong>
-                      <span
-                        style={{
-                          ...styles.posterHeaderLine,
-                          background: posterPreviewLine,
-                        }}
-                      />
-                    </div>
 
-                    <div style={styles.posterCenterBlock}>
-                      {posterVisible.mainName && (
-                        <h2 style={styles.posterMainName}>
-                          {posterMainNameText}
-                        </h2>
-                      )}
+                  {showComment ? (
+                    <p className="level-up-performance-comment">{mainComment}</p>
+                  ) : null}
 
-                      {posterVisible.subtitle && (
-                        <p
-                          style={{
-                            ...styles.posterSubtitle,
-                            color: posterPreviewAccent,
-                          }}
-                        >
-                          {posterSubtitleText}
-                        </p>
-                      )}
-
-                      {(posterVisible.eventTitle || posterVisible.date) && (
-                        <div
-                          style={{
-                            ...styles.posterStarLine,
-                            color: posterPreviewAccent,
-                          }}
-                        >
-                          <span
-                            style={{
-                              ...styles.posterStarRule,
-                              background: posterPreviewLine,
-                            }}
-                          />
-                          <span
-                            style={{
-                              ...styles.posterStarRule,
-                              background: posterPreviewLine,
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {posterVisible.eventTitle && (
-                        <p
-                          style={{
-                            ...styles.posterEventTitle,
-                            color: posterPreviewAccent,
-                          }}
-                        >
-                          {posterEventTitleText}
-                        </p>
-                      )}
-
-                      {posterVisible.date && (
-                        <p
-                          style={{
-                            ...styles.posterDateText,
-                            color: posterPreviewAccent,
-                          }}
-                        >
-                          {posterDateTextValue}
-                        </p>
-                      )}
-                    </div>
-
-                    <div style={styles.posterBottomBlock}>
-                      {posterVisible.meta && (
-                        <p
-                          style={{
-                            ...styles.posterMetaText,
-                            color: posterPreviewAccent,
-                          }}
-                        >
-                          {posterMetaTextValue}
-                        </p>
-                      )}
-
-                      {showComment && (
-                        <p style={styles.posterComment}>{mainComment}</p>
-                      )}
-
-                      {posterVisible.footer && (
-                        <p
-                          style={{
-                            ...styles.posterFooterText,
-                            color: posterPreviewAccent,
-                          }}
-                        >
-                          {posterFooterTextValue}
-                        </p>
-                      )}
-                    </div>
+                  <div className="level-up-performance-footer">
+                    <span>{levelUpDisplaySlogan}</span>
+                    <strong>{levelUpStreakDays || 1} DAY STREAK</strong>
                   </div>
-                ) : (
-                  <div
-                    style={{
-                      ...styles.socialCardTextLayer,
-                      ...(cardStyle === "social"
-                        ? { position: "absolute", inset: 0, minHeight: 0 }
-                        : { minHeight: cardPreviewHeight }),
-                    }}
-                  >
-                    <div style={styles.socialCardTop}>
-                      <span
-                        style={{
-                          ...styles.socialCardKicker,
-                          color: posterPreviewAccent,
-                        }}
-                      >
-                        BOXING TRAINING
-                      </span>
-                      <strong>{profileStats.levelLabel}</strong>
-                    </div>
-
-                    <div style={styles.socialCardBottom}>
-                      <div>
-                        <p style={styles.socialTitle}>{primaryCardTitle}</p>
-
-                        {showComment && (
-                          <p style={styles.socialComment}>{mainComment}</p>
-                        )}
-                      </div>
-
-                      <div style={styles.socialMetricRow}>
-                        <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>WEEK</span>
-                          <strong style={styles.socialMetricValue}>
-                            {profileStats.weeklyRounds}R
-                          </strong>
-                        </div>
-
-                        <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>TOTAL</span>
-                          <strong style={styles.socialMetricValue}>
-                            {profileStats.totalRounds}R
-                          </strong>
-                        </div>
-
-                        <div style={styles.socialMetricBox}>
-                          <span style={styles.socialMetricLabel}>STREAK</span>
-                          <strong style={styles.socialMetricValue}>
-                            {levelUpStreakDays || 1}d
-                          </strong>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            </div>
-
-            <button
-              type="button"
-              className="save-image-button"
-              style={{
-                ...styles.saveImageButton,
-                ...(isSaveCardDisabled ? styles.disabledSaveButton : {}),
-              }}
-              onClick={isSaveCardDisabled ? undefined : handleSaveCardImage}
-              disabled={isSaveCardDisabled}
-            >
-              {cardMediaType === "video"
-                ? "사진으로 바꿔 저장"
-                : isSavingImage
-                ? "이미지 저장 중..."
-                : isCardImagePreparing
-                ? "사진 준비 중..."
-                : cardSaveLabel}
-            </button>
-
-            <p style={styles.shareHint}>
-              선택한 <strong>{activeCardStyle.name}</strong> 스타일 그대로 저장됩니다.
-              {cardStyle === "social"
-                ? " 1080×1920 인스타 스토리 비율이에요."
-                : cardStyle === "poster"
-                ? " 세로 포스터 비율이에요."
-                : " 레벨업 카드 비율이에요."}
-            </p>
-
-            {exportPreview && (
-              <div style={styles.exportPreviewBox}>
-                <strong style={styles.exportPreviewTitle}>iPhone 저장 안내</strong>
-                <p style={styles.exportPreviewText}>
-                  공유창이 안 뜨면 아래 이미지를 길게 누르고 “사진에 저장”을 선택해.
-                </p>
-
-                <img
-                  src={exportPreview.dataUrl}
-                  alt="저장할 카드 미리보기"
-                  style={styles.exportPreviewImage}
-                />
-
-                <div style={styles.exportPreviewButtonRow}>
-                  <button
-                    type="button"
-                    style={styles.exportPreviewPrimaryButton}
-                    onClick={() => shareOrDownloadPreparedExport(exportPreview)}
-                  >
-                    공유창 다시 열기
-                  </button>
-
-                  <button
-                    type="button"
-                    style={styles.exportPreviewSecondaryButton}
-                    onClick={() => setExportPreview(null)}
-                  >
-                    닫기
-                  </button>
                 </div>
               </div>
-            )}
-              </>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="nameplate-slogan-edit"
+            onClick={() => setStudioPanel("text")}
+            style={{
+              width: "100%",
+              marginTop: 10,
+              padding: "12px 14px",
+              border: "1px solid var(--p-border-soft, rgba(255,255,255,0.12))",
+              borderRadius: 14,
+              background: "var(--p-bg-subtle, rgba(255,255,255,0.04))",
+              color: "inherit",
+              textAlign: "left",
+              cursor: "pointer",
+            }}
+          >
+            <small style={{ display: "block", opacity: 0.65, fontWeight: 800 }}>
+              문구
+            </small>
+            <strong>{levelUpDisplaySlogan}</strong>
+          </button>
+        </div>
+
+        <input
+          ref={cardMediaInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleCardMediaChange}
+          style={{ display: "none" }}
+        />
+
+        <div
+          className="nameplate-edit-menu"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 8,
+            margin: "16px 0 12px",
+          }}
+        >
+          {[
+            ["photo", "사진"],
+            ["text", "문구"],
+            ["style", "스타일"],
+          ].map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() =>
+                setStudioPanel((current) => (current === id ? null : id))
+              }
+              style={{
+                minHeight: 44,
+                borderRadius: 12,
+                border:
+                  studioPanel === id
+                    ? "1px solid #8a2e2e"
+                    : "1px solid var(--p-border-soft, rgba(255,255,255,0.12))",
+                background:
+                  studioPanel === id
+                    ? "rgba(138, 46, 46, 0.16)"
+                    : "var(--p-bg-deep, transparent)",
+                color: "inherit",
+                fontWeight: 900,
+                cursor: "pointer",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {studioPanel === "photo" ? (
+          <div style={styles.cardPhotoBox}>
+            <div style={styles.cardPhotoButtonRow}>
+              <button
+                type="button"
+                style={styles.photoButton}
+                onClick={() => cardMediaInputRef.current?.click()}
+              >
+                {cardMedia ? "사진 바꾸기" : "사진 선택"}
+              </button>
+              {cardMedia ? (
+                <button
+                  type="button"
+                  style={styles.darkButton}
+                  onClick={handleRemoveCardMedia}
+                >
+                  사진 지우기
+                </button>
+              ) : null}
+            </div>
+            {cardMediaType === "video" ? (
+              <p style={styles.videoNotice}>
+                예전에 고른 영상이 남아 있어요. 지우고 사진으로 바꿔 주세요.
+              </p>
             ) : null}
-          </>
+          </div>
+        ) : null}
+
+        {studioPanel === "text" ? (
+          <div style={styles.levelUpInputBox}>
+            <label style={styles.label}>
+              카드 문구
+              <input
+                value={levelUpSlogan}
+                onChange={(event) => setLevelUpSlogan(event.target.value)}
+                placeholder="예: ONE ROUND AT A TIME"
+                style={styles.input}
+              />
+            </label>
+          </div>
+        ) : null}
+
+        {studioPanel === "style" ? (
+          <div style={styles.filterSection}>
+            <div className="filter-grid" style={styles.filterGrid}>
+              {SIMPLE_CARD_LOOKS.map((look) => (
+                <button
+                  key={look.id}
+                  type="button"
+                  style={{
+                    ...styles.filterButton,
+                    ...(selectedFilter === look.id
+                      ? styles.activeFilterButton
+                      : {}),
+                  }}
+                  onClick={() => handleSelectFilter(look.id)}
+                >
+                  <strong style={styles.filterChipTitle}>{look.name}</strong>
+                  <span style={styles.filterChipLock}>{look.description}</span>
+                </button>
+              ))}
+            </div>
+            <p style={styles.cardMakerHelp}>
+              지금 스타일: {activeSimpleLook.name}
+            </p>
+          </div>
+        ) : null}
+
+        <details
+          className="nameplate-details"
+          open={detailsOpen}
+          onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
+          style={{
+            margin: "14px 0",
+            padding: "12px 14px",
+            borderRadius: 14,
+            border: "1px solid var(--p-border-soft, rgba(255,255,255,0.12))",
+          }}
+        >
+          <summary style={{ cursor: "pointer", fontWeight: 900 }}>
+            세부 정보
+          </summary>
+          <p style={{ ...styles.cardMakerHelp, marginTop: 10 }}>
+            날짜·체육관·라운드는 최근 훈련에서 자동으로 가져옵니다. 표시만
+            바꿀 수 있어요.
+          </p>
+          <label style={styles.commentToggle}>
+            <input
+              type="checkbox"
+              checked={showCardDate}
+              onChange={(event) => setShowCardDate(event.target.checked)}
+              style={styles.commentCheckbox}
+            />
+            <span>날짜 표시 · {cardDateLabel || "기록 없음"}</span>
+          </label>
+          <label style={styles.commentToggle}>
+            <input
+              type="checkbox"
+              checked={showCardGym}
+              onChange={(event) => setShowCardGym(event.target.checked)}
+              style={styles.commentCheckbox}
+            />
+            <span>체육관 표시 · {cardGymLabel || "미설정"}</span>
+          </label>
+          <label style={styles.commentToggle}>
+            <input
+              type="checkbox"
+              checked={showCardRounds}
+              onChange={(event) => setShowCardRounds(event.target.checked)}
+              style={styles.commentCheckbox}
+            />
+            <span>라운드 표시 · {cardTotalRounds}R</span>
+          </label>
+          <label style={styles.commentToggle}>
+            <input
+              type="checkbox"
+              checked={showComment}
+              onChange={(event) => updateShowComment(event.target.checked)}
+              style={styles.commentCheckbox}
+            />
+            <span>훈련 코멘트 표시</span>
+          </label>
+
+          {logs.length > 0 ? (
+            <div style={{ marginTop: 12 }}>
+              <p style={styles.cardMakerLabel}>기록 선택</p>
+              <div style={styles.logSelectList}>
+                {logs.slice(0, 8).map((log) => {
+                  const isSelected = selectedLogIds.includes(log.id);
+                  return (
+                    <button
+                      key={log.id}
+                      type="button"
+                      onClick={() => toggleLogSelection(log.id)}
+                      style={{
+                        ...styles.logSelectItem,
+                        ...(isSelected ? styles.logSelectItemActive : {}),
+                      }}
+                    >
+                      <div style={styles.logSelectCheck}>
+                        {isSelected ? "·" : ""}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <strong style={styles.logSelectTitle}>{log.type}</strong>
+                        <p style={styles.logSelectMeta}>
+                          {getRounds(log)}R · {log.minutes || log.duration}min ·{" "}
+                          {log.date}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </details>
+
+        <button
+          type="button"
+          className="save-image-button"
+          style={{
+            ...styles.saveImageButton,
+            ...(isSaveCardDisabled ? styles.disabledSaveButton : {}),
+          }}
+          onClick={isSaveCardDisabled ? undefined : handleSaveCardImage}
+          disabled={isSaveCardDisabled}
+        >
+          {cardMediaType === "video"
+            ? "사진으로 바꿔 저장"
+            : isSavingImage
+              ? "이미지 저장 중..."
+              : isCardImagePreparing
+                ? "사진 준비 중..."
+                : cardSaveLabel}
+        </button>
+
+        {savedShareReady ? (
+          <button
+            type="button"
+            onClick={handleShareSavedCard}
+            style={{
+              ...styles.saveImageButton,
+              marginTop: 10,
+              background: "transparent",
+              border: "1px solid rgba(138, 46, 46, 0.55)",
+              color: "inherit",
+            }}
+          >
+            공유하기
+          </button>
+        ) : null}
+
+        {exportPreview && (
+          <div style={styles.exportPreviewBox}>
+            <strong style={styles.exportPreviewTitle}>저장 미리보기</strong>
+            <p style={styles.exportPreviewText}>
+              아래 이미지를 길게 누르고 “사진에 저장”을 선택하거나, 공유하기를
+              눌러 주세요.
+            </p>
+            <img
+              src={exportPreview.dataUrl}
+              alt="저장할 카드 미리보기"
+              style={styles.exportPreviewImage}
+            />
+            <div style={styles.exportPreviewButtonRow}>
+              <button
+                type="button"
+                style={styles.exportPreviewPrimaryButton}
+                onClick={() => shareOrDownloadPreparedExport(exportPreview)}
+              >
+                공유하기
+              </button>
+              <button
+                type="button"
+                style={styles.exportPreviewSecondaryButton}
+                onClick={() => setExportPreview(null)}
+              >
+                닫기
+              </button>
+            </div>
+          </div>
         )}
       </section>
         </>

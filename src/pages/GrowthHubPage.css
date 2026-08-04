@@ -9,7 +9,7 @@
   padding: 8px 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--p-text-muted);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
@@ -313,7 +313,7 @@
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.12em;
-  color: var(--p-accent);
+  color: var(--p-text-muted);
 }
 
 .growth-hub-card-title {
@@ -386,7 +386,111 @@
 .growth-hub-progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: #8a2e2e;
+  background: var(--p-text-soft);
+}
+
+.growth-hub-next-stage {
+  display: grid;
+  gap: 5px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--p-border-soft);
+}
+
+.growth-hub-next-stage span {
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.growth-hub-next-stage strong {
+  color: var(--p-text);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.growth-hub-next-stage small {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.growth-hub-secondary-details {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 14px;
+  background: var(--p-bg-deep);
+  color: var(--p-text);
+  overflow: hidden;
+}
+
+.growth-hub-secondary-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 66px;
+  padding: 13px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.growth-hub-secondary-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.growth-hub-secondary-details > summary span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.growth-hub-secondary-details > summary small {
+  color: var(--p-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.growth-hub-secondary-details > summary strong {
+  overflow: hidden;
+  color: var(--p-text);
+  font-size: 14px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.growth-hub-secondary-details > summary em {
+  flex: 0 0 auto;
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.growth-hub-secondary-details[open] > summary em {
+  color: var(--p-accent);
+}
+
+.growth-hub-secondary-body {
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--p-border-soft);
+}
+
+.growth-hub-secondary-body > p {
+  margin: 0;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.growth-hub-tier-details .growth-hub-tier-table {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .growth-hub-progress-fill.is-complete {
@@ -430,27 +534,28 @@
 }
 
 .growth-hub-collections {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.growth-collection-card {
-  overflow: hidden;
-  border: 1px solid var(--p-border-soft);
-  border-radius: 18px;
-  background: var(--p-bg-deep);
+  display: block;
 }
 
 .growth-collection-card-button {
   display: block;
   width: 100%;
-  padding: 16px 18px;
+  padding: 15px 0;
   border: 0;
+  border-top: 1px solid var(--p-border-soft);
   background: transparent;
   color: var(--p-text);
   text-align: left;
   cursor: pointer;
+}
+
+.growth-collection-card-button:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.growth-collection-card-button:last-child {
+  padding-bottom: 0;
 }
 
 .growth-collection-card-head {
@@ -463,7 +568,7 @@
 .growth-collection-card-head p,
 .growth-collection-sheet-head p {
   margin: 0 0 4px;
-  color: var(--p-accent);
+  color: var(--p-text-muted);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -483,21 +588,21 @@
   font-weight: 900;
 }
 
-.growth-collection-card strong {
+.growth-collection-card-button > strong {
   display: block;
   margin-top: 14px;
   font-size: 15px;
   font-weight: 900;
 }
 
-.growth-collection-card p {
+.growth-collection-card-button > p {
   margin: 5px 0 0;
   color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.45;
 }
 
-.growth-collection-card em {
+.growth-collection-card-button > em {
   display: block;
   margin-top: 12px;
   color: var(--p-text-soft);

@@ -33,6 +33,14 @@ export const MATCH_TIMER_PRESETS = [
     workSeconds: 180,
     restSeconds: 30,
   },
+  {
+    id: "match12",
+    title: "12R",
+    description: "챔피언 라운드",
+    rounds: 12,
+    workSeconds: 180,
+    restSeconds: 30,
+  },
 ];
 
 export function getTimerPresetById(id) {
@@ -43,7 +51,7 @@ export function getTimerPresetById(id) {
   return MATCH_TIMER_PRESETS.find((preset) => preset.id === id) || null;
 }
 
-export function buildPresetTimerLaunch(preset) {
+export function buildPresetTimerLaunch(preset, { autoStart = false } = {}) {
   if (!preset) return null;
 
   return {
@@ -55,5 +63,6 @@ export function buildPresetTimerLaunch(preset) {
     cooldownSeconds: 0,
     routineTitle: `${preset.title} 라운드 훈련`,
     logType: preset.logType || `${preset.title} 라운드 훈련`,
+    autoStart,
   };
 }

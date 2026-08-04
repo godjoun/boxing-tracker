@@ -2,13 +2,19 @@ import { useMemo, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { buildTrainingBreakdown } from "../utils/trainingBreakdown";
 import { getFighterProgress } from "../utils/fighterProgress";
-import { getTrainingStreak } from "./profilePage/profileCardUtils";
+import {
+  getTrainingStreak,
+  resizeImage,
+} from "./profilePage/profileCardUtils";
 import {
   buildWeeklyRoundTrend,
+  getLogMinutes,
 } from "../utils/trainingStats";
 import { getTodaysLessonPreview } from "../utils/dailyLesson";
 import { getFirstWeekChallengeStatus } from "../utils/retentionMetrics";
 import { BRAND_NAME } from "../utils/brand";
+import { getLogSummary } from "../utils/logCategories";
+import MenuIcon from "../components/MenuIcon";
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
 
@@ -61,6 +67,18 @@ function startOfWeekMonday(date = new Date()) {
   return current;
 }
 
+function isThisWeek(value, now = new Date()) {
+  const key = getDateKey(value || now);
+  if (!key) return false;
+
+  const weekStart = startOfWeekMonday(now);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 7);
+
+  const date = new Date(`${key}T00:00:00`);
+  return date >= weekStart && date < weekEnd;
+}
+
 function buildWeekStrip(trainingByDate, now = new Date()) {
   const monday = startOfWeekMonday(now);
   const todayKey = getDateKey(now);
@@ -82,39 +100,27 @@ function buildWeekStrip(trainingByDate, now = new Date()) {
   });
 }
 
-function formatRecentLogLine(log, todayKey) {
-  if (!log) {
-    return {
-      title: "아직 흔적이 없습니다",
-      copy: "오늘 첫 벨을 울리면 여기에 남습니다.",
-    };
-  }
-
-  const logKey = getDateKey(log.date || log.createdAt);
-  const rounds = getRounds(log);
-  const type = (log.type || "훈련").trim();
-  const minutes = log.minutes || log.duration;
-
-  let when = logKey.replaceAll("-", ".");
-  if (logKey === todayKey) {
-    when = "오늘";
-  } else {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (logKey === getDateKey(yesterday)) {
-      when = "어제";
-    }
-  }
-
-  return {
-    title: `${when} · ${rounds}R · ${type}`,
-    copy: minutes ? `${minutes}분 남긴 기록` : "기록을 열어 다시 볼 수 있어요",
-  };
-}
-
 function formatSceneDateLabel(now = new Date()) {
   const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
   return `${now.getMonth() + 1}월 ${now.getDate()}일 ${weekdays[now.getDay()]}요일`;
+}
+
+function getGreeting(now = new Date()) {
+  const hour = now.getHours();
+  if (hour < 11) return "좋은 아침입니다";
+  if (hour < 18) return "좋은 오후입니다";
+  return "좋은 저녁입니다";
+}
+
+function formatLogWhen(log, todayKey) {
+  const logKey = getDateKey(log.date || log.createdAt);
+  if (logKey === todayKey) return "오늘";
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (logKey === getDateKey(yesterday)) return "어제";
+
+  return logKey ? logKey.replaceAll("-", ".") : "날짜 없음";
 }
 
 function buildMonthDays(now = new Date()) {
@@ -140,19 +146,21 @@ function buildMonthDays(now = new Date()) {
 
 export default function HomePage({
   timerSummary = null,
-  onStartTraining,
   onOpenTimer,
   onNavigate,
-  onNavigateGym,
   onOpenCardMaker,
   onOpenCurriculum,
+  onOpenGrowth,
   onReadLesson,
 }) {
-  const { logs = [], profile } = useTraining();
+  const { logs = [], profile, updateProfile } = useTraining();
   const [selectedDate, setSelectedDate] = useState("");
+  const [isHeroMenuOpen, setIsHeroMenuOpen] = useState(false);
   const calendarDetailsRef = useRef(null);
   const moreDetailsRef = useRef(null);
+  const homeHeroInputRef = useRef(null);
   const isFirstUser = logs.length === 0;
+  const homeHeroPhoto = profile?.homeHeroPhoto || "";
 
   const dashboard = useMemo(() => {
     const fighter = getFighterProgress(logs);
@@ -181,7 +189,10 @@ export default function HomePage({
     }, {});
 
     return {
+      fighter,
       totalRounds: fighter.totalRounds,
+      totalMinutes: fighter.totalMinutes,
+      totalExp: fighter.totalExp,
       weeklyTrend,
       streakDays,
       trainedToday: Boolean(trainingByDate[todayKey]),
@@ -211,31 +222,37 @@ export default function HomePage({
   const todayRounds = dashboard.trainingByDate[todayKey]?.rounds || 0;
   const nickname = profile?.nickname || "나";
   const sceneDateLabel = formatSceneDateLabel();
-  const recentLine = formatRecentLogLine(dashboard.lastLog, todayKey);
+  const greeting = getGreeting();
+  const recentLogs = logs.slice(0, 3);
+  const weeklyLogs = logs.filter((log) => isThisWeek(log.date));
+  const weeklyStats = {
+    rounds: dashboard.weekStrip.reduce((sum, day) => sum + day.rounds, 0),
+    minutes: weeklyLogs.reduce((sum, log) => sum + getLogMinutes(log), 0),
+  };
 
   const sceneTitle =
-    todaysLesson.kind === "session"
-      ? todaysLesson.title
-      : isFirstUser
-        ? "오늘 첫 라운드를 남겨보세요"
+    isFirstUser
+      ? "오늘 운동을 남겨보세요"
+      : todaysLesson.kind === "session"
+        ? todaysLesson.title
         : todaysLesson.title || "오늘도 벨을 울리자";
-
-  const sceneCopy =
-    todaysLesson.kind === "session"
-      ? todaysLesson.goal || "레슨을 읽고, 준비되면 타이머로 이어가세요."
-      : isFirstUser
-        ? "큰 버튼 하나만 누르면 됩니다. 복싱이 처음이어도 괜찮아요."
-        : todaysLesson.message ||
-          "짧게라도 라운드를 남기면 오늘의 흔적이 됩니다.";
-
   const primaryLabel =
-    todaysLesson.kind === "session"
-      ? "오늘 레슨 열기"
-      : dashboard.trainedToday
-        ? "오늘 훈련 이어가기"
-        : isFirstUser
-          ? "지금 훈련 시작"
-          : "오늘 훈련 시작";
+    isFirstUser
+      ? "기록하기"
+      : todaysLesson.kind === "session"
+        ? "레슨 열기"
+        : dashboard.trainedToday
+        ? "훈련 이어가기"
+        : "훈련 시작";
+
+  const primaryHint =
+    isFirstUser
+      ? "복싱 · 러닝 · 웨이트 · 걷기"
+      : todaysLesson.kind === "session"
+        ? todaysLesson.goal || "준비되면 바로 이어가세요"
+        : dashboard.trainedToday
+          ? "조금 더 남겨도 됩니다"
+          : "짧게라도 오늘 라운드를 남기세요";
 
   function handleCalendarSelect(dateKey) {
     setSelectedDate((current) => (current === dateKey ? "" : dateKey));
@@ -255,6 +272,10 @@ export default function HomePage({
   }
 
   function handlePrimaryAction() {
+    if (isFirstUser) {
+      onNavigate?.("log");
+      return;
+    }
     if (todaysLesson.kind === "session") {
       onReadLesson?.(todaysLesson.session);
       return;
@@ -262,13 +283,36 @@ export default function HomePage({
     onOpenTimer?.();
   }
 
-  function handleRecentClick() {
-    if (dashboard.lastLog) {
-      onOpenCardMaker?.(dashboard.lastLog.id);
+  async function handleHomeHeroPhotoChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      window.alert("이미지 파일만 선택할 수 있어요.");
+      event.target.value = "";
       return;
     }
-    onNavigate?.("log");
+
+    try {
+      const resizedImage = await resizeImage(file);
+      updateProfile?.({ homeHeroPhoto: resizedImage });
+      setIsHeroMenuOpen(false);
+    } catch {
+      window.alert("사진을 불러오지 못했어요. 다른 사진으로 다시 시도해 주세요.");
+    } finally {
+      event.target.value = "";
+    }
   }
+
+  function handleRemoveHomeHeroPhoto() {
+    updateProfile?.({ homeHeroPhoto: "" });
+    setIsHeroMenuOpen(false);
+  }
+
+  const sceneKicker = dashboard.trainedToday
+    ? `오늘 ${todayRounds}R`
+    : "오늘";
 
   return (
     <main className="home-page">
@@ -294,28 +338,87 @@ export default function HomePage({
       ) : null}
 
       <header className="home-scene-header">
-        <div className="home-scene-header-identity">
-          <div
-            className="home-scene-avatar"
-            aria-hidden={!profile?.photo}
-          >
-            {profile?.photo ? (
-              <img src={profile.photo} alt="" />
-            ) : (
-              <span>{nickname.slice(0, 1)}</span>
-            )}
-          </div>
-          <div className="home-scene-header-copy">
-            <p className="home-scene-brand">{BRAND_NAME}</p>
-            <p className="home-scene-meta">{nickname}의 오늘</p>
-          </div>
+        <div className="home-app-brand" aria-label={`${BRAND_NAME} Boxing Tracker`}>
+          <strong>{BRAND_NAME}</strong>
+          <span>BOXING TRACKER</span>
         </div>
+        <button
+          type="button"
+          className="home-alert-button"
+          aria-label="전체 메뉴"
+          onClick={() => onNavigate?.("category")}
+        >
+          <MenuIcon name="notification" size={20} />
+        </button>
       </header>
 
-      <section className="home-scene-card" aria-label="오늘의 장면">
-        <p className="home-scene-date">{sceneDateLabel}</p>
+      <section className="home-greeting" aria-label="오늘 인사">
+        <p className="home-greeting-date">{sceneDateLabel}</p>
+        <p className="home-greeting-line">
+          {greeting}, <span>{nickname}</span>
+        </p>
+      </section>
+
+      <section
+        className={`home-scene-card${homeHeroPhoto ? " has-custom-photo" : ""}`}
+        aria-label="오늘의 행동"
+      >
+        {homeHeroPhoto ? (
+          <>
+            <img
+              className="home-scene-card-image"
+              src={homeHeroPhoto}
+              alt=""
+              aria-hidden="true"
+            />
+            <div className="home-scene-card-shade" aria-hidden="true" />
+          </>
+        ) : null}
+        <div className="home-scene-photo-control">
+          <button
+            type="button"
+            className="home-scene-menu-button"
+            aria-label="오늘 장면 사진 메뉴"
+            aria-expanded={isHeroMenuOpen}
+            title="사진 설정"
+            onClick={() => setIsHeroMenuOpen((open) => !open)}
+          >
+            <span aria-hidden="true">•••</span>
+          </button>
+          {isHeroMenuOpen ? (
+            <div className="home-scene-photo-menu" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => homeHeroInputRef.current?.click()}
+              >
+                {homeHeroPhoto ? "사진 교체" : "사진 선택"}
+              </button>
+              {homeHeroPhoto ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="is-danger"
+                  onClick={handleRemoveHomeHeroPhoto}
+                >
+                  사진 제거
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          <input
+            ref={homeHeroInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            onChange={handleHomeHeroPhotoChange}
+            hidden
+          />
+        </div>
+        <div className="home-scene-card-top">
+          <p className="home-scene-kicker">{sceneKicker}</p>
+        </div>
         <h1 className="home-scene-title">{sceneTitle}</h1>
-        <p className="home-scene-copy">{sceneCopy}</p>
+        <p className="home-scene-copy">{primaryHint}</p>
 
         <div className="home-scene-actions">
           <button
@@ -326,105 +429,146 @@ export default function HomePage({
           >
             {primaryLabel}
           </button>
+          {!isFirstUser && dashboard.trainedToday && dashboard.lastLog ? (
+            <button
+              type="button"
+              className="home-scene-secondary-link"
+              onClick={() => onOpenCardMaker?.(dashboard.lastLog?.id)}
+            >
+              인증 카드 만들기
+            </button>
+          ) : null}
         </div>
       </section>
 
       {isFirstUser ? (
         <section className="home-first-guide" aria-label="시작 안내">
-          <p className="home-first-guide-kicker">시작 방법</p>
-          <h2 className="home-first-guide-title">이렇게만 하면 돼요</h2>
+          <p className="home-first-guide-kicker">NEXT</p>
+          <h2 className="home-first-guide-title">이렇게 시작하면 됩니다</h2>
           <ol className="home-first-guide-list">
             <li>
-              <strong>1. 위 버튼으로 시작</strong>
-              <span>타이머가 열리면 벨에 맞춰 움직이면 됩니다.</span>
+              <strong>기록하기</strong>
+              <span>위에서 오늘의 첫 훈련을 남깁니다.</span>
             </li>
             <li>
-              <strong>2. 라운드를 고르고 싶을 때</strong>
-              <span>하단 「링」에서 3R · 6R · 9R을 고를 수 있어요.</span>
+              <strong>훈련</strong>
+              <span>하단 탭에서 라운드 타이머를 바로 켭니다.</span>
             </li>
             <li>
-              <strong>3. 체육관이 필요할 때</strong>
-              <span>하단 「짐」에서 근처 관을 찾아보세요.</span>
+              <strong>커뮤니티</strong>
+              <span>다닐 체육관과 라이벌을 찾아둡니다.</span>
             </li>
           </ol>
           <div className="home-first-guide-actions">
             <button
               type="button"
               className="home-first-guide-link"
-              onClick={onStartTraining}
+              onClick={() => onNavigate?.("train")}
             >
-              링으로 이동
+              훈련 탭 열기
             </button>
             <button
               type="button"
               className="home-first-guide-link"
-              onClick={() => onNavigateGym?.("gyms")}
+              onClick={() => onNavigate?.("gym")}
             >
-              짐으로 이동
+              커뮤니티 열기
             </button>
           </div>
-          <p className="home-first-guide-note">
-            기록·기술·백업은 하단 「더보기」에 있어요.
-          </p>
         </section>
       ) : (
         <>
+          <section className="home-week-summary-card" aria-label="이번 주 요약">
+            <div className="home-section-row">
+              <h2>이번 주</h2>
+              <span className="home-week-inline-meta">
+                {weeklyStats.rounds}R · {weeklyStats.minutes}분 · 연속{" "}
+                {dashboard.streakDays}일
+              </span>
+            </div>
+            <div className="home-week-summary-strip" aria-label="이번 주 훈련일">
+              <div className="home-week-strip-days">
+                {dashboard.weekStrip.map((day) => (
+                  <div
+                    key={day.key}
+                    className={`home-week-day${day.isToday ? " is-today" : ""}${
+                      day.trained ? " is-trained" : ""
+                    }`}
+                  >
+                    <span>{day.label}</span>
+                    <i aria-hidden="true" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="home-recent-card" aria-label="최근 기록">
+            <div className="home-section-row">
+              <h2>최근 기록</h2>
+              <button
+                type="button"
+                className="home-section-text-link"
+                onClick={() => onNavigate?.("log")}
+              >
+                기록 전체
+              </button>
+            </div>
+            <div className="home-recent-list">
+              {recentLogs.length > 0 ? (
+                recentLogs.slice(0, 2).map((log) => (
+                  <button
+                    type="button"
+                    className="home-recent-item"
+                    key={log.id}
+                    onClick={() => onOpenCardMaker?.(log.id)}
+                  >
+                    <span>
+                      <strong>{log.type || "훈련"}</strong>
+                      <em>{getLogSummary(log) || "기록 보기"}</em>
+                    </span>
+                    <small>{formatLogWhen(log, todayKey)}</small>
+                  </button>
+                ))
+              ) : (
+                <div className="home-recent-empty">
+                  <strong>아직 기록이 없습니다</strong>
+                  <span>첫 훈련을 남기면 여기에 나타납니다.</span>
+                </div>
+              )}
+            </div>
+          </section>
+
           <button
             type="button"
-            className="home-recent-line home-recent-line-solo"
-            onClick={handleRecentClick}
+            className="home-level-strip"
+            onClick={() => onOpenGrowth?.()}
+            aria-label={`레벨 ${dashboard.fighter.level}, 성장 보기`}
           >
-            <span className="home-recent-line-kicker">최근</span>
-            <strong>{recentLine.title}</strong>
-            <em>{recentLine.copy}</em>
+            <span>
+              <small>성장</small>
+              <strong>LV.{dashboard.fighter.level}</strong>
+            </span>
+            <span className="home-level-progress" aria-hidden="true">
+              <i style={{ width: `${dashboard.fighter.progressPercent}%` }} />
+            </span>
+            <em>{dashboard.fighter.progressPercent}%</em>
           </button>
+        </>
+      )}
 
+      {!isFirstUser ? (
+        <>
           <details
             className="home-collapsible home-more-details"
             ref={moreDetailsRef}
           >
             <summary className="home-collapsible-summary">
-              <span className="home-section-label">기록</span>
-              <strong>
-                이번 주{" "}
-                {dashboard.weekStrip.filter((day) => day.trained).length}일 ·
-                연속 {dashboard.streakDays}일
-              </strong>
+              <span className="home-section-label">더 보기</span>
+              <strong>통계 · 캘린더 · 챌린지</strong>
             </summary>
 
             <div className="home-more-details-body">
-              <section
-                className="home-week-strip"
-                aria-label="이번 주 훈련 흔적"
-              >
-                <div className="home-week-strip-head">
-                  <p className="home-week-strip-label">이번 주</p>
-                  <div className="home-week-strip-actions">
-                    <button
-                      type="button"
-                      className="home-week-calendar-link"
-                      onClick={handleOpenCalendar}
-                    >
-                      캘린더
-                    </button>
-                  </div>
-                </div>
-                <div className="home-week-strip-days">
-                  {dashboard.weekStrip.map((day) => (
-                    <div
-                      key={day.key}
-                      className={`home-week-day${
-                        day.isToday ? " is-today" : ""
-                      }${day.trained ? " is-trained" : ""}`}
-                    >
-                      <span>{day.label}</span>
-                      <strong>{day.day}</strong>
-                      <i aria-hidden="true" />
-                    </div>
-                  ))}
-                </div>
-              </section>
-
               <section className="home-trace-stats" aria-label="흔적">
                 <div className="home-trace-stats-grid">
                   <div>
@@ -441,23 +585,6 @@ export default function HomePage({
                   </div>
                 </div>
               </section>
-
-              {dashboard.lastLog && dashboard.trainedToday ? (
-                <div className="home-today-victory">
-                  <p className="home-today-victory-copy">
-                    오늘 {getRounds(dashboard.lastLog)}R ·{" "}
-                    {dashboard.lastLog.type} ·{" "}
-                    {dashboard.lastLog.minutes || dashboard.lastLog.duration}분
-                  </p>
-                  <button
-                    type="button"
-                    className="home-today-card-link"
-                    onClick={() => onOpenCardMaker?.(dashboard.lastLog?.id)}
-                  >
-                    인증 카드 만들기
-                  </button>
-                </div>
-              ) : null}
 
               {firstWeekChallenge ? (
                 <div
@@ -492,9 +619,16 @@ export default function HomePage({
                 <button
                   type="button"
                   className="home-secondary-button"
-                  onClick={onStartTraining}
+                  onClick={() => onNavigate?.("train")}
                 >
-                  링에서 더 보기
+                  훈련에서 더 보기
+                </button>
+                <button
+                  type="button"
+                  className="home-secondary-button"
+                  onClick={handleOpenCalendar}
+                >
+                  캘린더 열기
                 </button>
                 {todaysLesson.kind === "session" ? (
                   <button
@@ -659,7 +793,7 @@ export default function HomePage({
             </div>
           </details>
         </>
-      )}
+      ) : null}
     </main>
   );
 }

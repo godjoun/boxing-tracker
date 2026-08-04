@@ -1,3 +1,5 @@
+import { RELEASE_SCOPE } from "./releaseScope";
+
 /**
  * 스파링 상대찾기.
  * 군산 소프트 론칭: LV.1부터 열어 활성화. (예전 LV.7 게이트는 전국 확장 때 재검토)
@@ -7,7 +9,7 @@ export const SPARRING_UNLOCK_LEVEL = 1;
 /** LV.10 일반인 정점 — 기본 커리큘럼을 마친 뒤 콤보 크리에이터 해금 */
 export const COMBO_CREATOR_UNLOCK_LEVEL = 10;
 
-export const FEATURE_UNLOCKS = [
+const ALL_FEATURE_UNLOCKS = [
   {
     id: "sparring",
     level: SPARRING_UNLOCK_LEVEL,
@@ -33,6 +35,10 @@ export const FEATURE_UNLOCKS = [
   },
 ];
 
+export const FEATURE_UNLOCKS = ALL_FEATURE_UNLOCKS.filter(
+  (feature) => feature.id !== "sparring" || RELEASE_SCOPE.rivals
+);
+
 export function getFeatureUnlock(featureId) {
   return FEATURE_UNLOCKS.find((feature) => feature.id === featureId) || null;
 }
@@ -51,7 +57,7 @@ export function isFeatureUnlocked(featureId, level) {
 }
 
 export function isSparringUnlocked(level) {
-  return isFeatureUnlocked("sparring", level);
+  return RELEASE_SCOPE.rivals && isFeatureUnlocked("sparring", level);
 }
 
 export function isComboCreatorUnlocked(level) {

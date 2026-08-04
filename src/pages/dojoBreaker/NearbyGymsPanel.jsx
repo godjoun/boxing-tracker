@@ -1,6 +1,4 @@
 import {
-  lazy,
-  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -9,6 +7,8 @@ import {
 import { track } from "@vercel/analytics";
 import GymDetailPanel from "../../components/GymDetailPanel";
 import ExchangeBoardPanel from "./ExchangeBoardPanel";
+import ExchangeHubPanel from "./ExchangeHubPanel";
+import MeActivityPanel from "./MeActivityPanel";
 import GymInquiryChatModal from "../../components/GymInquiryChatModal";
 import GymInquiryModal from "../../components/GymInquiryModal";
 import GymInquiryLedgerPanel from "../../components/GymInquiryLedgerPanel";
@@ -23,8 +23,12 @@ import { inquiryKindLabel } from "../../utils/gymInquiry";
 import { useTraining } from "../../store/TrainingContext";
 import {
   getDistanceKm,
+  getGymSearchCityLabel,
+  getListedGymsByCity,
+  getUnlocatedListedGyms,
   getSavedLocation,
   isNearbyMapGym,
+  resolveGpsSearchLocation,
   resolveSearchLocation,
   saveGymSearchLocation,
   suggestAreas,
@@ -43,8 +47,7 @@ import {
 } from "../../utils/gymFavorites";
 import { BRAND_NAME } from "../../utils/brand";
 import { groupRivalsByArea } from "../../utils/rivalAreaMap";
-
-const GymMapPanel = lazy(() => import("../../components/GymMapPanel"));
+import { RELEASE_SCOPE } from "../../utils/releaseScope";
 
 const MAP_OVERVIEW = {
   lat: 36.45,
@@ -81,19 +84,17 @@ function writeRecentSearch(label) {
 }
 
 const LAYER_FILTERS = [
+  { id: "hub", label: "교류" },
   { id: "gyms", label: "체육관" },
-  { id: "sparring", label: "라이벌" },
-  { id: "favorites", label: "찜" },
+  ...(RELEASE_SCOPE.rivals ? [{ id: "sparring", label: "라이벌" }] : []),
   { id: "meeting", label: "모임" },
 ];
 
 export default function NearbyGymsPanel({
-  categoryNav = null,
-  activeLayer = "gyms",
+  activeLayer = "hub",
   onSelectLayer,
   onMeetingSectionChange,
   onGoRivalProfile,
-  meetingRequest = 0,
   rivals = [],
   rivalBridge = null,
   rivalContent = null,
@@ -102,6 +103,8 @@ export default function NearbyGymsPanel({
   const [section, setSection] = useState("find");
   const [status, setStatus] = useState("idle");
   const [gyms, setGyms] = useState([]);
+  const [allListedGyms, setAllListedGyms] = useState([]);
+  const [gymListScope, setGymListScope] = useState("nearby");
   const [selectedGym, setSelectedGym] = useState(null);
   const [selectedRivalArea, setSelectedRivalArea] = useState(null);
   const [selectedRivalPartner, setSelectedRivalPartner] = useState(null);
@@ -127,9 +130,10 @@ export default function NearbyGymsPanel({
   const [draftDistanceKm, setDraftDistanceKm] = useState(20);
   const [draftLayer, setDraftLayer] = useState(activeLayer);
   const [recentSearches, setRecentSearches] = useState(readRecentSearches);
-  const [sheetSnap, setSheetSnap] = useState("half");
+  const [meetingFocus, setMeetingFocus] = useState(null);
   const initialAreaLoaded = useRef(false);
   const prevLayerRef = useRef(activeLayer);
+  const searchRequestIdRef = useRef(0);
 
   const rivalAreas = useMemo(() => groupRivalsByArea(rivals), [rivals]);
   const rivalsInArea = useMemo(() => {
@@ -145,7 +149,8 @@ export default function NearbyGymsPanel({
   );
   const mapGyms = useMemo(() => {
     const base =
-      activeLayer === "favorites"
+      activeLayer === "favorites" ||
+      (activeLayer === "gyms" && gymListScope === "favorites")
         ? favoriteGyms
         : activeLayer === "gyms"
           ? gyms
@@ -154,7 +159,47 @@ export default function NearbyGymsPanel({
       if (!Number.isFinite(Number(gym.distanceKm))) return true;
       return Number(gym.distanceKm) <= distanceLimitKm;
     });
-  }, [activeLayer, favoriteGyms, gyms, distanceLimitKm]);
+  }, [activeLayer, favoriteGyms, gyms, distanceLimitKm, gymListScope]);
+  const approvedListedGyms = useMemo(
+    () =>
+      allListedGyms
+        .filter((gym) => gym.source === "listing" && !gym.ownerPreview)
+        .sort((a, b) => {
+          if (a.featured && !b.featured) return -1;
+          if (b.featured && !a.featured) return 1;
+          return (a.distanceKm ?? 9999) - (b.distanceKm ?? 9999);
+        }),
+    [allListedGyms]
+  );
+  const searchCityLabel = useMemo(
+    () => getGymSearchCityLabel(position),
+    [position]
+  );
+  const cityListedGyms = useMemo(() => {
+    const cityMatches = getListedGymsByCity(
+      approvedListedGyms,
+      searchCityLabel,
+      position
+    );
+    if (cityMatches.length > 0 || searchCityLabel !== "현재 지역") {
+      return cityMatches;
+    }
+    return approvedListedGyms.filter(
+      (gym) => Number(gym.distanceKm) <= distanceLimitKm
+    );
+  }, [approvedListedGyms, distanceLimitKm, position, searchCityLabel]);
+  const unlocatedListedGyms = useMemo(
+    () => getUnlocatedListedGyms(approvedListedGyms),
+    [approvedListedGyms]
+  );
+  const visibleGyms =
+    activeLayer === "gyms" && gymListScope === "listed"
+      ? approvedListedGyms
+      : activeLayer === "gyms" && gymListScope === "favorites"
+        ? favoriteGyms
+        : activeLayer === "favorites"
+          ? favoriteGyms
+          : mapGyms;
 
   useEffect(() => {
     if (prevLayerRef.current === activeLayer) return;
@@ -165,32 +210,20 @@ export default function NearbyGymsPanel({
       setSelectedRivalArea(null);
       setSelectedRivalPartner(null);
       setHomeGymNotice("");
-      setSheetSnap("half");
-      setSection("find");
-      onMeetingSectionChange?.(false);
+      setGymListScope("nearby");
+      if (activeLayer === "meeting") {
+        setSection("meeting");
+        onMeetingSectionChange?.(true);
+      } else if (activeLayer === "me") {
+        setSection("me");
+        onMeetingSectionChange?.(false);
+      } else {
+        setSection("find");
+        onMeetingSectionChange?.(false);
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, [activeLayer, onMeetingSectionChange]);
-
-  useEffect(() => {
-    if (!meetingRequest) return;
-    const timer = window.setTimeout(() => {
-      track("gym_section_tab", { section: "meeting" });
-      setSection("meeting");
-      setInquiryGym(null);
-      setChatInquiry(null);
-      setOwnerMode(null);
-      setEditingListing(null);
-      setSideMenuOpen(false);
-      onMeetingSectionChange?.(true);
-      setSelectedGym(null);
-      setDetailGym(null);
-      setSelectedRivalPartner(null);
-      setSelectedRivalArea(null);
-      setHomeGymNotice("");
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [meetingRequest, onMeetingSectionChange]);
 
   function closeChatAndRefresh() {
     setChatInquiry(null);
@@ -206,9 +239,6 @@ export default function NearbyGymsPanel({
     setEditingListing(null);
     setSideMenuOpen(false);
     onMeetingSectionChange?.(next === "meeting");
-    if (next === "find") {
-      setSheetSnap("half");
-    }
   }
 
   function closeSidePanel() {
@@ -238,10 +268,18 @@ export default function NearbyGymsPanel({
     }
     if (section !== "find") {
       switchSection("find");
+      if (activeLayer === "meeting" || activeLayer === "me") {
+        onSelectLayer?.("hub");
+      }
       return true;
     }
-    if (activeLayer === "favorites" || activeLayer === "sparring") {
-      onSelectLayer?.("gyms");
+    if (
+      activeLayer === "favorites" ||
+      activeLayer === "sparring" ||
+      activeLayer === "gyms" ||
+      activeLayer === "meeting"
+    ) {
+      onSelectLayer?.("hub");
       return true;
     }
     return false;
@@ -341,6 +379,7 @@ export default function NearbyGymsPanel({
 
   async function loadGyms(options = {}) {
     const { preset = null, query = null, allowFallback = false } = options;
+    const requestId = ++searchRequestIdRef.current;
 
     setStatus("loading");
     setActivePreset(preset);
@@ -355,41 +394,69 @@ export default function NearbyGymsPanel({
         allowFallback,
       });
 
+      if (requestId !== searchRequestIdRef.current) return;
       setPosition(currentPosition);
+      setGymListScope("nearby");
+      setSelectedGym(null);
+      setSelectedRivalArea(null);
+      setDetailGym(null);
 
-      const [osmResult, listedResult] = await Promise.allSettled([
-        searchOsmBoxingGyms({
+      const osmRequest = searchOsmBoxingGyms({
           lat: currentPosition.lat,
           lon: currentPosition.lon,
-        }),
-        loadApprovedGymsForSearch(currentPosition.lat, currentPosition.lon, {
+        }).then(
+          (value) => ({ status: "fulfilled", value }),
+          (reason) => ({ status: "rejected", reason })
+        );
+      let listedRaw = [];
+      let listedFailed = false;
+      try {
+        listedRaw = await loadApprovedGymsForSearch(
+          currentPosition.lat,
+          currentPosition.lon,
+          {
           userId,
-        }),
-      ]);
-      const osmGyms =
-        osmResult.status === "fulfilled"
-          ? osmResult.value.map((gym) => {
-              const distanceKm = getDistanceKm(
-                currentPosition.lat,
-                currentPosition.lon,
-                gym.lat,
-                gym.lon
-              );
-              return {
-                ...gym,
-                distanceKm,
-                distanceLabel:
-                  distanceKm < 1
-                    ? `${Math.round(distanceKm * 1000)}m`
-                    : `${distanceKm.toFixed(1)}km`,
-              };
-            })
-          : [];
-      const listedRaw =
-        listedResult.status === "fulfilled" ? listedResult.value : [];
+          }
+        );
+      } catch (error) {
+        listedFailed = true;
+        console.error("Approved gym listing search failed", error);
+      }
+
+      if (requestId !== searchRequestIdRef.current) return;
+      setAllListedGyms(listedRaw);
       const listed = listedRaw.filter((gym) =>
         isNearbyMapGym(gym, currentPosition)
       );
+      setGyms(listed);
+      setStatus(listed.length > 0 || listedRaw.length > 0 ? "ready" : "loading");
+
+      let osmGyms = [];
+      let osmFailed = false;
+      const osmResult = await osmRequest;
+      if (osmResult.status === "fulfilled") {
+        osmGyms = osmResult.value.map((gym) => {
+          const distanceKm = getDistanceKm(
+            currentPosition.lat,
+            currentPosition.lon,
+            gym.lat,
+            gym.lon
+          );
+          return {
+            ...gym,
+            distanceKm,
+            distanceLabel:
+              distanceKm < 1
+                ? `${Math.round(distanceKm * 1000)}m`
+                : `${distanceKm.toFixed(1)}km`,
+          };
+        });
+      } else {
+        osmFailed = true;
+        console.warn("OSM gym search delayed", osmResult.reason);
+      }
+
+      if (requestId !== searchRequestIdRef.current) return;
       const nearbyOsm = osmGyms.filter((gym) =>
         isNearbyMapGym(gym, currentPosition)
       );
@@ -405,19 +472,18 @@ export default function NearbyGymsPanel({
       });
 
       setGyms(merged);
-      setSelectedGym(null);
-      setSelectedRivalArea(null);
-      setDetailGym(null);
       if (merged.length > 0) {
         setStatus("ready");
-      } else if (osmResult.status === "rejected") {
-        throw osmResult.reason;
+      } else if (listedFailed && osmFailed) {
+        setStatus("error");
       } else {
         setStatus("empty");
       }
     } catch (loadError) {
       console.error("Gym map search failed", loadError);
-      setStatus("error");
+      if (requestId === searchRequestIdRef.current) {
+        setStatus("error");
+      }
     }
   }
 
@@ -462,24 +528,6 @@ export default function NearbyGymsPanel({
     setDetailGym(null);
   }
 
-  function selectRivalOnMap(area) {
-    setSelectedRivalArea(area);
-    setSelectedGym(null);
-    setDetailGym(null);
-
-    const inArea = rivals.filter((partner) => {
-      const resolved = findAreaByQuery(partner.area);
-      return resolved?.id === area.id;
-    });
-
-    if (inArea.length === 1) {
-      setSelectedRivalPartner(inArea[0]);
-      return;
-    }
-
-    setSelectedRivalPartner(null);
-  }
-
   function openSearch() {
     setSearchOpen(true);
     setSuggestions(suggestAreas(regionQuery, 5));
@@ -514,7 +562,6 @@ export default function NearbyGymsPanel({
       }
     }
     setFilterOpen(false);
-    setSheetSnap("half");
   }
 
   async function runRegionSearch(label) {
@@ -525,6 +572,11 @@ export default function NearbyGymsPanel({
     setRegionQuery(q);
     closeSearch();
     await loadGyms({ query: q, allowFallback: false });
+    onSelectLayer?.("gyms");
+    if (section !== "find") {
+      switchSection("find");
+    }
+    setGymListScope("nearby");
   }
 
   async function handleSearchSubmit(event) {
@@ -547,113 +599,249 @@ export default function NearbyGymsPanel({
     navigator.geolocation.getCurrentPosition(
       async (result) => {
         try {
-          saveGymSearchLocation({
+          const gpsPosition = {
             lat: result.coords.latitude,
             lon: result.coords.longitude,
             label: "내 위치",
             source: "gps",
             accuracy: result.coords.accuracy,
-          });
-          await loadGyms({ allowFallback: true });
+          };
+          saveGymSearchLocation(gpsPosition);
+          const [, resolvedLocation] = await Promise.all([
+            loadGyms({ allowFallback: true }),
+            resolveGpsSearchLocation(gpsPosition),
+          ]);
+          if (resolvedLocation?.cityLabel) {
+            saveGymSearchLocation(resolvedLocation);
+            setPosition((current) =>
+              Number(current?.lat) === Number(resolvedLocation.lat) &&
+              Number(current?.lon) === Number(resolvedLocation.lon)
+                ? resolvedLocation
+                : current
+            );
+          }
         } finally {
           setLocating(false);
         }
       },
       () => {
         setLocating(false);
+        if (!getSavedLocation()) {
+          openSearch();
+          return;
+        }
         loadGyms({ allowFallback: true });
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
   }
 
-  const mapFocus = sheetSnap === "peek" && section === "find";
+  const hasMapAnchor =
+    (position?.source && position.source !== "overview") ||
+    Boolean(getSavedLocation()) ||
+    gyms.length > 0;
+  const needsLocationGate =
+    section === "find" && activeLayer === "gyms" && !hasMapAnchor;
+
+  const firstUseGateTracked = useRef(false);
+
+  useEffect(() => {
+    if (!needsLocationGate || status === "loading" || firstUseGateTracked.current) {
+      return;
+    }
+    firstUseGateTracked.current = true;
+    track("gym_first_use_gate_view");
+  }, [needsLocationGate, status]);
+
+  function startNearbySearch() {
+    track("gym_first_use_locate");
+    handleMyLocation();
+  }
+
+  function startRegionSearch() {
+    track("gym_first_use_search");
+    openSearch();
+  }
+
+  const visibleSummary =
+    activeLayer === "sparring"
+      ? `${rivalAreas.length}개 권역 · ${rivals.length}명`
+      : activeLayer === "favorites"
+        ? `${mapGyms.length}곳`
+        : status === "loading" &&
+            mapGyms.length === 0 &&
+            approvedListedGyms.length === 0
+          ? "검색 중"
+          : mapGyms.length > 0 || approvedListedGyms.length > 0
+            ? `${searchCityLabel} 입점 ${cityListedGyms.length}`
+            : "지역 선택";
+  const placeSearchLabel =
+    activeLayer === "sparring"
+      ? "활동 권역을 눌러 프로필 보기"
+      : position?.label && position.source !== "overview"
+      ? `${position.label} 주변 복싱장`
+      : "지역 · 체육관 검색";
 
   const mapOverlay = (
     <div
       className={`gym-map-overlay-controls is-discovery${
-        mapFocus ? " is-map-focus" : ""
+        needsLocationGate ? " is-first-use" : ""
       }`}
     >
-      {mapFocus ? (
-        <div className="gym-map-focus-bar">
-          <button
-            type="button"
-            className="gym-map-chrome-btn"
-            aria-label="목록 보기"
-            onClick={() => setSheetSnap("half")}
-          >
-            ←
-          </button>
-          <div className="gym-map-top-bar-actions">
+        <div className="gym-map-top-stack">
+          <header className="gym-community-head">
+            <div className="gym-community-head-copy">
+              <h1>커뮤니티</h1>
+              <p>사람을 만나고, 함께 훈련하고, 프로필에 남깁니다.</p>
+            </div>
             <button
               type="button"
-              className="gym-map-locate-chip"
-              aria-label="내 위치"
-              disabled={locating || status === "loading"}
-              onClick={handleMyLocation}
+              className="gym-community-me-btn"
+              aria-label="내 활동"
+              onClick={() => {
+                onSelectLayer?.("me");
+                switchSection("me");
+              }}
             >
-              {locating ? "위치…" : "내 위치"}
+              나
             </button>
+          </header>
+
+          <nav className="gym-map-layer-row" aria-label="커뮤니티 카테고리">
+            {LAYER_FILTERS.map((item) => {
+              const active =
+                item.id === "meeting"
+                  ? activeLayer === "meeting" || section === "meeting"
+                  : activeLayer === item.id &&
+                    section !== "meeting" &&
+                    section !== "me";
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={active ? "is-active" : ""}
+                  onClick={() => {
+                    onSelectLayer?.(item.id);
+                    if (item.id === "meeting") {
+                      setMeetingFocus(null);
+                      switchSection("meeting");
+                      return;
+                    }
+                    if (section !== "find") {
+                      switchSection("find");
+                    }
+                    if (item.id === "gyms" && !hasMapAnchor) {
+                      return;
+                    }
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+
+          {activeLayer !== "hub" ? (
+            <>
+          <div className="gym-map-search-pill-row">
             <button
               type="button"
-              className="gym-map-chrome-btn"
-              aria-label="검색"
-              onClick={openSearch}
+              className="gym-map-search-pill"
+              aria-label={
+                activeLayer === "sparring"
+                  ? "공개 라이벌 프로필 목록 열기"
+                  : "지역 선택"
+              }
+              onClick={
+                activeLayer === "sparring"
+                  ? () => undefined
+                  : needsLocationGate
+                    ? startRegionSearch
+                    : openSearch
+              }
             >
-              <span aria-hidden="true">🔍</span>
+              <span aria-hidden="true">
+                {activeLayer === "sparring" ? "◎" : "⌕"}
+              </span>
+              <strong>
+                {activeLayer === "sparring"
+                  ? placeSearchLabel
+                  : needsLocationGate
+                    ? "지역을 선택하세요"
+                    : placeSearchLabel}
+              </strong>
+              <small>
+                {activeLayer === "sparring"
+                  ? visibleSummary
+                  : needsLocationGate
+                    ? "선택 후 아래 목록에 표시"
+                    : visibleSummary}
+              </small>
             </button>
+
+            <div className="gym-map-top-bar-actions">
+              {activeLayer !== "sparring" ? (
+                <button
+                  type="button"
+                  className="gym-map-locate-chip"
+                  aria-label="내 위치"
+                  disabled={locating || status === "loading"}
+                  onClick={handleMyLocation}
+                >
+                  {locating ? "위치…" : "내 위치"}
+                </button>
+              ) : null}
+              {!needsLocationGate ? (
+                <button
+                  type="button"
+                  className={`gym-map-chrome-btn${
+                    section === "sent" ? " is-active" : ""
+                  }`}
+                  aria-label="내 문의"
+                  title="내 문의"
+                  onClick={() => switchSection("sent")}
+                >
+                  <span aria-hidden="true">✉</span>
+                </button>
+              ) : null}
+              {!needsLocationGate ? (
+                <button
+                  type="button"
+                  className={`gym-map-chrome-btn${
+                    sideMenuOpen ? " is-active" : ""
+                  }`}
+                  aria-expanded={sideMenuOpen}
+                  aria-controls="gym-map-side-menu"
+                  aria-label="더보기 메뉴"
+                  onClick={() => setSideMenuOpen((open) => !open)}
+                >
+                  <span aria-hidden="true">☰</span>
+                </button>
+              ) : null}
+            </div>
           </div>
+
+          {!needsLocationGate ? (
+            <div className="gym-map-context-strip" aria-label="지도 요약">
+              <span>
+                {activeLayer === "sparring"
+                  ? `라이벌 권역 ${rivalAreas.length}`
+                  : activeLayer === "favorites" || gymListScope === "favorites"
+                    ? `찜 ${favoriteGyms.length}`
+                    : `${searchCityLabel} 입점관 ${cityListedGyms.length}`}
+              </span>
+              {activeLayer !== "sparring" ? (
+                <button type="button" onClick={openFilter}>
+                  반경 {distanceLimitKm}km
+                </button>
+              ) : (
+                <span>{`라이벌 ${rivals.length}명`}</span>
+              )}
+            </div>
+          ) : null}
+            </>
+          ) : null}
         </div>
-      ) : (
-        <div className="gym-map-hero-head">
-          <div className="gym-map-hero-copy">
-            <p className="gym-map-hero-kicker">GYM</p>
-            <h1>짐 찾기</h1>
-            <p>내 주변 체육관을 지도로 찾아보세요</p>
-          </div>
-          <div className="gym-map-top-bar-actions">
-            <button
-              type="button"
-              className="gym-map-locate-chip"
-              aria-label="내 위치"
-              disabled={locating || status === "loading"}
-              onClick={handleMyLocation}
-            >
-              {locating ? "위치…" : "내 위치"}
-            </button>
-            <button
-              type="button"
-              className="gym-map-chrome-btn"
-              aria-label="검색"
-              onClick={openSearch}
-            >
-              <span aria-hidden="true">🔍</span>
-            </button>
-            <button
-              type="button"
-              className={`gym-map-chrome-btn${
-                section === "sent" ? " is-active" : ""
-              }`}
-              aria-label="내 문의"
-              title="내 문의"
-              onClick={() => switchSection("sent")}
-            >
-              <span aria-hidden="true">✉</span>
-            </button>
-            <button
-              type="button"
-              className={`gym-map-chrome-btn${sideMenuOpen ? " is-active" : ""}`}
-              aria-expanded={sideMenuOpen}
-              aria-controls="gym-map-side-menu"
-              aria-label="더보기 메뉴"
-              onClick={() => setSideMenuOpen((open) => !open)}
-            >
-              <span aria-hidden="true">☰</span>
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 
@@ -834,31 +1022,107 @@ export default function NearbyGymsPanel({
     </div>
   ) : null;
 
+  const firstUseGate =
+    needsLocationGate ? (
+      <div className="gym-first-gate" role="region" aria-label="체육관 지역 선택">
+        {status === "loading" || locating ? (
+          <>
+            <h2>체육관을 찾는 중</h2>
+            <p>선택한 지역의 목록을 준비하고 있습니다.</p>
+          </>
+        ) : (
+          <>
+            <h2>다닐 체육관 찾기</h2>
+            <p>지역을 고르면 아래에 체육관 목록이 나타납니다.</p>
+            <button
+              type="button"
+              className="gym-first-gate-primary"
+              onClick={startRegionSearch}
+            >
+              지역 선택
+            </button>
+            <button
+              type="button"
+              className="gym-first-gate-secondary"
+              disabled={locating || status === "loading"}
+              onClick={startNearbySearch}
+            >
+              내 주변으로 찾기
+            </button>
+            <div className="gym-first-gate-regions" aria-label="추천 지역">
+              {QUICK_REGIONS.slice(0, 4).map((area) => (
+                <button
+                  key={area.id}
+                  type="button"
+                  className="gym-first-gate-region"
+                  onClick={() => {
+                    track("gym_first_use_quick_region", { region: area.label });
+                    runRegionSearch(area.label);
+                  }}
+                >
+                  {area.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    ) : null;
+
   const sheetTitle =
-    activeLayer === "favorites"
+    needsLocationGate
+      ? "짐 찾기"
+      : activeLayer === "hub"
+        ? ""
+        : activeLayer === "favorites" || gymListScope === "favorites"
       ? "찜한 체육관"
-      : activeLayer === "sparring"
-        ? "라이벌"
-        : "가까운 체육관";
+        : activeLayer === "sparring"
+        ? "공개 라이벌"
+        : gymListScope === "listed"
+          ? "전체 입점관"
+          : position?.source === "gps"
+            ? "내 주변 체육관"
+            : `${searchCityLabel} 체육관`;
   const sheetCount =
-    activeLayer === "sparring"
+    needsLocationGate || activeLayer === "hub"
+      ? 0
+      : activeLayer === "sparring"
       ? rivals.length
-      : mapGyms.length;
+      : visibleGyms.length;
 
-  const previewGym =
-    activeLayer === "sparring"
-      ? null
-      : selectedGym && mapGyms.some((gym) => gym.id === selectedGym.id)
-        ? selectedGym
-        : mapGyms[0] || null;
-  const previewRival =
-    activeLayer === "sparring"
-      ? selectedRivalPartner || rivals[0] || null
-      : null;
-  const previewCover = previewGym ? coverGymPhoto(previewGym) : null;
-
-  const sheetListContent =
-    activeLayer === "sparring" ? (
+  const sheetListContent = needsLocationGate
+    ? firstUseGate
+    : activeLayer === "hub" ? (
+      <ExchangeHubPanel
+        onOpenMeetings={() => {
+          setMeetingFocus(null);
+          onSelectLayer?.("meeting");
+          switchSection("meeting");
+        }}
+        onComposeMeeting={() => {
+          setMeetingFocus({ compose: true, nonce: Date.now() });
+          onSelectLayer?.("meeting");
+          switchSection("meeting");
+        }}
+        onOpenEvent={(event, { isPast = false } = {}) => {
+          setMeetingFocus({
+            eventId: event?.id || null,
+            showPast: Boolean(isPast || event?.isPast),
+            nonce: Date.now(),
+          });
+          onSelectLayer?.("meeting");
+          switchSection("meeting");
+        }}
+        onOpenRivals={() => {
+          onSelectLayer?.("sparring");
+          switchSection("find");
+        }}
+        onOpenMe={() => {
+          onSelectLayer?.("me");
+          switchSection("me");
+        }}
+      />
+    ) : activeLayer === "sparring" ? (
       rivals.length === 0 ? (
         <div className="gym-state-card">
           <strong>공개 중인 라이벌이 없습니다</strong>
@@ -869,24 +1133,36 @@ export default function NearbyGymsPanel({
           {rivals.map((partner) => renderRivalRow(partner))}
         </div>
       )
-    ) : mapGyms.length === 0 ? (
+    ) : visibleGyms.length === 0 ? (
       <div className="gym-state-card">
         <strong>
-          {activeLayer === "favorites"
+          {activeLayer === "favorites" || gymListScope === "favorites"
             ? "찜한 체육관이 없습니다"
             : status === "loading"
               ? "체육관을 찾는 중"
-              : "이 지역 결과가 없습니다"}
+              : gymListScope === "listed"
+                ? "등록된 입점관이 없습니다"
+                : "이 지역 결과가 없습니다"}
         </strong>
         <p>
-          {activeLayer === "favorites"
+          {activeLayer === "favorites" || gymListScope === "favorites"
             ? "지도에서 마음에 드는 관을 찜해 보세요."
-            : "🔍 로 지역을 검색하거나 내 위치로 찾아보세요."}
+            : gymListScope === "listed"
+              ? "입점 승인된 체육관이 여기에 모입니다."
+              : "🔍 로 지역을 검색하거나 내 위치로 찾아보세요."}
         </p>
       </div>
     ) : (
       <div className="gym-result-list">
-        {mapGyms.map((gym, index) => (
+        {activeLayer === "gyms" &&
+        gymListScope === "listed" &&
+        unlocatedListedGyms.length > 0 ? (
+          <div className="gym-location-quality-note" role="status">
+            <strong>위치 확인 필요 {unlocatedListedGyms.length}곳</strong>
+            <span>지도 위치를 등록하면 도시 집계가 더 정확해집니다.</span>
+          </div>
+        ) : null}
+        {visibleGyms.map((gym, index) => (
           <GymResultCard
             key={gym.id}
             gym={gym}
@@ -905,120 +1181,82 @@ export default function NearbyGymsPanel({
       </div>
     );
 
-  const peekPreview =
-    activeLayer === "sparring" ? (
-      previewRival ? (
-        <button
-          type="button"
-          className="gym-map-preview-card"
-          onClick={() => {
-            setSelectedRivalPartner(previewRival);
-            setSheetSnap("half");
-          }}
-        >
-          <div className="gym-map-preview-copy">
-            <span>라이벌</span>
-            <strong>{previewRival.nickname || "라이벌"}</strong>
-            <small>
-              {[previewRival.area, previewRival.weightClass]
-                .filter(Boolean)
-                .join(" · ") || "카드를 열어 확인하세요"}
-            </small>
-          </div>
-          <em>목록</em>
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="gym-map-preview-card is-empty"
-          onClick={() => setSheetSnap("half")}
-        >
-          <div className="gym-map-preview-copy">
-            <span>라이벌</span>
-            <strong>지도에서 발견하세요</strong>
-            <small>핸들을 올려 목록을 볼 수 있어요</small>
-          </div>
-        </button>
-      )
-    ) : previewGym ? (
-      <button
-        type="button"
-        className="gym-map-preview-card"
-        onClick={() => openDetail(previewGym)}
-      >
-        <div className="gym-map-preview-media" aria-hidden="true">
-          {previewCover ? (
-            <img src={previewCover} alt="" loading="lazy" />
-          ) : (
-            <span />
-          )}
-        </div>
-        <div className="gym-map-preview-copy">
-          <span>{previewGym.source === "listing" ? "입점" : "주변"}</span>
-          <strong>{previewGym.name}</strong>
-          <small>
-            {[previewGym.distanceLabel, previewGym.address]
-              .filter(Boolean)
-              .join(" · ")}
-          </small>
-        </div>
-        <em>상세</em>
-      </button>
-    ) : (
-      <button
-        type="button"
-        className="gym-map-preview-card is-empty"
-        onClick={() => setSheetSnap("half")}
-      >
-        <div className="gym-map-preview-copy">
-          <span>{sheetTitle}</span>
-          <strong>
-            {status === "loading" ? "찾는 중…" : "근처 체육관을 발견하세요"}
-          </strong>
-          <small>핸들을 올리면 목록이 열려요</small>
-        </div>
-      </button>
-    );
-
   const resultSheet =
     section === "find" ? (
       <GymMapSheet
-        snap={sheetSnap}
+        variant="page"
+        snap="full"
         title={sheetTitle}
         count={sheetCount}
         subtitle={
-          position?.label && position.source !== "overview"
-            ? position.label
-            : ""
+          needsLocationGate
+            ? ""
+            : activeLayer === "sparring"
+              ? "활동 권역 기준 · 정확한 위치 비공개"
+              : activeLayer === "gyms" && gymListScope === "listed"
+              ? unlocatedListedGyms.length > 0
+                ? `승인된 입점관 · 위치 확인 필요 ${unlocatedListedGyms.length}`
+                : "승인된 입점관"
+              : position?.label && position.source !== "overview"
+                ? position.label
+                : ""
         }
-        filters={categoryNav}
+        filters={
+          !needsLocationGate && activeLayer === "gyms" ? (
+            <div className="gym-map-scope-tabs" role="group" aria-label="체육관 범위">
+              <button
+                type="button"
+                className={gymListScope === "nearby" ? "is-active" : ""}
+                aria-pressed={gymListScope === "nearby"}
+                onClick={() => {
+                  setGymListScope("nearby");
+                  setSelectedGym(null);
+                }}
+              >
+                내 주변 <em>{mapGyms.length}</em>
+              </button>
+              <button
+                type="button"
+                className={gymListScope === "listed" ? "is-active" : ""}
+                aria-pressed={gymListScope === "listed"}
+                onClick={() => {
+                  setGymListScope("listed");
+                  setSelectedGym(null);
+                }}
+              >
+                전체 입점관 <em>{approvedListedGyms.length}</em>
+              </button>
+              <button
+                type="button"
+                className={gymListScope === "favorites" ? "is-active" : ""}
+                aria-pressed={gymListScope === "favorites"}
+                onClick={() => {
+                  setGymListScope("favorites");
+                  setSelectedGym(null);
+                }}
+              >
+                찜 <em>{favoriteGyms.length}</em>
+              </button>
+            </div>
+          ) : null
+        }
         headAction={
-          <button
-            type="button"
-            className="gym-map-sheet-filter-btn"
-            aria-label="필터"
-            onClick={openFilter}
-          >
-            필터
-          </button>
-        }
-        onSnapChange={setSheetSnap}
-      >
-        {sheetSnap === "peek" ? (
-          peekPreview
-        ) : (
-          <>
-            {sheetListContent}
-
+          needsLocationGate ||
+          activeLayer === "hub" ||
+          activeLayer === "sparring" ||
+          (activeLayer === "gyms" && gymListScope === "listed") ? null : (
             <button
               type="button"
-              className="gym-map-sheet-map-cta"
-              onClick={() => setSheetSnap("peek")}
+              className="gym-map-sheet-filter-btn"
+              aria-label="필터"
+              onClick={openFilter}
             >
-              지도로 전체 체육관 보기
+              필터
             </button>
-          </>
-        )}
+          )
+        }
+      >
+        {needsLocationGate ? firstUseGate : sheetListContent}
       </GymMapSheet>
     ) : null;
 
@@ -1060,18 +1298,20 @@ export default function NearbyGymsPanel({
           >
             지도 · 체육관
           </button>
-          <button
-            type="button"
-            className="gym-map-side-menu-item"
-            onClick={() =>
-              runFromSideMenu(() => {
-                onSelectLayer?.("sparring");
-                switchSection("find");
-              })
-            }
-          >
-            라이벌
-          </button>
+          {RELEASE_SCOPE.rivals ? (
+            <button
+              type="button"
+              className="gym-map-side-menu-item"
+              onClick={() =>
+                runFromSideMenu(() => {
+                  onSelectLayer?.("sparring");
+                  switchSection("find");
+                })
+              }
+            >
+              라이벌
+            </button>
+          ) : null}
           <button
             type="button"
             className="gym-map-side-menu-item"
@@ -1091,13 +1331,15 @@ export default function NearbyGymsPanel({
           >
             내 문의
           </button>
-          <button
-            type="button"
-            className="gym-map-side-menu-item"
-            onClick={() => runFromSideMenu(() => goRivalProfile())}
-          >
-            명패 · 라이벌 카드
-          </button>
+          {RELEASE_SCOPE.rivals ? (
+            <button
+              type="button"
+              className="gym-map-side-menu-item"
+              onClick={() => runFromSideMenu(() => goRivalProfile())}
+            >
+              명패 · 라이벌 카드
+            </button>
+          ) : null}
         </div>
 
         <hr className="gym-map-side-menu-divider" />
@@ -1138,14 +1380,14 @@ export default function NearbyGymsPanel({
                   })
                 }
               >
-                지도로
+                목록으로
               </button>
             </div>
           </>
         ) : null}
 
         <p className="gym-map-side-menu-note">
-          지도에 없는 체육관은 등록해 주세요. 승인 후 다른 사용자도 찾을 수
+          목록에 없는 체육관은 등록해 주세요. 승인 후 다른 사용자도 찾을 수
           있습니다.
         </p>
       </nav>
@@ -1153,15 +1395,47 @@ export default function NearbyGymsPanel({
   ) : null;
 
   const utilityOverlay =
-    section === "sent" || section === "meeting" || section === "owner" ? (
+    section === "sent" ||
+    section === "meeting" ||
+    section === "owner" ||
+    section === "me" ||
+    activeLayer === "me" ? (
       <div className="gym-map-utility-overlay" role="dialog" aria-modal="true">
         <button
           type="button"
           className="gym-utility-back"
-          onClick={goBack}
+          onClick={() => {
+            if (section === "me" || activeLayer === "me") {
+              onSelectLayer?.("hub");
+              switchSection("find");
+              return;
+            }
+            goBack();
+          }}
         >
           ← 뒤로
         </button>
+        {section === "me" || activeLayer === "me" ? (
+          <MeActivityPanel
+            onOpenHub={() => {
+              onSelectLayer?.("hub");
+              switchSection("find");
+            }}
+            onOpenGyms={() => {
+              onSelectLayer?.("gyms");
+              switchSection("find");
+            }}
+            onOpenRivals={() => {
+              onSelectLayer?.("sparring");
+              switchSection("find");
+            }}
+            onOpenMeetings={() => {
+              onSelectLayer?.("meeting");
+              switchSection("meeting");
+            }}
+            onGoRivalProfile={onGoRivalProfile}
+          />
+        ) : null}
         {section === "sent" ? (
           <GymSentInquiriesPanel
             userId={userId}
@@ -1171,7 +1445,18 @@ export default function NearbyGymsPanel({
           />
         ) : null}
         {section === "meeting" ? (
-          <ExchangeBoardPanel embedded onGoBack={goBack} />
+          <ExchangeBoardPanel
+            key={
+              meetingFocus?.nonce
+                ? `meeting-focus-${meetingFocus.nonce}`
+                : "meeting-board"
+            }
+            embedded
+            onGoBack={goBack}
+            initialEventId={meetingFocus?.eventId || null}
+            initialCompose={Boolean(meetingFocus?.compose)}
+            initialShowPast={Boolean(meetingFocus?.showPast)}
+          />
         ) : null}
         {section === "owner" && ownerMode === "ledger" ? (
           <GymInquiryLedgerPanel
@@ -1228,7 +1513,7 @@ export default function NearbyGymsPanel({
       <button
         key={partner.id}
         type="button"
-        className="gym-result-row is-tappable"
+        className="gym-result-row is-tappable is-rival-profile"
         onClick={() => {
           setSelectedRivalPartner(partner);
           setSelectedRivalArea(null);
@@ -1236,6 +1521,9 @@ export default function NearbyGymsPanel({
           setDetailGym(null);
         }}
       >
+        <div className="gym-result-row-thumb rival-thumb" aria-hidden="true">
+          <span>{String(partner.nickname || "R").slice(0, 1)}</span>
+        </div>
         <div className="gym-result-row-copy">
           <span className="gym-result-row-badge">
             {matched
@@ -1256,9 +1544,7 @@ export default function NearbyGymsPanel({
               .join(" · ")}
           </small>
         </div>
-        <div className="gym-result-row-thumb rival-thumb">
-          <span>{String(partner.nickname || "R").slice(0, 1)}</span>
-        </div>
+        <span className="rival-profile-row-open" aria-hidden="true">›</span>
       </button>
     );
   }
@@ -1371,15 +1657,21 @@ export default function NearbyGymsPanel({
 
       return (
         <article className="gym-place-card rival-place-card">
-          <div className="rival-place-card-hero" aria-hidden="true">
-            <span>{String(partner.nickname || "R").slice(0, 1)}</span>
-            {matched ? <em className="rival-place-badge">매칭</em> : null}
-          </div>
           <div className="gym-place-card-body">
-            <p className="gym-place-card-eyebrow">
-              라이벌 · {partner.area || selectedRivalArea?.label || "동네"}
-            </p>
-            <h3>{partner.nickname}</h3>
+            <div className="rival-profile-identity">
+              <span className="rival-profile-avatar" aria-hidden="true">
+                {String(partner.nickname || "R").slice(0, 1)}
+              </span>
+              <div>
+                <p className="gym-place-card-eyebrow">공개 라이벌 프로필</p>
+                <h3>{partner.nickname}</h3>
+                <small>
+                  {partner.area || selectedRivalArea?.label || "활동 지역"}
+                  {" · 활동 권역"}
+                </small>
+              </div>
+              {matched ? <em className="rival-place-badge">매칭</em> : null}
+            </div>
             <div className="rival-place-tags">
               {[partner.weightClass, partner.experience, partner.style]
                 .filter(Boolean)
@@ -1395,6 +1687,9 @@ export default function NearbyGymsPanel({
             {partner.note ? (
               <p className="rival-place-detail">{partner.note}</p>
             ) : null}
+            <p className="rival-profile-privacy">
+              정확한 위치와 연락처는 공개하지 않습니다.
+            </p>
             {!partner.isMine ? (
               <div className="gym-place-card-actions">
                 <button
@@ -1432,6 +1727,13 @@ export default function NearbyGymsPanel({
     if (selectedRivalArea && activeLayer === "sparring") {
       return (
         <div className="rival-area-panel">
+          <section className="rival-area-summary">
+            <p>ACTIVITY AREA</p>
+            <strong>{selectedRivalArea.label}</strong>
+            <span>
+              공개 프로필 {rivalsInArea.length}명 · 정확한 위치는 표시하지 않음
+            </span>
+          </section>
           {rivalsInArea.length === 0 ? (
             <div className="gym-state-card">
               <strong>이 권역에 공개 중인 라이벌이 없습니다</strong>
@@ -1464,30 +1766,22 @@ export default function NearbyGymsPanel({
 
   return (
     <div
-      className={`gym-map-service-stage${sidePanelOpen ? " is-side-open" : ""}`}
+      className={`gym-map-service-stage is-list-only${
+        sidePanelOpen ? " is-side-open" : ""
+      }`}
     >
-      <Suspense fallback={<div className="gym-map-loading">지도를 여는 중...</div>}>
-        <GymMapPanel
-          center={position}
-          gyms={mapGyms}
-          selectedGym={selectedGym}
-          rivalAreas={activeLayer === "sparring" ? rivalAreas : []}
-          selectedRivalArea={selectedRivalArea}
-          overlay={mapOverlay}
-          onSelect={selectGymOnMap}
-          onSelectRival={selectRivalOnMap}
-        />
-      </Suspense>
-
+      {mapOverlay}
       {locateControl}
       {resultSheet}
       {searchModal}
       {filterSheet}
       {sideMenu}
-      {activeLayer === "sparring" && rivalContent ? (
-        <div className="gym-rival-bridge-host" aria-hidden="true">
-          {rivalContent}
-        </div>
+      {activeLayer === "sparring" || activeLayer === "hub" ? (
+        rivalContent ? (
+          <div className="gym-rival-bridge-host" aria-hidden="true">
+            {rivalContent}
+          </div>
+        ) : null
       ) : null}
 
       <GymMapSidePanel

@@ -26,6 +26,20 @@
 
 (선택) 닉네임 → `fighter_nicknames` = 13번째. 없어도 됨.
 
+### 설계만 · 아직 Table 없음 (관↔관 교류)
+
+> 잠금: `docs/gym-exchange.md`. **출시 전 Run 금지.** 기존 `dojo_exchange_*`(모임)과 이름만 비슷함 — 덮어쓰지 말 것.
+
+| 한국어 | 예정 영어 이름 |
+|--------|----------------|
+| 관 멤버 | `dojo_gym_members` |
+| 관↔관 교류 | `dojo_gym_exchanges` |
+| 교류 일정 | `dojo_gym_exchange_schedules` |
+| 교류 기록 | `dojo_gym_exchange_records` |
+| 교류 참가자 | `dojo_gym_exchange_participants` |
+
+gym 식별자는 1단계에서 기존 `dojo_gym_listings` 재사용.
+
 ## 스니펫 전부 지우고 다시 붙일 때
 
 PRIVATE 스니펫만 지운다. **Table Editor 장부는 지우지 말 것.**

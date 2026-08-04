@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import ExchangeChatModal from "../../components/ExchangeChatModal";
 import { useTraining } from "../../store/TrainingContext";
@@ -36,13 +36,20 @@ function buildDefaultForm() {
   };
 }
 
-export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
+export default function ExchangeBoardPanel({
+  onGoBack,
+  embedded = false,
+  initialEventId = null,
+  initialCompose = false,
+  initialShowPast = false,
+}) {
   const { profile, userId } = useTraining();
-  const [composing, setComposing] = useState(false);
+  const panelRef = useRef(null);
+  const [composing, setComposing] = useState(Boolean(initialCompose));
   const [form, setForm] = useState(buildDefaultForm);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [showPast, setShowPast] = useState(false);
+  const [showPast, setShowPast] = useState(Boolean(initialShowPast));
   const [dateFilter, setDateFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [events, setEvents] = useState([]);
@@ -52,9 +59,64 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [chatTarget, setChatTarget] = useState(null);
+  const [selectedEventId, setSelectedEventId] = useState(initialEventId || null);
 
   const remoteReady = hasDojoExchangeRemote();
   const myActorId = resolveDojoActorId(userId);
+
+  const loadEvents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const upcoming = await listExchangeEventsAsync(userId);
+      setEvents(upcoming.events);
+      setSynced(upcoming.synced);
+
+      const mine = upcoming.events.filter(
+        (item) => item.isMine && item.source === "server"
+      );
+      const applicantEntries = await Promise.all(
+        mine.map(async (item) => [
+          item.id,
+          await listAppliesForEventAsync(item.id, { source: item.source }),
+        ])
+      );
+      setApplicantsByEvent(Object.fromEntries(applicantEntries));
+
+      if (showPast || selectedEventId) {
+        const past = await listPastExchangeEventsAsync(userId);
+        setPastEvents(past.events);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, showPast, selectedEventId]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(loadEvents, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadEvents]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const panel = panelRef.current;
+      const overlay = panel?.closest(".gym-map-utility-overlay");
+      if (overlay) {
+        overlay.scrollTo({ top: 0, behavior: "auto" });
+      } else {
+        panel?.scrollIntoView({ block: "start", behavior: "auto" });
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [composing, selectedEventId, showPast]);
+
+  function updateField(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function flash(message) {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 2800);
+  }
 
   function openChatWith({
     event,
@@ -79,47 +141,6 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
         event.whenLabel ||
         formatExchangeWhen(event.startsAt, event.whenLabel || ""),
     });
-  }
-
-  const loadEvents = useCallback(async () => {
-    setLoading(true);
-    try {
-      const upcoming = await listExchangeEventsAsync(userId);
-      setEvents(upcoming.events);
-      setSynced(upcoming.synced);
-
-      const mine = upcoming.events.filter(
-        (item) => item.isMine && item.source === "server"
-      );
-      const applicantEntries = await Promise.all(
-        mine.map(async (item) => [
-          item.id,
-          await listAppliesForEventAsync(item.id, { source: item.source }),
-        ])
-      );
-      setApplicantsByEvent(Object.fromEntries(applicantEntries));
-
-      if (showPast) {
-        const past = await listPastExchangeEventsAsync(userId);
-        setPastEvents(past.events);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, showPast]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(loadEvents, 0);
-    return () => window.clearTimeout(timer);
-  }, [loadEvents]);
-
-  function updateField(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function flash(message) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(""), 2800);
   }
 
   async function handleSubmit(event) {
@@ -193,6 +214,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
     setBusy(true);
     try {
       await removeExchangeEventAsync(eventId, userId);
+      setSelectedEventId(null);
       track("dojo_exchange_remove");
       await loadEvents();
     } finally {
@@ -263,9 +285,57 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
     searchQuery
   );
   const visiblePastEvents = filterExchangeEventsByQuery(
-    pastEvents,
+    filterExchangeEventsByDate(pastEvents, dateFilter),
     searchQuery
   );
+  const activeVisibleEvents = showPast ? visiblePastEvents : visibleEvents;
+  const selectedEvent = [...events, ...pastEvents].find(
+    (item) => item.id === selectedEventId
+  );
+
+  function getEventStatus(item) {
+    const applied = hasAppliedExchange(item.id, userId);
+    const cap = Number(item.capacity) || 0;
+    const count = Number(item.appliedCount) || 0;
+    if (item.isPast) return "지난 모임";
+    if (item.isMine) return "내 모임";
+    if (applied) return "참가 신청됨";
+    if (cap > 0 && count >= cap) return "마감";
+    return "모집 중";
+  }
+
+  function renderBoardRow(item) {
+    const title = item.title || `${item.gymName} 모임`;
+    const whenText =
+      item.whenLabel || formatExchangeWhen(item.startsAt, item.whenLabel);
+    const statusLabel = getEventStatus(item);
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        className={`exchange-board-row${
+          statusLabel === "마감" || item.isPast ? " is-muted" : ""
+        }${hasAppliedExchange(item.id, userId) ? " is-applied" : ""}`}
+        onClick={() => {
+          setSelectedEventId(item.id);
+          setComposing(false);
+        }}
+      >
+        <span className="exchange-board-row-status">{statusLabel}</span>
+        <span className="exchange-board-row-main">
+          <strong>{title}</strong>
+          <small>{[whenText, item.gymName].filter(Boolean).join(" · ")}</small>
+          <em>{item.address || "장소 확인 필요"}</em>
+        </span>
+        <span className="exchange-board-row-side">
+          <strong>{formatExchangeSlots(item.appliedCount, item.capacity)}</strong>
+          <small>{formatExchangeFee(item.feeWon)}</small>
+          <i aria-hidden="true">›</i>
+        </span>
+      </button>
+    );
+  }
 
   function renderCard(item) {
     const applied = hasAppliedExchange(item.id, userId);
@@ -277,18 +347,25 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
       : [];
     const whenText =
       item.whenLabel || formatExchangeWhen(item.startsAt, item.whenLabel);
+    const statusLabel = getEventStatus(item);
+    const title = item.title || `${item.gymName || "교류"} 모임`;
 
     return (
       <article
         key={item.id}
-        className={`exchange-match${item.isMine ? " is-mine" : ""}${
+        className={`exchange-match is-detail${item.isMine ? " is-mine" : ""}${
           applied ? " is-applied" : ""
         }${full ? " is-full" : ""}${item.isSample ? " is-sample" : ""}${
           item.isPast ? " is-past" : ""
         }`}
       >
+        <div className="exchange-match-media" aria-hidden="true">
+          <span>{statusLabel}</span>
+        </div>
+
         <div className="exchange-match-top">
           <div className="exchange-match-time">{whenText}</div>
+          <span className="exchange-match-status">{statusLabel}</span>
           {item.isSample ? (
             <span className="exchange-sample-chip">예시</span>
           ) : null}
@@ -297,12 +374,12 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
           ) : null}
         </div>
 
-        <h3 className="exchange-match-place">{item.gymName}</h3>
+        <h3 className="exchange-match-place">{title}</h3>
+        {item.gymName ? (
+          <p className="exchange-match-title">{item.gymName}</p>
+        ) : null}
         {item.address ? (
           <p className="exchange-match-address">{item.address}</p>
-        ) : null}
-        {item.title ? (
-          <p className="exchange-match-title">{item.title}</p>
         ) : null}
 
         {item.note ? (
@@ -342,10 +419,10 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
                           applicantNickname: person.nickname || "신청자",
                         })
                       }
-                      >
-                        ③ 대화하기
-                      </button>
-                    ) : null}
+                    >
+                      대화하기
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -367,7 +444,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
               내 일정 삭제
             </button>
           ) : item.isPast ? (
-            <p className="exchange-sample-hint">지난 일정</p>
+            <p className="exchange-sample-hint">완료된 교류입니다. 흔적은 프로필에 남습니다.</p>
           ) : (
             <>
               <button
@@ -380,7 +457,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
                   ? "신청 취소"
                   : full
                     ? "마감"
-                    : "② 참가 신청"}
+                    : "참가 신청"}
               </button>
               {applied && item.source === "server" && item.userId ? (
                 <button
@@ -396,7 +473,7 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
                     })
                   }
                 >
-                  ③ 대화하기
+                  대화하기
                 </button>
               ) : applied && item.source !== "server" ? (
                 <p className="exchange-sample-hint">
@@ -411,104 +488,120 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
   }
 
   return (
-    <>
-      {!embedded ? (
-        <header className="gym-search-header">
-          {onGoBack ? (
+    <section className="exchange-board-shell" ref={panelRef}>
+      <header className="exchange-board-head">
+        <div>
+          {!embedded && onGoBack ? (
             <button
-              className="category-back dojo-sub-back"
+              className="exchange-board-back"
               type="button"
               onClick={onGoBack}
             >
               ← 짐
             </button>
           ) : null}
-          <h1>모임</h1>
-          <p className="gym-search-context">오픈 스파링 · 합동훈련</p>
-        </header>
+          <p>EXCHANGE</p>
+          <h2>
+            {selectedEvent
+              ? "교류 상세"
+              : composing
+                ? "모임 올리기"
+                : "모임"}
+          </h2>
+          <span>
+            {selectedEvent
+              ? "일정 · 인원 · 장소를 확인하고 신청하세요."
+              : composing
+                ? "운동 약속에 필요한 정보만 입력합니다."
+                : "지역에서 함께 훈련할 사람을 찾습니다."}
+          </span>
+        </div>
+        {selectedEvent || composing ? (
+          <button
+            type="button"
+            className="exchange-board-head-action is-secondary"
+            onClick={() => {
+              setSelectedEventId(null);
+              setComposing(false);
+              setError("");
+            }}
+          >
+            목록
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="exchange-board-head-action"
+            onClick={() => {
+              setComposing(true);
+              setForm(buildDefaultForm());
+              setError("");
+            }}
+          >
+            모임 올리기
+          </button>
+        )}
+      </header>
+
+      {!selectedEvent && !composing ? (
+        <>
+          <div className="exchange-board-tabs" role="tablist" aria-label="모임 상태">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!showPast}
+              className={!showPast ? "is-active" : ""}
+              onClick={() => setShowPast(false)}
+            >
+              모집 중 <em>{events.length}</em>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={showPast}
+              className={showPast ? "is-active" : ""}
+              onClick={() => setShowPast(true)}
+            >
+              지난 모임
+            </button>
+          </div>
+
+          <div className="exchange-board-filters">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="지역 · 체육관 · 모임 검색"
+              aria-label="모임 검색"
+              enterKeyHint="search"
+            />
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(event) => setDateFilter(event.target.value)}
+              aria-label="날짜로 찾기"
+            />
+            {searchQuery || dateFilter ? (
+              <button
+                type="button"
+                className="exchange-board-filter-clear"
+                onClick={() => {
+                  setSearchQuery("");
+                  setDateFilter("");
+                }}
+              >
+                전체
+              </button>
+            ) : null}
+          </div>
+
+          {!remoteReady || !synced ? (
+            <p className="exchange-board-sync-note">
+              서버 미연결 시 작성·신청은 이 기기에 저장됩니다.
+            </p>
+          ) : null}
+        </>
       ) : null}
-
-      <section className="exchange-flow-guide" aria-label="모임 이용 순서">
-        <p className="home-section-label">HOW IT WORKS</p>
-        <ol className="exchange-flow-steps">
-          <li>
-            <strong>올리기</strong>
-            <span>날짜·장소·인원을 올립니다</span>
-          </li>
-          <li>
-            <strong>참가</strong>
-            <span>카드에서 참가 신청합니다</span>
-          </li>
-          <li>
-            <strong>대화</strong>
-            <span>신청 후 주최자와 대화합니다</span>
-          </li>
-        </ol>
-      </section>
-
-      <p className="exchange-limit-note">
-        {remoteReady
-          ? synced
-            ? "일정·신청이 서버와 연결됐습니다. 다른 폰에서도 보입니다."
-            : "서버 미연결 — 지금은 이 기기에만 저장됩니다."
-          : "서버 연결 전에도 이 기기에서 올리고 신청할 수 있어요."}
-      </p>
-
-      <label className="exchange-search-filter">
-        <span>검색</span>
-        <div className="exchange-search-filter-row">
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="체육관 · 주소 · 제목"
-            enterKeyHint="search"
-          />
-          {searchQuery ? (
-            <button
-              type="button"
-              className="exchange-date-clear"
-              onClick={() => setSearchQuery("")}
-            >
-              지우기
-            </button>
-          ) : null}
-        </div>
-      </label>
-
-      <label className="exchange-date-filter">
-        <span>날짜로 찾기</span>
-        <div className="exchange-date-filter-row">
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(event) => setDateFilter(event.target.value)}
-          />
-          {dateFilter ? (
-            <button
-              type="button"
-              className="exchange-date-clear"
-              onClick={() => setDateFilter("")}
-            >
-              전체
-            </button>
-          ) : null}
-        </div>
-      </label>
-
-      <div className="exchange-toolbar exchange-toolbar-simple">
-        <button
-          type="button"
-          className="exchange-compose-button"
-          onClick={() => {
-            setComposing((open) => !open);
-            setError("");
-            if (!composing) setForm(buildDefaultForm());
-          }}
-        >
-          {composing ? "작성 닫기" : "① 일정 올리기"}
-        </button>
-      </div>
 
       {notice ? <p className="exchange-notice">{notice}</p> : null}
 
@@ -617,55 +710,36 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
         </form>
       ) : null}
 
-      {loading ? (
-        <div className="gym-state-card">
-          <strong>일정 불러오는 중</strong>
-          <p>잠시만요.</p>
-        </div>
-      ) : visibleEvents.length === 0 ? (
-        <div className="gym-state-card">
-          <strong>
-            {searchQuery || dateFilter
-              ? "조건에 맞는 일정이 없습니다"
-              : "아직 올라온 모임이 없습니다"}
-          </strong>
-          <p>
-            {searchQuery || dateFilter
-              ? "검색어·날짜를 바꾸거나 전체를 보세요."
-              : "위에서 「① 일정 올리기」로 첫 모임을 만들어 보세요."}
-          </p>
-          {!searchQuery && !dateFilter ? (
-            <button
-              type="button"
-              className="gym-retry-button"
-              onClick={() => {
-                setComposing(true);
-                setError("");
-                setForm(buildDefaultForm());
-              }}
-            >
-              일정 올리기
-            </button>
-          ) : null}
-        </div>
-      ) : (
-        <div className="exchange-feed">{visibleEvents.map(renderCard)}</div>
-      )}
-
-      <button
-        type="button"
-        className="exchange-past-toggle"
-        onClick={() => setShowPast((value) => !value)}
-      >
-        {showPast ? "지난 일정 숨기기" : "지난 일정 보기"}
-      </button>
-
-      {showPast ? (
-        visiblePastEvents.length === 0 ? (
-          <p className="exchange-notice">지난 일정이 없습니다.</p>
+      {selectedEvent ? (
+        <section className="exchange-board-detail" aria-label="모임 상세">
+          {renderCard(selectedEvent)}
+        </section>
+      ) : !composing ? (
+        loading ? (
+          <div className="gym-state-card">
+            <strong>모임을 불러오는 중</strong>
+            <p>잠시만요.</p>
+          </div>
+        ) : activeVisibleEvents.length === 0 ? (
+          <div className="gym-state-card">
+            <strong>
+              {searchQuery || dateFilter
+                ? "조건에 맞는 모임이 없습니다"
+                : showPast
+                  ? "지난 모임이 없습니다"
+                  : "아직 모집 중인 모임이 없습니다"}
+            </strong>
+            <p>
+              {searchQuery || dateFilter
+                ? "검색어나 날짜를 지우고 다시 확인해 보세요."
+                : showPast
+                  ? "종료된 모임이 생기면 여기에 정리됩니다."
+                  : "첫 훈련 모임을 올려 지역 복서들과 연결해 보세요."}
+            </p>
+          </div>
         ) : (
-          <div className="exchange-feed exchange-feed-past">
-            {visiblePastEvents.map(renderCard)}
+          <div className="exchange-board-list" role="feed">
+            {activeVisibleEvents.map(renderBoardRow)}
           </div>
         )
       ) : null}
@@ -685,6 +759,6 @@ export default function ExchangeBoardPanel({ onGoBack, embedded = false }) {
           onClose={() => setChatTarget(null)}
         />
       ) : null}
-    </>
+    </section>
   );
 }

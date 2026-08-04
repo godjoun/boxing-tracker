@@ -117,6 +117,12 @@ const ICONS = {
       <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none" />
     </>
   ),
+  notification: (
+    <>
+      <path d="M6.5 10.5a5.5 5.5 0 0 1 11 0v3.8l1.5 2.2H5l1.5-2.2v-3.8Z" />
+      <path d="M9.7 19a2.6 2.6 0 0 0 4.6 0" />
+    </>
+  ),
   fresh: (
     <>
       <path d="M18.5 10a6.5 6.5 0 1 0-1.4 5.2" />

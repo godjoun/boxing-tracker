@@ -3,6 +3,7 @@ const PROFILE_STORAGE_KEYS = [
   "nickname",
   "bio",
   "photo",
+  "homeHeroPhoto",
   "heightCm",
   "weightKg",
   "reachCm",
@@ -52,7 +53,7 @@ export function sanitizeProfileForStorage(profile) {
       return safe;
     }
 
-    if (key === "photo") {
+    if (key === "photo" || key === "homeHeroPhoto") {
       safe[key] = sanitizePhotoValue(profile[key]);
     } else if (key === "homeGymId") {
       safe[key] = String(profile[key] || "").trim().slice(0, 120);
@@ -73,6 +74,7 @@ export function sanitizeProfileForBackup(profile) {
   const safe = sanitizeProfileForStorage(profile);
   delete safe.contact;
   delete safe.photo;
+  delete safe.homeHeroPhoto;
 
   return safe;
 }

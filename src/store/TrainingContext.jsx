@@ -32,6 +32,7 @@ import { getFighterProgress } from "../utils/fighterProgress";
 import { syncListingFromProfile } from "../utils/sparringPartners";
 import { registerNickname } from "../api/nicknameApi";
 import { resetTutorial } from "../utils/tutorial";
+import { normalizeLogCategory } from "../utils/logCategories";
 
 const TrainingContext = createContext(null);
 const GUEST_USER_ID = "local-user";
@@ -50,6 +51,7 @@ const DEFAULT_PROFILE = {
   nickname: "나",
   bio: "아직 초보지만 링에 계속 올라가는 중",
   photo: "",
+  homeHeroPhoto: "",
   heightCm: null,
   weightKg: null,
   reachCm: null,
@@ -131,7 +133,7 @@ function loadUserState(userId) {
   };
 
   return {
-    logs: normalizeLogScores(loadStorage(keys.logs, [])),
+    logs: normalizeLogScores(loadStorage(keys.logs, []).map(normalizeLogCategory)),
     feed: loadStorage(keys.feed, []),
     profile,
     mode: localStorage.getItem(keys.mode) || "solo",
@@ -224,6 +226,7 @@ function getFinalRounds(logLike) {
 
 function getRecordSourceLabel(source) {
   if (source === "timer") return "자동 기록";
+  if (source === "auto") return "자동 측정";
   if (source === "manual") return "수동 기록";
   if (source === "dev") return "개발";
   return "기록";
@@ -356,6 +359,9 @@ function TrainingProviderState({ children, userId }) {
     totalRounds = 0,
     completedRounds = 0,
     publicComment = "",
+    category,
+    subtype,
+    metrics = {},
     source,
   }) {
     const finalMinutes = Number(minutes || duration || 0);
@@ -370,10 +376,13 @@ function TrainingProviderState({ children, userId }) {
     const finalSource =
       source || (finalRounds > 0 && memo.includes("라운드") ? "timer" : "manual");
 
-    const newLog = {
+    const newLog = normalizeLogCategory({
       id: crypto.randomUUID(),
       date: finalDate,
       type: finalType,
+      category,
+      subtype,
+      metrics,
       minutes: finalMinutes,
       duration: finalMinutes,
       rounds: finalRounds,
@@ -391,7 +400,7 @@ function TrainingProviderState({ children, userId }) {
       score: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
+    });
 
     newLog.score = calculateLogScore(newLog);
 
@@ -421,7 +430,7 @@ function TrainingProviderState({ children, userId }) {
 
         const nextSource = updates.source || log.source || "manual";
 
-        const nextLog = {
+        const nextLog = normalizeLogCategory({
           ...log,
           ...updates,
           minutes: nextMinutes,
@@ -437,7 +446,7 @@ function TrainingProviderState({ children, userId }) {
           sourceLabel: getRecordSourceLabel(nextSource),
           isEdited: true,
           updatedAt: new Date().toISOString(),
-        };
+        });
 
         return {
           ...nextLog,
@@ -499,8 +508,8 @@ function TrainingProviderState({ children, userId }) {
     }
 
     const nextLogs = merge
-      ? normalizeLogScores(mergeLogs(logs, data.logs))
-      : normalizeLogScores(data.logs);
+      ? normalizeLogScores(mergeLogs(logs, data.logs).map(normalizeLogCategory))
+      : normalizeLogScores(data.logs.map(normalizeLogCategory));
 
     const nextFeed = merge ? mergeFeed(feed, data.feed || []) : data.feed || [];
     const safeImportedProfile = sanitizeProfileForStorage(data.profile);

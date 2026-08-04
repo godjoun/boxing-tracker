@@ -1,15 +1,21 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
-import { getFighterProgress } from "../utils/fighterProgress";
-import {
-  isComboCreatorUnlocked,
-  COMBO_CREATOR_UNLOCK_LEVEL,
-} from "../utils/featureUnlocks";
 import { MATCH_TIMER_PRESETS } from "../utils/timerPresets";
+import { startTimerAudioSession } from "../utils/timerAudio";
 import MenuIcon from "../components/MenuIcon";
 
+function getTodayString() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(
+    today.getDate()
+  ).padStart(2, "0")}`;
+}
+
+function getLogRounds(log) {
+  return Number(log.rounds || log.totalRounds || log.completedRounds || 0);
+}
+
 export default function TrainingHubPage({
-  fighterLevel = 1,
   onStartPreset,
   onOpenTimer,
   onOpenCurriculum,
@@ -17,185 +23,182 @@ export default function TrainingHubPage({
   onOpenStrength,
 }) {
   const { logs } = useTraining();
+  const [selectedModeId, setSelectedModeId] = useState("general");
 
-  const fighter = useMemo(() => getFighterProgress(logs), [logs]);
+  const todaySummary = useMemo(() => {
+    const todayLogs = logs.filter((log) => log.date === getTodayString());
+    return {
+      rounds: todayLogs.reduce((sum, log) => sum + getLogRounds(log), 0),
+      minutes: todayLogs.reduce(
+        (sum, log) => sum + Number(log.minutes || log.duration || 0),
+        0
+      ),
+    };
+  }, [logs]);
 
-  const comboUnlocked = isComboCreatorUnlocked(fighterLevel);
+  const defaultPreset = MATCH_TIMER_PRESETS[0];
+  const sessionRounds = Number(defaultPreset?.rounds || 3);
+  const sessionMinutes = Math.round(
+    (Number(defaultPreset?.workSeconds || 180) * sessionRounds) / 60
+  );
 
-  const levelUpTips = [
-    {
-      icon: "1",
-      title: "훈련을 끝까지 완료하기",
-      description: "타이머를 완료하면 라운드가 자동으로 기록에 남아요.",
-    },
-    {
-      icon: "2",
-      title: "더보기에서 직접 남기기",
-      description: "타이머 없이 운동했다면 더보기 → 기록에서 수동으로 남겨도 됩니다.",
-    },
-    {
-      icon: "3",
-      title: "라운드·시간을 채우기",
-      description: "많이, 오래 버틸수록 성장 흔적이 선명해져요.",
-    },
-    {
-      icon: "4",
-      title: "명패로 증명하기",
-      description: "완료한 라운드는 명패 카드로 남겨 두고 공유할 수 있어요.",
-    },
-  ];
+  async function startRoundTraining(logType = null) {
+    if (!defaultPreset) return;
 
-  const menuItems = [
+    await startTimerAudioSession();
+    onStartPreset?.(
+      logType
+        ? {
+            ...defaultPreset,
+            title: logType,
+            logType,
+          }
+        : defaultPreset
+    );
+  }
+
+  const trainingModes = [
     {
-      id: "strength",
-      icon: "body",
-      title: "신체",
-      description: "몸 만들기 · 워밍업",
-      onClick: onOpenStrength,
-      locked: false,
+      id: "general",
+      icon: "round",
+      title: "일반 훈련",
+      detail: `${sessionRounds}R · ${sessionMinutes}분`,
+      start: () => startRoundTraining(),
     },
     {
-      id: "curriculum",
+      id: "bag",
       icon: "skill",
-      title: "기술",
-      description: "4주 코스 · 영상+훈련",
-      onClick: onOpenCurriculum,
-      locked: false,
+      title: "샌드백",
+      detail: `${sessionRounds}R · ${sessionMinutes}분`,
+      start: () => startRoundTraining("샌드백"),
     },
     {
-      id: "combo",
+      id: "sparring",
       icon: "combo",
-      title: "콤보 만들기",
-      description: comboUnlocked
-        ? "나만의 섀도우 루틴"
-        : `LV.${COMBO_CREATOR_UNLOCK_LEVEL} 해금`,
-      onClick: onOpenComboCreator,
-      locked: !comboUnlocked,
+      title: "스파링",
+      detail: `${sessionRounds}R · ${sessionMinutes}분`,
+      start: () => startRoundTraining("스파링"),
+    },
+    {
+      id: "conditioning",
+      icon: "body",
+      title: "근력 · 체력",
+      detail: "컨디셔닝",
+      start: onOpenStrength,
     },
   ];
+
+  const selectedMode =
+    trainingModes.find((mode) => mode.id === selectedModeId) || trainingModes[0];
 
   return (
-    <main className="hub-page levelup-page">
+    <main className="hub-page levelup-page training-page">
       <header className="levelup-header">
-        <h1 className="levelup-title">링</h1>
-        <p className="levelup-subtitle">오늘의 벨을 울리세요.</p>
+        <h1 className="levelup-title">훈련</h1>
+        <p className="training-page-sub">모드를 고르고 바로 시작하세요</p>
       </header>
 
-      <section className="levelup-timer-hero" aria-label="라운드">
-        <div className="levelup-timer-hero-top">
-          <div className="levelup-timer-icon" aria-hidden="true">
-            <MenuIcon name="round" size={22} />
-          </div>
-          <div className="levelup-timer-copy">
-            <p className="levelup-timer-kicker">ROUND</p>
-            <h2 className="levelup-timer-title">라운드</h2>
-            <span className="levelup-timer-desc">
-              1R = 운동 1세트 · 완료 시 기록에 자동 저장
-            </span>
-          </div>
-        </div>
-
-        <div className="levelup-timer-presets">
-          {MATCH_TIMER_PRESETS.map((preset, index) => (
+      <section className="training-mode-section" aria-label="훈련 모드">
+        <div className="training-mode-grid">
+          {trainingModes.map((mode) => (
             <button
-              key={preset.id}
+              key={mode.id}
               type="button"
-              className={`levelup-timer-preset${
-                index === 0 ? " is-primary" : ""
+              className={`training-mode-card${
+                selectedMode.id === mode.id ? " is-selected" : ""
               }`}
-              onClick={() => onStartPreset?.(preset)}
+              aria-pressed={selectedMode.id === mode.id}
+              onClick={() => setSelectedModeId(mode.id)}
             >
-              <strong>{preset.title}</strong>
-              <small>{preset.description}</small>
+              <span className="training-mode-card-icon" aria-hidden="true">
+                <MenuIcon name={mode.icon} size={18} />
+              </span>
+              <span className="training-mode-card-copy">
+                <strong>{mode.title}</strong>
+              </span>
+              <span className="training-mode-card-state" aria-hidden="true">
+                {selectedMode.id === mode.id ? "✓" : ""}
+              </span>
             </button>
           ))}
         </div>
+      </section>
 
-        <button
-          type="button"
-          className="levelup-timer-open"
-          onClick={onOpenTimer}
-        >
-          타이머 설정 열기
+      <section className="training-session-card" aria-label="오늘 세션">
+        <div className="training-session-head">
+          <div>
+            <p>오늘 세션</p>
+            <h2>{selectedMode.title}</h2>
+          </div>
+          {selectedMode.id !== "conditioning" ? (
+            <button
+              type="button"
+              className="training-session-edit"
+              onClick={onOpenTimer}
+              aria-label="라운드 직접 설정"
+            >
+              설정
+            </button>
+          ) : null}
+        </div>
+        <div className="training-session-stats">
+          {selectedMode.id === "conditioning" ? (
+            <>
+              <div>
+                <span>구성</span>
+                <strong>컨디셔닝</strong>
+              </div>
+              <div>
+                <span>오늘</span>
+                <strong>
+                  {todaySummary.rounds}R · {todaySummary.minutes}분
+                </strong>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <span>라운드</span>
+                <strong>{sessionRounds}R</strong>
+              </div>
+              <div>
+                <span>시간</span>
+                <strong>{sessionMinutes}분</strong>
+              </div>
+              <div>
+                <span>오늘</span>
+                <strong>
+                  {todaySummary.rounds}R · {todaySummary.minutes}분
+                </strong>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      <section className="training-tools-section" aria-label="추천 루틴">
+        <div className="training-section-heading">
+          <div>
+            <h2>추천 루틴</h2>
+          </div>
+        </div>
+        <button type="button" onClick={onOpenCurriculum}>
+          <span>기술 루틴</span>
+          <small>커리큘럼으로 이어가기</small>
+          <b>›</b>
+        </button>
+        <button type="button" onClick={onOpenComboCreator}>
+          <span>콤보 만들기</span>
+          <small>나만의 흐름</small>
+          <b>›</b>
         </button>
       </section>
 
-      <div className="levelup-card-stack">
-        <section className="levelup-box-card">
-          <div className="levelup-box-head">
-            <div>
-              <p className="levelup-box-kicker">MY LEVEL</p>
-              <h3 className="levelup-box-title">
-                LV.{fighter.level}{" "}
-                <span className="levelup-box-title-sub">{fighter.fighterTitle}</span>
-              </h3>
-            </div>
-            <div className="levelup-box-stat">
-              <span>{fighter.isMaxLevel ? "MAX" : "다음 레벨까지"}</span>
-              <strong>
-                {fighter.isMaxLevel ? "달성" : `${fighter.xpToNextLevel} EXP`}
-              </strong>
-            </div>
-          </div>
-
-          <div className="levelup-progress-track">
-            <div
-              className="levelup-progress-fill"
-              style={{ width: `${fighter.progressPercent}%` }}
-            />
-          </div>
-          <p className="levelup-progress-note">
-            {fighter.isMaxLevel
-              ? "최고 레벨에 도달했어요."
-              : `${fighter.currentLevelExp} / ${fighter.nextLevelExp} EXP`}
-          </p>
-        </section>
-
-        <section className="levelup-box-card">
-          <p className="levelup-box-kicker">TRAINING MENU</p>
-          <h3 className="levelup-box-title">링 메뉴</h3>
-
-          <div className="levelup-menu-grid">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`levelup-menu-tile${item.locked ? " is-locked" : ""}`}
-                onClick={item.onClick}
-              >
-                <span className="levelup-menu-icon" aria-hidden="true">
-                  <MenuIcon name={item.icon} size={16} />
-                </span>
-                <strong>{item.title}</strong>
-                <small>{item.description}</small>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <details className="levelup-box-card levelup-guide-details">
-          <summary className="levelup-guide-summary">
-            <span>
-              <p className="levelup-box-kicker">HOW TO LEVEL UP</p>
-              <strong>레벨업 하는 방법</strong>
-            </span>
-            <em aria-hidden="true">↓</em>
-          </summary>
-
-          <div className="levelup-guide-list">
-            {levelUpTips.map((tip) => (
-              <div key={tip.title} className="levelup-guide-item">
-                <span className="levelup-guide-icon" aria-hidden="true">
-                  {tip.icon}
-                </span>
-                <div>
-                  <strong>{tip.title}</strong>
-                  <p>{tip.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </details>
+      <div className="training-start-dock">
+        <button type="button" onClick={selectedMode.start}>
+          훈련 시작
+          <small>{selectedMode.title} · {selectedMode.detail}</small>
+        </button>
       </div>
     </main>
   );

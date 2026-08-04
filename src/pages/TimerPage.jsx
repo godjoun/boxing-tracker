@@ -808,6 +808,18 @@ export default function TimerPage({
 
     const timeoutId = window.setTimeout(() => {
       applyLaunchConfig(launchConfig);
+
+      if (launchConfig.autoStart) {
+        track("training_start", { mode: "timer" });
+        setHasStartedSession(true);
+        setCurrentRound(1);
+        setPhase("prep");
+        previousPhaseRef.current = "prep";
+        setRemainingTime(launchConfig.prepSeconds ?? PREP_SECONDS);
+        setIsRunning(true);
+        playTimerBeep(soundMode, "prep");
+      }
+
       onLaunchConsumed?.();
     }, 0);
 
@@ -1387,7 +1399,7 @@ export default function TimerPage({
             className="timer-back-button"
             onClick={handleLeaveTimer}
           >
-            ← 뒤로
+            ← {backLabel}
           </button>
         </div>
       ) : null}
@@ -1617,5 +1629,3 @@ export default function TimerPage({
     </div>
   );
 }
-
-

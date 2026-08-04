@@ -1,5 +1,5 @@
 import { fetchNearbyGyms as fetchGymsFromApi } from "../api/dojoApi";
-import { geocodeOsmArea } from "../api/osmGymApi";
+import { geocodeOsmArea, reverseGeocodeOsmArea } from "../api/osmGymApi";
 
 const LOCATION_STORAGE_KEY = "fitness-league-search-location";
 
@@ -125,6 +125,8 @@ function normalizePosition(position) {
     lat: position.lat,
     lon: position.lon,
     label: position.label || "선택한 위치",
+    cityLabel: position.cityLabel || "",
+    countryLabel: position.countryLabel || "",
     source: position.source || "manual",
     accuracy: position.accuracy ?? null,
   };
@@ -211,6 +213,8 @@ export async function resolveSearchLocation(options = {}) {
       lat: resolved.lat,
       lon: resolved.lon,
       label: resolved.label || query.trim(),
+      cityLabel: resolved.cityLabel || "",
+      countryLabel: resolved.countryLabel || "",
       source: "search",
       accuracy: resolved.accuracy ?? null,
     });
@@ -268,6 +272,94 @@ export function getDistanceKm(lat1, lon1, lat2, lon2) {
   return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function getCityName(value) {
+  const text = String(value || "").trim();
+  if (!text || text === "내 위치" || text === "선택한 위치") return "";
+  if (text.includes(",")) return text.split(",")[0].trim();
+  if (/[가-힣]/.test(text)) return text.split(/\s+/)[0] || "";
+  return text;
+}
+
+/** GPS 좌표 또는 지역 검색어를 사용자가 읽을 수 있는 도시 단위로 정리한다. */
+export function getGymSearchCityLabel(position) {
+  if (position?.source === "overview") return "현재 지역";
+  const explicitCity = String(position?.cityLabel || "").trim() ||
+    getCityName(position?.label);
+  if (explicitCity) return explicitCity;
+  if (!hasMapCoordinates(position)) return "현재 지역";
+
+  const nearest = SEARCHABLE_AREAS.map((area) => ({
+    area,
+    distanceKm: getDistanceKm(position.lat, position.lon, area.lat, area.lon),
+  })).sort((a, b) => a.distanceKm - b.distanceKm)[0];
+
+  return nearest && nearest.distanceKm <= 45
+    ? getCityName(nearest.area.label)
+    : "현재 지역";
+}
+
+/** GPS 좌표를 전 세계 도시명으로 보완한다. 국내 주요 도시는 로컬 좌표를 먼저 쓴다. */
+export async function resolveGpsSearchLocation(position) {
+  const normalized = normalizePosition({ ...position, source: "gps" });
+  const localCity = getGymSearchCityLabel(normalized);
+  if (localCity !== "현재 지역") {
+    return normalizePosition({
+      ...normalized,
+      label: localCity,
+      cityLabel: localCity,
+    });
+  }
+
+  try {
+    const resolved = await reverseGeocodeOsmArea(
+      normalized.lat,
+      normalized.lon
+    );
+    if (!resolved) return normalized;
+    return normalizePosition({
+      ...normalized,
+      ...resolved,
+      source: "gps",
+      accuracy: normalized.accuracy,
+    });
+  } catch {
+    return normalized;
+  }
+}
+
+/** 승인된 입점관을 주소 또는 좌표로 도시 단위에 포함한다. */
+export function getListedGymsByCity(gyms, cityLabel, center = null) {
+  const approved = (Array.isArray(gyms) ? gyms : []).filter(
+    (gym) => gym?.source === "listing" && !gym?.ownerPreview
+  );
+  const city = String(cityLabel || "").trim();
+  const canMatchCoordinates = hasMapCoordinates(center);
+  if ((!city || city === "현재 지역") && !canMatchCoordinates) return [];
+
+  return approved.filter((gym) => {
+    const matchesText = city && city !== "현재 지역" &&
+      [gym.address, ...(Array.isArray(gym.tags) ? gym.tags : [])]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(city.toLocaleLowerCase());
+    const distanceKm = canMatchCoordinates && hasMapCoordinates(gym)
+      ? getDistanceKm(center.lat, center.lon, gym.lat, gym.lon)
+      : Number.NaN;
+    return matchesText || (Number.isFinite(distanceKm) && distanceKm <= 45);
+  });
+}
+
+/** 지도 좌표가 없어 주소 문자열에만 의존하는 승인 입점관이다. */
+export function getUnlocatedListedGyms(gyms) {
+  return (Array.isArray(gyms) ? gyms : []).filter(
+    (gym) =>
+      gym?.source === "listing" &&
+      !gym?.ownerPreview &&
+      !hasMapCoordinates(gym)
+  );
+}
+
 export function hasMapCoordinates(item) {
   if (
     item?.lat === null ||
@@ -291,12 +383,11 @@ export function hasMapCoordinates(item) {
   );
 }
 
-/** 지도에 올릴 수 있는 국내 좌표 + 검색 반경 안인지 */
+/** 지도에 올릴 수 있는 전 세계 좌표 + 검색 반경 안인지 */
 export function isNearbyMapGym(gym, center, radiusKm = 20) {
   if (!hasMapCoordinates(gym) || !hasMapCoordinates(center)) return false;
   const lat = Number(gym.lat);
   const lon = Number(gym.lon);
-  if (lat < 33 || lat > 39 || lon < 124 || lon > 132) return false;
   const distanceKm = getDistanceKm(center.lat, center.lon, lat, lon);
   return Number.isFinite(distanceKm) && distanceKm <= radiusKm;
 }

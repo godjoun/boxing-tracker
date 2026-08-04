@@ -22,6 +22,16 @@ const PERK_KIND_LABEL = {
   frame: "명패",
 };
 
+function getTierPerkLabel(tier) {
+  if (!tier?.perks?.length) return "새 해금 없음";
+  return tier.perks.map((perk) => perk.label).join(" · ");
+}
+
+function getTierLevelRange(tier) {
+  if (!tier) return "";
+  return `LV. ${tier.from}–${tier.to}`;
+}
+
 export default function GrowthHubPage({
   onStartTraining,
   onGoBack,
@@ -204,15 +214,14 @@ export default function GrowthHubPage({
           <p className="growth-hub-empty-kicker">FIRST ROUND</p>
           <h2 className="growth-hub-empty-title">아직 훈련 기록이 없어요</h2>
           <p className="growth-hub-empty-text">
-            타이머로 첫 라운드를 완료하면 EXP가 쌓이고, 여기에 성장 데이터가
-            표시됩니다.
+            첫 라운드를 남기면 여기에 커리어가 열립니다.
           </p>
           <button
             type="button"
             className="growth-hub-empty-button"
             onClick={onStartTraining}
           >
-            3R 바로 시작하기
+            오늘 훈련 시작
           </button>
         </section>
       ) : null}
@@ -229,29 +238,36 @@ export default function GrowthHubPage({
         </section>
       ) : null}
 
-      <section className="growth-hub-card growth-hub-season" aria-label="월간 커리어 리그">
+      <section className="growth-hub-card growth-hub-season" aria-label="현재 커리어 구간">
+        <div className="growth-hub-level-scene">
+          <div className="growth-hub-level-mark" aria-hidden="true">
+            <span>LV</span>
+            <strong>{fighter.level}</strong>
+          </div>
+          <p>{tierState.current.stage}</p>
+        </div>
         <div className="growth-hub-card-head">
           <div>
-            <p className="growth-hub-kicker">MONTHLY CAREER</p>
-            <h2 className="growth-hub-card-title">지금의 커리어</h2>
+            <p className="growth-hub-kicker">현재 구간</p>
+            <h2 className="growth-hub-card-title">{tierState.current.stage}</h2>
           </div>
-          <strong className="growth-hub-season-stage">{tierState.current.stage}</strong>
+          <strong className="growth-hub-season-stage">LV. {fighter.level}</strong>
         </div>
 
         <p className="growth-hub-season-current">
-          LV. {fighter.level} · {tierState.current.from}–{tierState.current.to} 구간
+          {getTierLevelRange(tierState.current)} 구간
         </p>
         <div className="growth-hub-tier-progress">
           <div className="growth-hub-progress-meta">
             <strong>
               {tierState.isMaxTier
-                ? "커리어 최고 구간"
-                : `${tierState.next.stage}까지 ${tierState.levelsToNextTier} LV`}
+                ? "최고 구간에 도달했습니다"
+                : `${tierState.levelsToNextTier}레벨 뒤 승급`}
             </strong>
             <span>
               {tierState.isMaxTier
-                ? "LV. 100"
-                : `LV. ${tierState.next.from} 조건`}
+                ? "MAX"
+                : `${tierState.progressPercent}%`}
             </span>
           </div>
           <div className="growth-hub-progress-track" aria-hidden="true">
@@ -261,35 +277,59 @@ export default function GrowthHubPage({
             />
           </div>
         </div>
-        <p className="growth-hub-season-current is-season-reward">
-          이번 달 기록을 마치면{" "}
-          <strong>+{seasonSummary.levels} LV</strong>
-        </p>
-        <p className="growth-hub-card-note">
-          {seasonSummary.endsOn}에 이번 달 최고 리그를 기준으로 영구 보너스 레벨을
-          지급합니다.
-          {tierState.next
-            ? ` 다음 구간은 ${tierState.next.stage}입니다.`
-            : " 레전드의 기록은 계속됩니다."}
-        </p>
 
-        <div className="growth-hub-tier-table" aria-label="전체 커리어 티어표">
-          {tierState.tiers.map((tier) => {
-            return (
+        <div className="growth-hub-next-stage" aria-label="다음 커리어 구간">
+          <span>{tierState.next ? "다음 목표" : "현재 상태"}</span>
+          <strong>
+            {tierState.next
+              ? `${tierState.next.stage} · LV. ${tierState.next.from}`
+              : "레전드 · 최고 구간"}
+          </strong>
+          <small>
+            {tierState.next
+              ? getTierPerkLabel(tierState.next)
+              : "레전드의 훈련 기록은 계속 쌓입니다."}
+          </small>
+        </div>
+      </section>
+
+      <details className="growth-hub-secondary-details">
+        <summary>
+          <span>
+            <small>이번 달 승급</small>
+            <strong>현재 구간 기준 +{seasonSummary.levels} LV</strong>
+          </span>
+          <em>보기</em>
+        </summary>
+        <div className="growth-hub-secondary-body">
+          <p>
+            {seasonSummary.endsOn}에 이번 달 최고 구간을 기준으로 레벨을 지급합니다.
+            훈련 기록이 있는 달에만 적용됩니다.
+          </p>
+        </div>
+      </details>
+
+      <details className="growth-hub-secondary-details growth-hub-tier-details">
+        <summary>
+          <span>
+            <small>전체 커리어 구간</small>
+            <strong>6개 구간 · LV. 1–100</strong>
+          </span>
+          <em>보기</em>
+        </summary>
+        <div className="growth-hub-secondary-body">
+          <div className="growth-hub-tier-table" aria-label="전체 커리어 리그표">
+            {tierState.tiers.map((tier) => (
               <div
                 className={`growth-hub-tier-row is-${tier.status}`}
                 key={tier.stage}
               >
                 <div className="growth-hub-tier-name">
                   <strong>{tier.stage}</strong>
-                  <span>LV. {tier.from}–{tier.to}</span>
+                  <span>{getTierLevelRange(tier)}</span>
                 </div>
                 <div className="growth-hub-tier-reward">
-                  <small>
-                    {tier.perks.length > 0
-                      ? tier.perks.map((perk) => perk.label).join(" · ")
-                      : "해금 보상 없음"}
-                  </small>
+                  <small>{getTierPerkLabel(tier)}</small>
                   <em>월간 +{tier.levels} LV</em>
                 </div>
                 <b aria-label={`${tier.stage} ${tier.status}`}>
@@ -300,13 +340,22 @@ export default function GrowthHubPage({
                       : "잠김"}
                 </b>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </section>
+      </details>
 
-      <div className="growth-hub-collections">
-        <section className="growth-collection-card">
+      <details className="growth-hub-secondary-details growth-hub-collections">
+        <summary>
+          <span>
+            <small>수집 기록</small>
+            <strong>
+              칭호 {unlockedTitleCount} · 혜택 {unlockedPerkCount} · 업적 {unlockedAchievementCount}
+            </strong>
+          </span>
+          <em>보기</em>
+        </summary>
+        <div className="growth-hub-secondary-body growth-collection-list">
           <button
             type="button"
             className="growth-collection-card-button"
@@ -327,11 +376,9 @@ export default function GrowthHubPage({
                 ? `다음 ${nextTitle.ko} · LV. ${nextTitle.level}`
                 : "모든 칭호를 획득했습니다"}
             </p>
-            <em>도감 보기 →</em>
+            <em>열기</em>
           </button>
-        </section>
 
-        <section className="growth-collection-card">
           <button
             type="button"
             className="growth-collection-card-button"
@@ -350,11 +397,9 @@ export default function GrowthHubPage({
                 ? `다음 해금 LV. ${nextPerk.level} · ${PERK_KIND_LABEL[nextPerk.kind] || "혜택"}`
                 : "명패와 카드에서 적용 중입니다"}
             </p>
-            <em>혜택 보기 →</em>
+            <em>열기</em>
           </button>
-        </section>
 
-        <section className="growth-collection-card">
           <button
             type="button"
             className="growth-collection-card-button"
@@ -375,10 +420,10 @@ export default function GrowthHubPage({
                 ? nextAchievement.description
                 : "지나온 훈련의 장면을 모두 남겼습니다"}
             </p>
-            <em>업적 보기 →</em>
+            <em>열기</em>
           </button>
-        </section>
-      </div>
+        </div>
+      </details>
       {collectionSheet}
     </main>
   );

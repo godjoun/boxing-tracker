@@ -1,10 +1,7 @@
 import {
-  getSparringUnlockProgress,
   getUnlockLevel,
   isFeatureUnlocked,
-  SPARRING_UNLOCK_LEVEL,
 } from "../utils/featureUnlocks";
-import { getLevelTitle } from "../utils/fighterTitles";
 import { MENU_GROUPS } from "../utils/appMenu";
 import MenuIcon from "./MenuIcon";
 
@@ -20,13 +17,7 @@ export default function AppMenuBoard({
   theme = "dark",
   onToggleTheme,
 }) {
-  const sparringProgress = getSparringUnlockProgress(fighterLevel);
-  const sparringTitle = getLevelTitle(SPARRING_UNLOCK_LEVEL);
   const isHome = variant === "home";
-  const sparringTitleLabel =
-    typeof sparringTitle === "string"
-      ? sparringTitle
-      : sparringTitle?.ko || sparringTitle?.title || "";
 
   function selectItem(item) {
     if (item.action === "card-maker") {
@@ -68,30 +59,105 @@ export default function AppMenuBoard({
     );
   }
 
-  return (
-    <div className={`app-menu-board${isHome ? " is-home" : " is-category"}`}>
-      {!isHome ? (
-        <header className="app-menu-header">
+  function renderMenuRow(item) {
+    const locked =
+      item.featureId && !isFeatureUnlocked(item.featureId, fighterLevel);
+    const unlockLevel = item.featureId ? getUnlockLevel(item.featureId) : null;
+
+    return (
+      <button
+        type="button"
+        className={`app-menu-row${locked ? " is-locked" : ""}`}
+        key={item.id}
+        onClick={() => (item.onSelect ? item.onSelect() : selectItem(item))}
+        aria-label={`${item.title}${locked ? `, 레벨 ${unlockLevel} 해금` : ""}`}
+      >
+        <span className="app-menu-row-icon" aria-hidden="true">
+          <MenuIcon name={item.icon} size={18} />
+        </span>
+        <span className="app-menu-row-copy">
+          <strong>{item.title}</strong>
+          {locked ? <small>LV.{unlockLevel} 해금</small> : null}
+        </span>
+        <span className="app-menu-row-arrow" aria-hidden="true">
+          {locked ? "🔒" : "›"}
+        </span>
+      </button>
+    );
+  }
+
+  const utilityItems = [
+    ...(onToggleTheme
+      ? [
+          {
+            id: "theme",
+            icon: theme === "dark" ? "themeLight" : "themeDark",
+            title: theme === "dark" ? "라이트 모드" : "다크 모드",
+            onSelect: onToggleTheme,
+          },
+        ]
+      : []),
+    ...(onReplayTutorial
+      ? [
+          {
+            id: "tutorial",
+            icon: "help",
+            title: "튜토리얼 다시 보기",
+            onSelect: onReplayTutorial,
+          },
+        ]
+      : []),
+  ];
+
+  if (!isHome) {
+    return (
+      <div className="app-menu-board is-category">
+        <header className="app-menu-header app-menu-category-header">
           {showBack ? (
-            <button className="app-menu-back" type="button" onClick={onGoBack}>
+            <button
+              className="app-menu-back"
+              type="button"
+              onClick={onGoBack}
+              aria-label="홈으로 돌아가기"
+            >
               <span aria-hidden="true">←</span>
-              홈
             </button>
           ) : null}
           <div className="app-menu-header-copy">
-            <h1>{isHome ? "바로가기" : "메뉴"}</h1>
-            <span>LV.{fighterLevel}</span>
+            <h1>전체 메뉴</h1>
           </div>
         </header>
-      ) : null}
 
+        <div className="app-menu-category-grid" role="navigation" aria-label="전체 메뉴">
+          {MENU_GROUPS.map((group) => {
+            const items =
+              group.id === "app"
+                ? [...group.items, ...utilityItems]
+                : group.items;
+
+            return (
+              <section className="app-menu-group-card" key={group.id} aria-labelledby={`menu-group-${group.id}`}>
+                <h2 id={`menu-group-${group.id}`}>{group.title}</h2>
+                <div className="app-menu-row-list">
+                  {items.map((item) => renderMenuRow(item))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-menu-board is-home">
       <div className="app-menu-sections">
         {MENU_GROUPS.map((group) => (
           <section className="app-menu-section" key={group.id}>
             <h2>{group.title}</h2>
             <div className="app-menu-grid">
               {group.items.map((item) => renderTile(item))}
-              {group.id === "tools" && onToggleTheme ? (
+              {group.id === "app" && onToggleTheme ? (
                 <button
                   type="button"
                   className="app-menu-tile accent-slate"
@@ -113,7 +179,7 @@ export default function AppMenuBoard({
                   </small>
                 </button>
               ) : null}
-              {group.id === "tools" && onReplayTutorial ? (
+              {group.id === "app" && onReplayTutorial ? (
                 <button
                   type="button"
                   className="app-menu-tile accent-slate"
@@ -130,28 +196,6 @@ export default function AppMenuBoard({
           </section>
         ))}
       </div>
-
-      {!sparringProgress.unlocked && !isHome ? (
-        <div className="app-menu-unlock">
-          <span>라이벌 찾기 해금</span>
-          <p>
-            짐 → 라이벌 찾기 · LV.{sparringProgress.unlockLevel}{" "}
-            <strong>{sparringTitleLabel}</strong> · {sparringProgress.levelsToGo}
-            레벨 남음
-          </p>
-          <div className="app-menu-unlock-bar" aria-hidden="true">
-            <div
-              style={{
-                width: `${
-                  sparringProgress.progressPercent ??
-                  sparringProgress.percent ??
-                  0
-                }%`,
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

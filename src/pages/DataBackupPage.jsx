@@ -118,7 +118,7 @@ export default function DataBackupPage({ onGoBack }) {
     <main className="backup-page">
       <header className="report-hero">
         <button className="category-back" type="button" onClick={onGoBack}>
-          <span>←</span> 더보기
+          <span>←</span> 전체
         </button>
         <div className="report-hero-copy">
           <p>DATA BACKUP</p>

@@ -8,6 +8,7 @@ const DIFFICULTY_MULTIPLIER = {
 const SPARRING_BONUS = 20;
 const ROUND_SCORE = 10;
 const MINUTE_SCORE = 0.5;
+const WEIGHT_SET_SCORE = 6;
 
 export const CONDITION_OPTIONS = [
   { id: "fresh", label: "컨디션 좋음" },
@@ -50,6 +51,8 @@ export function calculateLogScore(logOrMinutes, difficulty = "normal", rounds = 
   let finalDifficulty;
   let finalRounds;
   let finalType;
+  let finalCategory;
+  let finalMetrics;
 
   if (typeof logOrMinutes === "object" && logOrMinutes !== null) {
     const log = logOrMinutes;
@@ -57,15 +60,24 @@ export function calculateLogScore(logOrMinutes, difficulty = "normal", rounds = 
     finalDifficulty = log.difficulty || "normal";
     finalRounds = getLogRounds(log);
     finalType = log.type || "";
+    finalCategory = log.category || "";
+    finalMetrics = log.metrics || {};
   } else {
     minutes = Number(logOrMinutes || 0);
     finalDifficulty = difficulty;
     finalRounds = Number(rounds || 0);
     finalType = type;
+    finalCategory = "";
+    finalMetrics = {};
   }
 
   const multiplier = DIFFICULTY_MULTIPLIER[finalDifficulty] || 1;
-  let base = finalRounds * ROUND_SCORE + minutes * MINUTE_SCORE;
+  const weightSets =
+    finalCategory === "weights" ? Number(finalMetrics.sets || 0) : 0;
+  let base =
+    finalRounds * ROUND_SCORE +
+    minutes * MINUTE_SCORE +
+    weightSets * WEIGHT_SET_SCORE;
 
   if (isSparringLog({ type: finalType })) {
     base += SPARRING_BONUS;

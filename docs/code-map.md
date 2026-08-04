@@ -2,9 +2,13 @@
 
 | 하고 싶은 일 | 파일 |
 |---|---|
-| 하단 내비 | `src/App.jsx` · 링 · 짐 · 홈 · 명패 · 더보기 |
-| 짐 탭 | `src/pages/GymFinderPage.jsx` · 체육관 · 라이벌 찾기 · 찜 |
-| 모임(보류) | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
+| 하단 내비 | `src/App.jsx` · 홈 · 훈련 · 기록 · 커뮤니티 · 전체 |
+| 공통 화면 레이아웃 | `src/reference-layout.css` · 화면 여백 · 카드 · 하단 내비 · 시안 재해석 |
+| 커뮤니티 IA | `docs/community-ia.md` · Vision Loop · 칩 `교류·체육관·라이벌·모임` |
+| 커뮤니티 UI 설계 | `docs/community-ui.md` · 구현 전 |
+| 커뮤니티(짐) | `src/pages/GymFinderPage.jsx` · (코드는 구칩 · 문서 잠금과 아직 불일치) |
+| 모임 | `ExchangeBoardPanel.jsx` · `utils/dojoExchange.js` · 채팅 `ExchangeChatModal.jsx` · `utils/dojoChat.js` · `api/dojoChatApi.js` |
+| 관↔관 교류 | 설계 `docs/gym-exchange.md` · 코드/SQL 없음 (Level 3) |
 | 채팅 SQL | `supabase/dojo_chat.sql` |
 | 체육관 검색·카드 | `NearbyGymsPanel.jsx` (지도·찜·내 문의·등록 관리) · `GymResultCard.jsx` · `utils/gymPricing.js` |
 | 관 상세 | `GymDetailPanel.jsx` · `docs/dojo-ui.md` |

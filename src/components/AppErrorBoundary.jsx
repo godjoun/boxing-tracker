@@ -42,7 +42,7 @@ export default class AppErrorBoundary extends Component {
           </h1>
           <p style={{ color: "#b8a99a", lineHeight: 1.6 }}>
             기기에 저장된 훈련 기록은 그대로 유지됩니다. 같은 문제가 반복되면
-            더보기에서 JSON 백업을 먼저 보관해 주세요.
+            전체 메뉴에서 JSON 백업을 먼저 보관해 주세요.
           </p>
           <button
             type="button"

@@ -118,9 +118,42 @@
 }
 
 .fighter-nameplate-photo-action.is-primary {
-  border-color: rgba(138, 46, 46, 0.42);
-  background: #8a2e2e;
-  color: #f5f1e8;
+  border-color: var(--p-border);
+  background: var(--p-card-lift);
+  color: var(--p-text);
+}
+
+@media (max-width: 420px) {
+  .fighter-nameplate-top {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .fighter-nameplate-photo,
+  .fighter-nameplate-photo-btn {
+    width: 64px;
+    height: 64px;
+  }
+
+  .fighter-nameplate-badge {
+    grid-column: 2;
+    justify-self: start;
+    width: auto;
+    min-height: 36px;
+    padding: 6px 10px;
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .fighter-nameplate-photo-empty {
+    font-size: 11px;
+  }
+
+  .fighter-nameplate-photo-action {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 12px;
+  }
 }
 
 .fighter-nameplate-editor {

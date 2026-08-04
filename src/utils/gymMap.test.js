@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { normalizeOsmGym } from "../api/osmGymApi";
+import {
+  normalizeOsmGym,
+  normalizePhotonLocation,
+} from "../api/osmGymApi";
 import {
   getFavoriteGyms,
   toggleFavoriteGym,
@@ -8,7 +11,15 @@ import {
   mergeGymSearchResults,
   validateGymListingForm,
 } from "./gymListing";
-import { getDistanceKm, hasMapCoordinates, isNearbyMapGym } from "./gymSearch";
+import {
+  getDistanceKm,
+  getGymSearchCityLabel,
+  getListedGymsByCity,
+  getUnlocatedListedGyms,
+  hasMapCoordinates,
+  isNearbyMapGym,
+  resolveGpsSearchLocation,
+} from "./gymSearch";
 import { groupRivalsByArea } from "./rivalAreaMap";
 
 afterEach(() => {
@@ -81,6 +92,100 @@ describe("지도형 체육관 검색", () => {
     expect(
       isNearbyMapGym({ lat: 37.51, lon: 127.04 }, center)
     ).toBe(true);
+    expect(
+      isNearbyMapGym(
+        { lat: 40.713, lon: -74.006 },
+        { lat: 40.7128, lon: -74.006 }
+      )
+    ).toBe(true);
+  });
+
+  it("GPS 좌표를 도시로 표시하고 해당 도시의 승인 입점관만 센다", () => {
+    const city = getGymSearchCityLabel({
+      lat: 37.51,
+      lon: 127.03,
+      label: "내 위치",
+      source: "gps",
+    });
+    const gyms = getListedGymsByCity(
+      [
+        { id: "seoul", source: "listing", address: "서울 강남구 역삼동" },
+        {
+          id: "coordinate-only",
+          source: "listing",
+          address: "도로명 확인 중",
+          lat: 37.52,
+          lon: 127.04,
+        },
+        { id: "busan", source: "listing", address: "부산 부산진구" },
+        {
+          id: "pending",
+          source: "listing",
+          address: "서울 마포구",
+          ownerPreview: true,
+        },
+        { id: "map", source: "osm", address: "서울 송파구" },
+      ],
+      city,
+      { lat: 37.51, lon: 127.03 }
+    );
+
+    expect(city).toBe("서울");
+    expect(gyms.map((gym) => gym.id)).toEqual(["seoul", "coordinate-only"]);
+    expect(
+      getGymSearchCityLabel({
+        lat: 36.45,
+        lon: 127.85,
+        label: "대한민국",
+        source: "overview",
+      })
+    ).toBe("현재 지역");
+  });
+
+  it("지도 좌표가 없는 승인 입점관을 위치 확인 대상으로 분리한다", () => {
+    const unknown = getUnlocatedListedGyms([
+      { id: "unknown", source: "listing", address: "", tags: ["입점"] },
+      { id: "addressed", source: "listing", address: "서울 마포구" },
+      { id: "mapped", source: "listing", lat: 37.5, lon: 127 },
+      { id: "osm", source: "osm", address: "" },
+    ]);
+
+    expect(unknown.map((gym) => gym.id)).toEqual(["unknown", "addressed"]);
+  });
+
+  it("Photon 응답의 해외 도시명을 보존하고 GPS 위치에 적용한다", async () => {
+    const feature = {
+      geometry: { coordinates: [-74.006, 40.7128] },
+      properties: { city: "New York", country: "United States" },
+    };
+    expect(normalizePhotonLocation(feature)).toMatchObject({
+      cityLabel: "New York",
+      label: "New York, United States",
+    });
+
+    vi.stubGlobal("localStorage", {
+      getItem: () => null,
+      setItem: () => {},
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ features: [feature] }),
+    }));
+
+    const location = await resolveGpsSearchLocation({
+      lat: 40.7128,
+      lon: -74.006,
+      label: "내 위치",
+      source: "gps",
+      accuracy: 20,
+    });
+
+    expect(location).toMatchObject({
+      cityLabel: "New York",
+      countryLabel: "United States",
+      source: "gps",
+      accuracy: 20,
+    });
   });
 
   it("사용자 장소 제보는 관장 연락처 없이 좌표만으로 접수한다", () => {
@@ -122,8 +227,15 @@ describe("지도형 체육관 검색", () => {
 
   it("라이벌은 정확 좌표 없이 같은 활동 권역으로 묶는다", () => {
     const areas = groupRivalsByArea([
-      { id: "rival-1", area: "성수동" },
-      { id: "rival-2", area: "서울 성수" },
+      {
+        id: "rival-1",
+        nickname: "신조운",
+        weightClass: "라이트급",
+        area: "성수동",
+      },
+      { id: "rival-2", nickname: "복서B", area: "서울 성수" },
+      { id: "rival-3", nickname: "복서C", area: "성수동" },
+      { id: "rival-4", nickname: "복서D", area: "성수동" },
       { id: "rival-3", area: "알 수 없는 지역" },
     ]);
 
@@ -131,7 +243,17 @@ describe("지도형 체육관 검색", () => {
       expect.objectContaining({
         id: "seoul-sungsu",
         label: "서울 성수",
-        count: 2,
+        count: 4,
+        profiles: [
+          {
+            id: "rival-1",
+            nickname: "신조운",
+            initial: "신",
+            weightClass: "라이트급",
+          },
+          expect.objectContaining({ id: "rival-2", initial: "복" }),
+          expect.objectContaining({ id: "rival-3", initial: "복" }),
+        ],
       }),
     ]);
   });

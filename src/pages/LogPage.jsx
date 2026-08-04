@@ -1,45 +1,35 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import { getCompletionDelta } from "../utils/fighterProgress";
 import {
-  SPARRING_UNLOCK_LEVEL,
-  isSparringUnlocked,
-} from "../utils/featureUnlocks";
-import {
-  calculateLogScore,
-  CONDITION_OPTIONS,
   getLogRounds,
-  isThisWeek,
 } from "../utils/trainingStats";
-import { getLogExp } from "../utils/fighterProgress";
+import {
+  getLogCategory,
+  getLogSummary,
+  getRunningPaceLabel,
+  inferLogCategory,
+  LOG_CATEGORIES,
+  normalizeLogCategory,
+} from "../utils/logCategories";
+import MenuIcon from "../components/MenuIcon";
 import "./LogPage.css";
 
 const CUSTOM_EXERCISE_VALUE = "직접 입력";
-
 const EXERCISE_OPTIONS = [
-  "복싱",
-  "쉐도우복싱",
-  "샌드백",
-  "미트 훈련",
-  "줄넘기",
-  "풋워크",
-  "복근 운동",
-  "스파링",
-  "러닝",
-  "기타",
+  ...LOG_CATEGORIES.flatMap((category) => category.subtypes),
   CUSTOM_EXERCISE_VALUE,
 ];
 
-const QUICK_EXERCISE_OPTIONS = ["복싱", "샌드백", "쉐도우복싱", "스파링", "러닝"];
-const DURATION_PRESETS = [30, 60, 90];
+const ROUND_PRESETS = [3, 5, 8];
 
-const DIFFICULTY_OPTIONS = [
-  { id: "easy", label: "가볍게", description: "가볍게 움직인 날" },
-  { id: "normal", label: "보통", description: "평소처럼 훈련한 날" },
-  { id: "hard", label: "빡셈", description: "확실히 힘들었던 날" },
-  { id: "crazy", label: "죽음", description: "오늘 좀 미쳤던 날" },
-];
+const CATEGORY_ICON = {
+  boxing: "skill",
+  running: "growth",
+  weights: "body",
+  walking: "round",
+};
 
 function getTodayString() {
   const today = new Date();
@@ -50,13 +40,24 @@ function getTodayString() {
   return `${year}-${month}-${date}`;
 }
 
-function calculatePreviewScore(minutes, difficulty, rounds = 0, type = "") {
-  return calculateLogScore({
-    minutes,
-    difficulty,
-    rounds,
-    type,
-  });
+function getDistanceKm(from, to) {
+  if (!from || !to) return 0;
+
+  const earthRadiusKm = 6371;
+  const toRadians = (value) => (value * Math.PI) / 180;
+  const latDelta = toRadians(to.latitude - from.latitude);
+  const lonDelta = toRadians(to.longitude - from.longitude);
+  const startLat = toRadians(from.latitude);
+  const endLat = toRadians(to.latitude);
+
+  const haversine =
+    Math.sin(latDelta / 2) * Math.sin(latDelta / 2) +
+    Math.cos(startLat) *
+      Math.cos(endLat) *
+      Math.sin(lonDelta / 2) *
+      Math.sin(lonDelta / 2);
+
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
 }
 
 function getRounds(log) {
@@ -71,7 +72,9 @@ function getRounds(log) {
 
 function createEmptyForm() {
   return {
-    type: "복싱",
+    category: "",
+    type: "",
+    subtype: "",
     customType: "",
     minutes: "",
     rounds: "",
@@ -80,20 +83,7 @@ function createEmptyForm() {
     condition: "normal",
     memo: "",
     publicComment: "",
-  };
-}
-
-function getExerciseFormState(exerciseName) {
-  if (EXERCISE_OPTIONS.includes(exerciseName)) {
-    return {
-      type: exerciseName,
-      customType: "",
-    };
-  }
-
-  return {
-    type: CUSTOM_EXERCISE_VALUE,
-    customType: exerciseName || "",
+    metrics: {},
   };
 }
 
@@ -105,17 +95,128 @@ function getFinalExerciseName(formData) {
   return formData.type;
 }
 
-function OptionButton({ isActive, title, description, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`log-option${isActive ? " is-active" : ""}`}
-    >
-      <p className="log-option-title">{title}</p>
-      <p className="log-option-desc">{description}</p>
-    </button>
-  );
+function getCorePrompt(categoryId) {
+  if (categoryId === "boxing") return "라운드와 시간만 남기면 됩니다";
+  if (categoryId === "running") return "거리와 시간이 있으면 페이스가 계산됩니다";
+  if (categoryId === "weights") return "세트, 무게, 횟수만 입력합니다";
+  if (categoryId === "walking") return "걸은 시간과 거리만 남깁니다";
+  return "먼저 운동을 하나 고르세요";
+}
+
+function getStepOneStatus(formData) {
+  if (!formData.category) {
+    return {
+      isComplete: false,
+      label: "운동 선택",
+      buttonLabel: "운동 선택",
+    };
+  }
+
+  if (formData.category === "weights") {
+    const hasSets = Number(formData.metrics?.sets || 0) > 0;
+    const hasReps = Number(formData.metrics?.reps || 0) > 0;
+
+    if (!hasSets) {
+      return {
+        isComplete: false,
+        label: "세트 입력",
+        buttonLabel: "세트 입력",
+      };
+    }
+
+    if (!hasReps) {
+      return {
+        isComplete: false,
+        label: "횟수 입력",
+        buttonLabel: "횟수 입력",
+      };
+    }
+
+    return {
+      isComplete: true,
+      label: "저장 가능",
+      buttonLabel: "저장",
+    };
+  }
+
+  if (
+    ["running", "walking"].includes(formData.category) &&
+    !formData.minutes &&
+    !formData.metrics?.distanceKm
+  ) {
+    return {
+      isComplete: false,
+      label: "GPS 측정",
+      buttonLabel: "GPS 시작",
+    };
+  }
+
+  if (!formData.minutes || Number(formData.minutes) <= 0) {
+    return {
+      isComplete: false,
+      label: "시간 입력",
+      buttonLabel: "시간 입력",
+    };
+  }
+
+  if (
+    formData.category === "running" &&
+    (!formData.metrics?.distanceKm || Number(formData.metrics.distanceKm) <= 0)
+  ) {
+    return {
+      isComplete: false,
+      label: "거리 입력",
+      buttonLabel: "거리 입력",
+    };
+  }
+
+  return {
+    isComplete: true,
+    label: "저장 가능",
+    buttonLabel: "저장",
+  };
+}
+
+function isInPeriod(log, period, now = new Date()) {
+  const date = new Date(`${log.date || ""}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (period === "year" ? 364 : period === "month" ? 29 : 6));
+  return date >= start && date <= now;
+}
+
+function buildTrend(logs, period, now = new Date()) {
+  const days = period === "year" ? 12 : period === "month" ? 8 : 7;
+  const stepDays = period === "year" ? 30 : period === "month" ? 4 : 1;
+
+  return Array.from({ length: days }, (_, index) => {
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    end.setDate(now.getDate() - (days - 1 - index) * stepDays);
+    const start = new Date(end);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(end.getDate() - (stepDays - 1));
+    const value = logs
+      .filter((log) => {
+        const date = new Date(`${log.date || ""}T00:00:00`);
+        return date >= start && date <= end;
+      })
+      .reduce(
+        (sum, log) =>
+          sum + Math.max(getLogRounds(log), Number(log.minutes || log.duration || 0) / 3),
+        0
+      );
+
+    return {
+      label:
+        period === "year"
+          ? `${end.getMonth() + 1}월`
+          : `${end.getMonth() + 1}/${end.getDate()}`,
+      value: Math.round(value),
+    };
+  });
 }
 
 export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
@@ -125,38 +226,68 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     updateLog,
     deleteLog,
     resetAllLogs,
-    dailyScoreLimit,
   } = useTraining();
 
   const [form, setForm] = useState(createEmptyForm);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(createEmptyForm);
   const [reward, setReward] = useState(null);
-  const [logView, setLogView] = useState("write");
-  const [writeStep, setWriteStep] = useState(1);
   const [historyLimit, setHistoryLimit] = useState(5);
-  const WRITE_STEP_TOTAL = 3;
+  const [historyCategory, setHistoryCategory] = useState("all");
+  const [historyPeriod, setHistoryPeriod] = useState("week");
+  const [autoTracking, setAutoTracking] = useState(null);
+  const watchIdRef = useRef(null);
 
-  const weekSummary = useMemo(() => {
-    const weekLogs = logs.filter((log) => isThisWeek(log.date));
-    return {
-      count: weekLogs.length,
-      rounds: weekLogs.reduce((sum, log) => sum + getLogRounds(log), 0),
-      exp: weekLogs.reduce((sum, log) => sum + getLogExp(log), 0),
-    };
-  }, [logs]);
-
-  const previewScore = calculatePreviewScore(
-    form.minutes,
-    form.difficulty,
-    form.rounds,
-    form.type === CUSTOM_EXERCISE_VALUE ? form.customType : form.type
+  const selectedCategory = form.category ? getLogCategory(form.category) : null;
+  const stepOneStatus = getStepOneStatus(form);
+  const canSave = stepOneStatus.isComplete;
+  const canStartGpsFromDock =
+    ["running", "walking"].includes(form.category) &&
+    stepOneStatus.buttonLabel === "GPS 시작";
+  const historyCategoryLogs = useMemo(
+    () =>
+      logs.filter(
+        (log) =>
+          (historyCategory === "all" ||
+            inferLogCategory(log) === historyCategory)
+      ),
+    [historyCategory, logs]
   );
+  const historyLogs = useMemo(
+    () => historyCategoryLogs.filter((log) => isInPeriod(log, historyPeriod)),
+    [historyCategoryLogs, historyPeriod]
+  );
+  const historySummary = useMemo(
+    () => ({
+      count: historyCategoryLogs.length,
+      rounds: historyCategoryLogs.reduce((sum, log) => sum + getLogRounds(log), 0),
+      minutes: historyCategoryLogs.reduce(
+        (sum, log) => sum + Number(log.minutes || log.duration || 0),
+        0
+      ),
+    }),
+    [historyCategoryLogs]
+  );
+  const historyTrend = useMemo(
+    () => buildTrend(historyLogs, historyPeriod),
+    [historyLogs, historyPeriod]
+  );
+  const historyTrendMax = Math.max(...historyTrend.map((item) => item.value), 1);
 
   function updateFormField(field, value) {
     setForm((prev) => ({
       ...prev,
       [field]: value,
+    }));
+  }
+
+  function updateFormMetrics(nextMetrics) {
+    setForm((prev) => ({
+      ...prev,
+      metrics: {
+        ...prev.metrics,
+        ...nextMetrics,
+      },
     }));
   }
 
@@ -167,18 +298,141 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     }));
   }
 
+  function updateEditMetrics(nextMetrics) {
+    setEditForm((prev) => ({
+      ...prev,
+      metrics: {
+        ...prev.metrics,
+        ...nextMetrics,
+      },
+    }));
+  }
+
   function handleTypeChange(value) {
     setForm((prev) => ({
       ...prev,
       type: value,
+      subtype: value,
       customType: value === CUSTOM_EXERCISE_VALUE ? prev.customType : "",
     }));
   }
+
+  function handleCategoryChange(categoryId) {
+    const category = getLogCategory(categoryId);
+    clearAutoTracking();
+    setForm((prev) => ({
+      ...prev,
+      category: category.id,
+      type: category.subtypes[0],
+      subtype: category.subtypes[0],
+      customType: "",
+      rounds: "",
+      metrics: {},
+    }));
+  }
+
+  function clearAutoTracking() {
+    if (watchIdRef.current !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+    watchIdRef.current = null;
+    setAutoTracking(null);
+  }
+
+  function handleStartAutoTracking() {
+    if (!["running", "walking"].includes(form.category)) return;
+
+    if (!navigator.geolocation) {
+      alert("이 브라우저에서는 GPS 자동 측정을 사용할 수 없어요.");
+      return;
+    }
+
+    clearAutoTracking();
+
+    const startTime = new Date().getTime();
+    setAutoTracking({
+      category: form.category,
+      startedAt: startTime,
+      distanceKm: 0,
+      lastPosition: null,
+      status: "측정 준비 중",
+    });
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const nextPosition = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
+
+        setAutoTracking((current) => {
+          if (!current) return current;
+          const addedDistance = getDistanceKm(current.lastPosition, nextPosition);
+          const nextDistance = current.distanceKm + addedDistance;
+          const elapsedMinutes = Math.max(1, Math.round((new Date().getTime() - current.startedAt) / 60000));
+
+          setForm((prev) => ({
+            ...prev,
+            minutes: String(elapsedMinutes),
+            metrics: {
+              ...prev.metrics,
+              distanceKm: nextDistance ? nextDistance.toFixed(2) : prev.metrics.distanceKm || "",
+              autoSignals: ["GPS", "시간"],
+              autoAccuracyM: Math.round(nextPosition.accuracy || 0),
+            },
+          }));
+
+          return {
+            ...current,
+            distanceKm: nextDistance,
+            lastPosition: nextPosition,
+            status: "측정 중",
+          };
+        });
+      },
+      () => {
+        setAutoTracking((current) =>
+          current ? { ...current, status: "GPS 권한이 필요해요" } : current
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000,
+      }
+    );
+  }
+
+  function handleStopAutoTracking() {
+    const current = autoTracking;
+    clearAutoTracking();
+    if (!current) return;
+
+    const elapsedMinutes = Math.max(1, Math.round((new Date().getTime() - current.startedAt) / 60000));
+    setForm((prev) => ({
+      ...prev,
+      minutes: prev.minutes || String(elapsedMinutes),
+      metrics: {
+        ...prev.metrics,
+        distanceKm:
+          prev.metrics.distanceKm ||
+          (current.distanceKm ? current.distanceKm.toFixed(2) : ""),
+        autoSignals: ["GPS", "시간"],
+        autoStoppedAt: new Date().toISOString(),
+      },
+    }));
+  }
+
+  useEffect(() => {
+    return () => clearAutoTracking();
+  }, []);
 
   function handleEditTypeChange(value) {
     setEditForm((prev) => ({
       ...prev,
       type: value,
+      subtype: value,
       customType: value === CUSTOM_EXERCISE_VALUE ? prev.customType : "",
     }));
   }
@@ -189,12 +443,28 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     const finalExerciseName = getFinalExerciseName(form);
 
     if (!finalExerciseName) {
-      alert("운동 종류를 입력해줘!");
+      alert("운동을 먼저 선택해줘!");
       return;
     }
 
-    if (!form.minutes || Number(form.minutes) <= 0) {
+    if (form.category !== "weights" && (!form.minutes || Number(form.minutes) <= 0)) {
       alert("운동 시간을 입력해줘!");
+      return;
+    }
+
+    if (
+      form.category === "running" &&
+      (!form.metrics.distanceKm || Number(form.metrics.distanceKm) <= 0)
+    ) {
+      alert("러닝 거리를 입력해줘!");
+      return;
+    }
+
+    if (
+      form.category === "weights" &&
+      (!form.metrics.sets || !form.metrics.reps)
+    ) {
+      alert("웨이트 세트와 횟수를 입력해줘!");
       return;
     }
 
@@ -210,55 +480,41 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       condition: form.condition,
       memo: form.memo,
       publicComment: form.publicComment,
-      source: "manual",
+      category: form.category,
+      subtype: form.subtype,
+      metrics: form.metrics,
+      source: form.metrics?.autoSignals?.length ? "auto" : "manual",
     });
 
     track("log_save", {
-      source: "manual",
+      source: form.metrics?.autoSignals?.length ? "auto" : "manual",
       rounds: Number(form.rounds || 0),
     });
 
+    clearAutoTracking();
+    const delta = getCompletionDelta(logs, savedLog);
+    setForm(createEmptyForm());
+    setHistoryLimit(5);
     setReward({
       type: "growth",
-      delta: getCompletionDelta(logs, savedLog),
+      delta,
       logId: savedLog.id,
       minutes: Number(form.minutes),
       rounds: Number(form.rounds || 0),
       message: form.publicComment.trim() || null,
     });
-
-    setForm(createEmptyForm());
-    setWriteStep(1);
-  }
-
-  function handleWriteNext() {
-    if (writeStep === 1) {
-      const finalExerciseName = getFinalExerciseName(form);
-      if (!finalExerciseName) {
-        alert("운동 종류를 입력해줘!");
-        return;
-      }
-      if (!form.minutes || Number(form.minutes) <= 0) {
-        alert("운동 시간을 입력해줘!");
-        return;
-      }
-    }
-
-    setWriteStep((step) => Math.min(step + 1, WRITE_STEP_TOTAL));
-  }
-
-  function handleWriteBack() {
-    setWriteStep((step) => Math.max(step - 1, 1));
   }
 
   function handleStartEdit(log) {
     setEditingId(log.id);
 
-    const exerciseState = getExerciseFormState(log.type || "복싱");
+    const normalizedLog = normalizeLogCategory(log);
 
     setEditForm({
-      type: exerciseState.type,
-      customType: exerciseState.customType,
+      category: normalizedLog.category,
+      type: normalizedLog.type || "복싱",
+      subtype: normalizedLog.subtype || normalizedLog.type || "복싱",
+      customType: "",
       minutes: String(log.minutes || log.duration || ""),
       rounds: String(getRounds(log) || ""),
       date: log.date || getTodayString(),
@@ -266,6 +522,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       condition: log.condition || "normal",
       memo: log.memo || "",
       publicComment: log.publicComment || "",
+      metrics: normalizedLog.metrics,
     });
   }
 
@@ -282,8 +539,27 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       return;
     }
 
-    if (!editForm.minutes || Number(editForm.minutes) <= 0) {
+    if (
+      editForm.category !== "weights" &&
+      (!editForm.minutes || Number(editForm.minutes) <= 0)
+    ) {
       alert("운동 시간을 입력해줘!");
+      return;
+    }
+
+    if (
+      editForm.category === "running" &&
+      (!editForm.metrics.distanceKm || Number(editForm.metrics.distanceKm) <= 0)
+    ) {
+      alert("러닝 거리를 입력해줘!");
+      return;
+    }
+
+    if (
+      editForm.category === "weights" &&
+      (!editForm.metrics.sets || !editForm.metrics.reps)
+    ) {
+      alert("웨이트 세트와 횟수를 입력해줘!");
       return;
     }
 
@@ -299,6 +575,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       condition: editForm.condition,
       memo: editForm.memo,
       publicComment: editForm.publicComment,
+      category: editForm.category,
+      subtype: editForm.subtype,
+      metrics: editForm.metrics,
     });
 
     setReward({
@@ -327,12 +606,6 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     setEditingId(null);
   }
 
-  function handleOpenProfile() {
-    if (typeof onGoProfile === "function") {
-      onGoProfile();
-    }
-  }
-
   function handleOpenCardFromReward(logId) {
     const goCardMaker = onGoProfileCardMaker || onGoProfile;
 
@@ -349,288 +622,325 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   }
 
   return (
-    <main className={`log-page${logView === "write" ? " has-write-dock" : ""}`}>
+    <main className="log-page has-write-dock">
       <div className="log-container">
         <header className="log-hero">
           <h1 className="log-title">기록</h1>
-          <div className="log-week-strip" aria-label="이번 주 요약">
-            <div>
-              <span>이번 주</span>
-              <strong>{weekSummary.count}회</strong>
-            </div>
-            <div>
-              <span>라운드</span>
-              <strong>{weekSummary.rounds}R</strong>
-            </div>
-            <div>
-              <span>EXP</span>
-              <strong>{weekSummary.exp}</strong>
-            </div>
-          </div>
+          <p className="log-subtitle">오늘 한 운동만 빠르게 남기세요</p>
         </header>
 
-        <div className="log-view-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={logView === "write"}
-            className={`log-view-tab${logView === "write" ? " is-active" : ""}`}
-            onClick={() => setLogView("write")}
-          >
-            쓰기
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={logView === "history"}
-            className={`log-view-tab${logView === "history" ? " is-active" : ""}`}
-            onClick={() => {
-              setLogView("history");
-              setHistoryLimit(5);
-            }}
-          >
-            목록{logs.length > 0 ? ` · ${logs.length}` : ""}
-          </button>
-        </div>
-
-        {logView === "write" && (
-          <>
         {reward?.type === "growth" && reward.delta ? (
-          <section className="log-growth-reward" aria-live="polite">
-            <p className="log-growth-kicker">주인공 스펙 상승</p>
-
-            {reward.delta.didLevelUp ? (
-              <span className="log-growth-levelup">LEVEL UP</span>
-            ) : null}
-
-            <div className="log-growth-grid">
-              <div className="log-growth-stat">
-                <span>기록 라운드</span>
-                <strong>{reward.rounds}R</strong>
-              </div>
-              <div className="log-growth-stat">
-                <span>이번 주</span>
-                <strong>{reward.delta.weeklyRounds}R</strong>
-                {reward.delta.weeklyRoundsAdded > 0 ? (
-                  <em>+{reward.delta.weeklyRoundsAdded}R</em>
-                ) : null}
-              </div>
-              <div className="log-growth-stat">
-                <span>훈련 시간</span>
-                <strong>{reward.minutes}분</strong>
-              </div>
-              <div className="log-growth-stat">
-                <span>획득 EXP</span>
-                <strong className="log-growth-exp">
-                  +{reward.delta.gainedExp}
-                </strong>
-              </div>
+          <section className="log-save-notice" aria-live="polite">
+            <div>
+              <strong>
+                {reward.delta.didLevelUp
+                  ? "레벨이 올랐습니다"
+                  : "기록이 남았습니다"}
+              </strong>
+              <p>
+                {[
+                  reward.rounds ? `${reward.rounds}R` : "",
+                  reward.minutes ? `${reward.minutes}분` : "",
+                  reward.delta.gainedExp
+                    ? `성장 +${reward.delta.gainedExp}`
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
             </div>
-
-            <div className="log-growth-level-head">
-              <strong>{reward.delta.levelLabel}</strong>
-              <span>
-                {reward.delta.isMaxLevel
-                  ? "MAX LEVEL"
-                  : `${reward.delta.currentLevelExp} / ${reward.delta.nextLevelExp} EXP`}
-              </span>
-            </div>
-            <div className="log-growth-level-track">
-              <div
-                style={{ width: `${reward.delta.currentLevelExp}%` }}
-              />
-            </div>
-            <p className="log-growth-level-note">
-              {reward.delta.isMaxLevel
-                ? "최대 레벨에 도달했습니다"
-                : `다음 레벨까지 ${reward.delta.expToNextLevel} EXP`}
-            </p>
-
-            {reward.delta.didLevelUp && reward.delta.newTitle ? (
-              <div className="log-growth-unlocks">
-                <span>NEW TITLE · 새 칭호</span>
-                <p className="log-growth-title-ko">{reward.delta.newTitle.ko}</p>
-                <p className="log-growth-title-en">{reward.delta.newTitle.en}</p>
-                <small className="log-growth-title-flavor">
-                  {reward.delta.newTitle.flavor}
-                </small>
-                {reward.delta.currentLevel === SPARRING_UNLOCK_LEVEL &&
-                isSparringUnlocked(reward.delta.currentLevel) ? (
-                  <p className="log-growth-title-extra">
-                    라이벌 찾기 이용 가능
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            {reward.message ? (
-              <p className="log-growth-message">{reward.message}</p>
-            ) : null}
-
-            <div className="log-growth-actions">
-              {typeof onGoProfile === "function" ? (
-                <button
-                  type="button"
-                  className="log-growth-btn log-growth-btn-primary"
-                  onClick={handleOpenProfile}
-                >
-                  명패 보기
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="log-growth-btn"
-                onClick={() => handleOpenCardFromReward(reward.logId)}
-              >
-                훈련 카드 만들기
-              </button>
-            </div>
+            <button type="button" onClick={() => setReward(null)}>
+              닫기
+            </button>
           </section>
         ) : null}
 
         {reward?.type === "edit" ? (
-          <section className="log-reward">
-            <strong>{reward.title}</strong>
-            <p>{reward.message}</p>
+          <section className="log-save-notice" aria-live="polite">
+            <div>
+              <strong>{reward.title}</strong>
+              <p>{reward.message}</p>
+            </div>
+            <button type="button" onClick={() => setReward(null)}>
+              닫기
+            </button>
           </section>
         ) : null}
 
         <section className="log-card log-form-card">
           <form onSubmit={handleSubmit}>
-            <div className="log-write-steps" aria-label="기록 작성 단계">
-              <p className="log-write-step-label">
-                {writeStep} / {WRITE_STEP_TOTAL}
-              </p>
-              <div className="log-write-step-progress" aria-hidden="true">
-                {Array.from({ length: WRITE_STEP_TOTAL }, (_, index) => (
-                  <span
-                    key={index}
-                    className={
-                      index + 1 < writeStep
-                        ? "is-done"
-                        : index + 1 === writeStep
-                          ? "is-active"
-                          : ""
-                    }
-                  />
+            <div className="log-form-block">
+              <div className="log-step-heading">
+                <h2>운동 남기기</h2>
+                <span>{getCorePrompt(form.category)}</span>
+              </div>
+
+              <div className="log-category-grid" role="group" aria-label="운동 카테고리">
+                {LOG_CATEGORIES.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    className={`log-category-choice${
+                      form.category === category.id ? " is-active" : ""
+                    }`}
+                    aria-pressed={form.category === category.id}
+                    onClick={() => handleCategoryChange(category.id)}
+                  >
+                    <span className="log-category-icon" aria-hidden="true">
+                      <MenuIcon name={CATEGORY_ICON[category.id]} size={18} />
+                    </span>
+                    <strong>{category.label}</strong>
+                  </button>
                 ))}
               </div>
-            </div>
 
-            {writeStep === 1 ? (
-              <div className="log-form-block">
-                <p className="log-form-block-title">오늘 무엇을 했어?</p>
-
-                <div
-                  className="log-quick-choice-grid"
-                  role="group"
-                  aria-label="자주 하는 운동"
+              {selectedCategory ? (
+                <section
+                  className="log-core-panel"
+                  aria-label={`${selectedCategory.label} 기록 입력`}
                 >
-                  {QUICK_EXERCISE_OPTIONS.map((exercise) => (
-                    <button
-                      key={exercise}
-                      type="button"
-                      className={`log-quick-choice${
-                        form.type === exercise ? " is-active" : ""
-                      }`}
-                      aria-pressed={form.type === exercise}
-                      onClick={() => handleTypeChange(exercise)}
-                    >
-                      {exercise}
-                    </button>
-                  ))}
-                </div>
+                  {["running", "walking"].includes(form.category) ? (
+                    <section className="log-auto-panel" aria-label="GPS 자동 측정">
+                      <div>
+                        <strong>
+                          {autoTracking ? autoTracking.status : "GPS로 채우기"}
+                        </strong>
+                        <p>시작하면 거리와 시간이 들어갑니다.</p>
+                      </div>
+                      {autoTracking ? (
+                        <button type="button" onClick={handleStopAutoTracking}>
+                          종료
+                        </button>
+                      ) : (
+                        <button type="button" onClick={handleStartAutoTracking}>
+                          시작
+                        </button>
+                      )}
+                    </section>
+                  ) : null}
 
-                <div className="log-field">
-                  <label className="log-label">다른 운동을 했다면</label>
-                  <select
-                    value={form.type}
-                    onChange={(event) => handleTypeChange(event.target.value)}
-                    className="log-input"
-                  >
-                    {EXERCISE_OPTIONS.map((exercise) => (
-                      <option key={exercise} value={exercise}>
-                        {exercise}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {form.type === CUSTOM_EXERCISE_VALUE && (
-                  <div className="log-field">
-                    <label className="log-label">운동 이름 직접 작성</label>
-                    <input
-                      value={form.customType}
-                      onChange={(event) =>
-                        updateFormField("customType", event.target.value)
-                      }
-                      placeholder="예: 샌드백 집중 훈련"
-                      className="log-input"
-                    />
-                    <p className="log-hint">카드와 기록에 이 이름으로 표시돼요.</p>
-                  </div>
-                )}
-
-                <div className="log-field">
-                  <label className="log-label">얼마나 했어?</label>
-                  <div
-                    className="log-quick-choice-grid log-duration-presets"
-                    role="group"
-                    aria-label="운동 시간 빠른 선택"
-                  >
-                    {DURATION_PRESETS.map((minutes) => (
-                      <button
-                        key={minutes}
-                        type="button"
-                        className={`log-quick-choice${
-                          Number(form.minutes) === minutes ? " is-active" : ""
-                        }`}
-                        aria-pressed={Number(form.minutes) === minutes}
-                        onClick={() =>
-                          updateFormField("minutes", String(minutes))
-                        }
+                  {form.category === "boxing" ? (
+                    <>
+                      <div
+                        className="log-quick-choice-grid"
+                        role="group"
+                        aria-label="라운드 빠른 선택"
                       >
-                        {minutes}분
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="number"
-                    min="1"
-                    value={form.minutes}
-                    onChange={(event) =>
-                      updateFormField("minutes", event.target.value)
-                    }
-                    placeholder="15"
-                    className="log-input"
-                  />
-                  <p className="log-hint">
-                    버튼으로 고르거나 시간을 직접 입력하세요.
-                  </p>
-                </div>
-              </div>
-            ) : null}
+                        {ROUND_PRESETS.map((rounds) => (
+                          <button
+                            key={rounds}
+                            type="button"
+                            className={`log-quick-choice${
+                              Number(form.rounds) === rounds ? " is-active" : ""
+                            }`}
+                            aria-pressed={Number(form.rounds) === rounds}
+                            onClick={() => {
+                              updateFormField("rounds", String(rounds));
+                              if (!form.minutes) {
+                                updateFormField("minutes", String(rounds * 3));
+                              }
+                            }}
+                          >
+                            {rounds}R
+                          </button>
+                        ))}
+                      </div>
+                      <div className="log-grid-2">
+                        <div className="log-field">
+                          <label className="log-label">라운드</label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={form.rounds}
+                            onChange={(event) =>
+                              updateFormField("rounds", event.target.value)
+                            }
+                            placeholder="5"
+                            className="log-input"
+                          />
+                        </div>
+                        <div className="log-field">
+                          <label className="log-label">시간(분)</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={form.minutes}
+                            onChange={(event) =>
+                              updateFormField("minutes", event.target.value)
+                            }
+                            placeholder="30"
+                            className="log-input"
+                          />
+                        </div>
+                      </div>
+                      <label className="log-toggle-row">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(form.metrics.sparring)}
+                          onChange={(event) =>
+                            updateFormMetrics({ sparring: event.target.checked })
+                          }
+                        />
+                        <span>스파링 포함</span>
+                      </label>
+                    </>
+                  ) : null}
 
-            {writeStep === 2 ? (
-              <>
-                <div className="log-form-block">
-                  <p className="log-form-block-title">라운드 · 날짜</p>
+                  {form.category === "running" || form.category === "walking" ? (
+                    <>
+                      <div className="log-gps-summary" aria-label="측정값">
+                        <div>
+                          <span>거리</span>
+                          <strong>
+                            {form.metrics.distanceKm
+                              ? `${form.metrics.distanceKm}km`
+                              : "GPS 대기"}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>시간</span>
+                          <strong>
+                            {form.minutes ? `${form.minutes}분` : "자동"}
+                          </strong>
+                        </div>
+                        {form.category === "running" ? (
+                          <div>
+                            <span>페이스</span>
+                            <strong>
+                              {getRunningPaceLabel(
+                                form.metrics.distanceKm,
+                                form.minutes
+                              ) || "—"}
+                            </strong>
+                          </div>
+                        ) : null}
+                      </div>
+                      <details className="log-manual-details">
+                        <summary>직접 입력</summary>
+                        <div className="log-grid-2">
+                          <div className="log-field">
+                            <label className="log-label">거리(km)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              value={form.metrics.distanceKm || ""}
+                              onChange={(event) =>
+                                updateFormMetrics({
+                                  distanceKm: event.target.value,
+                                })
+                              }
+                              placeholder={
+                                form.category === "running" ? "5" : "2"
+                              }
+                              className="log-input"
+                            />
+                          </div>
+                          <div className="log-field">
+                            <label className="log-label">시간(분)</label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={form.minutes}
+                              onChange={(event) =>
+                                updateFormField("minutes", event.target.value)
+                              }
+                              placeholder={
+                                form.category === "running" ? "30" : "40"
+                              }
+                              className="log-input"
+                            />
+                          </div>
+                        </div>
+                      </details>
+                    </>
+                  ) : null}
 
-                  <div className="log-grid-2">
-                    <div className="log-field">
-                      <label className="log-label">라운드 (R)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={form.rounds}
-                        onChange={(event) =>
-                          updateFormField("rounds", event.target.value)
-                        }
-                        placeholder="5"
-                        className="log-input"
-                      />
+                  {form.category === "weights" ? (
+                    <div className="log-weights-fields">
+                      <div className="log-grid-3">
+                        <div className="log-field">
+                          <label className="log-label">세트</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={form.metrics.sets || ""}
+                            onChange={(event) =>
+                              updateFormMetrics({ sets: event.target.value })
+                            }
+                            placeholder="3"
+                            className="log-input"
+                          />
+                        </div>
+                        <div className="log-field">
+                          <label className="log-label">무게</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={form.metrics.weightKg || ""}
+                            onChange={(event) =>
+                              updateFormMetrics({
+                                weightKg: event.target.value,
+                              })
+                            }
+                            placeholder="40"
+                            className="log-input"
+                          />
+                        </div>
+                        <div className="log-field">
+                          <label className="log-label">횟수</label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={form.metrics.reps || ""}
+                            onChange={(event) =>
+                              updateFormMetrics({ reps: event.target.value })
+                            }
+                            placeholder="10"
+                            className="log-input"
+                          />
+                        </div>
+                      </div>
                     </div>
+                  ) : null}
 
+                  <details className="log-subtype-details">
+                    <summary>세부 운동 · 메모</summary>
+                    <div className="log-subtype-grid">
+                      {selectedCategory.subtypes.map((exercise) => (
+                        <button
+                          key={exercise}
+                          type="button"
+                          className={form.type === exercise ? "is-active" : ""}
+                          onClick={() => handleTypeChange(exercise)}
+                        >
+                          {exercise}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        className={
+                          form.type === CUSTOM_EXERCISE_VALUE ? "is-active" : ""
+                        }
+                        onClick={() => handleTypeChange(CUSTOM_EXERCISE_VALUE)}
+                      >
+                        직접 입력
+                      </button>
+                    </div>
+                    {form.type === CUSTOM_EXERCISE_VALUE ? (
+                      <div className="log-field log-subtype-custom">
+                        <label className="log-label">운동 이름</label>
+                        <input
+                          value={form.customType}
+                          onChange={(event) =>
+                            updateFormField("customType", event.target.value)
+                          }
+                          placeholder="예: 샌드백 집중 훈련"
+                          className="log-input"
+                        />
+                      </div>
+                    ) : null}
                     <div className="log-field">
                       <label className="log-label">날짜</label>
                       <input
@@ -642,236 +952,224 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                         className="log-input"
                       />
                     </div>
-                  </div>
-                </div>
-
-                <div className="log-form-block">
-                  <p className="log-form-block-title">강도 · 컨디션</p>
-
-                  <div className="log-field">
-                    <label className="log-label">운동 강도</label>
-                    <div className="log-chip-grid">
-                      {DIFFICULTY_OPTIONS.map((option) => (
-                        <OptionButton
-                          key={option.id}
-                          isActive={form.difficulty === option.id}
-                          title={option.label}
-                          description={option.description}
-                          onClick={() =>
-                            updateFormField("difficulty", option.id)
-                          }
-                        />
-                      ))}
+                    <div className="log-field">
+                      <label className="log-label">메모</label>
+                      <input
+                        value={form.memo}
+                        onChange={(event) =>
+                          updateFormField("memo", event.target.value)
+                        }
+                        placeholder="짧게 남겨도 됩니다"
+                        className="log-input"
+                      />
                     </div>
-                  </div>
-
-                  <div className="log-field">
-                    <label className="log-label">오늘 컨디션</label>
-                    <div className="log-chip-grid">
-                      {CONDITION_OPTIONS.map((option) => (
-                        <OptionButton
-                          key={option.id}
-                          isActive={form.condition === option.id}
-                          title={option.label}
-                          description="훈련 당시 몸 상태"
-                          onClick={() =>
-                            updateFormField("condition", option.id)
-                          }
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : null}
-
-            {writeStep === 3 ? (
-              <div className="log-form-block">
-                <p className="log-form-block-title">메모 · 저장</p>
-
-                <div className="log-field">
-                  <label className="log-label">내 메모</label>
-                  <input
-                    value={form.memo}
-                    onChange={(event) =>
-                      updateFormField("memo", event.target.value)
-                    }
-                    placeholder="예: 오늘 샌드백 위주로 했다"
-                    className="log-input"
-                  />
-                </div>
-
-                <div className="log-field">
-                  <label className="log-label">공개용 코멘트</label>
-                  <textarea
-                    value={form.publicComment}
-                    onChange={(event) =>
-                      updateFormField("publicComment", event.target.value)
-                    }
-                    placeholder="예: 오늘 첫 5라운드 완주. 마지막 라운드는 진짜 힘들었지만 버텼다."
-                    className="log-textarea"
-                  />
-                </div>
-              </div>
-            ) : null}
+                  </details>
+                </section>
+              ) : null}
+            </div>
           </form>
         </section>
-          </>
-        )}
 
-        {logView === "write" ? (
-          <div
-            className={`log-write-dock${
-              writeStep === WRITE_STEP_TOTAL ? " is-final" : ""
-            }`}
+        <div className="log-write-dock is-final">
+          <div className="log-write-dock-exp">
+            <span>다음</span>
+            <strong>{stepOneStatus.label}</strong>
+          </div>
+          <button
+            type="button"
+            className="log-submit"
+            onClick={canSave ? handleSubmit : handleStartAutoTracking}
+            disabled={!canSave && !canStartGpsFromDock}
           >
-            {writeStep > 1 ? (
-              <button
-                type="button"
-                className="log-write-dock-back"
-                onClick={handleWriteBack}
-              >
-                이전
-              </button>
-            ) : null}
-            {writeStep === 1 || writeStep === WRITE_STEP_TOTAL ? (
-              <div className="log-write-dock-exp">
-                <span>하루 최대 {dailyScoreLimit}</span>
-                <strong>+{previewScore}</strong>
-              </div>
-            ) : null}
-            {writeStep < WRITE_STEP_TOTAL ? (
-              <button
-                type="button"
-                className="log-submit"
-                onClick={handleWriteNext}
-              >
-                다음
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="log-submit"
-                onClick={handleSubmit}
-              >
-                저장
-              </button>
-            )}
-          </div>
-        ) : null}
+            {canSave ? "저장" : stepOneStatus.buttonLabel}
+          </button>
+        </div>
 
-        {logView === "history" && (
-        <section className="log-card log-recent-card">
+        <section className="log-list-section" aria-label="기록 목록">
           <div className="log-recent-head">
-            <h2>최근</h2>
-
-            {logs.length > 0 && (
-              <button
-                type="button"
-                onClick={handleResetAllLogs}
-                className="log-reset-btn"
-              >
-                전체 초기화
-              </button>
-            )}
+            <h2>최근 기록</h2>
+            <span className="log-list-count">{historySummary.count}회</span>
           </div>
 
-          {logs.length === 0 ? (
+          <div
+            className="log-history-category-row"
+            role="group"
+            aria-label="운동 카테고리"
+          >
+            <button
+              type="button"
+              className={historyCategory === "all" ? "is-active" : ""}
+              onClick={() => {
+                setHistoryCategory("all");
+                setHistoryLimit(5);
+              }}
+            >
+              전체
+            </button>
+            {LOG_CATEGORIES.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                className={historyCategory === category.id ? "is-active" : ""}
+                onClick={() => {
+                  setHistoryCategory(category.id);
+                  setHistoryLimit(5);
+                }}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+
+          <details className="log-stats-fold">
+            <summary>
+              요약 · 그래프
+              <strong>
+                {historySummary.rounds}R · {historySummary.minutes}분
+              </strong>
+            </summary>
+            <section className="log-record-summary" aria-label="기록 요약">
+              <div>
+                <span>총 라운드</span>
+                <strong>
+                  {historySummary.rounds.toLocaleString()}
+                  <small>R</small>
+                </strong>
+              </div>
+              <div>
+                <span>총 시간</span>
+                <strong>
+                  {historySummary.minutes.toLocaleString()}
+                  <small>분</small>
+                </strong>
+              </div>
+              <div className="log-record-summary-wide">
+                <span>총 횟수</span>
+                <strong>
+                  {historySummary.count.toLocaleString()}
+                  <small>회</small>
+                </strong>
+              </div>
+            </section>
+
+            <section className="log-history-trend" aria-label="훈련 추이">
+              <div className="log-history-trend-head">
+                <h2>{historyPeriod === "week" ? "이번 주" : "훈련 흐름"}</h2>
+                <div
+                  className="log-history-period-row"
+                  role="group"
+                  aria-label="기간 선택"
+                >
+                  {[
+                    ["week", "주"],
+                    ["month", "월"],
+                    ["year", "년"],
+                  ].map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={historyPeriod === id ? "is-active" : ""}
+                      onClick={() => {
+                        setHistoryPeriod(id);
+                        setHistoryLimit(5);
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div
+                className="log-history-chart"
+                aria-label="훈련량 막대 그래프"
+                style={{
+                  gridTemplateColumns: `repeat(${historyTrend.length}, minmax(0, 1fr))`,
+                }}
+              >
+                {historyTrend.map((item) => (
+                  <div key={item.label}>
+                    <span className="log-history-chart-value">
+                      {item.value > 0 ? item.value : ""}
+                    </span>
+                    <i
+                      style={{
+                        height: `${Math.max(
+                          item.value ? 12 : 3,
+                          (item.value / historyTrendMax) * 100
+                        )}%`,
+                      }}
+                    />
+                    <small>{item.label}</small>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </details>
+
+          {historyLogs.length === 0 ? (
             <div className="log-empty-state">
               <p className="log-empty">
-                아직 기록이 없어요. 오늘 훈련 하나만 등록해 보세요.
+                {logs.length === 0
+                  ? "위에서 오늘 운동을 남기면 여기에 쌓입니다."
+                  : "이 조건에 맞는 기록이 없습니다."}
               </p>
-              <button
-                type="button"
-                className="log-empty-cta"
-                onClick={() => setLogView("write")}
-              >
-                기록 쓰기
-              </button>
             </div>
           ) : (
             <div className="log-list">
-              {logs.slice(0, historyLimit).map((log) => {
+              {historyLogs.slice(0, historyLimit).map((log) => {
                 const isEditing = editingId === log.id;
-                const rounds = getRounds(log);
 
                 return (
                   <div key={log.id} className="log-item">
                     {!isEditing ? (
                       <>
-                        <div className="log-item-head">
+                        <div className="log-history-row">
                           <div>
-                            <div className="log-badge-row">
-                              <span className="log-source-badge">
-                                {log.sourceLabel ||
-                                  (log.source === "timer"
-                                    ? "자동 기록"
-                                    : "수동 기록")}
-                              </span>
-
-                              {log.isEdited && (
-                                <span className="log-edited-badge">수정됨</span>
-                              )}
-                            </div>
-
-                            <p className="log-item-type">{log.type}</p>
-
-                            <p className="log-item-meta">
-                              {log.minutes || log.duration}분 · {rounds}R ·{" "}
-                              {log.difficultyLabel || "보통"} ·{" "}
-                              {log.conditionLabel || "보통"} · {log.date}
+                            <p className="log-history-date">
+                              {String(log.date || "").replaceAll("-", ".")}
                             </p>
+                            <p className="log-item-type">{log.type}</p>
                           </div>
-
-                          <div>
-                            <p className="log-item-score">+{log.score} EXP</p>
-
-                            <div className="log-action-row">
-                              <button
-                                type="button"
-                                onClick={() => handleStartEdit(log)}
-                                className="log-btn-sm log-btn-edit"
-                              >
-                                수정
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleMakeCard(log.id)}
-                                className="log-btn-sm log-btn-card"
-                              >
-                                카드
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteLog(log.id)}
-                                className="log-btn-sm log-btn-delete"
-                              >
-                                삭제
-                              </button>
-                            </div>
+                          <div className="log-history-row-right">
+                            <p className="log-history-metrics">
+                              {getLogSummary(log)}
+                            </p>
+                            <details className="log-item-menu">
+                              <summary aria-label={`${log.type} 기록 메뉴`}>
+                                ⋯
+                              </summary>
+                              <div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEdit(log)}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleMakeCard(log.id)}
+                                >
+                                  카드
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteLog(log.id)}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            </details>
                           </div>
                         </div>
-
-                        {log.publicComment && (
-                          <div className="log-quote-box">
-                            <span className="log-quote-label">공개 코멘트</span>
-                            <p className="log-quote-text">{log.publicComment}</p>
-                          </div>
-                        )}
-
-                        {log.memo && (
-                          <div className="log-quote-box is-memo">
-                            <span className="log-quote-label">내 메모</span>
-                            <p className="log-quote-text">{log.memo}</p>
-                          </div>
-                        )}
+                        {log.publicComment || log.memo ? (
+                          <p className="log-history-note">
+                            {log.publicComment || log.memo}
+                          </p>
+                        ) : null}
                       </>
                     ) : (
                       <div>
                         <p className="log-edit-head">기록 수정</p>
-
                         <div className="log-field">
                           <label className="log-label">운동 종류</label>
                           <select
@@ -888,12 +1186,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                             ))}
                           </select>
                         </div>
-
-                        {editForm.type === CUSTOM_EXERCISE_VALUE && (
+                        {editForm.type === CUSTOM_EXERCISE_VALUE ? (
                           <div className="log-field">
-                            <label className="log-label">
-                              운동 이름 직접 작성
-                            </label>
+                            <label className="log-label">운동 이름</label>
                             <input
                               value={editForm.customType}
                               onChange={(event) =>
@@ -902,18 +1197,13 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                                   event.target.value
                                 )
                               }
-                              placeholder="예: 샌드백 집중 훈련"
                               className="log-input"
                             />
-                            <p className="log-hint">
-                              저장하면 이 이름으로 기록돼요.
-                            </p>
                           </div>
-                        )}
-
+                        ) : null}
                         <div className="log-grid-2">
                           <div className="log-field">
-                            <label className="log-label">운동 시간 (분)</label>
+                            <label className="log-label">시간(분)</label>
                             <input
                               type="number"
                               min="1"
@@ -924,9 +1214,8 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                               className="log-input"
                             />
                           </div>
-
                           <div className="log-field">
-                            <label className="log-label">라운드 (R)</label>
+                            <label className="log-label">라운드</label>
                             <input
                               type="number"
                               min="0"
@@ -938,78 +1227,53 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                             />
                           </div>
                         </div>
-
-                        <div className="log-field">
-                          <label className="log-label">날짜</label>
-                          <input
-                            type="date"
-                            value={editForm.date}
-                            onChange={(event) =>
-                              updateEditField("date", event.target.value)
-                            }
-                            className="log-input"
-                          />
-                        </div>
-
-                        <div className="log-field">
-                          <label className="log-label">운동 강도</label>
-                          <div className="log-chip-grid">
-                            {DIFFICULTY_OPTIONS.map((option) => (
-                              <OptionButton
-                                key={option.id}
-                                isActive={editForm.difficulty === option.id}
-                                title={option.label}
-                                description={option.description}
-                                onClick={() =>
-                                  updateEditField("difficulty", option.id)
+                        {editForm.category === "weights" ? (
+                          <div className="log-grid-3">
+                            <div className="log-field">
+                              <label className="log-label">세트</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={editForm.metrics.sets || ""}
+                                onChange={(event) =>
+                                  updateEditMetrics({
+                                    sets: event.target.value,
+                                  })
                                 }
+                                className="log-input"
                               />
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="log-field">
-                          <label className="log-label">오늘 컨디션</label>
-                          <div className="log-chip-grid">
-                            {CONDITION_OPTIONS.map((option) => (
-                              <OptionButton
-                                key={option.id}
-                                isActive={editForm.condition === option.id}
-                                title={option.label}
-                                description="훈련 당시 몸 상태"
-                                onClick={() =>
-                                  updateEditField("condition", option.id)
+                            </div>
+                            <div className="log-field">
+                              <label className="log-label">무게</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.5"
+                                value={editForm.metrics.weightKg || ""}
+                                onChange={(event) =>
+                                  updateEditMetrics({
+                                    weightKg: event.target.value,
+                                  })
                                 }
+                                className="log-input"
                               />
-                            ))}
+                            </div>
+                            <div className="log-field">
+                              <label className="log-label">횟수</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={editForm.metrics.reps || ""}
+                                onChange={(event) =>
+                                  updateEditMetrics({
+                                    reps: event.target.value,
+                                  })
+                                }
+                                className="log-input"
+                              />
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="log-field">
-                          <label className="log-label">내 메모</label>
-                          <input
-                            value={editForm.memo}
-                            onChange={(event) =>
-                              updateEditField("memo", event.target.value)
-                            }
-                            className="log-input"
-                          />
-                        </div>
-
-                        <div className="log-field">
-                          <label className="log-label">공개용 코멘트</label>
-                          <textarea
-                            value={editForm.publicComment}
-                            onChange={(event) =>
-                              updateEditField(
-                                "publicComment",
-                                event.target.value
-                              )
-                            }
-                            className="log-textarea"
-                          />
-                        </div>
-
+                        ) : null}
                         <div className="log-edit-actions">
                           <button
                             type="button"
@@ -1018,7 +1282,6 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                           >
                             수정 저장
                           </button>
-
                           <button
                             type="button"
                             onClick={handleCancelEdit}
@@ -1035,17 +1298,26 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
             </div>
           )}
 
-          {logs.length > historyLimit ? (
+          {historyLogs.length > historyLimit ? (
             <button
               type="button"
               className="log-load-more"
               onClick={() => setHistoryLimit((prev) => prev + 5)}
             >
-              더 보기 ({historyLimit}/{logs.length})
+              더 보기 ({historyLimit}/{historyLogs.length})
+            </button>
+          ) : null}
+
+          {logs.length > 0 ? (
+            <button
+              type="button"
+              onClick={handleResetAllLogs}
+              className="log-reset-btn log-reset-inline"
+            >
+              전체 초기화
             </button>
           ) : null}
         </section>
-        )}
       </div>
     </main>
   );

@@ -18,8 +18,18 @@ export function groupRivalsByArea(partners = []) {
       lat: resolved.lat,
       lon: resolved.lon,
       count: 0,
+      profiles: [],
     };
     current.count += 1;
+    if (current.profiles.length < 3) {
+      const nickname = String(partner?.nickname || "복서").trim() || "복서";
+      current.profiles.push({
+        id: partner?.id || `${resolved.id}-${current.count}`,
+        nickname,
+        initial: nickname.slice(0, 1),
+        weightClass: partner?.weightClass || "",
+      });
+    }
     groups.set(resolved.id, current);
   });
 

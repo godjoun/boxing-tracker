@@ -15,6 +15,7 @@ import {
 } from "../utils/sparringPartners";
 import { suggestWeightClass } from "../data/proBoxingWeightClasses";
 import { BRAND_NAME } from "../utils/brand";
+import { RELEASE_SCOPE } from "../utils/releaseScope";
 import { styles } from "./ProfilePage.styles";
 import {
   getDisplayComment,
@@ -33,6 +34,11 @@ import {
   getImageFilter,
 } from "./profilePage/cardConfig";
 import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
+import {
+  buildCommunityTraces,
+  pickSparringLogs,
+} from "../utils/communityTraces";
+import { listExchangeEventsAsync } from "../utils/dojoExchange";
 
 export default function ProfilePage({
   scrollTarget,
@@ -40,6 +46,7 @@ export default function ProfilePage({
   onStudioModeChange,
   onOpenGrowth,
   onGoLog,
+  onGoBack,
 }) {
   const {
     logs,
@@ -63,6 +70,9 @@ export default function ProfilePage({
 
   const [profileView, setProfileView] = useState(
     scrollTarget === "cardMaker" ? "studio" : "nameplate"
+  );
+  const [supportDetailsOpen, setSupportDetailsOpen] = useState(
+    RELEASE_SCOPE.rivals && scrollTarget === "rivalCard"
   );
 
   useEffect(() => {
@@ -97,6 +107,23 @@ export default function ProfilePage({
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [exchangeEvents, setExchangeEvents] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listExchangeEventsAsync(userId, { includePast: true })
+      .then((result) => {
+        if (!cancelled) {
+          setExchangeEvents(Array.isArray(result?.events) ? result.events : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setExchangeEvents([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const [selectedLogIds, setSelectedLogIds] = useState(
     cardMakerFocusLogId ? [cardMakerFocusLogId] : []
@@ -352,18 +379,25 @@ export default function ProfilePage({
   }, [scrollTarget, cardMakerFocusLogId]);
 
   useEffect(() => {
-    if (scrollTarget !== "rivalCard") return;
+    if (!RELEASE_SCOPE.rivals || scrollTarget !== "rivalCard") return;
 
     if (typeof window !== "undefined") {
+      let scrollFrame;
       const frame = window.requestAnimationFrame(() => {
         setProfileView("nameplate");
-        rivalCardRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
+        setSupportDetailsOpen(true);
+        scrollFrame = window.requestAnimationFrame(() => {
+          rivalCardRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         });
       });
 
-      return () => window.cancelAnimationFrame(frame);
+      return () => {
+        window.cancelAnimationFrame(frame);
+        if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
+      };
     }
   }, [scrollTarget]);
 
@@ -2251,11 +2285,27 @@ export default function ProfilePage({
     SIMPLE_CARD_LOOKS[0];
   const tierState = getCareerTierState(profileStats.level);
   const recentLogs = logs.slice(0, 3);
+  const communityTraces = useMemo(
+    () =>
+      buildCommunityTraces({
+        profile,
+        exchangeEvents,
+        sparringLogs: pickSparringLogs(logs),
+      }),
+    [profile, exchangeEvents, logs]
+  );
 
   return (
     <main style={styles.page} className="profile-page">
       {profileView === "nameplate" && (
         <>
+      <header className="profile-page-header">
+        <button type="button" onClick={onGoBack} aria-label="전체 메뉴로 돌아가기">
+          ←
+        </button>
+        <h1>프로필</h1>
+        <span aria-hidden="true" />
+      </header>
       <div className="profile-hub-layout">
       <div className="profile-hub-primary">
       <FighterSpecCard
@@ -2278,7 +2328,7 @@ export default function ProfilePage({
         onUploadPhoto={() => fileInputRef.current?.click()}
         onRemovePhoto={handleRemovePhoto}
         showSpecChips={!isProfileEditOpen}
-        showProgress={false}
+        showProgress
         showStats={false}
       >
         <input
@@ -2347,6 +2397,8 @@ export default function ProfilePage({
               </label>
             </div>
 
+            <details className="profile-edit-more">
+              <summary>신체 스펙 · 지역 (선택)</summary>
             <div style={styles.profileEditSection}>
               <p
                 className="profile-edit-section-title"
@@ -2460,7 +2512,7 @@ export default function ProfilePage({
                 <div style={styles.fieldLabel}>
                   내 체육관
                   <span style={styles.fieldHint}>
-                    짐 지도에서 변경할 수 있습니다
+                    커뮤니티에서 변경할 수 있습니다
                   </span>
                   <strong>{profile.homeGymName}</strong>
                   {profile.homeGymAddress ? (
@@ -2469,6 +2521,7 @@ export default function ProfilePage({
                 </div>
               ) : null}
             </div>
+            </details>
 
             <div style={styles.profileSaveFooter}>
               {saveError ? (
@@ -2485,93 +2538,61 @@ export default function ProfilePage({
           </div>
         ) : null}
       </FighterSpecCard>
-      </div>
 
-      <div className="profile-hub-secondary">
-      <section className="profile-hub-card profile-growth-summary" aria-label="성장 요약">
-        <p className="home-section-label">GROWTH</p>
-        <h2>성장 요약</h2>
-        <div className="profile-growth-grid">
+      <section className="profile-trace-summary" aria-label="내 훈련의 흔적">
+        <p className="home-section-label">MY TRACE</p>
+        <h2>내 훈련의 흔적</h2>
+        <div className="profile-trace-stats">
           <div>
             <span>누적 라운드</span>
             <strong>{profileStats.totalRounds}R</strong>
           </div>
           <div>
-            <span>총 운동 시간</span>
+            <span>링 위의 시간</span>
             <strong>{profileStats.totalMinutes}분</strong>
           </div>
           <div>
             <span>연속 훈련</span>
             <strong>{levelUpStreakDays || 0}일</strong>
           </div>
-          <div>
-            <span>현재 레벨</span>
-            <strong>LV.{profileStats.level}</strong>
-          </div>
         </div>
       </section>
 
-      <section className="profile-hub-card profile-season-summary" aria-label="이번 시즌">
-        <div className="profile-season-head">
+      <section className="profile-trace-summary profile-exchange-traces" aria-label="교류의 흔적">
+        <p className="home-section-label">EXCHANGE TRACE</p>
+        <h2>교류의 흔적</h2>
+        <div className="profile-trace-stats">
           <div>
-            <p className="home-section-label">SEASON</p>
-            <h2>이번 시즌</h2>
+            <span>교류</span>
+            <strong>{communityTraces.summary.exchangeCount}</strong>
           </div>
-          <strong className="profile-season-stage">{tierState.current.stage}</strong>
+          <div>
+            <span>스파링</span>
+            <strong>{communityTraces.summary.sparringCount}</strong>
+          </div>
+          <div>
+            <span>체육관</span>
+            <strong>{communityTraces.summary.gymCount}</strong>
+          </div>
         </div>
-        <p className="profile-season-copy">
-          {tierState.isMaxTier
-            ? "커리어 최고 구간에 있습니다."
-            : `${tierState.next.stage}까지 ${tierState.levelsToNextTier} LV · LV. ${tierState.next.from}`}
-        </p>
-        <div className="growth-hub-progress-track" aria-hidden="true">
-          <div
-            className="growth-hub-progress-fill"
-            style={{ width: `${tierState.progressPercent}%` }}
-          />
-        </div>
-        {onOpenGrowth ? (
-          <button
-            type="button"
-            className="profile-section-link"
-            onClick={onOpenGrowth}
-          >
-            성장 화면 보기 →
-          </button>
-        ) : null}
-      </section>
-      </div>
-      </div>
-
-      <section
-        id="profile-rival-card"
-        ref={rivalCardRef}
-        className="profile-hub-card profile-rival-card-section"
-        aria-label="라이벌 카드"
-      >
-        <div className="profile-rival-card-head">
-          <p className="home-section-label">RIVAL</p>
-          <h2>라이벌 카드</h2>
+        {communityTraces.recent.length === 0 ? (
           <p className="profile-rival-card-desc">
-            완성된 카드만 먼저 보고, 필요할 때 수정합니다.
+            모임·스파링·내 관이 쌓이면 여기에 남습니다.
           </p>
-        </div>
-        <SparringPartnerPanel variant="profile" embedded />
+        ) : (
+          <ul className="profile-recent-list profile-exchange-list">
+            {communityTraces.recent.map((item) => (
+              <li key={item.id}>
+                <strong>
+                  <em className="profile-exchange-type">{item.type}</em>
+                  {item.title}
+                </strong>
+                <span>{item.meta || item.date}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
-
-      <button
-        type="button"
-        className="profile-studio-entry profile-hub-card"
-        style={styles.cardStudioEntry}
-        onClick={scrollToCardMaker}
-      >
-        <span style={styles.cardStudioEntryKicker}>NAMEPLATE</span>
-        <strong style={styles.cardStudioEntryTitle}>명패 만들기</strong>
-        <span style={styles.cardStudioEntryDesc}>
-          사진 · 문구 · 스타일로 오늘의 명패를 남깁니다.
-        </span>
-        <span style={styles.cardStudioEntryCta}>명패 만들기 →</span>
-      </button>
 
       <section className="profile-hub-card profile-recent-logs" aria-label="최근 운동 기록">
         <div className="profile-season-head">
@@ -2606,6 +2627,97 @@ export default function ProfilePage({
           </ul>
         )}
       </section>
+      </div>
+
+      <div className="profile-hub-secondary">
+      <button
+        type="button"
+        className="profile-studio-entry profile-hub-card"
+        style={styles.cardStudioEntry}
+        onClick={scrollToCardMaker}
+      >
+        <span style={styles.cardStudioEntryKicker}>NAMEPLATE</span>
+        <strong style={styles.cardStudioEntryTitle}>오늘의 명패 만들기</strong>
+        <span style={styles.cardStudioEntryDesc}>
+          오늘 버텨낸 훈련을 한 장면으로 남깁니다.
+        </span>
+        <span style={styles.cardStudioEntryCta}>명패 만들기 →</span>
+      </button>
+
+      <details
+        className="profile-hub-card profile-more-fold"
+        open={supportDetailsOpen}
+        onToggle={(event) => setSupportDetailsOpen(event.currentTarget.open)}
+      >
+        <summary>
+          {RELEASE_SCOPE.rivals ? "라이벌 카드 · 성장 자세히" : "성장 자세히"}
+        </summary>
+
+      {RELEASE_SCOPE.rivals ? (
+        <section
+          id="profile-rival-card"
+          ref={rivalCardRef}
+          className="profile-rival-card-section"
+          aria-label="라이벌 카드"
+        >
+          <div className="profile-rival-card-head">
+            <p className="home-section-label">RIVAL</p>
+            <h2>라이벌 카드</h2>
+            <p className="profile-rival-card-desc">
+              커뮤니티에서 나를 보여줄 카드입니다.
+            </p>
+          </div>
+          <SparringPartnerPanel variant="profile" embedded />
+        </section>
+      ) : null}
+
+      <section className="profile-growth-summary" aria-label="성장 요약">
+        <p className="home-section-label">GROWTH</p>
+        <h2>성장 요약</h2>
+        <div className="profile-growth-grid">
+          <div>
+            <span>현재 레벨</span>
+            <strong>LV.{profileStats.level}</strong>
+          </div>
+          <div>
+            <span>이번 주 라운드</span>
+            <strong>{profileStats.weeklyRounds}R</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="profile-season-summary" aria-label="이번 시즌">
+        <div className="profile-season-head">
+          <div>
+            <p className="home-section-label">SEASON</p>
+            <h2>이번 시즌</h2>
+          </div>
+          <strong className="profile-season-stage">{tierState.current.stage}</strong>
+        </div>
+        <p className="profile-season-copy">
+          {tierState.isMaxTier
+            ? "커리어 최고 구간에 있습니다."
+            : `${tierState.next.stage}까지 ${tierState.levelsToNextTier} LV · LV. ${tierState.next.from}`}
+        </p>
+        <div className="growth-hub-progress-track" aria-hidden="true">
+          <div
+            className="growth-hub-progress-fill"
+            style={{ width: `${tierState.progressPercent}%` }}
+          />
+        </div>
+        {onOpenGrowth ? (
+          <button
+            type="button"
+            className="profile-section-link"
+            onClick={onOpenGrowth}
+          >
+            성장 화면 보기 →
+          </button>
+        ) : null}
+      </section>
+      </details>
+      </div>
+      </div>
         </>
       )}
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { track } from "@vercel/analytics";
 import { TrainingProvider, useTraining } from "./store/TrainingContext";
@@ -38,6 +38,7 @@ import {
 } from "./utils/theme";
 import { dismissBootSplash } from "./utils/bootSplash";
 import "./App.css";
+import "./reference-layout.css";
 
 const TIMER_RETURN_PAGE_KEY = "mantle-timer-return-page";
 const LEGACY_TIMER_RETURN_PAGE_KEY = "anima-timer-return-page";
@@ -136,10 +137,11 @@ function AppFlow() {
 
 function MainAppShell({ theme, onToggleTheme }) {
   const { logs, profile, grantFighterLevel } = useTraining();
+  const appMainRef = useRef(null);
   const [currentPage, setCurrentPage] = useState("home");
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialComplete());
   const [tutorialSession, setTutorialSession] = useState(0);
-  const [gymView, setGymView] = useState("gyms");
+  const [gymView, setGymView] = useState("hub");
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
@@ -161,6 +163,12 @@ function MainAppShell({ theme, onToggleTheme }) {
   useEffect(() => {
     recordAppOpen();
   }, []);
+
+  useEffect(() => {
+    if (appMainRef.current) {
+      appMainRef.current.scrollTop = 0;
+    }
+  }, [currentPage]);
 
   useEffect(() => {
     if (!isDevMode() || !grantFighterLevel) return;
@@ -200,7 +208,7 @@ function MainAppShell({ theme, onToggleTheme }) {
     setCurrentPage("profile");
   };
 
-  const goGym = (view = "gyms") => {
+  const goGym = (view = "hub") => {
     setGymView(view);
     setCurrentPage("gym");
   };
@@ -311,16 +319,15 @@ function MainAppShell({ theme, onToggleTheme }) {
         isFullscreenPage ? " is-fullscreen" : ""
       }${isEdgeToNavPage ? " is-edge-to-nav" : ""}`}
     >
-      <main className="app-main">
+      <main className="app-main" ref={appMainRef}>
         {currentPage === "home" && (
           <HomePage
             timerSummary={timerSummary}
-            onStartTraining={() => goPage("train")}
             onOpenTimer={() => goDefaultTimer("home")}
             onNavigate={goPage}
-            onNavigateGym={goGym}
             onOpenCardMaker={goProfileCardMaker}
             onOpenCurriculum={goCurriculum}
+            onOpenGrowth={() => goPage("growth")}
             onReadLesson={goReadLesson}
           />
         )}
@@ -351,7 +358,10 @@ function MainAppShell({ theme, onToggleTheme }) {
           <TrainingHubPage
             fighterLevel={fighterLevel}
             onStartPreset={(preset) =>
-              goTimerWithLaunch(buildPresetTimerLaunch(preset), "train")
+              goTimerWithLaunch(
+                buildPresetTimerLaunch(preset, { autoStart: true }),
+                "train"
+              )
             }
             onOpenTimer={() => openTimerFrom("train")}
             onOpenCurriculum={goCurriculum}
@@ -374,10 +384,10 @@ function MainAppShell({ theme, onToggleTheme }) {
               home: "홈",
               curriculum: "기술",
               strength: "신체",
-              gym: "짐",
+              gym: "체육관",
               profile: "명패",
               growth: "성장",
-            }[timerReturnPage] || "링"}
+            }[timerReturnPage] || "훈련"}
             onGoProfile={goProfileCardMaker}
           />
         )}
@@ -411,6 +421,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             onStudioModeChange={setProfileStudioOpen}
             onOpenGrowth={() => goPage("growth")}
             onGoLog={() => goPage("log")}
+            onGoBack={() => goPage("category")}
           />
         )}
 
@@ -468,6 +479,17 @@ function MainAppShell({ theme, onToggleTheme }) {
         <nav className="app-bottom-nav" aria-label="메인 메뉴">
           <button
             type="button"
+            className={getNavClass(currentPage === "home")}
+            onClick={() => goPage("home")}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              <MenuIcon name="home" size={20} />
+            </span>
+            <span className="app-nav-label">홈</span>
+          </button>
+
+          <button
+            type="button"
             data-tutorial-target="nav-timer"
             className={getNavClass(
               currentPage === "train" || currentPage === "timer"
@@ -477,42 +499,31 @@ function MainAppShell({ theme, onToggleTheme }) {
             <span className="app-nav-icon" aria-hidden="true">
               <MenuIcon name="ring" size={20} />
             </span>
-            <span className="app-nav-label">링</span>
+            <span className="app-nav-label">훈련</span>
+          </button>
+
+          <button
+            type="button"
+            data-tutorial-target="nav-log"
+            className={getNavClass(currentPage === "log")}
+            onClick={() => goPage("log")}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              <MenuIcon name="log" size={20} />
+            </span>
+            <span className="app-nav-label">기록</span>
           </button>
 
           <button
             type="button"
             data-tutorial-target="nav-dojo"
             className={getNavClass(currentPage === "gym")}
-            onClick={() => goGym("gyms")}
+            onClick={() => goGym("hub")}
           >
             <span className="app-nav-icon" aria-hidden="true">
               <MenuIcon name="dojo" size={20} />
             </span>
-            <span className="app-nav-label">짐</span>
-          </button>
-
-          <button
-            type="button"
-            className={`${getNavClass(currentPage === "home")} is-nav-home`}
-            onClick={() => goPage("home")}
-          >
-            <span className="app-nav-icon" aria-hidden="true">
-              <MenuIcon name="home" size={22} />
-            </span>
-            <span className="app-nav-label">홈</span>
-          </button>
-
-          <button
-            type="button"
-            data-tutorial-target="nav-profile"
-            className={getNavClass(currentPage === "profile")}
-            onClick={goProfile}
-          >
-            <span className="app-nav-icon" aria-hidden="true">
-              <MenuIcon name="nameplate" size={20} />
-            </span>
-            <span className="app-nav-label">명패</span>
+            <span className="app-nav-label">커뮤니티</span>
           </button>
 
           <button
@@ -521,14 +532,14 @@ function MainAppShell({ theme, onToggleTheme }) {
             className={getNavClass(
               currentPage === "category" ||
                 currentPage === "growth" ||
-                currentPage === "log"
+                currentPage === "profile"
             )}
             onClick={() => goPage("category")}
           >
             <span className="app-nav-icon" aria-hidden="true">
               <MenuIcon name="more" size={20} />
             </span>
-            <span className="app-nav-label">더보기</span>
+            <span className="app-nav-label">전체</span>
           </button>
         </nav>
       ) : null}

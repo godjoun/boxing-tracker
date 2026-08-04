@@ -19,18 +19,41 @@ function formatWalkHint(gym) {
   return gym?.distanceLabel || "";
 }
 
-function MapViewport({ center, selectedGym, selectedRivalArea }) {
+function MapViewport({ center, selectedGym, selectedRivalArea, rivalAreas }) {
   const map = useMap();
 
   useEffect(() => {
-    const target = selectedGym || selectedRivalArea || center;
-    if (!target) return;
+    const selectedTarget = selectedGym || selectedRivalArea;
+    if (selectedTarget) {
+      map.flyTo(
+        [selectedTarget.lat, selectedTarget.lon],
+        selectedGym ? 15 : 11,
+        { duration: 0.45 }
+      );
+      return;
+    }
+
+    if (rivalAreas.length === 1) {
+      map.flyTo([rivalAreas[0].lat, rivalAreas[0].lon], 10, {
+        duration: 0.45,
+      });
+      return;
+    }
+    if (rivalAreas.length > 1) {
+      map.fitBounds(
+        rivalAreas.map((area) => [area.lat, area.lon]),
+        { animate: true, duration: 0.45, maxZoom: 9, padding: [64, 64] }
+      );
+      return;
+    }
+
+    if (!center) return;
     map.flyTo(
-      [target.lat, target.lon],
-      selectedGym ? 15 : selectedRivalArea ? 12 : target.source === "overview" ? 7 : 13,
+      [center.lat, center.lon],
+      center.source === "overview" ? 7 : 13,
       { duration: 0.45 }
     );
-  }, [center, map, selectedGym, selectedRivalArea]);
+  }, [center, map, rivalAreas, selectedGym, selectedRivalArea]);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => map.invalidateSize());
@@ -69,6 +92,7 @@ export default function GymMapPanel({
           center={center}
           selectedGym={selectedGym}
           selectedRivalArea={selectedRivalArea}
+          rivalAreas={rivalAreas}
         />
         {gyms.filter(hasMapCoordinates).map((gym) => {
           const listed = gym.source === "listing";
@@ -108,17 +132,35 @@ export default function GymMapPanel({
             <CircleMarker
               key={`rival-${area.id}`}
               center={[area.lat, area.lon]}
-              radius={selected ? 22 : 17}
+              radius={selected ? 14 : 10}
               pathOptions={{
                 color: "#8a2e2e",
                 fillColor: "#8a2e2e",
-                fillOpacity: selected ? 0.72 : 0.48,
+                fillOpacity: selected ? 0.9 : 0.64,
                 weight: selected ? 3 : 2,
               }}
               eventHandlers={{ click: () => onSelectRival?.(area) }}
             >
-              <Tooltip direction="top" offset={[0, -8]}>
-                {area.label} · 라이벌 {area.count}명
+              <Tooltip
+                className={`rival-map-profile-tooltip${
+                  selected ? " is-selected" : ""
+                }`}
+                direction="top"
+                offset={[0, -8]}
+                permanent
+                opacity={1}
+              >
+                <span className="rival-map-profile-pin">
+                  <span className="rival-map-profile-stack" aria-hidden="true">
+                    {area.profiles.map((profile) => (
+                      <i key={profile.id}>{profile.initial}</i>
+                    ))}
+                  </span>
+                  <span className="rival-map-profile-copy">
+                    <strong>{area.label}</strong>
+                    <small>공개 프로필 {area.count}명</small>
+                  </span>
+                </span>
               </Tooltip>
             </CircleMarker>
           );

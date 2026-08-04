@@ -39,7 +39,7 @@ export const TUTORIAL_STEPS = [
     id: "nav-dojo",
     kicker: "GYM",
     title: "짐 — 체육관과 상대를 찾는다",
-    body: "지도에서 체육관을 찾고, 라이벌과 찜한 체육관을 한곳에서 확인합니다.",
+    body: "지도에서 체육관을 찾고, 모임과 찜한 체육관을 한곳에서 확인합니다.",
     mode: "spotlight",
     target: TUTORIAL_TARGETS.navDojo,
     placement: "top",

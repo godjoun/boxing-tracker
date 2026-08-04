@@ -33,12 +33,10 @@ import { syncListingFromProfile } from "../utils/sparringPartners";
 import { registerNickname } from "../api/nicknameApi";
 import { resetTutorial } from "../utils/tutorial";
 import { normalizeLogCategory } from "../utils/logCategories";
+import { markFreshOnboardingMigrationComplete } from "../utils/profileMigration";
 
 const TrainingContext = createContext(null);
 const GUEST_USER_ID = "local-user";
-
-/** MANTLE 온보딩을 처음부터 다시 보기 위한 1회성 리셋 플래그 */
-const FRESH_ONBOARDING_FLAG = "fitness-league-fresh-onboarding-v1";
 
 const LEGACY_STORAGE_KEYS = {
   logs: "fitness-league-logs",
@@ -99,30 +97,9 @@ function migrateLegacyStorage(userId) {
   });
 }
 
-function applyFreshOnboardingReset(userId) {
-  try {
-    if (localStorage.getItem(FRESH_ONBOARDING_FLAG) === "1") {
-      return;
-    }
-
-    const keys = getStorageKeys(userId);
-    localStorage.setItem(
-      keys.profile,
-      JSON.stringify({
-        ...DEFAULT_PROFILE,
-        onboardingComplete: false,
-      }),
-    );
-    resetTutorial();
-    localStorage.setItem(FRESH_ONBOARDING_FLAG, "1");
-  } catch {
-    // ignore storage failures
-  }
-}
-
 function loadUserState(userId) {
   migrateLegacyStorage(userId);
-  applyFreshOnboardingReset(userId);
+  markFreshOnboardingMigrationComplete();
 
   const keys = getStorageKeys(userId);
   const savedProfile = loadStorage(keys.profile, DEFAULT_PROFILE);

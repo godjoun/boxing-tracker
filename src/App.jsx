@@ -141,7 +141,7 @@ function MainAppShell({ theme, onToggleTheme }) {
   const [currentPage, setCurrentPage] = useState("home");
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialComplete());
   const [tutorialSession, setTutorialSession] = useState(0);
-  const [gymView, setGymView] = useState("hub");
+  const [gymView, setGymView] = useState("feed");
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
@@ -208,7 +208,7 @@ function MainAppShell({ theme, onToggleTheme }) {
     setCurrentPage("profile");
   };
 
-  const goGym = (view = "hub") => {
+  const goGym = (view = "feed") => {
     setGymView(view);
     setCurrentPage("gym");
   };
@@ -518,7 +518,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             type="button"
             data-tutorial-target="nav-dojo"
             className={getNavClass(currentPage === "gym")}
-            onClick={() => goGym("hub")}
+            onClick={() => goGym("feed")}
           >
             <span className="app-nav-icon" aria-hidden="true">
               <MenuIcon name="dojo" size={20} />

@@ -4,11 +4,17 @@ import {
   listExchangeEventsAsync,
   listPastExchangeEventsAsync,
 } from "../../utils/dojoExchange";
+import { RELEASE_SCOPE } from "../../utils/releaseScope";
 
-const PURPOSE_TABS = [
-  { id: "feed", label: "피드" },
-  { id: "schedule", label: "일정" },
+/**
+ * 교류 도구 카테고리 (커뮤니티 첫 화면 피드는 상위 탭).
+ * 뱃지·랭킹은 틀만 두고 MVP 본기능은 제외(철학).
+ */
+const CATEGORIES = [
   { id: "propose", label: "제안" },
+  { id: "schedule", label: "일정" },
+  { id: "badges", label: "뱃지" },
+  { id: "ranking", label: "랭킹" },
 ];
 
 function formatWhen(startsAt) {
@@ -50,31 +56,7 @@ function dDayLabel(startsAt) {
   return `D+${Math.abs(diff)}`;
 }
 
-/** 피드 카드: 상태 → 제목 → 관·일시. 사진 자리만, 좋아요 없음 */
-function FeedCard({ event, isPast = false, onOpen }) {
-  const status = getStatus(event, { isPast });
-  const when = formatWhen(event.startsAt || event.starts_at);
-  const gym = event.gymName || event.gym_name || "";
-  const title = event.title || gym || "교류";
-
-  return (
-    <button
-      type="button"
-      className={`ex-feed-card${isPast || status.id === "done" ? " is-muted" : ""}`}
-      onClick={onOpen}
-    >
-      <div className="ex-feed-card-media" aria-hidden="true">
-        <em className={`ex-chip is-${status.id}`}>{status.label}</em>
-      </div>
-      <div className="ex-feed-card-body">
-        <strong>{title}</strong>
-        <span>{[gym && title !== gym ? gym : null, when].filter(Boolean).join(" · ") || "일정 확인"}</span>
-      </div>
-    </button>
-  );
-}
-
-/** 일정 카드: D-day → 관 → 시각 */
+/** 교류 일정 — D-day → 관 → 시각 */
 function ScheduleCard({ event, isPast = false, onOpen }) {
   const status = getStatus(event, { isPast });
   const when = formatWhen(event.startsAt || event.starts_at);
@@ -99,10 +81,9 @@ function ScheduleCard({ event, isPast = false, onOpen }) {
   );
 }
 
-function PurposeHead({ kicker, title, lead }) {
+function CategoryHead({ title, lead }) {
   return (
     <header className="exchange-purpose-head">
-      <p className="exchange-hub-kicker">{kicker}</p>
       <h2>{title}</h2>
       {lead ? <p className="exchange-hub-lead">{lead}</p> : null}
     </header>
@@ -117,7 +98,7 @@ export default function ExchangeHubPanel({
   onOpenMe,
 }) {
   const { userId } = useTraining();
-  const [purpose, setPurpose] = useState("feed"); // feed | schedule | propose
+  const [category, setCategory] = useState("schedule");
   const [scheduleTab, setScheduleTab] = useState("upcoming");
   const [events, setEvents] = useState([]);
   const [pastEvents, setPastEvents] = useState([]);
@@ -175,74 +156,76 @@ export default function ExchangeHubPanel({
     return { upcoming, ongoing, done: pastEvents };
   }, [events, pastEvents]);
 
-  const feedCards = useMemo(() => {
-    const open = events.slice(0, 10);
-    const done = pastEvents.slice(0, 3).map((event) => ({ ...event, isPast: true }));
-    return [...open, ...done];
-  }, [events, pastEvents]);
-
   const scheduleItems = scheduleBuckets[scheduleTab] || [];
 
   return (
     <div className="exchange-hub" aria-label="교류">
-      <nav className="exchange-purpose-nav" aria-label="교류 목적">
-        {PURPOSE_TABS.map((tab) => (
+      <nav className="exchange-category-nav" aria-label="교류 카테고리">
+        {CATEGORIES.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            className={purpose === tab.id ? "is-active" : ""}
-            aria-current={purpose === tab.id ? "page" : undefined}
-            onClick={() => setPurpose(tab.id)}
+            className={category === tab.id ? "is-active" : ""}
+            aria-current={category === tab.id ? "page" : undefined}
+            onClick={() => setCategory(tab.id)}
           >
             {tab.label}
           </button>
         ))}
       </nav>
 
-      {purpose === "feed" ? (
-        <section className="exchange-purpose" aria-label="교류 피드">
-          <PurposeHead
-            kicker="EXCHANGE"
-            title="교류 피드"
-            lead="함께 훈련할 일정을 고릅니다."
+      {/* 교류 제안 — 보드 제안 양식으로 진입 */}
+      {category === "propose" ? (
+        <section className="exchange-frame is-propose" aria-label="교류 제안">
+          <CategoryHead
+            title="교류 제안"
+            lead="대상 · 일시 · 장소 · 메시지를 정해 만남을 보냅니다."
           />
 
           <div className="exchange-purpose-body">
-            {loading ? (
-              <p className="exchange-hub-empty">불러오는 중…</p>
-            ) : feedCards.length === 0 ? (
-              <div className="exchange-hub-empty-card">
-                <strong>아직 올라온 교류가 없습니다</strong>
-                <span>모임을 올려 첫 만남을 만드세요.</span>
+            <div className="ex-propose-form" aria-label="제안 구성">
+              <div className="ex-propose-field">
+                <span>1. 대상</span>
+                <div className="ex-propose-field-value">체육관 · 지역 모임</div>
               </div>
-            ) : (
-              <div className="ex-feed-list">
-                {feedCards.map((event) => (
-                  <FeedCard
-                    key={`feed-${event.id}-${event.isPast ? "p" : "o"}`}
-                    event={event}
-                    isPast={Boolean(event.isPast)}
-                    onOpen={() => openEvent(event, Boolean(event.isPast))}
-                  />
-                ))}
+              <div className="ex-propose-field">
+                <span>2. 일시 · 장소</span>
+                <div className="ex-propose-field-value">날짜 · 시간 · 주소</div>
               </div>
-            )}
+              <div className="ex-propose-field">
+                <span>3. 인원 · 참가비</span>
+                <div className="ex-propose-field-value">모집 규모와 비용</div>
+              </div>
+              <div className="ex-propose-field">
+                <span>4. 메시지</span>
+                <div className="ex-propose-field-value">체급 · 준비물 · 한 줄 인사</div>
+              </div>
+              <div className="ex-propose-field is-later">
+                <span>관 ↔ 관</span>
+                <div className="ex-propose-field-value">출시 후 · 체육관 단위 제안</div>
+              </div>
+            </div>
           </div>
 
           <div className="exchange-purpose-foot">
             <button type="button" className="exchange-purpose-cta" onClick={openCompose}>
-              모임 올리기
+              제안서 작성하기
             </button>
+            {RELEASE_SCOPE.rivals ? (
+              <button type="button" className="exchange-purpose-text" onClick={onOpenRivals}>
+                라이벌에게 관심 보내기
+              </button>
+            ) : null}
           </div>
         </section>
       ) : null}
 
-      {purpose === "schedule" ? (
-        <section className="exchange-purpose" aria-label="교류 일정">
-          <PurposeHead
-            kicker="SCHEDULE"
+      {/* 4. 교류 일정 */}
+      {category === "schedule" ? (
+        <section className="exchange-frame is-schedule" aria-label="교류 일정">
+          <CategoryHead
             title="교류 일정"
-            lead="예정된 만남을 D-day로 봅니다."
+            lead="예정 · 진행 · 완료를 D-day로 관리합니다."
           />
 
           <div className="exchange-schedule-tabs" role="tablist" aria-label="일정 상태">
@@ -300,48 +283,54 @@ export default function ExchangeHubPanel({
           <div className="exchange-purpose-foot">
             {scheduleTab === "done" ? (
               <button type="button" className="exchange-purpose-cta is-secondary" onClick={onOpenMe}>
-                내 활동에서 흔적 보기
+                프로필 흔적 보기
               </button>
             ) : (
               <button type="button" className="exchange-purpose-cta" onClick={openCompose}>
-                일정 만들기
+                + 일정 만들기
               </button>
             )}
           </div>
         </section>
       ) : null}
 
-      {purpose === "propose" ? (
-        <section className="exchange-purpose" aria-label="교류 제안">
-          <PurposeHead
-            kicker="PROPOSE"
-            title="교류 제안"
-            lead="다음 만남을 제안합니다."
+      {/* 5. 뱃지 — 보드 자리, MVP는 프로필 흔적으로 대체 */}
+      {category === "badges" ? (
+        <section className="exchange-frame is-deferred" aria-label="교류 뱃지">
+          <CategoryHead
+            title="교류 뱃지"
+            lead="배지 그리드 대신, 완료한 교류가 프로필 흔적으로 남습니다."
           />
-
-          <div className="exchange-purpose-body">
-            <div className="exchange-propose-stack">
-              <article className="exchange-propose-card">
-                <strong>훈련 모임</strong>
-                <span>지역 복서에게 일정을 올립니다.</span>
-              </article>
-              <article className="exchange-propose-card">
-                <strong>라이벌 1:1</strong>
-                <span>공개 카드로 스파링 가능한 사람을 찾습니다.</span>
-              </article>
-              <article className="exchange-propose-card is-later">
-                <strong>관 ↔ 관</strong>
-                <span>출시 후 이 자리에 옵니다.</span>
-              </article>
-            </div>
+          <div className="exchange-hub-empty-card">
+            <strong>프로필 「교류의 흔적」</strong>
+            <span>횟수·이력으로 신뢰를 남깁니다. 배지 경쟁 UI는 넣지 않습니다.</span>
           </div>
-
           <div className="exchange-purpose-foot">
-            <button type="button" className="exchange-purpose-cta" onClick={openCompose}>
-              모임으로 제안하기
+            <button type="button" className="exchange-purpose-cta" onClick={onOpenMe}>
+              내 흔적 보기
             </button>
-            <button type="button" className="exchange-purpose-text" onClick={onOpenRivals}>
-              라이벌 보러 가기
+          </div>
+        </section>
+      ) : null}
+
+      {/* 6. 랭킹 — 보드 자리, MVP 제외 */}
+      {category === "ranking" ? (
+        <section className="exchange-frame is-deferred" aria-label="교류 랭킹">
+          <CategoryHead
+            title="교류 랭킹"
+            lead="공개 랭킹은 출시 MVP에 넣지 않습니다."
+          />
+          <div className="exchange-hub-empty-card">
+            <strong>경쟁보다 만남</strong>
+            <span>함께 훈련한 기록이 프로필에 남는 쪽이 우선입니다.</span>
+          </div>
+          <div className="exchange-purpose-foot">
+            <button
+              type="button"
+              className="exchange-purpose-cta is-secondary"
+              onClick={() => setCategory("schedule")}
+            >
+              일정으로 돌아가기
             </button>
           </div>
         </section>

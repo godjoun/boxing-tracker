@@ -4,7 +4,9 @@ import {
   filterExchangeEventsByQuery,
   formatExchangeFee,
   formatExchangeSlots,
+  isReleaseExcludedExchangeEvent,
 } from "./dojoExchange";
+import { LOCAL_EXCHANGE_EVENTS } from "../data/localDojoData";
 
 const EVENTS = [
   {
@@ -43,5 +45,36 @@ describe("모임 게시판 필터", () => {
     expect(formatExchangeSlots(3, 12)).toBe("3/12명");
     expect(formatExchangeFee(0)).toBe("무료");
     expect(formatExchangeFee(10000)).toBe("10,000원");
+  });
+});
+
+describe("출시 테스트 콘텐츠 차단", () => {
+  it("로컬 시드 예시는 비어 있다", () => {
+    expect(LOCAL_EXCHANGE_EVENTS).toEqual([]);
+  });
+
+  it("배포 환경에서 확인된 테스트짐을 숨긴다", () => {
+    const testEvent = {
+      id: "test",
+      gymName: "테스트짐",
+      address: "서울 테스트동",
+      title: "테스트짐 교류",
+    };
+    expect(isReleaseExcludedExchangeEvent(testEvent, { isDev: false })).toBe(
+      true
+    );
+    expect(isReleaseExcludedExchangeEvent(EVENTS[0], { isDev: false })).toBe(
+      false
+    );
+  });
+
+  it("개발 환경에서는 테스트 일정을 남겨 QA할 수 있다", () => {
+    const testEvent = {
+      gymName: "테스트짐",
+      address: "서울 테스트동",
+    };
+    expect(isReleaseExcludedExchangeEvent(testEvent, { isDev: true })).toBe(
+      false
+    );
   });
 });

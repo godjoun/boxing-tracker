@@ -241,9 +241,28 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const selectedCategory = form.category ? getLogCategory(form.category) : null;
   const stepOneStatus = getStepOneStatus(form);
   const canSave = stepOneStatus.isComplete;
+  const gpsPhase = autoTracking?.phase || null;
+  const gpsIsActive = gpsPhase === "active";
+  const gpsIsFailed = gpsPhase === "failed";
   const canStartGpsFromDock =
     ["running", "walking"].includes(form.category) &&
-    stepOneStatus.buttonLabel === "GPS 시작";
+    !gpsIsActive &&
+    (gpsIsFailed || stepOneStatus.buttonLabel === "GPS 시작");
+
+  const dockLabel = canSave
+    ? "저장"
+    : gpsIsActive
+      ? "측정 종료"
+      : gpsIsFailed
+        ? "다시 시도"
+        : stepOneStatus.buttonLabel;
+  const dockHint = canSave
+    ? "저장 가능"
+    : gpsIsActive
+      ? "측정 중"
+      : gpsIsFailed
+        ? "권한 확인"
+        : stepOneStatus.label;
   const historyCategoryLogs = useMemo(
     () =>
       logs.filter(
@@ -331,11 +350,15 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     }));
   }
 
-  function clearAutoTracking() {
+  function clearAutoTrackingWatch() {
     if (watchIdRef.current !== null && navigator.geolocation) {
       navigator.geolocation.clearWatch(watchIdRef.current);
     }
     watchIdRef.current = null;
+  }
+
+  function clearAutoTracking() {
+    clearAutoTrackingWatch();
     setAutoTracking(null);
   }
 
@@ -343,14 +366,22 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     if (!["running", "walking"].includes(form.category)) return;
 
     if (!navigator.geolocation) {
-      alert("이 브라우저에서는 GPS 자동 측정을 사용할 수 없어요.");
+      setAutoTracking({
+        phase: "failed",
+        category: form.category,
+        startedAt: null,
+        distanceKm: 0,
+        lastPosition: null,
+        status: "이 브라우저에서는 GPS를 쓸 수 없어요",
+      });
       return;
     }
 
-    clearAutoTracking();
+    clearAutoTrackingWatch();
 
     const startTime = new Date().getTime();
     setAutoTracking({
+      phase: "active",
       category: form.category,
       startedAt: startTime,
       distanceKm: 0,
@@ -367,17 +398,22 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         };
 
         setAutoTracking((current) => {
-          if (!current) return current;
+          if (!current || current.phase !== "active") return current;
           const addedDistance = getDistanceKm(current.lastPosition, nextPosition);
           const nextDistance = current.distanceKm + addedDistance;
-          const elapsedMinutes = Math.max(1, Math.round((new Date().getTime() - current.startedAt) / 60000));
+          const elapsedMinutes = Math.max(
+            1,
+            Math.round((new Date().getTime() - current.startedAt) / 60000)
+          );
 
           setForm((prev) => ({
             ...prev,
             minutes: String(elapsedMinutes),
             metrics: {
               ...prev.metrics,
-              distanceKm: nextDistance ? nextDistance.toFixed(2) : prev.metrics.distanceKm || "",
+              distanceKm: nextDistance
+                ? nextDistance.toFixed(2)
+                : prev.metrics.distanceKm || "",
               autoSignals: ["GPS", "시간"],
               autoAccuracyM: Math.round(nextPosition.accuracy || 0),
             },
@@ -385,6 +421,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
           return {
             ...current,
+            phase: "active",
             distanceKm: nextDistance,
             lastPosition: nextPosition,
             status: "측정 중",
@@ -392,9 +429,15 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         });
       },
       () => {
-        setAutoTracking((current) =>
-          current ? { ...current, status: "GPS 권한이 필요해요" } : current
-        );
+        clearAutoTrackingWatch();
+        setAutoTracking({
+          phase: "failed",
+          category: form.category,
+          startedAt: null,
+          distanceKm: 0,
+          lastPosition: null,
+          status: "GPS 권한이 필요해요",
+        });
       },
       {
         enableHighAccuracy: true,
@@ -407,9 +450,12 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   function handleStopAutoTracking() {
     const current = autoTracking;
     clearAutoTracking();
-    if (!current) return;
+    if (!current || current.phase !== "active" || !current.startedAt) return;
 
-    const elapsedMinutes = Math.max(1, Math.round((new Date().getTime() - current.startedAt) / 60000));
+    const elapsedMinutes = Math.max(
+      1,
+      Math.round((new Date().getTime() - current.startedAt) / 60000)
+    );
     setForm((prev) => ({
       ...prev,
       minutes: prev.minutes || String(elapsedMinutes),
@@ -424,8 +470,27 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     }));
   }
 
+  function handleDockPrimaryAction() {
+    if (canSave) {
+      handleSubmit();
+      return;
+    }
+    if (gpsIsActive) {
+      handleStopAutoTracking();
+      return;
+    }
+    if (canStartGpsFromDock) {
+      handleStartAutoTracking();
+    }
+  }
+
   useEffect(() => {
-    return () => clearAutoTracking();
+    return () => {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      watchIdRef.current = null;
+    };
   }, []);
 
   function handleEditTypeChange(value) {
@@ -700,22 +765,22 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                   aria-label={`${selectedCategory.label} 기록 입력`}
                 >
                   {["running", "walking"].includes(form.category) ? (
-                    <section className="log-auto-panel" aria-label="GPS 자동 측정">
+                    <section
+                      className={`log-auto-panel${gpsIsFailed ? " is-failed" : ""}`}
+                      aria-label="GPS 자동 측정"
+                    >
                       <div>
                         <strong>
                           {autoTracking ? autoTracking.status : "GPS로 채우기"}
                         </strong>
-                        <p>시작하면 거리와 시간이 들어갑니다.</p>
+                        <p>
+                          {gpsIsFailed
+                            ? "권한을 허용한 뒤 아래에서 다시 시도하거나, 직접 입력하세요."
+                            : gpsIsActive
+                              ? "측정이 끝나면 아래에서 종료하세요."
+                              : "시작하면 거리와 시간이 들어갑니다."}
+                        </p>
                       </div>
-                      {autoTracking ? (
-                        <button type="button" onClick={handleStopAutoTracking}>
-                          종료
-                        </button>
-                      ) : (
-                        <button type="button" onClick={handleStartAutoTracking}>
-                          시작
-                        </button>
-                      )}
                     </section>
                   ) : null}
 
@@ -973,15 +1038,15 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         <div className="log-write-dock is-final">
           <div className="log-write-dock-exp">
             <span>다음</span>
-            <strong>{stepOneStatus.label}</strong>
+            <strong>{dockHint}</strong>
           </div>
           <button
             type="button"
             className="log-submit"
-            onClick={canSave ? handleSubmit : handleStartAutoTracking}
-            disabled={!canSave && !canStartGpsFromDock}
+            onClick={handleDockPrimaryAction}
+            disabled={!canSave && !canStartGpsFromDock && !gpsIsActive}
           >
-            {canSave ? "저장" : stepOneStatus.buttonLabel}
+            {dockLabel}
           </button>
         </div>
 

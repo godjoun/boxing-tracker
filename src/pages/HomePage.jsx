@@ -456,7 +456,7 @@ export default function HomePage({
             </li>
             <li>
               <strong>커뮤니티</strong>
-              <span>다닐 체육관과 라이벌을 찾아둡니다.</span>
+              <span>다닐 체육관과 모임을 찾아둡니다.</span>
             </li>
           </ol>
           <div className="home-first-guide-actions">

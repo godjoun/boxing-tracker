@@ -32,6 +32,26 @@ export function formatExchangeSlots(appliedCount, capacity) {
   return `${applied}/${cap}명`;
 }
 
+/**
+ * 배포 화면에 나오면 안 되는 확인된 테스트 일정.
+ * 개발 환경(QA)에서는 그대로 보여 디버깅할 수 있다.
+ * 실제 Supabase 행 삭제는 관리자 작업으로 별도 진행.
+ */
+export function isReleaseExcludedExchangeEvent(
+  event,
+  { isDev = import.meta.env.DEV } = {}
+) {
+  if (isDev || !event) return false;
+  const gym = String(event.gymName || event.gym_name || "");
+  const address = String(event.address || "");
+  const title = String(event.title || "");
+  return (
+    gym.includes("테스트짐") ||
+    address.includes("서울 테스트동") ||
+    title.includes("테스트짐")
+  );
+}
+
 /** 다음 해당 요일의 시각 (이미 지났으면 다음 주) */
 export function upcomingWeekdayIso(weekday, hour = 14, minute = 0) {
   const now = new Date();
@@ -278,6 +298,7 @@ function buildMergedList({
   return [...remote, ...local, ...seed]
     .map((event) => decorateEvent(event, userId, actorId, now))
     .map((event) => withApplyBoost(event, userId))
+    .filter((event) => !isReleaseExcludedExchangeEvent(event))
     .filter((event) => {
       if (pastOnly) return event.isPast;
       return includePast || !event.isPast;

@@ -6,6 +6,7 @@ import {
 } from "react";
 import { track } from "@vercel/analytics";
 import GymDetailPanel from "../../components/GymDetailPanel";
+import CommunityFeedPanel from "./CommunityFeedPanel";
 import ExchangeBoardPanel from "./ExchangeBoardPanel";
 import ExchangeHubPanel from "./ExchangeHubPanel";
 import MeActivityPanel from "./MeActivityPanel";
@@ -84,14 +85,17 @@ function writeRecentSearch(label) {
 }
 
 const LAYER_FILTERS = [
+  { id: "feed", label: "피드" },
   { id: "hub", label: "교류" },
+  ...(RELEASE_SCOPE.rivals ? [{ id: "sparring", label: "스파링" }] : []),
   { id: "gyms", label: "체육관" },
-  ...(RELEASE_SCOPE.rivals ? [{ id: "sparring", label: "라이벌" }] : []),
   { id: "meeting", label: "모임" },
 ];
 
+const isFeedOrHub = (layer) => layer === "feed" || layer === "hub";
+
 export default function NearbyGymsPanel({
-  activeLayer = "hub",
+  activeLayer = "feed",
   onSelectLayer,
   onMeetingSectionChange,
   onGoRivalProfile,
@@ -269,7 +273,7 @@ export default function NearbyGymsPanel({
     if (section !== "find") {
       switchSection("find");
       if (activeLayer === "meeting" || activeLayer === "me") {
-        onSelectLayer?.("hub");
+        onSelectLayer?.("feed");
       }
       return true;
     }
@@ -277,9 +281,10 @@ export default function NearbyGymsPanel({
       activeLayer === "favorites" ||
       activeLayer === "sparring" ||
       activeLayer === "gyms" ||
-      activeLayer === "meeting"
+      activeLayer === "meeting" ||
+      activeLayer === "hub"
     ) {
-      onSelectLayer?.("hub");
+      onSelectLayer?.("feed");
       return true;
     }
     return false;
@@ -692,7 +697,6 @@ export default function NearbyGymsPanel({
           <header className="gym-community-head">
             <div className="gym-community-head-copy">
               <h1>커뮤니티</h1>
-              <p>사람을 만나고, 함께 훈련하고, 프로필에 남깁니다.</p>
             </div>
             <button
               type="button"
@@ -741,7 +745,7 @@ export default function NearbyGymsPanel({
             })}
           </nav>
 
-          {activeLayer !== "hub" ? (
+          {!isFeedOrHub(activeLayer) ? (
             <>
           <div className="gym-map-search-pill-row">
             <button
@@ -1069,10 +1073,26 @@ export default function NearbyGymsPanel({
       </div>
     ) : null;
 
+  const openMeetingCompose = () => {
+    setMeetingFocus({ compose: true, nonce: Date.now() });
+    onSelectLayer?.("meeting");
+    switchSection("meeting");
+  };
+
+  const openMeetingEvent = (event, { isPast = false } = {}) => {
+    setMeetingFocus({
+      eventId: event?.id || null,
+      showPast: Boolean(isPast || event?.isPast),
+      nonce: Date.now(),
+    });
+    onSelectLayer?.("meeting");
+    switchSection("meeting");
+  };
+
   const sheetTitle =
     needsLocationGate
       ? "짐 찾기"
-      : activeLayer === "hub"
+      : isFeedOrHub(activeLayer)
         ? ""
         : activeLayer === "favorites" || gymListScope === "favorites"
       ? "찜한 체육관"
@@ -1084,7 +1104,7 @@ export default function NearbyGymsPanel({
             ? "내 주변 체육관"
             : `${searchCityLabel} 체육관`;
   const sheetCount =
-    needsLocationGate || activeLayer === "hub"
+    needsLocationGate || isFeedOrHub(activeLayer)
       ? 0
       : activeLayer === "sparring"
       ? rivals.length
@@ -1092,27 +1112,20 @@ export default function NearbyGymsPanel({
 
   const sheetListContent = needsLocationGate
     ? firstUseGate
-    : activeLayer === "hub" ? (
+    : activeLayer === "feed" ? (
+      <CommunityFeedPanel
+        onOpenEvent={openMeetingEvent}
+        onCompose={openMeetingCompose}
+      />
+    ) : activeLayer === "hub" ? (
       <ExchangeHubPanel
         onOpenMeetings={() => {
           setMeetingFocus(null);
           onSelectLayer?.("meeting");
           switchSection("meeting");
         }}
-        onComposeMeeting={() => {
-          setMeetingFocus({ compose: true, nonce: Date.now() });
-          onSelectLayer?.("meeting");
-          switchSection("meeting");
-        }}
-        onOpenEvent={(event, { isPast = false } = {}) => {
-          setMeetingFocus({
-            eventId: event?.id || null,
-            showPast: Boolean(isPast || event?.isPast),
-            nonce: Date.now(),
-          });
-          onSelectLayer?.("meeting");
-          switchSection("meeting");
-        }}
+        onComposeMeeting={openMeetingCompose}
+        onOpenEvent={openMeetingEvent}
         onOpenRivals={() => {
           onSelectLayer?.("sparring");
           switchSection("find");
@@ -1242,7 +1255,7 @@ export default function NearbyGymsPanel({
         }
         headAction={
           needsLocationGate ||
-          activeLayer === "hub" ||
+          isFeedOrHub(activeLayer) ||
           activeLayer === "sparring" ||
           (activeLayer === "gyms" && gymListScope === "listed") ? null : (
             <button
@@ -1406,7 +1419,7 @@ export default function NearbyGymsPanel({
           className="gym-utility-back"
           onClick={() => {
             if (section === "me" || activeLayer === "me") {
-              onSelectLayer?.("hub");
+              onSelectLayer?.("feed");
               switchSection("find");
               return;
             }
@@ -1418,7 +1431,7 @@ export default function NearbyGymsPanel({
         {section === "me" || activeLayer === "me" ? (
           <MeActivityPanel
             onOpenHub={() => {
-              onSelectLayer?.("hub");
+              onSelectLayer?.("feed");
               switchSection("find");
             }}
             onOpenGyms={() => {
@@ -1776,7 +1789,7 @@ export default function NearbyGymsPanel({
       {searchModal}
       {filterSheet}
       {sideMenu}
-      {activeLayer === "sparring" || activeLayer === "hub" ? (
+      {activeLayer === "sparring" || isFeedOrHub(activeLayer) ? (
         rivalContent ? (
           <div className="gym-rival-bridge-host" aria-hidden="true">
             {rivalContent}

@@ -200,7 +200,7 @@ export default function ExchangeBoardPanel({
       setError("");
       flash(
         result.synced
-          ? "일정이 올라갔습니다. 다른 폰에서도 보입니다."
+          ? "제안이 올라갔습니다. 다른 폰에서도 보입니다."
           : "이 기기에 저장됐습니다. (서버 미연결)"
       );
       await loadEvents();
@@ -349,54 +349,77 @@ export default function ExchangeBoardPanel({
       item.whenLabel || formatExchangeWhen(item.startsAt, item.whenLabel);
     const statusLabel = getEventStatus(item);
     const title = item.title || `${item.gymName || "교류"} 모임`;
+    const hostName = item.hostNickname || (item.isMine ? profile?.nickname : null) || "주최자";
+    const guestLabel =
+      count > 0 ? `신청 ${count}명` : item.isPast ? "참가자" : "모집 중";
 
     return (
       <article
         key={item.id}
-        className={`exchange-match is-detail${item.isMine ? " is-mine" : ""}${
+        className={`exchange-detail${item.isMine ? " is-mine" : ""}${
           applied ? " is-applied" : ""
         }${full ? " is-full" : ""}${item.isSample ? " is-sample" : ""}${
           item.isPast ? " is-past" : ""
         }`}
       >
-        <div className="exchange-match-media" aria-hidden="true">
-          <span>{statusLabel}</span>
+        <div className="exchange-detail-vs" aria-hidden="true">
+          <div className="exchange-detail-side">
+            <span className="exchange-detail-avatar">{String(hostName).slice(0, 1)}</span>
+            <strong>{hostName}</strong>
+            <small>주최</small>
+          </div>
+          <em className="exchange-detail-vs-mark">VS</em>
+          <div className="exchange-detail-side">
+            <span className="exchange-detail-avatar is-guest">+</span>
+            <strong>{guestLabel}</strong>
+            <small>{formatExchangeSlots(item.appliedCount, item.capacity)}</small>
+          </div>
         </div>
 
-        <div className="exchange-match-top">
-          <div className="exchange-match-time">{whenText}</div>
-          <span className="exchange-match-status">{statusLabel}</span>
-          {item.isSample ? (
-            <span className="exchange-sample-chip">예시</span>
-          ) : null}
-          {item.isMine ? (
-            <span className="exchange-mine-chip">내 일정</span>
-          ) : null}
+        <div className="exchange-detail-summary">
+          <em className="exchange-match-status">{statusLabel}</em>
+          <h3>{title}</h3>
+          <p>{whenText}</p>
         </div>
 
-        <h3 className="exchange-match-place">{title}</h3>
-        {item.gymName ? (
-          <p className="exchange-match-title">{item.gymName}</p>
-        ) : null}
-        {item.address ? (
-          <p className="exchange-match-address">{item.address}</p>
-        ) : null}
-
-        {item.note ? (
-          <p className="exchange-match-note">{item.note}</p>
-        ) : null}
-
-        <div className="exchange-match-meta">
+        <div className="exchange-detail-info">
+          <div>
+            <span>일시</span>
+            <strong>{whenText}</strong>
+          </div>
+          <div>
+            <span>장소</span>
+            <strong>{item.gymName || "미정"}</strong>
+            {item.address ? <small>{item.address}</small> : null}
+          </div>
           <div>
             <span>인원</span>
-            <strong>
-              {formatExchangeSlots(item.appliedCount, item.capacity)}
-            </strong>
+            <strong>{formatExchangeSlots(item.appliedCount, item.capacity)}</strong>
           </div>
           <div>
             <span>참가비</span>
             <strong>{formatExchangeFee(item.feeWon)}</strong>
           </div>
+        </div>
+
+        <div className="exchange-detail-photos" aria-label="교류 사진">
+          <div className="exchange-detail-photo is-main">
+            <span>{statusLabel}</span>
+          </div>
+          <div className="exchange-detail-photo-grid">
+            <div className="exchange-detail-photo" />
+            <div className="exchange-detail-photo" />
+          </div>
+          <p className="exchange-detail-photo-hint">
+            {item.isPast
+              ? "완료 후 사진·후기가 여기에 모입니다."
+              : "실시 후 사진과 후기를 남길 수 있습니다."}
+          </p>
+        </div>
+
+        <div className="exchange-detail-review">
+          <span>한줄 안내</span>
+          <p>{item.note || "준비물·체급 안내는 아직 없습니다."}</p>
         </div>
 
         {item.isMine && applicants.length > 0 ? (
@@ -444,7 +467,9 @@ export default function ExchangeBoardPanel({
               내 일정 삭제
             </button>
           ) : item.isPast ? (
-            <p className="exchange-sample-hint">완료된 교류입니다. 흔적은 프로필에 남습니다.</p>
+            <p className="exchange-sample-hint">
+              완료된 교류입니다. 흔적은 프로필에 남습니다.
+            </p>
           ) : (
             <>
               <button
@@ -453,11 +478,7 @@ export default function ExchangeBoardPanel({
                 onClick={() => handleApplyToggle(item)}
                 disabled={full || busy}
               >
-                {applied
-                  ? "신청 취소"
-                  : full
-                    ? "마감"
-                    : "참가 신청"}
+                {applied ? "신청 취소" : full ? "마감" : "참가 신청"}
               </button>
               {applied && item.source === "server" && item.userId ? (
                 <button
@@ -505,14 +526,14 @@ export default function ExchangeBoardPanel({
             {selectedEvent
               ? "교류 상세"
               : composing
-                ? "모임 올리기"
+                ? "교류 제안"
                 : "모임"}
           </h2>
           <span>
             {selectedEvent
-              ? "일정 · 인원 · 장소를 확인하고 신청하세요."
+              ? "일시 · 장소 · 인원을 확인하고 신청하세요."
               : composing
-                ? "운동 약속에 필요한 정보만 입력합니다."
+                ? "대상 · 일시 · 장소를 정해 만남을 제안합니다."
                 : "지역에서 함께 훈련할 사람을 찾습니다."}
           </span>
         </div>
@@ -606,106 +627,114 @@ export default function ExchangeBoardPanel({
       {notice ? <p className="exchange-notice">{notice}</p> : null}
 
       {composing ? (
-        <form className="exchange-compose" onSubmit={handleSubmit}>
-          <p className="gym-inquiry-kicker">MEETUP</p>
-          <strong>훈련 모임 올리기</strong>
-          <p className="exchange-compose-lead">
-            필수만 채우면 됩니다. 올린 뒤 다른 사람이 참가 신청할 수 있어요.
-          </p>
-
-          <label className="gym-inquiry-field">
-            <span>체육관 *</span>
+        <form className="exchange-propose" onSubmit={handleSubmit}>
+          <div className="exchange-propose-block">
+            <p className="exchange-propose-label">대상 체육관 *</p>
             <input
               type="text"
               value={form.gymName}
               onChange={(e) => updateField("gymName", e.target.value)}
               placeholder="예: ○○ 복싱짐"
+              aria-label="대상 체육관"
             />
-          </label>
-
-          <label className="gym-inquiry-field">
-            <span>주소 *</span>
             <input
               type="text"
               value={form.address}
               onChange={(e) => updateField("address", e.target.value)}
-              placeholder="예: 서울 강남구 역삼동 ○○"
+              placeholder="주소 *"
+              aria-label="주소"
             />
-          </label>
+          </div>
 
-          <div className="exchange-compose-row">
+          <div className="exchange-propose-block">
+            <p className="exchange-propose-label">기본 정보</p>
+            <div className="exchange-compose-row">
+              <label className="gym-inquiry-field">
+                <span>날짜 *</span>
+                <input
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => updateField("date", e.target.value)}
+                  required
+                />
+              </label>
+              <label className="gym-inquiry-field">
+                <span>시간 *</span>
+                <input
+                  type="time"
+                  value={form.time}
+                  onChange={(e) => updateField("time", e.target.value)}
+                  required
+                />
+              </label>
+            </div>
+            <div className="exchange-compose-row">
+              <label className="gym-inquiry-field">
+                <span>모집 인원 *</span>
+                <input
+                  type="number"
+                  min="1"
+                  inputMode="numeric"
+                  value={form.capacity}
+                  onChange={(e) => updateField("capacity", e.target.value)}
+                  placeholder="예: 8"
+                />
+              </label>
+              <label className="gym-inquiry-field">
+                <span>참가비 (원)</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  inputMode="numeric"
+                  value={form.feeWon}
+                  onChange={(e) => updateField("feeWon", e.target.value)}
+                  placeholder="0 = 무료"
+                />
+              </label>
+            </div>
             <label className="gym-inquiry-field">
-              <span>날짜 *</span>
+              <span>일정 이름 (선택)</span>
               <input
-                type="date"
-                value={form.date}
-                onChange={(e) => updateField("date", e.target.value)}
-                required
-              />
-            </label>
-
-            <label className="gym-inquiry-field">
-              <span>시간 *</span>
-              <input
-                type="time"
-                value={form.time}
-                onChange={(e) => updateField("time", e.target.value)}
-                required
+                type="text"
+                value={form.title}
+                onChange={(e) => updateField("title", e.target.value)}
+                placeholder="예: 주말 스파링 모임"
               />
             </label>
           </div>
 
-          <div className="exchange-compose-row">
-            <label className="gym-inquiry-field">
-              <span>모집 인원 *</span>
-              <input
-                type="number"
-                min="1"
-                inputMode="numeric"
-                value={form.capacity}
-                onChange={(e) => updateField("capacity", e.target.value)}
-                placeholder="12"
-              />
-            </label>
-
-            <label className="gym-inquiry-field">
-              <span>참가비 (원) *</span>
-              <input
-                type="number"
-                min="0"
-                step="1000"
-                inputMode="numeric"
-                value={form.feeWon}
-                onChange={(e) => updateField("feeWon", e.target.value)}
-                placeholder="0 = 무료"
-              />
-            </label>
-          </div>
-
-          <label className="gym-inquiry-field">
-            <span>일정 이름 (선택)</span>
-            <input
-              type="text"
-              value={form.title}
-              onChange={(e) => updateField("title", e.target.value)}
-              placeholder="비워도 됩니다"
-            />
-          </label>
-
-          <label className="gym-inquiry-field">
-            <span>안내 (선택)</span>
-            <input
-              type="text"
+          <div className="exchange-propose-block">
+            <p className="exchange-propose-label">메시지</p>
+            <textarea
               value={form.note}
               onChange={(e) => updateField("note", e.target.value)}
-              placeholder="체급 · 준비물 한 줄"
+              placeholder="체급 · 준비물 · 한 줄 인사"
+              rows={3}
+              aria-label="메시지"
             />
-          </label>
+          </div>
+
+          <div className="exchange-propose-preview">
+            <span>미리보기</span>
+            <strong>
+              {[form.gymName.trim() || "체육관", form.date, form.time]
+                .filter(Boolean)
+                .join(" · ")}
+            </strong>
+            <small>
+              {form.capacity ? `${form.capacity}명` : "인원 미정"}
+              {" · "}
+              {Number(form.feeWon) > 0
+                ? `${Number(form.feeWon).toLocaleString("ko-KR")}원`
+                : "무료"}
+            </small>
+          </div>
 
           {error ? <p className="gym-inquiry-error">{error}</p> : null}
 
           <button type="submit" className="gym-inquiry-submit" disabled={busy}>
-            {busy ? "올리는 중..." : "모임 올리기"}
+            {busy ? "보내는 중..." : "제안 보내기"}
           </button>
         </form>
       ) : null}

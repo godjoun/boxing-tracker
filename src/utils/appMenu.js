@@ -81,10 +81,10 @@ const SHORTCUTS = {
   hub: {
     id: "hub",
     icon: "dojo",
-    title: "교류",
-    description: "모임 · 라이벌 · 내 관",
+    title: "커뮤니티",
+    description: "피드 · 교류 · 모임",
     route: "gym",
-    gymView: "hub",
+    gymView: "feed",
     accent: "slate",
   },
   gyms: {

@@ -5,8 +5,9 @@ import { RELEASE_SCOPE } from "../utils/releaseScope";
 import NearbyGymsPanel from "./dojoBreaker/NearbyGymsPanel";
 import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
-/** Community IA: hub | gyms | sparring | meeting (+ favorites filter alias) */
+/** Community IA: feed | hub | gyms | sparring | meeting (+ favorites filter alias) */
 function resolveView(view) {
+  if (view === "feed" || view === "community") return "feed";
   if (view === "hub" || view === "exchange") return "hub";
   if (view === "gyms" || view === "favorites") return view;
   if (view === "meeting") return "meeting";
@@ -16,11 +17,11 @@ function resolveView(view) {
   ) {
     return "sparring";
   }
-  return "hub";
+  return "feed";
 }
 
 export default function GymFinderPage({
-  initialView = "hub",
+  initialView = "feed",
   fighterLevel = 1,
   onGoRivalProfile,
   onStartTraining,
@@ -40,12 +41,14 @@ export default function GymFinderPage({
     view === "meeting" || meetingActive
       ? "모임"
       : view === "sparring"
-        ? "라이벌 찾기"
+        ? "스파링"
         : view === "favorites"
           ? "찜한 체육관"
           : view === "hub"
             ? "교류"
-            : "체육관 찾기";
+            : view === "feed"
+              ? "피드"
+              : "체육관 찾기";
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -74,7 +77,7 @@ export default function GymFinderPage({
             <FeatureLockScreen
               featureId="sparring"
               currentLevel={fighterLevel}
-              onBack={() => setView("hub")}
+              onBack={() => setView("feed")}
               onStartTraining={onStartTraining}
               embedded
             />

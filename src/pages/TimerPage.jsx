@@ -23,6 +23,7 @@ import {
 import {
   clearTimerSession,
   getTimerSessionSummary,
+  loadTimerSession,
   reconcileTimerSession,
   saveTimerSession,
 } from "../utils/timerSession";
@@ -260,9 +261,10 @@ export default function TimerPage({
   const previousPhaseRef = useRef(initialTimerState.phase);
   const lastTapRef = useRef(0);
   const wakeLockRef = useRef(null);
+  const lastAppliedFingerprintRef = useRef("");
+  const applyPersistedStateRef = useRef(null);
 
   const workSeconds = workSecondsSetting;
-  const restSeconds = restSecondsSetting;
 
   const totalWorkSeconds = totalRounds * workSecondsSetting;
   const totalSessionSeconds =
@@ -304,8 +306,26 @@ export default function TimerPage({
     [curriculumDrills, phase, currentRound, totalRounds]
   );
 
-  const applyPersistedState = useCallback((saved) => {
+  const applyPersistedState = useCallback((saved, { silent = false } = {}) => {
     if (!saved) return;
+
+    const fingerprint = [
+      saved.phase,
+      saved.remainingTime,
+      saved.currentRound,
+      Boolean(saved.isRunning),
+      Boolean(saved.hasSavedLog),
+    ].join("|");
+
+    if (lastAppliedFingerprintRef.current === fingerprint) {
+      return;
+    }
+    lastAppliedFingerprintRef.current = fingerprint;
+
+    // 복귀 catch-up: 최종 phase만 반영하고 놓친 전환음은 재생하지 않음.
+    if (silent) {
+      previousPhaseRef.current = saved.phase ?? "work";
+    }
 
     setSelectedPresetId(saved.selectedPresetId ?? "match3");
     setCurriculumSessionId(saved.curriculumSessionId ?? null);
@@ -334,11 +354,18 @@ export default function TimerPage({
     setHasStartedSession(Boolean(saved.hasStartedSession));
     setHasSavedLog(Boolean(saved.hasSavedLog));
     setSoundMode(saved.soundMode ?? "basic");
-    previousPhaseRef.current = saved.phase ?? "work";
     savedLogRef.current = Boolean(saved.hasSavedLog);
   }, []);
 
-  useTimerSessionListener(applyPersistedState);
+  useEffect(() => {
+    applyPersistedStateRef.current = applyPersistedState;
+  }, [applyPersistedState]);
+
+  const onExternalTimerSync = useCallback(
+    (saved) => applyPersistedState(saved, { silent: true }),
+    [applyPersistedState]
+  );
+  useTimerSessionListener(onExternalTimerSync);
 
   useEffect(() => {
     // 입력 중에 totalRounds가 바뀌면 빈 칸/작성 중이던 값이 도로 덮인다.
@@ -498,125 +525,58 @@ export default function TimerPage({
   }, [isRunning]);
 
   useEffect(() => {
+    function reconcileFromStorage() {
+      const saved = reconcileTimerSession(loadTimerSession());
+      if (!saved) return;
+      applyPersistedStateRef.current?.(saved, { silent: true });
+      saveTimerSession(saved);
+    }
+
     function handleVisibility() {
       if (document.visibilityState === "visible") {
         resumeTimerAudio();
+        reconcileFromStorage();
       }
+    }
 
-      if (document.visibilityState !== "visible") return;
+    function handlePageShow() {
+      reconcileFromStorage();
+    }
 
-      const saved = reconcileTimerSession(
-        buildTimerSnapshot({
-          selectedPresetId,
-          curriculumSessionId,
-          curriculumRoutineTitle,
-          curriculumLogType,
-          curriculumSessionTitle,
-          curriculumGoal,
-          curriculumSessionCode,
-          curriculumWeekLabel,
-          curriculumWeekTheme,
-          curriculumDrills,
-          strengthDayId,
-          canSkipStrengthWarmup,
-          strengthPlan,
-          totalRounds,
-          workSecondsSetting,
-          restSecondsSetting,
-          currentRound,
-          phase,
-          remainingTime,
-          isRunning,
-          hasStartedSession,
-          hasSavedLog,
-          soundMode,
-          routineTitle,
-        })
-      );
-
-      applyPersistedState(saved);
+    function handleFocus() {
+      reconcileFromStorage();
     }
 
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
-  }, [
-    applyPersistedState,
-    selectedPresetId,
-    curriculumSessionId,
-    curriculumRoutineTitle,
-    curriculumLogType,
-    curriculumSessionTitle,
-    curriculumGoal,
-    curriculumSessionCode,
-    curriculumWeekLabel,
-    curriculumWeekTheme,
-    curriculumDrills,
-    strengthDayId,
-    canSkipStrengthWarmup,
-    strengthPlan,
-    prepSecondsSetting,
-    cooldownSecondsSetting,
-    totalRounds,
-    workSecondsSetting,
-    restSecondsSetting,
-    currentRound,
-    phase,
-    remainingTime,
-    isRunning,
-    hasStartedSession,
-    hasSavedLog,
-    soundMode,
-    routineTitle,
-  ]);
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isRunning) return;
 
-    const timer = setInterval(() => {
-      setRemainingTime((prev) => {
-        if (prev > 1) {
-          return prev - 1;
-        }
+    const syncFromClock = () => {
+      const session = loadTimerSession();
+      if (!session?.isRunning || session.phase === "done") return;
 
-        if (phase === "prep") {
-          setPhase("work");
-          return workSeconds;
-        }
+      const reconciled = reconcileTimerSession(session);
+      if (!reconciled) return;
 
-        if (phase === "work") {
-          if (currentRound === totalRounds) {
-            if (isCurriculumSession && cooldownSecondsSetting > 0) {
-              setPhase("cooldown");
-              return cooldownSecondsSetting;
-            }
+      // 포그라운드 틱: 벽시계 보정. 단계가 바뀌면 phase effect가 현재 단계 알림만 재생.
+      applyPersistedStateRef.current?.(reconciled, { silent: false });
+      saveTimerSession(reconciled);
+    };
 
-            setPhase("done");
-            setIsRunning(false);
-            return 0;
-          }
-
-          setPhase("rest");
-          return restSeconds;
-        }
-
-        if (phase === "cooldown") {
-          setPhase("done");
-          setIsRunning(false);
-          return 0;
-        }
-
-        if (phase === "rest") {
-          setCurrentRound((round) => round + 1);
-          setPhase("work");
-          return workSeconds;
-        }
-
-        return 0;
-      });
-    }, 1000);
-
+    syncFromClock();
+    const timer = setInterval(syncFromClock, 1000);
     return () => clearInterval(timer);
-  }, [isRunning, phase, currentRound, totalRounds, workSeconds, restSeconds, isCurriculumSession, cooldownSecondsSetting]);
+  }, [isRunning]);
 
   useEffect(() => {
     if (previousPhaseRef.current === phase) return;

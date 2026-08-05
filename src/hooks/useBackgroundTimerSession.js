@@ -23,6 +23,7 @@ export function useBackgroundTimerSession(currentPage) {
         return;
       }
 
+      // 타이머 화면이 열려 있으면 TimerPage가 복귀 보정의 단일 소스다.
       const reconciled =
         currentPage === "timer"
           ? session
@@ -59,10 +60,16 @@ export function useBackgroundTimerSession(currentPage) {
     }, 1000);
 
     function handleVisibility() {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState !== "visible") return;
+
+      // 타이머 페이지에서는 TimerPage가 visibility/pageshow/focus를 처리한다.
+      if (currentPage === "timer") {
         sync();
-        window.dispatchEvent(new CustomEvent("timer-session-updated"));
+        return;
       }
+
+      sync();
+      window.dispatchEvent(new CustomEvent("timer-session-updated"));
     }
 
     window.addEventListener("timer-session-updated", sync);
@@ -78,6 +85,7 @@ export function useBackgroundTimerSession(currentPage) {
   return summary;
 }
 
+/** 타이머 페이지 외부 동기화만 수신. visibility 복귀는 TimerPage 단일 소스. */
 export function useTimerSessionListener(onSync) {
   useEffect(() => {
     function handleSync() {
@@ -88,11 +96,9 @@ export function useTimerSessionListener(onSync) {
     }
 
     window.addEventListener("timer-session-updated", handleSync);
-    document.addEventListener("visibilitychange", handleSync);
 
     return () => {
       window.removeEventListener("timer-session-updated", handleSync);
-      document.removeEventListener("visibilitychange", handleSync);
     };
   }, [onSync]);
 }

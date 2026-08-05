@@ -6,11 +6,12 @@ export function saveTimerSession(session) {
     return;
   }
 
+  const updatedAt = Number(session.updatedAt);
   sessionStorage.setItem(
     STORAGE_KEY,
     JSON.stringify({
       ...session,
-      updatedAt: Date.now(),
+      updatedAt: Number.isFinite(updatedAt) ? updatedAt : Date.now(),
     })
   );
 }
@@ -52,7 +53,9 @@ export function getTimerSessionSummary(session = loadTimerSession()) {
         ? "훈련"
         : reconciled.phase === "rest"
           ? "휴식"
-          : "완료";
+          : reconciled.phase === "cooldown"
+            ? "마무리"
+            : "완료";
 
   const minutes = Math.floor(reconciled.remainingTime / 60);
   const seconds = reconciled.remainingTime % 60;
@@ -86,6 +89,13 @@ function advancePhase(state) {
 
   if (next.phase === "work") {
     if (next.currentRound >= next.totalRounds) {
+      const cooldownSeconds = Number(next.cooldownSecondsSetting) || 0;
+      if (cooldownSeconds > 0) {
+        next.phase = "cooldown";
+        next.remainingTime = cooldownSeconds;
+        return next;
+      }
+
       next.phase = "done";
       next.isRunning = false;
       next.remainingTime = 0;
@@ -101,6 +111,13 @@ function advancePhase(state) {
     next.currentRound += 1;
     next.phase = "work";
     next.remainingTime = next.workSecondsSetting;
+    return next;
+  }
+
+  if (next.phase === "cooldown") {
+    next.phase = "done";
+    next.isRunning = false;
+    next.remainingTime = 0;
     return next;
   }
 
@@ -135,6 +152,7 @@ export function reconcileTimerSession(session, now = Date.now()) {
     elapsed -= next.remainingTime;
     next.remainingTime = 0;
     next = advancePhase(next);
+    next.updatedAt = now;
   }
 
   return next;

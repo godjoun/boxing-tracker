@@ -54,6 +54,8 @@ export function getTimerPresetById(id) {
 export function buildPresetTimerLaunch(preset, { autoStart = false } = {}) {
   if (!preset) return null;
 
+  const defaultTitle = preset.logType || `${preset.title} 라운드 훈련`;
+
   return {
     presetId: preset.id,
     rounds: preset.rounds,
@@ -61,8 +63,8 @@ export function buildPresetTimerLaunch(preset, { autoStart = false } = {}) {
     restSeconds: preset.restSeconds,
     prepSeconds: 10,
     cooldownSeconds: 0,
-    routineTitle: `${preset.title} 라운드 훈련`,
-    logType: preset.logType || `${preset.title} 라운드 훈련`,
+    routineTitle: preset.routineTitle || defaultTitle,
+    logType: preset.logType || defaultTitle,
     autoStart,
   };
 }

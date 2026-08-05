@@ -45,6 +45,8 @@ export default function TrainingHubPage({
   const sessionMinutes = Math.round(
     (Number(defaultPreset?.workSeconds || 180) * sessionRounds) / 60
   );
+  const roundDetail = `${sessionRounds}R · ${sessionMinutes}분`;
+  const runningGoalMinutes = 30;
 
   async function startRoundTraining(logType = null) {
     if (!defaultPreset) return;
@@ -61,13 +63,26 @@ export default function TrainingHubPage({
     );
   }
 
+  async function startRunningSession() {
+    await startTimerAudioSession();
+    onStartPreset?.({
+      id: "running-time-30",
+      title: "러닝",
+      description: "시간 목표 러닝",
+      rounds: 1,
+      workSeconds: runningGoalMinutes * 60,
+      restSeconds: 0,
+      logType: "러닝",
+      routineTitle: "러닝 · 30분",
+    });
+  }
+
   const trainingModes = [
     {
       id: "boxing",
       icon: "skill",
       title: "복싱 훈련",
-      detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "라운드 타이머로 시작",
+      detail: roundDetail,
       ctaLabel: "훈련 시작",
       start: () => startRoundTraining(),
     },
@@ -75,17 +90,15 @@ export default function TrainingHubPage({
       id: "running",
       icon: "growth",
       title: "러닝",
-      detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "러닝으로 기록할 세션",
-      ctaLabel: "훈련 시작",
-      start: () => startRoundTraining("러닝"),
+      detail: `시간 목표 · ${runningGoalMinutes}분`,
+      ctaLabel: "러닝 시작",
+      start: () => startRunningSession(),
     },
     {
       id: "weights",
       icon: "body",
       title: "웨이트",
-      detail: "컨디셔닝",
-      hint: "근력 · 체력 루틴",
+      detail: "근력 · 체력 루틴",
       ctaLabel: "루틴 열기",
       start: onOpenStrength,
     },
@@ -93,19 +106,9 @@ export default function TrainingHubPage({
       id: "mitt",
       icon: "combo",
       title: "미트 훈련",
-      detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "미트 중심으로 시작",
+      detail: roundDetail,
       ctaLabel: "훈련 시작",
       start: () => startRoundTraining("미트 훈련"),
-    },
-    {
-      id: "free",
-      icon: "log",
-      title: "자유 기록",
-      detail: "직접 남기기",
-      hint: "이미 끝난 운동을 적습니다",
-      ctaLabel: "기록 열기",
-      start: () => onOpenLog?.(),
     },
   ];
 
@@ -113,6 +116,12 @@ export default function TrainingHubPage({
     trainingModes.find((mode) => mode.id === selectedModeId) || trainingModes[0];
 
   const moreTools = [
+    {
+      id: "free",
+      label: "직접 기록하기",
+      hint: "이미 끝난 운동을 적습니다",
+      onClick: () => onOpenLog?.(),
+    },
     {
       id: "bag",
       label: "샌드백",
@@ -146,22 +155,17 @@ export default function TrainingHubPage({
   ];
 
   return (
-    <main className="hub-page levelup-page training-page">
-      <header className="levelup-header">
-        <h1 className="levelup-title">훈련</h1>
-        <p className="training-page-sub">집중할 훈련을 고르세요</p>
+    <main className="hub-page levelup-page training-page training-page-focus">
+      <header className="levelup-header training-focus-header">
+        <div>
+          <h1 className="levelup-title">훈련</h1>
+        </div>
+        <p className="training-today-chip">
+          오늘 {todaySummary.rounds}R · {todaySummary.minutes}분
+        </p>
       </header>
 
       <section className="training-mode-section" aria-label="훈련 모드">
-        <div className="training-section-heading">
-          <div>
-            <p>MODE</p>
-            <h2>훈련 모드 선택</h2>
-          </div>
-          <span className="training-today-chip">
-            오늘 {todaySummary.rounds}R · {todaySummary.minutes}분
-          </span>
-        </div>
         <div className="training-mode-grid">
           {trainingModes.map((mode) => {
             const selected = selectedMode.id === mode.id;
@@ -174,11 +178,11 @@ export default function TrainingHubPage({
                 onClick={() => setSelectedModeId(mode.id)}
               >
                 <span className="training-mode-card-icon" aria-hidden="true">
-                  <MenuIcon name={mode.icon} size={18} />
+                  <MenuIcon name={mode.icon} size={16} />
                 </span>
                 <span className="training-mode-card-copy">
                   <strong>{mode.title}</strong>
-                  <small>{mode.hint}</small>
+                  <small>{mode.detail}</small>
                 </span>
                 <span
                   className={`training-mode-card-check${selected ? " is-on" : ""}`}
@@ -192,75 +196,10 @@ export default function TrainingHubPage({
         </div>
       </section>
 
-      <section className="training-session-card" aria-label="시작할 세션">
-        <div className="training-session-head">
-          <div>
-            <p>선택한 세션</p>
-            <h2>{selectedMode.title}</h2>
-          </div>
-          {selectedMode.id !== "weights" && selectedMode.id !== "free" ? (
-            <button
-              type="button"
-              className="training-session-edit"
-              onClick={onOpenTimer}
-              aria-label="라운드 직접 설정"
-            >
-              설정
-            </button>
-          ) : null}
-        </div>
-        <div className="training-session-stats">
-          {selectedMode.id === "weights" ? (
-            <>
-              <div>
-                <span>구성</span>
-                <strong>컨디셔닝</strong>
-              </div>
-              <div>
-                <span>오늘</span>
-                <strong>
-                  {todaySummary.rounds}R · {todaySummary.minutes}분
-                </strong>
-              </div>
-            </>
-          ) : selectedMode.id === "free" ? (
-            <>
-              <div>
-                <span>방식</span>
-                <strong>직접 입력</strong>
-              </div>
-              <div>
-                <span>오늘</span>
-                <strong>
-                  {todaySummary.rounds}R · {todaySummary.minutes}분
-                </strong>
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <span>라운드</span>
-                <strong>{sessionRounds}R</strong>
-              </div>
-              <div>
-                <span>시간</span>
-                <strong>{sessionMinutes}분</strong>
-              </div>
-              <div>
-                <span>오늘</span>
-                <strong>
-                  {todaySummary.rounds}R · {todaySummary.minutes}분
-                </strong>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
       <details className="training-tools-details">
         <summary className="training-tools-summary">
           <span>더 보기</span>
-          <strong>샌드백 · 스파링 · 기술</strong>
+          <strong>기록 · 샌드백 · 스파링</strong>
         </summary>
         <section className="training-tools-section" aria-label="추가 훈련 도구">
           {moreTools.map((tool) => (

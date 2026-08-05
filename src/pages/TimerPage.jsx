@@ -42,6 +42,7 @@ import {
 } from "../utils/timerAudio";
 import {
   buildTimerSnapshot,
+  mergeRunningTimerPersistSnapshot,
   readInitialTimerState,
 } from "../utils/timerPagePersistence";
 import { styles } from "./TimerPage.styles";
@@ -391,34 +392,38 @@ export default function TimerPage({
   }
 
   useEffect(() => {
-    const snapshot = buildTimerSnapshot({
-      selectedPresetId,
-      curriculumSessionId,
-      curriculumRoutineTitle,
-      curriculumLogType,
-      curriculumSessionTitle,
-      curriculumGoal,
-      curriculumSessionCode,
-      curriculumWeekLabel,
-      curriculumWeekTheme,
-      curriculumDrills,
-      strengthDayId,
-      canSkipStrengthWarmup,
-      strengthPlan,
-      prepSecondsSetting,
-      cooldownSecondsSetting,
-      totalRounds,
-      workSecondsSetting,
-      restSecondsSetting,
-      currentRound,
-      phase,
-      remainingTime,
-      isRunning,
-      hasStartedSession,
-      hasSavedLog,
-      soundMode,
-      routineTitle,
-    });
+    const loaded = loadTimerSession();
+    const snapshot = mergeRunningTimerPersistSnapshot(
+      buildTimerSnapshot({
+        selectedPresetId,
+        curriculumSessionId,
+        curriculumRoutineTitle,
+        curriculumLogType,
+        curriculumSessionTitle,
+        curriculumGoal,
+        curriculumSessionCode,
+        curriculumWeekLabel,
+        curriculumWeekTheme,
+        curriculumDrills,
+        strengthDayId,
+        canSkipStrengthWarmup,
+        strengthPlan,
+        prepSecondsSetting,
+        cooldownSecondsSetting,
+        totalRounds,
+        workSecondsSetting,
+        restSecondsSetting,
+        currentRound,
+        phase,
+        remainingTime,
+        isRunning,
+        hasStartedSession,
+        hasSavedLog,
+        soundMode,
+        routineTitle,
+      }),
+      loaded
+    );
 
     saveTimerSession(snapshot);
     updateTimerMediaSession(getTimerSessionSummary(snapshot));
@@ -533,28 +538,14 @@ export default function TimerPage({
     }
 
     function handleVisibility() {
-      if (document.visibilityState === "visible") {
-        resumeTimerAudio();
-        reconcileFromStorage();
-      }
-    }
-
-    function handlePageShow() {
-      reconcileFromStorage();
-    }
-
-    function handleFocus() {
+      if (document.visibilityState !== "visible") return;
+      resumeTimerAudio();
       reconcileFromStorage();
     }
 
     document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("pageshow", handlePageShow);
-    window.addEventListener("focus", handleFocus);
-
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("pageshow", handlePageShow);
-      window.removeEventListener("focus", handleFocus);
     };
   }, []);
 
@@ -568,7 +559,6 @@ export default function TimerPage({
       const reconciled = reconcileTimerSession(session);
       if (!reconciled) return;
 
-      // 포그라운드 틱: 벽시계 보정. 단계가 바뀌면 phase effect가 현재 단계 알림만 재생.
       applyPersistedStateRef.current?.(reconciled, { silent: false });
       saveTimerSession(reconciled);
     };

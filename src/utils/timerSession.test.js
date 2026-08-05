@@ -289,4 +289,91 @@ describe("reconcileTimerSession wall-clock catch-up", () => {
 
     expect(loadTimerSession().updatedAt).toBe(42);
   });
+
+  it("포그라운드 10초면 remaining이 정확히 10초 감소한다", () => {
+    const start = 2_000_000;
+    let session = {
+      isRunning: true,
+      phase: "work",
+      currentRound: 1,
+      totalRounds: 3,
+      remainingTime: 180,
+      workSecondsSetting: 180,
+      restSecondsSetting: 30,
+      updatedAt: start,
+    };
+
+    for (let second = 1; second <= 10; second += 1) {
+      session = reconcileTimerSession(session, start + second * 1000);
+      saveTimerSession(session);
+      session = loadTimerSession();
+    }
+
+    expect(session.remainingTime).toBe(170);
+    expect(session.updatedAt).toBe(start + 10_000);
+  });
+
+  it("reconcile 후 저장된 updatedAt이 현재 기준점으로 이동한다", () => {
+    const start = 3_000_000;
+    const reconciled = reconcileTimerSession(
+      {
+        isRunning: true,
+        phase: "work",
+        remainingTime: 180,
+        workSecondsSetting: 180,
+        restSecondsSetting: 30,
+        currentRound: 1,
+        totalRounds: 3,
+        updatedAt: start,
+      },
+      start + 5_000
+    );
+    saveTimerSession(reconciled);
+    expect(loadTimerSession().updatedAt).toBe(start + 5_000);
+    expect(loadTimerSession().remainingTime).toBe(175);
+  });
+
+  it("30초 백그라운드는 약 30초 감소한다", () => {
+    const start = 4_000_000;
+    const reconciled = reconcileTimerSession(
+      {
+        isRunning: true,
+        phase: "work",
+        remainingTime: 180,
+        workSecondsSetting: 180,
+        restSecondsSetting: 30,
+        currentRound: 1,
+        totalRounds: 3,
+        updatedAt: start,
+      },
+      start + 30_000
+    );
+    expect(reconciled.remainingTime).toBe(150);
+  });
+
+  it("일시정지 30초는 변화 없고 재개 후 1초씩 감소한다", () => {
+    const start = 5_000_000;
+    const paused = {
+      isRunning: false,
+      phase: "work",
+      remainingTime: 150,
+      workSecondsSetting: 180,
+      restSecondsSetting: 30,
+      currentRound: 1,
+      totalRounds: 3,
+      updatedAt: start,
+    };
+    expect(reconcileTimerSession(paused, start + 30_000).remainingTime).toBe(150);
+
+    const resumedAt = start + 30_000;
+    let running = {
+      ...paused,
+      isRunning: true,
+      updatedAt: resumedAt,
+    };
+    running = reconcileTimerSession(running, resumedAt + 1_000);
+    expect(running.remainingTime).toBe(149);
+    running = reconcileTimerSession(running, resumedAt + 2_000);
+    expect(running.remainingTime).toBe(148);
+  });
 });

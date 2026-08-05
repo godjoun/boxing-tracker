@@ -90,7 +90,7 @@ export function readInitialTimerState() {
   };
 }
 
-export function buildTimerSnapshot(state) {
+export function buildTimerSnapshot(state, now = Date.now()) {
   return {
     selectedPresetId: state.selectedPresetId,
     curriculumSessionId: state.curriculumSessionId,
@@ -118,6 +118,36 @@ export function buildTimerSnapshot(state) {
     hasSavedLog: state.hasSavedLog,
     soundMode: state.soundMode,
     routineTitle: state.routineTitle,
-    updatedAt: Date.now(),
+    updatedAt: now,
+  };
+}
+
+/**
+ * Running 중 시간 권한은 syncFromClock 전용.
+ * persist는 설정/메타만 갱신하고 remaining·updatedAt·phase·round는 storage 값을 유지한다.
+ * 일시정지→재개 시에는 updatedAt을 now로 재설정한다.
+ */
+export function mergeRunningTimerPersistSnapshot(
+  snapshot,
+  loaded,
+  now = Date.now()
+) {
+  if (!snapshot?.isRunning) {
+    return snapshot;
+  }
+
+  if (loaded?.isRunning) {
+    return {
+      ...snapshot,
+      remainingTime: loaded.remainingTime,
+      updatedAt: loaded.updatedAt,
+      phase: loaded.phase,
+      currentRound: loaded.currentRound,
+    };
+  }
+
+  return {
+    ...snapshot,
+    updatedAt: now,
   };
 }

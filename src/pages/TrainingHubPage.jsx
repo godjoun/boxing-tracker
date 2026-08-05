@@ -66,7 +66,7 @@ export default function TrainingHubPage({
       icon: "round",
       title: "일반 훈련",
       detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "라운드 타이머로 바로 시작",
+      hint: "타이머로 바로 시작",
       start: () => startRoundTraining(),
     },
     {
@@ -74,7 +74,7 @@ export default function TrainingHubPage({
       icon: "skill",
       title: "샌드백",
       detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "타격 중심으로 기록",
+      hint: "타격 라운드 시작",
       start: () => startRoundTraining("샌드백"),
     },
     {
@@ -82,7 +82,7 @@ export default function TrainingHubPage({
       icon: "combo",
       title: "스파링",
       detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "스파링 라운드로 기록",
+      hint: "스파링 라운드 시작",
       start: () => startRoundTraining("스파링"),
     },
     {
@@ -90,7 +90,7 @@ export default function TrainingHubPage({
       icon: "body",
       title: "근력 · 체력",
       detail: "컨디셔닝",
-      hint: "신체 루틴으로 이어가기",
+      hint: "루틴으로 시작",
       start: onOpenStrength,
     },
   ];
@@ -110,7 +110,7 @@ export default function TrainingHubPage({
     <main className="hub-page levelup-page training-page">
       <header className="levelup-header">
         <h1 className="levelup-title">훈련</h1>
-        <p className="training-page-sub">모드를 고르고 바로 시작하세요</p>
+        <p className="training-page-sub">지금 벨을 울립니다</p>
       </header>
 
       <section className="training-mode-section" aria-label="훈련 모드">
@@ -137,10 +137,10 @@ export default function TrainingHubPage({
         </div>
       </section>
 
-      <section className="training-session-card" aria-label="오늘 세션">
+      <section className="training-session-card" aria-label="시작할 세션">
         <div className="training-session-head">
           <div>
-            <p>오늘 세션</p>
+            <p>시작할 세션</p>
             <h2>{selectedMode.title}</h2>
           </div>
           {selectedMode.id !== "conditioning" ? (

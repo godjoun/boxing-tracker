@@ -479,17 +479,6 @@ function MainAppShell({ theme, onToggleTheme }) {
         <nav className="app-bottom-nav" aria-label="메인 메뉴">
           <button
             type="button"
-            className={getNavClass(currentPage === "home")}
-            onClick={() => goPage("home")}
-          >
-            <span className="app-nav-icon" aria-hidden="true">
-              <MenuIcon name="home" size={20} />
-            </span>
-            <span className="app-nav-label">홈</span>
-          </button>
-
-          <button
-            type="button"
             data-tutorial-target="nav-timer"
             className={getNavClass(
               currentPage === "train" || currentPage === "timer"
@@ -512,6 +501,17 @@ function MainAppShell({ theme, onToggleTheme }) {
               <MenuIcon name="log" size={20} />
             </span>
             <span className="app-nav-label">기록</span>
+          </button>
+
+          <button
+            type="button"
+            className={getNavClass(currentPage === "home")}
+            onClick={() => goPage("home")}
+          >
+            <span className="app-nav-icon" aria-hidden="true">
+              <MenuIcon name="home" size={20} />
+            </span>
+            <span className="app-nav-label">홈</span>
           </button>
 
           <button

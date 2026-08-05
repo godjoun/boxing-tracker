@@ -2,25 +2,25 @@ export const LOG_CATEGORIES = [
   {
     id: "boxing",
     label: "복싱",
-    description: "라운드와 시간을 남겨요",
+    description: "라운드 · 시간 입력",
     subtypes: ["복싱", "쉐도우복싱", "샌드백", "미트 훈련", "줄넘기", "풋워크", "스파링"],
   },
   {
     id: "running",
     label: "러닝",
-    description: "거리와 시간으로 페이스를 계산해요",
+    description: "거리 · 페이스 입력",
     subtypes: ["러닝", "조깅", "인터벌 러닝"],
   },
   {
     id: "weights",
     label: "웨이트",
-    description: "세트·무게·횟수만 남겨요",
+    description: "세트 · 횟수 입력",
     subtypes: ["웨이트", "상체", "하체", "코어"],
   },
   {
     id: "walking",
     label: "걷기",
-    description: "가볍게 걸은 시간을 남겨요",
+    description: "시간 · 거리 입력",
     subtypes: ["걷기", "회복 걷기"],
   },
 ];

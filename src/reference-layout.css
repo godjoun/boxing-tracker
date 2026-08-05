@@ -8,11 +8,11 @@
   --screen-radius: 8px;
   --screen-card: var(--p-bg-subtle);
   --screen-line: var(--p-border-soft);
-  --read-card-pad: 14px;
-  --read-card-title-size: 14px;
-  --read-card-body-size: 13px;
-  --read-card-meta-size: 11px;
-  --read-card-line-height: 1.45;
+  --read-card-pad: 12px;
+  --read-card-title-size: 13px;
+  --read-card-body-size: 12px;
+  --read-card-meta-size: 10px;
+  --read-card-line-height: 1.4;
 }
 
 .app-main {
@@ -68,8 +68,9 @@
 }
 
 .app-nav-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .home-page,
@@ -443,11 +444,15 @@
 }
 
 .home-week-inline-meta {
+  min-width: 0;
+  max-width: 58%;
   color: var(--p-text-muted);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   text-align: right;
   line-height: 1.3;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .home-week-summary-strip {
@@ -685,7 +690,7 @@
 }
 
 .training-mode-card strong {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -919,8 +924,8 @@
 .training-mode-card-copy small {
   display: block;
   color: var(--p-text-muted);
-  font-size: 12px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.35;
   white-space: normal;
 }
 
@@ -1014,10 +1019,13 @@
 .training-session-stats strong {
   overflow: hidden;
   color: var(--p-text);
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 900;
+  line-height: 1.25;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .training-analysis-panel {
@@ -1561,7 +1569,7 @@
   padding: 0 4px 8px;
   border-radius: 0;
   color: var(--p-text-muted);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   text-align: center;
 }
@@ -2753,7 +2761,7 @@
 .app-shell .training-mode-card-copy small {
   display: block;
   color: var(--p-text-muted);
-  font-size: 12px;
+  font-size: 11px;
   line-height: var(--read-card-line-height);
   white-space: normal;
 }

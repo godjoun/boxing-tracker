@@ -97,19 +97,19 @@ function getFinalExerciseName(formData) {
 }
 
 function getCorePrompt(categoryId) {
-  if (categoryId === "boxing") return "라운드와 시간만 남기면 됩니다";
-  if (categoryId === "running") return "거리와 시간이 있으면 페이스가 계산됩니다";
-  if (categoryId === "weights") return "세트, 무게, 횟수만 입력합니다";
-  if (categoryId === "walking") return "걸은 시간과 거리만 남깁니다";
-  return "먼저 운동을 하나 고르세요";
+  if (categoryId === "boxing") return "라운드와 시간만 적으면 됩니다";
+  if (categoryId === "running") return "거리와 시간만 적으면 됩니다";
+  if (categoryId === "weights") return "세트·무게·횟수만 적으면 됩니다";
+  if (categoryId === "walking") return "시간과 거리만 적으면 됩니다";
+  return "끝난 종류를 고르세요";
 }
 
 function getStepOneStatus(formData) {
   if (!formData.category) {
     return {
       isComplete: false,
-      label: "운동 선택",
-      buttonLabel: "운동 선택",
+      label: "종류 선택",
+      buttonLabel: "종류 선택",
     };
   }
 
@@ -237,9 +237,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const [historyCategory, setHistoryCategory] = useState("all");
   const [historyPeriod, setHistoryPeriod] = useState("week");
   const [autoTracking, setAutoTracking] = useState(null);
+  const [pickingCategory, setPickingCategory] = useState(false);
   const watchIdRef = useRef(null);
 
   const selectedCategory = form.category ? getLogCategory(form.category) : null;
+  const showCategoryPicker = !selectedCategory || pickingCategory;
   const stepOneStatus = getStepOneStatus(form);
   const canSave = stepOneStatus.isComplete;
   const gpsPhase = autoTracking?.phase || null;
@@ -341,6 +343,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   function handleCategoryChange(categoryId) {
     const category = getLogCategory(categoryId);
     clearAutoTracking();
+    setPickingCategory(false);
     setForm((prev) => ({
       ...prev,
       category: category.id,
@@ -561,6 +564,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     clearAutoTracking();
     const delta = getCompletionDelta(logs, savedLog);
     setForm(createEmptyForm());
+    setPickingCategory(false);
     setHistoryLimit(5);
     setReward({
       type: "growth",
@@ -691,11 +695,15 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   }
 
   return (
-    <main className="log-page has-write-dock">
+    <main
+      className={`log-page${
+        selectedCategory && !pickingCategory ? " has-write-dock" : ""
+      }`}
+    >
       <div className="log-container">
         <header className="log-hero">
           <h1 className="log-title">기록</h1>
-          <p className="log-subtitle">오늘 한 운동만 빠르게 남기세요</p>
+          <p className="log-subtitle">끝난 운동을 직접 남깁니다</p>
         </header>
 
         {reward?.type === "growth" && reward.delta ? (
@@ -739,31 +747,63 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         <section className="log-card log-form-card">
           <form onSubmit={handleSubmit}>
             <div className="log-form-block">
-              <div className="log-step-heading">
-                <h2>운동 남기기</h2>
+              <div
+                className={`log-step-heading${
+                  showCategoryPicker ? " is-picker" : ""
+                }`}
+              >
+                <p className="log-step-kicker">오늘</p>
+                <h2>직접 남기기</h2>
                 <span>{getCorePrompt(form.category)}</span>
               </div>
 
-              <div className="log-category-grid" role="group" aria-label="운동 카테고리">
-                {LOG_CATEGORIES.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    className={`log-category-choice${
-                      form.category === category.id ? " is-active" : ""
-                    }`}
-                    aria-pressed={form.category === category.id}
-                    onClick={() => handleCategoryChange(category.id)}
-                  >
+              {showCategoryPicker ? (
+                <div className="log-category-grid" role="group" aria-label="운동 카테고리">
+                  {LOG_CATEGORIES.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      className={`log-category-choice${
+                        form.category === category.id ? " is-active" : ""
+                      }`}
+                      aria-pressed={form.category === category.id}
+                      onClick={() => handleCategoryChange(category.id)}
+                    >
+                      <span className="log-category-icon" aria-hidden="true">
+                        <MenuIcon name={CATEGORY_ICON[category.id]} size={18} />
+                      </span>
+                      <span className="log-category-copy">
+                        <strong>{category.label}</strong>
+                        <small>{category.description}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="log-selected-category" aria-label="선택한 운동">
+                  <div className="log-selected-category-main">
                     <span className="log-category-icon" aria-hidden="true">
-                      <MenuIcon name={CATEGORY_ICON[category.id]} size={18} />
+                      <MenuIcon
+                        name={CATEGORY_ICON[selectedCategory.id]}
+                        size={18}
+                      />
                     </span>
-                    <strong>{category.label}</strong>
+                    <span className="log-category-copy">
+                      <strong>{selectedCategory.label}</strong>
+                      <small>{selectedCategory.description}</small>
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="log-selected-category-change"
+                    onClick={() => setPickingCategory(true)}
+                  >
+                    바꾸기
                   </button>
-                ))}
-              </div>
+                </div>
+              )}
 
-              {selectedCategory ? (
+              {selectedCategory && !pickingCategory ? (
                 <section
                   className="log-core-panel"
                   aria-label={`${selectedCategory.label} 기록 입력`}
@@ -975,7 +1015,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                   ) : null}
 
                   <details className="log-subtype-details">
-                    <summary>세부 운동 · 메모</summary>
+                    <summary>세부 · 직접 입력 · 메모</summary>
                     <div className="log-subtype-grid">
                       {selectedCategory.subtypes.map((exercise) => (
                         <button
@@ -1039,20 +1079,22 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
           </form>
         </section>
 
-        <div className="log-write-dock is-final">
-          <div className="log-write-dock-exp">
-            <span>다음</span>
-            <strong>{dockHint}</strong>
+        {selectedCategory && !pickingCategory ? (
+          <div className="log-write-dock is-final">
+            <div className="log-write-dock-exp">
+              <span>다음</span>
+              <strong>{dockHint}</strong>
+            </div>
+            <button
+              type="button"
+              className="log-submit"
+              onClick={handleDockPrimaryAction}
+              disabled={!canSave && !canStartGpsFromDock && !gpsIsActive}
+            >
+              {dockLabel}
+            </button>
           </div>
-          <button
-            type="button"
-            className="log-submit"
-            onClick={handleDockPrimaryAction}
-            disabled={!canSave && !canStartGpsFromDock && !gpsIsActive}
-          >
-            {dockLabel}
-          </button>
-        </div>
+        ) : null}
 
         <section className="log-list-section" aria-label="기록 목록">
           <div className="log-recent-head">

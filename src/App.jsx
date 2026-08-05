@@ -363,7 +363,16 @@ function MainAppShell({ theme, onToggleTheme }) {
                 "train"
               )
             }
-            onOpenTimer={() => openTimerFrom("train")}
+            onOpenTimer={(preset) => {
+              if (preset) {
+                goTimerWithLaunch(
+                  buildPresetTimerLaunch(preset, { autoStart: false }),
+                  "train"
+                );
+                return;
+              }
+              openTimerFrom("train");
+            }}
             onOpenCurriculum={goCurriculum}
             onOpenComboCreator={() => goPage("combo-creator")}
             onOpenStrength={() => goPage("strength")}

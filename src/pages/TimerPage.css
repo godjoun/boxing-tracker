@@ -5,17 +5,23 @@
 .timer-running-bar {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  margin: 0 0 10px;
+  padding-top: max(4px, env(safe-area-inset-top, 0px));
 }
 
 .timer-back-button {
-  min-height: 40px;
-  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 12px 10px 4px;
   border: none;
   background: transparent;
   color: var(--p-text);
   font-size: 14px;
   font-weight: 800;
+  line-height: 1.2;
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -215,8 +221,10 @@
 }
 
 .timer-setup-field-head strong {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 950;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .timer-setup-step-row,
@@ -232,14 +240,15 @@
 
 .timer-setup-step-row button,
 .timer-setup-quick-row button {
-  min-height: 40px;
+  min-height: 48px;
   border: 1px solid var(--p-border-soft);
   border-radius: 12px;
   background: var(--p-bg-panel);
   color: var(--p-text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .timer-setup-quick-row button.is-active {
@@ -281,7 +290,10 @@
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - var(--app-nav-total, 86px));
-  padding-bottom: 24px;
+  padding:
+    max(8px, env(safe-area-inset-top, 0px))
+    16px
+    calc(24px + env(safe-area-inset-bottom, 0px));
   background:
     radial-gradient(circle at 50% 0%, rgba(138, 46, 46, 0.1), transparent 42%),
     var(--p-bg-subtle);
@@ -301,7 +313,18 @@
 
 .timer-page-focus .timer-focus-time {
   font-size: clamp(72px, 22vw, 96px);
-  margin: 20px 0 12px;
+  margin: 12px 0 8px;
+  text-align: center;
+}
+
+.timer-page-focus .timer-focus-round-hero {
+  margin: 0 0 10px;
+  color: var(--p-text);
+  font-size: clamp(28px, 8vw, 36px);
+  font-weight: 950;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  text-align: center;
 }
 
 .timer-page-focus .timer-focus-round {
@@ -311,8 +334,17 @@
 }
 
 .timer-page-focus .timer-focus-name {
-  font-size: 15px;
+  font-size: 14px;
   margin-bottom: 4px;
+  color: var(--p-text-muted);
+  font-weight: 700;
+  text-align: center;
+}
+
+.timer-page-focus .timer-focus-phase-row {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 8px;
 }
 
 .timer-focus-hint {
@@ -320,6 +352,7 @@
   color: var(--p-text-faint);
   font-size: 11px;
   font-weight: 700;
+  text-align: center;
 }
 
 .timer-focus-controls {
@@ -349,6 +382,34 @@
   border: 2px solid rgba(138, 46, 46, 0.35);
   background: transparent;
   color: #cf8b8b;
+}
+
+.timer-focus-controls.is-prep {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.timer-focus-controls.is-prep .timer-focus-skip-prep {
+  min-height: 48px;
+  border: 1px solid var(--p-border-strong);
+  background: transparent;
+  color: var(--p-text);
+  font-size: 15px;
+}
+
+.timer-focus-controls.is-prep .timer-focus-stop {
+  min-height: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--p-text-faint);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.timer-focus-skip-prep {
+  border: 1px solid var(--p-border-strong);
+  background: transparent;
+  color: var(--p-text);
 }
 
 .timer-sound-details {

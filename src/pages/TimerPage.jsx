@@ -1175,6 +1175,17 @@ export default function TimerPage({
     onGoBack();
   }
 
+  function handleSkipPrep() {
+    if (phase !== "prep" || !hasStartedSession) return;
+
+    setPhase("work");
+    previousPhaseRef.current = "work";
+    setCurrentRound(1);
+    setRemainingTime(workSeconds);
+    setIsRunning(true);
+    playTimerBeep(soundMode, "work");
+  }
+
   const timerCardStyle = {
     ...styles.timerCard,
     ...(isFocusMode ? { marginBottom: 0 } : {}),
@@ -1260,7 +1271,7 @@ export default function TimerPage({
 
               <div className="timer-setup-field-group">
                 <div className="timer-setup-field-head">
-                  <span>운동</span>
+                  <span>운동 시간</span>
                   <strong>{formatTime(workSecondsSetting)}</strong>
                 </div>
                 <div className="timer-setup-step-row">
@@ -1269,21 +1280,21 @@ export default function TimerPage({
                     onClick={() => handleWorkSecondsChange(-10)}
                     disabled={isRunning}
                   >
-                    -10
+                    −10초
                   </button>
                   <button
                     type="button"
                     onClick={() => handleWorkSecondsChange(10)}
                     disabled={isRunning}
                   >
-                    +10
+                    +10초
                   </button>
                 </div>
               </div>
 
               <div className="timer-setup-field-group">
                 <div className="timer-setup-field-head">
-                  <span>휴식</span>
+                  <span>휴식 시간</span>
                   <strong>{formatTime(restSecondsSetting)}</strong>
                 </div>
                 <div className="timer-setup-quick-row">
@@ -1307,14 +1318,14 @@ export default function TimerPage({
                     onClick={() => handleRestSecondsChange(-5)}
                     disabled={isRunning}
                   >
-                    -5
+                    −5초
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRestSecondsChange(5)}
                     disabled={isRunning}
                   >
-                    +5
+                    +5초
                   </button>
                 </div>
               </div>
@@ -1416,23 +1427,50 @@ export default function TimerPage({
       >
         {isFocusMode ? (
           <p className="timer-focus-hint">
-            더블 탭 · 일시정지 / 재개 · 복귀 시 실제 시간으로 이어집니다
+            {phase === "prep"
+              ? "준비가 끝나면 1라운드가 시작됩니다"
+              : "더블 탭 · 일시정지 / 재개"}
           </p>
         ) : null}
 
-        {!isComplete ? (
+        {phase !== "done" ? (
+          <div className={isFocusMode ? "timer-focus-time" : ""} style={timeTextStyle}>
+            {formatTime(remainingTime)}
+          </div>
+        ) : null}
+
+        {isFocusMode && phase !== "prep" && phase !== "done" ? (
+          <p className="timer-focus-round-hero">
+            {isIntervalMode
+              ? `SET ${currentRound} / ${totalRounds}`
+              : `ROUND ${currentRound} / ${totalRounds}`}
+          </p>
+        ) : null}
+
+        {isFocusMode && phase === "prep" ? (
+          <p className="timer-focus-round-hero">
+            {formatTimerDurationLabel(activePrepSeconds)} 준비
+          </p>
+        ) : null}
+
+        {!isComplete && !isFocusMode ? (
           <div style={styles.timerTopRow}>
             <span style={{ ...styles.phaseBadge, ...getPhaseBadgeStyle() }}>
               {getPhaseText()}
             </span>
 
-            <span
-              className={isFocusMode ? "timer-focus-round" : ""}
-              style={styles.roundText}
-            >
+            <span className="timer-focus-round" style={styles.roundText}>
               {isIntervalMode
                 ? `${currentRound} / ${totalRounds} 세트`
                 : `${currentRound} / ${totalRounds} R`}
+            </span>
+          </div>
+        ) : null}
+
+        {isFocusMode && phase !== "done" ? (
+          <div className="timer-focus-phase-row">
+            <span style={{ ...styles.phaseBadge, ...getPhaseBadgeStyle() }}>
+              {getPhaseText()}
             </span>
           </div>
         ) : null}
@@ -1445,12 +1483,6 @@ export default function TimerPage({
             {getCurrentRoundName()}
           </div>
         )}
-
-        {phase !== "done" ? (
-          <div className={isFocusMode ? "timer-focus-time" : ""} style={timeTextStyle}>
-            {formatTime(remainingTime)}
-          </div>
-        ) : null}
 
         {strengthPlan && phase !== "done" ? (
           <StrengthTimerGuide
@@ -1580,31 +1612,60 @@ export default function TimerPage({
         )}
 
         {isFocusMode ? (
-          <div className="timer-focus-controls">
-            <button
-              type="button"
-              className="timer-focus-pause"
-              onClick={(event) => {
-                event.stopPropagation();
-                if (isRunning) {
-                  handlePause();
-                } else {
-                  handleStart();
-                }
-              }}
-            >
-              {isRunning ? "일시정지" : "계속"}
-            </button>
-            <button
-              type="button"
-              className="timer-focus-stop"
-              onClick={(event) => {
-                event.stopPropagation();
-                handleFocusStop();
-              }}
-            >
-              종료
-            </button>
+          <div
+            className={`timer-focus-controls${phase === "prep" ? " is-prep" : ""}`}
+          >
+            {phase === "prep" ? (
+              <>
+                <button
+                  type="button"
+                  className="timer-focus-skip-prep"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleSkipPrep();
+                  }}
+                >
+                  준비 건너뛰기
+                </button>
+                <button
+                  type="button"
+                  className="timer-focus-stop"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleLeaveTimer();
+                  }}
+                >
+                  나가기
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="timer-focus-pause"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    if (isRunning) {
+                      handlePause();
+                    } else {
+                      handleStart();
+                    }
+                  }}
+                >
+                  {isRunning ? "일시정지" : "계속"}
+                </button>
+                <button
+                  type="button"
+                  className="timer-focus-stop"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleFocusStop();
+                  }}
+                >
+                  종료
+                </button>
+              </>
+            )}
           </div>
         ) : isComplete ? null : (
         <div style={styles.buttonRow}>

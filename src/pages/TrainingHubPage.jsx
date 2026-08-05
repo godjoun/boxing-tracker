@@ -16,6 +16,23 @@ function getLogRounds(log) {
   return Number(log.rounds || log.totalRounds || log.completedRounds || 0);
 }
 
+function formatRestLabel(seconds) {
+  if (seconds >= 60) {
+    const minutes = Math.floor(seconds / 60);
+    const remain = seconds % 60;
+    return remain ? `${minutes}분 ${remain}초` : `${minutes}분`;
+  }
+  return `${seconds}초`;
+}
+
+const BOXING_KINDS = [
+  { id: "round", title: "라운드", logType: null },
+  { id: "bag", title: "샌드백", logType: "샌드백" },
+  { id: "mitt", title: "미트", logType: "미트 훈련" },
+  { id: "sparring", title: "스파링", logType: "스파링" },
+  { id: "shadow", title: "쉐도우", logType: "쉐도우" },
+];
+
 export default function TrainingHubPage({
   onStartPreset,
   onOpenTimer,
@@ -25,7 +42,12 @@ export default function TrainingHubPage({
   onOpenLog,
 }) {
   const { logs } = useTraining();
-  const [selectedModeId, setSelectedModeId] = useState("boxing");
+  const [categoryId, setCategoryId] = useState("boxing");
+  const [boxingKindId, setBoxingKindId] = useState("round");
+  const [roundPresetId, setRoundPresetId] = useState(
+    MATCH_TIMER_PRESETS[0]?.id || "match3"
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const todaySummary = useMemo(() => {
     const todayLogs = logs.filter(
@@ -40,27 +62,39 @@ export default function TrainingHubPage({
     };
   }, [logs]);
 
-  const defaultPreset = MATCH_TIMER_PRESETS[0];
-  const sessionRounds = Number(defaultPreset?.rounds || 3);
-  const sessionMinutes = Math.round(
-    (Number(defaultPreset?.workSeconds || 180) * sessionRounds) / 60
-  );
-  const roundDetail = `${sessionRounds}R · ${sessionMinutes}분`;
+  const selectedRoundPreset =
+    MATCH_TIMER_PRESETS.find((preset) => preset.id === roundPresetId) ||
+    MATCH_TIMER_PRESETS[0];
+  const boxingKind =
+    BOXING_KINDS.find((kind) => kind.id === boxingKindId) || BOXING_KINDS[0];
+
+  const sessionRounds = Number(selectedRoundPreset?.rounds || 3);
+  const workSeconds = Number(selectedRoundPreset?.workSeconds || 180);
+  const restSeconds = Number(selectedRoundPreset?.restSeconds || 30);
+  const workMinutes = Math.round(workSeconds / 60);
+  const roundSummary = `${sessionRounds}R · 운동 ${workMinutes}분 · 휴식 ${formatRestLabel(
+    restSeconds
+  )}`;
   const runningGoalMinutes = 30;
 
-  async function startRoundTraining(logType = null) {
-    if (!defaultPreset) return;
+  function buildBoxingPreset() {
+    if (!selectedRoundPreset) return null;
+    const logType = boxingKind.logType;
+    return {
+      ...selectedRoundPreset,
+      title: logType || selectedRoundPreset.title,
+      logType: logType || undefined,
+      routineTitle: logType
+        ? `${logType} · ${sessionRounds}R`
+        : `${sessionRounds}R 라운드 훈련`,
+    };
+  }
 
+  async function startBoxingSession() {
+    const preset = buildBoxingPreset();
+    if (!preset) return;
     await startTimerAudioSession();
-    onStartPreset?.(
-      logType
-        ? {
-            ...defaultPreset,
-            title: logType,
-            logType,
-          }
-        : defaultPreset
-    );
+    onStartPreset?.(preset);
   }
 
   async function startRunningSession() {
@@ -77,43 +111,35 @@ export default function TrainingHubPage({
     });
   }
 
-  const trainingModes = [
+  function openCustomRoundSetup() {
+    const preset = buildBoxingPreset();
+    if (!preset) {
+      onOpenTimer?.();
+      return;
+    }
+    onOpenTimer?.(preset);
+  }
+
+  const categories = [
     {
       id: "boxing",
       icon: "skill",
-      title: "복싱 훈련",
-      detail: roundDetail,
-      ctaLabel: "훈련 시작",
-      start: () => startRoundTraining(),
+      title: "복싱",
+      detail: "라운드 · 샌드백 · 미트",
     },
     {
       id: "running",
       icon: "growth",
       title: "러닝",
       detail: `시간 목표 · ${runningGoalMinutes}분`,
-      ctaLabel: "러닝 시작",
-      start: () => startRunningSession(),
     },
     {
       id: "weights",
       icon: "body",
       title: "웨이트",
       detail: "근력 · 체력 루틴",
-      ctaLabel: "루틴 열기",
-      start: onOpenStrength,
-    },
-    {
-      id: "mitt",
-      icon: "combo",
-      title: "미트 훈련",
-      detail: roundDetail,
-      ctaLabel: "훈련 시작",
-      start: () => startRoundTraining("미트 훈련"),
     },
   ];
-
-  const selectedMode =
-    trainingModes.find((mode) => mode.id === selectedModeId) || trainingModes[0];
 
   const moreTools = [
     {
@@ -121,24 +147,6 @@ export default function TrainingHubPage({
       label: "직접 기록하기",
       hint: "이미 끝난 운동을 적습니다",
       onClick: () => onOpenLog?.(),
-    },
-    {
-      id: "bag",
-      label: "샌드백",
-      hint: "타격 라운드 시작",
-      onClick: () => startRoundTraining("샌드백"),
-    },
-    {
-      id: "sparring",
-      label: "스파링",
-      hint: "스파링 라운드 시작",
-      onClick: () => startRoundTraining("스파링"),
-    },
-    {
-      id: "settings",
-      label: "라운드 직접 설정",
-      hint: "타이머 시간 · 라운드 조절",
-      onClick: onOpenTimer,
     },
     {
       id: "curriculum",
@@ -154,6 +162,25 @@ export default function TrainingHubPage({
     },
   ];
 
+  const cta =
+    categoryId === "running"
+      ? {
+          label: "러닝 시작",
+          detail: `시간 목표 · ${runningGoalMinutes}분`,
+          onClick: startRunningSession,
+        }
+      : categoryId === "weights"
+        ? {
+            label: "루틴 열기",
+            detail: "근력 · 체력 루틴",
+            onClick: () => onOpenStrength?.(),
+          }
+        : {
+            label: "훈련 시작",
+            detail: `${boxingKind.title} · ${roundSummary}`,
+            onClick: startBoxingSession,
+          };
+
   return (
     <main className="hub-page levelup-page training-page training-page-focus">
       <header className="levelup-header training-focus-header">
@@ -165,24 +192,27 @@ export default function TrainingHubPage({
         </p>
       </header>
 
-      <section className="training-mode-section" aria-label="훈련 모드">
+      <section className="training-mode-section" aria-label="훈련 종류">
         <div className="training-mode-grid">
-          {trainingModes.map((mode) => {
-            const selected = selectedMode.id === mode.id;
+          {categories.map((category) => {
+            const selected = categoryId === category.id;
             return (
               <button
-                key={mode.id}
+                key={category.id}
                 type="button"
                 className={`training-mode-card${selected ? " is-selected" : ""}`}
                 aria-pressed={selected}
-                onClick={() => setSelectedModeId(mode.id)}
+                onClick={() => {
+                  setCategoryId(category.id);
+                  setSettingsOpen(false);
+                }}
               >
                 <span className="training-mode-card-icon" aria-hidden="true">
-                  <MenuIcon name={mode.icon} size={16} />
+                  <MenuIcon name={category.icon} size={16} />
                 </span>
                 <span className="training-mode-card-copy">
-                  <strong>{mode.title}</strong>
-                  <small>{mode.detail}</small>
+                  <strong>{category.title}</strong>
+                  <small>{category.detail}</small>
                 </span>
                 <span
                   className={`training-mode-card-check${selected ? " is-on" : ""}`}
@@ -196,10 +226,88 @@ export default function TrainingHubPage({
         </div>
       </section>
 
+      {categoryId === "boxing" ? (
+        <section className="training-boxing-setup" aria-label="복싱 훈련 설정">
+          <div className="training-kind-row" role="list">
+            {BOXING_KINDS.map((kind) => {
+              const selected = boxingKindId === kind.id;
+              return (
+                <button
+                  key={kind.id}
+                  type="button"
+                  role="listitem"
+                  className={`training-kind-chip${selected ? " is-selected" : ""}`}
+                  aria-pressed={selected}
+                  onClick={() => setBoxingKindId(kind.id)}
+                >
+                  {kind.title}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className={`training-round-row${settingsOpen ? " is-open" : ""}`}
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen((open) => !open)}
+          >
+            <span>
+              <small>현재 설정</small>
+              <strong>{roundSummary}</strong>
+            </span>
+            <em>{settingsOpen ? "접기" : "변경"}</em>
+          </button>
+
+          {settingsOpen ? (
+            <div className="training-round-picker" role="group" aria-label="라운드 설정">
+              {MATCH_TIMER_PRESETS.map((preset) => {
+                const selected = roundPresetId === preset.id;
+                const minutes = Math.round(
+                  (Number(preset.workSeconds || 180) * Number(preset.rounds || 3)) /
+                    60
+                );
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={`training-round-option${selected ? " is-selected" : ""}`}
+                    aria-pressed={selected}
+                    onClick={() => {
+                      setRoundPresetId(preset.id);
+                      setSettingsOpen(false);
+                    }}
+                  >
+                    <strong>{preset.rounds}R</strong>
+                    <small>
+                      운동 {Math.round(Number(preset.workSeconds || 180) / 60)}분 · 휴식{" "}
+                      {formatRestLabel(Number(preset.restSeconds || 30))}
+                    </small>
+                    <span>{minutes}분</span>
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                className="training-round-option training-round-option-custom"
+                onClick={() => {
+                  setSettingsOpen(false);
+                  openCustomRoundSetup();
+                }}
+              >
+                <strong>직접 설정</strong>
+                <small>라운드 · 운동 · 휴식 직접 조절</small>
+                <span>›</span>
+              </button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       <details className="training-tools-details">
         <summary className="training-tools-summary">
           <span>더 보기</span>
-          <strong>기록 · 샌드백 · 스파링</strong>
+          <strong>기록 · 기술 · 콤보</strong>
         </summary>
         <section className="training-tools-section" aria-label="추가 훈련 도구">
           {moreTools.map((tool) => (
@@ -213,11 +321,9 @@ export default function TrainingHubPage({
       </details>
 
       <div className="training-start-dock">
-        <button type="button" onClick={() => selectedMode.start?.()}>
-          {selectedMode.ctaLabel}
-          <small>
-            {selectedMode.title} · {selectedMode.detail}
-          </small>
+        <button type="button" onClick={() => cta.onClick?.()}>
+          {cta.label}
+          <small>{cta.detail}</small>
         </button>
       </div>
     </main>

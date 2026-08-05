@@ -1276,6 +1276,7 @@
 
 .training-page-focus .training-tools-details {
   margin-top: 12px;
+  margin-bottom: 8px;
 }
 
 .training-page-focus .training-tools-details .training-tools-section button {
@@ -1296,8 +1297,156 @@
   min-height: 42px;
 }
 
+.training-page-focus .training-tools-details[open] .training-tools-section {
+  padding-bottom: 88px;
+}
+
 .training-page-focus .training-start-dock {
   margin-top: 14px;
+}
+
+.training-boxing-setup {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 4px;
+}
+
+.training-kind-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.training-kind-chip {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.theme-dark .training-kind-chip {
+  border-color: rgba(245, 241, 232, 0.12);
+}
+
+.training-kind-chip.is-selected {
+  border-color: var(--p-action);
+  background: rgba(138, 46, 46, 0.16);
+  color: var(--p-text);
+}
+
+.training-round-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 14px;
+  background: var(--p-bg-page);
+  color: var(--p-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-dark .training-round-row {
+  background: #121012;
+  border-color: rgba(245, 241, 232, 0.1);
+}
+
+.training-round-row.is-open {
+  border-color: var(--p-action);
+}
+
+.training-round-row span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.training-round-row small {
+  color: var(--p-text-faint);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.training-round-row strong {
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.training-round-row em {
+  flex: 0 0 auto;
+  color: var(--p-action, #8a2e2e);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.training-round-picker {
+  display: grid;
+  gap: 8px;
+}
+
+.training-round-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 12px;
+  background: var(--p-bg-page);
+  color: var(--p-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-dark .training-round-option {
+  background: #121012;
+  border-color: rgba(245, 241, 232, 0.1);
+}
+
+.training-round-option.is-selected {
+  border-color: var(--p-action);
+  box-shadow: inset 0 0 0 1px var(--p-action);
+}
+
+.training-round-option strong {
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.training-round-option small {
+  color: var(--p-text-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.training-round-option > span:last-child {
+  color: var(--p-text-faint);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.training-round-option-custom {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.training-round-option-custom strong {
+  grid-column: 1;
+}
+
+.training-round-option-custom small {
+  grid-column: 1;
 }
 
 /* Legacy session card styles kept for safety if referenced elsewhere */

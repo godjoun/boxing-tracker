@@ -151,3 +151,19 @@ export function mergeRunningTimerPersistSnapshot(
     updatedAt: now,
   };
 }
+
+/** 준비 건너뛰기: work 세션을 원자적으로 구성한다. */
+export function buildSkipPrepSession(state, now = Date.now()) {
+  const workSeconds = Number(state.workSecondsSetting) || DEFAULT_BOXING_WORK_SECONDS;
+  return buildTimerSnapshot(
+    {
+      ...state,
+      phase: "work",
+      remainingTime: workSeconds,
+      currentRound: 1,
+      isRunning: true,
+      hasStartedSession: true,
+    },
+    now
+  );
+}

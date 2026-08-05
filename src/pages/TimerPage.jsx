@@ -42,6 +42,7 @@ import {
 } from "../utils/timerAudio";
 import {
   buildTimerSnapshot,
+  buildSkipPrepSession,
   mergeRunningTimerPersistSnapshot,
   readInitialTimerState,
 } from "../utils/timerPagePersistence";
@@ -264,8 +265,7 @@ export default function TimerPage({
   const wakeLockRef = useRef(null);
   const lastAppliedFingerprintRef = useRef("");
   const applyPersistedStateRef = useRef(null);
-
-  const workSeconds = workSecondsSetting;
+  const skipPrepLockRef = useRef(false);
 
   const totalWorkSeconds = totalRounds * workSecondsSetting;
   const totalSessionSeconds =
@@ -548,6 +548,12 @@ export default function TimerPage({
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
+
+  useEffect(() => {
+    if (phase === "prep") {
+      skipPrepLockRef.current = false;
+    }
+  }, [phase]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -1128,13 +1134,41 @@ export default function TimerPage({
   }
 
   function handleSkipPrep() {
+    if (skipPrepLockRef.current) return;
     if (phase !== "prep" || !hasStartedSession) return;
 
-    setPhase("work");
-    previousPhaseRef.current = "work";
-    setCurrentRound(1);
-    setRemainingTime(workSeconds);
-    setIsRunning(true);
+    skipPrepLockRef.current = true;
+
+    const now = Date.now();
+    const nextSession = buildSkipPrepSession(
+      {
+        selectedPresetId,
+        curriculumSessionId,
+        curriculumRoutineTitle,
+        curriculumLogType,
+        curriculumSessionTitle,
+        curriculumGoal,
+        curriculumSessionCode,
+        curriculumWeekLabel,
+        curriculumWeekTheme,
+        curriculumDrills,
+        strengthDayId,
+        canSkipStrengthWarmup,
+        strengthPlan,
+        prepSecondsSetting,
+        cooldownSecondsSetting,
+        totalRounds,
+        workSecondsSetting,
+        restSecondsSetting,
+        soundMode,
+        routineTitle,
+        hasSavedLog,
+      },
+      now
+    );
+
+    saveTimerSession(nextSession);
+    applyPersistedState(nextSession, { silent: true });
     playTimerBeep(soundMode, "work");
   }
 

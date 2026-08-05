@@ -4,7 +4,10 @@ import {
   reconcileTimerSession,
   saveTimerSession,
 } from "./timerSession";
-import { buildTimerSnapshot } from "./timerPagePersistence";
+import {
+  buildSkipPrepSession,
+  buildTimerSnapshot,
+} from "./timerPagePersistence";
 
 describe("reconcileTimerSession wall-clock catch-up", () => {
   beforeEach(() => {
@@ -375,5 +378,23 @@ describe("reconcileTimerSession wall-clock catch-up", () => {
     expect(running.remainingTime).toBe(149);
     running = reconcileTimerSession(running, resumedAt + 2_000);
     expect(running.remainingTime).toBe(148);
+  });
+
+  it("prep skip 저장 후 3초면 work에서 정확히 3초 감소한다", () => {
+    const now = 8_000_000;
+    const skipped = buildSkipPrepSession(
+      {
+        totalRounds: 3,
+        workSecondsSetting: 180,
+        restSecondsSetting: 30,
+      },
+      now
+    );
+    saveTimerSession(skipped);
+    const after = reconcileTimerSession(loadTimerSession(), now + 3_000);
+    expect(after.phase).toBe("work");
+    expect(after.remainingTime).toBe(177);
+    expect(after.currentRound).toBe(1);
+    expect(after.updatedAt).toBe(now + 3_000);
   });
 });

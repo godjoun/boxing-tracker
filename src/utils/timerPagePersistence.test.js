@@ -9,6 +9,7 @@ import { loadTimerSession } from "./timerSession";
 import {
   TIMER_DEFAULT_STATE,
   buildTimerSnapshot,
+  buildSkipPrepSession,
   mergeRunningTimerPersistSnapshot,
   readInitialTimerState,
 } from "./timerPagePersistence";
@@ -109,5 +110,70 @@ describe("mergeRunningTimerPersistSnapshot", () => {
     const merged = mergeRunningTimerPersistSnapshot(snapshot, loaded, 1_030_000);
     expect(merged.remainingTime).toBe(150);
     expect(merged.updatedAt).toBe(1_030_000);
+  });
+});
+
+describe("buildSkipPrepSession", () => {
+  it("prep skip 시 work 세션을 원자적으로 만든다", () => {
+    const now = 9_000_000;
+    const next = buildSkipPrepSession(
+      {
+        selectedPresetId: "match3",
+        totalRounds: 3,
+        workSecondsSetting: 180,
+        restSecondsSetting: 30,
+        prepSecondsSetting: 10,
+        soundMode: "basic",
+        hasSavedLog: false,
+        phase: "prep",
+        remainingTime: 7,
+        currentRound: 1,
+        isRunning: true,
+      },
+      now
+    );
+
+    expect(next.phase).toBe("work");
+    expect(next.remainingTime).toBe(180);
+    expect(next.currentRound).toBe(1);
+    expect(next.isRunning).toBe(true);
+    expect(next.updatedAt).toBe(now);
+    expect(next.selectedPresetId).toBe("match3");
+    expect(next.workSecondsSetting).toBe(180);
+  });
+
+  it("skip 직후 persist merge가 prep으로 되돌리지 않는다", () => {
+    const now = 9_000_000;
+    const savedWork = buildSkipPrepSession(
+      {
+        selectedPresetId: "match3",
+        totalRounds: 3,
+        workSecondsSetting: 180,
+        restSecondsSetting: 30,
+        soundMode: "mute",
+      },
+      now
+    );
+
+    const reactSnapshot = buildTimerSnapshot(
+      {
+        ...savedWork,
+        remainingTime: 180,
+        phase: "work",
+        isRunning: true,
+      },
+      now + 5
+    );
+
+    const merged = mergeRunningTimerPersistSnapshot(
+      reactSnapshot,
+      savedWork,
+      now + 5
+    );
+
+    expect(merged.phase).toBe("work");
+    expect(merged.remainingTime).toBe(180);
+    expect(merged.updatedAt).toBe(now);
+    expect(merged.currentRound).toBe(1);
   });
 });

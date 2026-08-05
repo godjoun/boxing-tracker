@@ -1105,7 +1105,7 @@
 
 .log-item-meta {
   margin: 4px 0 0;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -1513,11 +1513,13 @@
 
 .log-category-choice strong {
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   font-size: 13px;
   font-weight: 900;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .log-category-choice span:not(.log-category-icon) {
@@ -1997,8 +1999,8 @@
 }
 
 .log-history-chart-value {
-  color: var(--p-text-faint);
-  font-size: 9px;
+  color: var(--p-text-muted);
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -2017,8 +2019,8 @@
 .log-history-chart small {
   width: 100%;
   overflow: hidden;
-  color: var(--p-text-faint);
-  font-size: 9px;
+  color: var(--p-text-muted);
+  font-size: 11px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2079,8 +2081,8 @@
 
 .log-history-date {
   margin: 0 0 4px;
-  color: var(--p-text-faint);
-  font-size: 10px;
+  color: var(--p-text-muted);
+  font-size: 11px;
   font-weight: 750;
 }
 
@@ -2171,13 +2173,16 @@
 }
 
 .log-history-note {
+  display: -webkit-box;
   overflow: hidden;
   margin: 6px 30px 0 0;
-  color: var(--p-text-muted);
-  font-size: 11px;
-  line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--p-text-body);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 @media (max-width: 420px) {

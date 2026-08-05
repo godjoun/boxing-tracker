@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { resolveDojoActorId } from "../api/dojoExchangeApi";
 import {
+  displayInquiryMemo,
   formatInquiryWhen,
   hasGymInquiryRemote,
   inquiryKindLabel,
@@ -98,7 +99,7 @@ export default function GymSentInquiriesPanel({
           >
             <div className="gym-inquiry-ledger-top">
               <span className="gym-inquiry-ledger-kind">
-                {inquiryKindLabel(item.kind)}
+                {inquiryKindLabel(item.kind, item.memo)}
                 {item.unread ? (
                   <span className="gym-inquiry-unread-dot" aria-label="안 읽음" />
                 ) : null}
@@ -111,7 +112,9 @@ export default function GymSentInquiriesPanel({
             {item.lastPreview ? (
               <p className="gym-inquiry-ledger-preview">{item.lastPreview}</p>
             ) : item.memo ? (
-              <p className="gym-inquiry-ledger-memo">{item.memo}</p>
+              <p className="gym-inquiry-ledger-memo">
+                {displayInquiryMemo(item.memo) || "교류 내용을 메시지로 조율해 보세요."}
+              </p>
             ) : (
               <p className="gym-inquiry-ledger-preview is-empty">
                 아직 대화가 없습니다

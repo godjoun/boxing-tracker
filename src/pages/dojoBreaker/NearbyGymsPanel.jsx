@@ -116,6 +116,7 @@ export default function NearbyGymsPanel({
   const [position, setPosition] = useState(MAP_OVERVIEW);
   const [inquiryGym, setInquiryGym] = useState(null);
   const [inquiryKind, setInquiryKind] = useState("trial");
+  const [inquiryIntent, setInquiryIntent] = useState("inquiry");
   const [detailGym, setDetailGym] = useState(null);
   const [chatInquiry, setChatInquiry] = useState(null);
   const [ownerMode, setOwnerMode] = useState(null);
@@ -297,6 +298,7 @@ export default function NearbyGymsPanel({
       acquisitionSource: gym.featured ? "featured" : "organic",
     });
     setInquiryKind("trial");
+    setInquiryIntent("inquiry");
     setInquiryGym(gym);
   }
 
@@ -307,6 +309,18 @@ export default function NearbyGymsPanel({
       acquisitionSource: gym.featured ? "featured" : "organic",
     });
     setInquiryKind("reservation");
+    setInquiryIntent("inquiry");
+    setInquiryGym(gym);
+  }
+
+  function openProposal(gym) {
+    if (gym?.source !== "listing") return;
+    track("gym_exchange_proposal_open", {
+      gymId: gym.id,
+      acquisitionSource: gym.featured ? "featured" : "organic",
+    });
+    setInquiryKind("reservation");
+    setInquiryIntent("exchange-proposal");
     setInquiryGym(gym);
   }
 
@@ -1125,6 +1139,10 @@ export default function NearbyGymsPanel({
           switchSection("meeting");
         }}
         onComposeMeeting={openMeetingCompose}
+        onOpenGyms={() => {
+          onSelectLayer?.("gyms");
+          switchSection("find");
+        }}
         onOpenEvent={openMeetingEvent}
         onOpenRivals={() => {
           onSelectLayer?.("sparring");
@@ -1575,6 +1593,7 @@ export default function NearbyGymsPanel({
           onClose={closeDetail}
           onInquire={openInquiry}
           onReserve={openReservation}
+          onPropose={openProposal}
           onSetHomeGym={handleSetHomeGym}
           homeGymNotice={homeGymNotice}
           onOpenLedger={() => {
@@ -1813,7 +1832,11 @@ export default function NearbyGymsPanel({
           userId={userId}
           nickname={profile?.nickname || ""}
           initialKind={inquiryKind}
-          onClose={() => setInquiryGym(null)}
+          initialIntent={inquiryIntent}
+          onClose={() => {
+            setInquiryGym(null);
+            setInquiryIntent("inquiry");
+          }}
         />
       ) : null}
 
@@ -1824,7 +1847,7 @@ export default function NearbyGymsPanel({
         nickname={profile?.nickname || ""}
         inquiryId={chatInquiry?.id}
         gymName={chatInquiry?.gymName || ""}
-        inquiryLabel={inquiryKindLabel(chatInquiry?.kind)}
+        inquiryLabel={inquiryKindLabel(chatInquiry?.kind, chatInquiry?.memo)}
         acquisitionSource={chatInquiry?.acquisitionSource || "organic"}
       />
     </div>

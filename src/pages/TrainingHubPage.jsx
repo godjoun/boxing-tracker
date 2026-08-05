@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { MATCH_TIMER_PRESETS } from "../utils/timerPresets";
 import { startTimerAudioSession } from "../utils/timerAudio";
+import { isDevSurfaceLog } from "../utils/devMode";
 import MenuIcon from "../components/MenuIcon";
 
 function getTodayString() {
@@ -26,7 +27,9 @@ export default function TrainingHubPage({
   const [selectedModeId, setSelectedModeId] = useState("general");
 
   const todaySummary = useMemo(() => {
-    const todayLogs = logs.filter((log) => log.date === getTodayString());
+    const todayLogs = logs.filter(
+      (log) => log.date === getTodayString() && !isDevSurfaceLog(log)
+    );
     return {
       rounds: todayLogs.reduce((sum, log) => sum + getLogRounds(log), 0),
       minutes: todayLogs.reduce(
@@ -63,6 +66,7 @@ export default function TrainingHubPage({
       icon: "round",
       title: "일반 훈련",
       detail: `${sessionRounds}R · ${sessionMinutes}분`,
+      hint: "라운드 타이머로 바로 시작",
       start: () => startRoundTraining(),
     },
     {
@@ -70,6 +74,7 @@ export default function TrainingHubPage({
       icon: "skill",
       title: "샌드백",
       detail: `${sessionRounds}R · ${sessionMinutes}분`,
+      hint: "타격 중심으로 기록",
       start: () => startRoundTraining("샌드백"),
     },
     {
@@ -77,6 +82,7 @@ export default function TrainingHubPage({
       icon: "combo",
       title: "스파링",
       detail: `${sessionRounds}R · ${sessionMinutes}분`,
+      hint: "스파링 라운드로 기록",
       start: () => startRoundTraining("스파링"),
     },
     {
@@ -84,12 +90,21 @@ export default function TrainingHubPage({
       icon: "body",
       title: "근력 · 체력",
       detail: "컨디셔닝",
+      hint: "신체 루틴으로 이어가기",
       start: onOpenStrength,
     },
   ];
 
   const selectedMode =
     trainingModes.find((mode) => mode.id === selectedModeId) || trainingModes[0];
+
+  function handleModeSelect(mode) {
+    if (mode.id === selectedModeId) {
+      mode.start?.();
+      return;
+    }
+    setSelectedModeId(mode.id);
+  }
 
   return (
     <main className="hub-page levelup-page training-page">
@@ -108,16 +123,14 @@ export default function TrainingHubPage({
                 selectedMode.id === mode.id ? " is-selected" : ""
               }`}
               aria-pressed={selectedMode.id === mode.id}
-              onClick={() => setSelectedModeId(mode.id)}
+              onClick={() => handleModeSelect(mode)}
             >
               <span className="training-mode-card-icon" aria-hidden="true">
                 <MenuIcon name={mode.icon} size={18} />
               </span>
               <span className="training-mode-card-copy">
                 <strong>{mode.title}</strong>
-              </span>
-              <span className="training-mode-card-state" aria-hidden="true">
-                {selectedMode.id === mode.id ? "✓" : ""}
+                <small>{mode.hint}</small>
               </span>
             </button>
           ))}
@@ -176,28 +189,31 @@ export default function TrainingHubPage({
         </div>
       </section>
 
-      <section className="training-tools-section" aria-label="추천 루틴">
-        <div className="training-section-heading">
-          <div>
-            <h2>추천 루틴</h2>
-          </div>
-        </div>
-        <button type="button" onClick={onOpenCurriculum}>
-          <span>기술 루틴</span>
-          <small>커리큘럼으로 이어가기</small>
-          <b>›</b>
-        </button>
-        <button type="button" onClick={onOpenComboCreator}>
-          <span>콤보 만들기</span>
-          <small>나만의 흐름</small>
-          <b>›</b>
-        </button>
-      </section>
+      <details className="training-tools-details">
+        <summary className="training-tools-summary">
+          <span>더 보기</span>
+          <strong>기술 · 콤보</strong>
+        </summary>
+        <section className="training-tools-section" aria-label="기술 · 콤보">
+          <button type="button" onClick={onOpenCurriculum}>
+            <span>기술 루틴</span>
+            <small>커리큘럼으로 이어가기</small>
+            <b>›</b>
+          </button>
+          <button type="button" onClick={onOpenComboCreator}>
+            <span>콤보 만들기</span>
+            <small>나만의 흐름</small>
+            <b>›</b>
+          </button>
+        </section>
+      </details>
 
       <div className="training-start-dock">
         <button type="button" onClick={selectedMode.start}>
           훈련 시작
-          <small>{selectedMode.title} · {selectedMode.detail}</small>
+          <small>
+            {selectedMode.title} · {selectedMode.detail}
+          </small>
         </button>
       </div>
     </main>

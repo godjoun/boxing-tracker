@@ -21,6 +21,7 @@ function sanitizeGym(gym) {
     lat: hasLat ? Number(gym.lat) : null,
     lon: hasLon ? Number(gym.lon) : null,
     phone: String(gym.phone || ""),
+    website: String(gym.website || ""),
     photoUrl: String(gym.photoUrl || ""),
     photoUrls: Array.isArray(gym.photoUrls) ? gym.photoUrls.slice(0, 5) : [],
     tags: Array.isArray(gym.tags) ? gym.tags.slice(0, 6) : [],

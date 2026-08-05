@@ -8,6 +8,11 @@
   --screen-radius: 8px;
   --screen-card: var(--p-bg-subtle);
   --screen-line: var(--p-border-soft);
+  --read-card-pad: 14px;
+  --read-card-title-size: 14px;
+  --read-card-body-size: 13px;
+  --read-card-meta-size: 11px;
+  --read-card-line-height: 1.45;
 }
 
 .app-main {
@@ -386,13 +391,17 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: inherit;
+  color: var(--p-text-muted);
   font-size: 13px;
   font-weight: 800;
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
-  opacity: 0.78;
+  opacity: 1;
+}
+
+.theme-dark .home-scene-secondary-link {
+  color: #b8a99a;
 }
 
 .home-week-summary-card,
@@ -864,9 +873,9 @@
 }
 
 .training-mode-card {
-  min-height: 58px;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
-  padding: 10px 12px;
+  min-height: 64px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  padding: 12px 14px;
   border: 1px solid var(--p-border-soft);
   border-radius: 10px;
   background: var(--p-bg-page);
@@ -907,26 +916,12 @@
   color: var(--p-text-muted);
 }
 
-.training-mode-card.is-selected .training-mode-card-state {
-  display: grid;
-  width: 22px;
-  height: 22px;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--p-action);
-  color: var(--p-action-text);
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.training-mode-card-state {
-  color: transparent;
-  font-size: 10px;
-  font-weight: 800;
-}
-
 .training-mode-card-copy small {
-  display: none;
+  display: block;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: normal;
 }
 
 .training-session-card {
@@ -1062,6 +1057,60 @@
 
 .training-tools-section .training-section-heading h2 {
   font-size: 14px;
+}
+
+.training-tools-details {
+  margin-top: 14px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 12px;
+  background: var(--p-bg-page);
+  overflow: hidden;
+}
+
+.theme-light .training-tools-details {
+  background: #ffffff;
+  border-color: rgba(10, 9, 9, 0.1);
+}
+
+.theme-dark .training-tools-details {
+  background: #121012;
+  border-color: rgba(245, 241, 232, 0.1);
+}
+
+.training-tools-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.training-tools-summary::-webkit-details-marker {
+  display: none;
+}
+
+.training-tools-summary span {
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.training-tools-summary strong {
+  color: var(--p-text);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.training-tools-details .training-tools-section {
+  margin-top: 0;
+  border: 0;
+  border-top: 1px solid var(--p-border-soft);
+  border-radius: 0;
+  background: transparent;
 }
 
 .training-start-dock {
@@ -1880,8 +1929,70 @@
   inset: auto;
   z-index: 1;
   flex: 0 0 auto;
-  padding: max(10px, env(safe-area-inset-top)) var(--screen-pad, 16px) 8px;
+  padding: max(10px, env(safe-area-inset-top)) var(--screen-pad, 16px) 0;
   background: var(--p-bg-page, #f7f5f2);
+  border-bottom: 1px solid var(--screen-line, var(--p-border-soft));
+}
+
+.theme-dark .gym-map-service-stage.is-list-only .gym-map-overlay-controls.is-discovery {
+  background: var(--p-bg-page, #0a0909);
+  border-bottom-color: rgba(245, 241, 232, 0.12);
+}
+
+.gym-map-service-stage.is-list-only .gym-map-top-stack {
+  gap: 12px;
+}
+
+.gym-map-service-stage.is-list-only .gym-community-head {
+  padding: 0 0 2px;
+}
+
+/* Keep category tabs in the header band — not a floating clipped pill. */
+.gym-map-service-stage.is-list-only .gym-map-layer-row {
+  width: calc(100% + (var(--screen-pad, 16px) * 2));
+  margin-left: calc(var(--screen-pad, 16px) * -1);
+  margin-right: calc(var(--screen-pad, 16px) * -1);
+  padding: 0 var(--screen-pad, 16px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  overflow: visible;
+}
+
+.theme-dark .gym-map-service-stage.is-list-only .gym-map-layer-row {
+  border: 0;
+  background: transparent;
+}
+
+.gym-map-service-stage.is-list-only .gym-map-layer-row button {
+  min-height: 40px;
+  padding: 0 4px 10px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--p-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.gym-map-service-stage.is-list-only .gym-map-layer-row button.is-active {
+  background: transparent;
+  color: var(--p-action, #8a2e2e);
+  box-shadow: none;
+}
+
+.gym-map-service-stage.is-list-only .gym-map-layer-row button.is-active::after {
+  content: "";
+  position: absolute;
+  right: 14%;
+  bottom: 0;
+  left: 14%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--p-action, #8a2e2e);
 }
 
 .gym-map-service-stage.is-list-only .gym-map-sheet.is-page {
@@ -1892,10 +2003,11 @@
   width: 100%;
   height: auto;
   min-height: 0;
-  border-radius: 18px 18px 0 0;
+  margin-top: 0;
+  border: 0;
+  border-radius: 0;
   box-shadow: none;
-  border-left: 0;
-  border-right: 0;
+  background: var(--p-bg-page, #f7f5f2);
 }
 
 .gym-map-service-stage.is-list-only .gym-map-sheet.is-page.is-full {
@@ -2546,5 +2658,205 @@
 
 .community-feed-fab:active {
   transform: scale(0.96);
+}
+
+/* Major reading cards — shared text-fit foundation. */
+:where(
+  .home-path-card,
+  .home-recent-item,
+  .training-mode-card,
+  .training-mode-card-copy,
+  .log-category-choice,
+  .log-history-row,
+  .app-menu-row,
+  .app-menu-row-copy,
+  .profile-hub-card,
+  .profile-recent-list li,
+  .community-feed-card,
+  .community-feed-identity,
+  .exchange-board-row-main
+) {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+:where(
+  .home-path-card,
+  .home-recent-item,
+  .training-mode-card-copy,
+  .log-category-choice,
+  .app-menu-row-copy,
+  .profile-hub-card,
+  .profile-recent-list li,
+  .community-feed-identity,
+  .community-feed-body,
+  .community-feed-title,
+  .exchange-board-row-main
+) :where(h2, h3, p, strong, small, span, em) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+/* Home: give shortcuts enough room for title and explanation. */
+@media (max-width: 520px) {
+  .app-shell .home-path-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+.app-shell .home-path-card {
+  height: auto;
+  min-height: 112px;
+  gap: 6px;
+  padding: var(--read-card-pad) 10px;
+}
+
+.app-shell .home-path-card strong,
+.app-shell .home-path-card small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.app-shell .home-path-card strong {
+  font-size: var(--read-card-title-size);
+  line-height: 1.35;
+}
+
+.app-shell .home-path-card small {
+  display: block;
+  color: var(--p-text-muted);
+  font-size: var(--read-card-meta-size);
+  line-height: var(--read-card-line-height);
+}
+
+.app-shell .home-recent-item > span {
+  min-width: 0;
+}
+
+.app-shell .home-recent-item em {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  line-height: var(--read-card-line-height);
+}
+
+/* Training: mode explanations are useful reading content, not hidden metadata. */
+.app-shell .training-mode-card {
+  height: auto;
+  min-height: 72px;
+  padding: 12px 14px;
+}
+
+.app-shell .training-mode-card-copy small {
+  display: block;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  line-height: var(--read-card-line-height);
+  white-space: normal;
+}
+
+/* All menu: allow titles and descriptions to occupy the row naturally. */
+.app-shell .app-menu-row {
+  height: auto;
+  min-height: 58px;
+  align-items: center;
+}
+
+.app-shell .app-menu-row-copy strong,
+.app-shell .app-menu-row-copy small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.app-shell .app-menu-row-copy strong {
+  font-size: var(--read-card-title-size);
+  line-height: 1.35;
+}
+
+.app-shell .app-menu-row-copy small {
+  color: var(--p-text-muted);
+  font-size: var(--read-card-meta-size);
+  line-height: var(--read-card-line-height);
+}
+
+/* Profile: long names and trace copy stay inside their cards. */
+.app-shell .profile-hub-card,
+.app-shell .profile-hub-card > *,
+.app-shell .profile-recent-list li > * {
+  min-width: 0;
+}
+
+.app-shell .profile-hub-card :where(h2, h3, p, strong, span),
+.app-shell .profile-recent-list li :where(strong, span) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.app-shell .profile-trace-stats span {
+  color: var(--p-text-muted);
+  font-size: var(--read-card-meta-size);
+  line-height: 1.4;
+}
+
+/* Community list pages are pages, not clipped bottom sheets. */
+.gym-map-service-stage.is-list-only
+  .gym-map-sheet.is-page
+  .gym-map-sheet-chrome.is-minimal {
+  display: none;
+}
+
+.gym-map-service-stage.is-list-only
+  .gym-map-sheet.is-page
+  .gym-map-sheet-body {
+  padding-top: 16px;
+}
+
+.theme-dark .gym-map-service-stage.is-list-only .gym-map-sheet.is-page {
+  background: var(--p-bg-page, #0a0909);
+}
+
+.app-shell .community-feed-card-head {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.app-shell .community-feed-identity strong,
+.app-shell .community-feed-identity span,
+.app-shell .community-feed-body,
+.app-shell .community-feed-title {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+.app-shell .community-feed-body {
+  color: var(--p-text-body);
+  font-size: var(--read-card-body-size);
+  line-height: var(--read-card-line-height);
+}
+
+.app-shell .community-feed-title {
+  color: var(--p-text-muted);
+  font-size: 12px;
+  line-height: var(--read-card-line-height);
+}
+
+.app-shell.theme-dark .community-feed-card {
+  border-color: rgba(245, 241, 232, 0.1);
+  background: #1a1214;
+}
+
+.app-shell .exchange-board-row-main strong,
+.app-shell .exchange-board-row-main small,
+.app-shell .exchange-board-row-main em {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 

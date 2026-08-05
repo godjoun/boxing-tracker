@@ -27,6 +27,16 @@ export function getDevUserId() {
   return isDevMode() ? DEV_USER_ID : null;
 }
 
+/** 홈·최근 기록 등 출시 표면에 올리지 않는 개발용 로그 */
+export function isDevSurfaceLog(log) {
+  if (!log) return false;
+  return (
+    log.id === DEV_LEVEL_BOOST_LOG_ID ||
+    log.source === "dev" ||
+    log.type === "개발 부스트"
+  );
+}
+
 function buildLevelBoostLog(targetLevel, boostScore) {
   const now = new Date().toISOString();
 

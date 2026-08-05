@@ -14,6 +14,7 @@ import { getTodaysLessonPreview } from "../utils/dailyLesson";
 import { getFirstWeekChallengeStatus } from "../utils/retentionMetrics";
 import { BRAND_NAME } from "../utils/brand";
 import { getLogSummary } from "../utils/logCategories";
+import { isDevSurfaceLog } from "../utils/devMode";
 import MenuIcon from "../components/MenuIcon";
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
@@ -159,7 +160,11 @@ export default function HomePage({
   const calendarDetailsRef = useRef(null);
   const moreDetailsRef = useRef(null);
   const homeHeroInputRef = useRef(null);
-  const isFirstUser = logs.length === 0;
+  const surfaceLogs = useMemo(
+    () => logs.filter((log) => !isDevSurfaceLog(log)),
+    [logs]
+  );
+  const isFirstUser = surfaceLogs.length === 0;
   const homeHeroPhoto = profile?.homeHeroPhoto || "";
 
   const dashboard = useMemo(() => {
@@ -167,9 +172,9 @@ export default function HomePage({
     const weeklyTrend = buildWeeklyRoundTrend(logs, 4);
     const streakDays = getTrainingStreak(logs);
     const todayKey = getTodayKey();
-    const lastLog = logs[0] || null;
+    const lastLog = surfaceLogs[0] || null;
 
-    const trainingByDate = logs.reduce((dates, log) => {
+    const trainingByDate = surfaceLogs.reduce((dates, log) => {
       const key = getDateKey(log.date || log.createdAt);
       if (!key) return dates;
 
@@ -201,7 +206,7 @@ export default function HomePage({
       monthDays: buildMonthDays(),
       weekStrip: buildWeekStrip(trainingByDate),
     };
-  }, [logs]);
+  }, [logs, surfaceLogs]);
 
   const selectedDayTraining = selectedDate
     ? dashboard.trainingByDate[selectedDate]
@@ -223,36 +228,50 @@ export default function HomePage({
   const nickname = profile?.nickname || "나";
   const sceneDateLabel = formatSceneDateLabel();
   const greeting = getGreeting();
-  const recentLogs = logs.slice(0, 3);
-  const weeklyLogs = logs.filter((log) => isThisWeek(log.date));
+  const recentLogs = surfaceLogs.slice(0, 2);
+  const weeklyLogs = surfaceLogs.filter((log) => isThisWeek(log.date));
   const weeklyStats = {
     rounds: dashboard.weekStrip.reduce((sum, day) => sum + day.rounds, 0),
     minutes: weeklyLogs.reduce((sum, log) => sum + getLogMinutes(log), 0),
   };
 
-  const sceneTitle =
-    isFirstUser
-      ? "오늘 운동을 남겨보세요"
-      : todaysLesson.kind === "session"
+  const trainedToday = Boolean(dashboard.trainedToday);
+  const hasLesson = todaysLesson.kind === "session";
+  const lastLog = dashboard.lastLog;
+
+  const sceneTitle = isFirstUser
+    ? "오늘 운동을 남겨보세요"
+    : trainedToday
+      ? "오늘도 벨은 울렸다"
+      : hasLesson
         ? todaysLesson.title
         : todaysLesson.title || "오늘도 벨을 울리자";
-  const primaryLabel =
-    isFirstUser
-      ? "기록하기"
-      : todaysLesson.kind === "session"
-        ? "레슨 열기"
-        : dashboard.trainedToday
-        ? "훈련 이어가기"
-        : "훈련 시작";
 
-  const primaryHint =
-    isFirstUser
-      ? "복싱 · 러닝 · 웨이트 · 걷기"
-      : todaysLesson.kind === "session"
+  const primaryLabel = isFirstUser
+    ? "기록하기"
+    : trainedToday && lastLog
+      ? "인증 카드 만들기"
+      : hasLesson
+        ? "레슨 열기"
+        : trainedToday
+          ? "훈련 이어가기"
+          : "훈련 시작";
+
+  const primaryHint = isFirstUser
+    ? "복싱 · 러닝 · 웨이트 · 걷기"
+    : trainedToday
+      ? "오늘의 장면을 카드로 남겨 두세요"
+      : hasLesson
         ? todaysLesson.goal || "준비되면 바로 이어가세요"
-        : dashboard.trainedToday
-          ? "조금 더 남겨도 됩니다"
-          : "짧게라도 오늘 라운드를 남기세요";
+        : "짧게라도 오늘 라운드를 남기세요";
+
+  const secondaryLabel = isFirstUser
+    ? null
+    : trainedToday && hasLesson
+      ? "오늘의 레슨"
+      : trainedToday && lastLog
+        ? "훈련 이어가기"
+        : null;
 
   function handleCalendarSelect(dateKey) {
     setSelectedDate((current) => (current === dateKey ? "" : dateKey));
@@ -276,7 +295,19 @@ export default function HomePage({
       onNavigate?.("log");
       return;
     }
-    if (todaysLesson.kind === "session") {
+    if (trainedToday && lastLog) {
+      onOpenCardMaker?.(lastLog.id);
+      return;
+    }
+    if (hasLesson) {
+      onReadLesson?.(todaysLesson.session);
+      return;
+    }
+    onOpenTimer?.();
+  }
+
+  function handleSecondaryAction() {
+    if (trainedToday && hasLesson) {
       onReadLesson?.(todaysLesson.session);
       return;
     }
@@ -429,13 +460,13 @@ export default function HomePage({
           >
             {primaryLabel}
           </button>
-          {!isFirstUser && dashboard.trainedToday && dashboard.lastLog ? (
+          {secondaryLabel ? (
             <button
               type="button"
               className="home-scene-secondary-link"
-              onClick={() => onOpenCardMaker?.(dashboard.lastLog?.id)}
+              onClick={handleSecondaryAction}
             >
-              인증 카드 만들기
+              {secondaryLabel}
             </button>
           ) : null}
         </div>

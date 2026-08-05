@@ -5,6 +5,7 @@ import {
   hasGymInquiryRemote,
   inquiryKindLabel,
   saveGymInquiryAsync,
+  withExchangeProposalMemo,
 } from "../utils/gymInquiry";
 import GymInquiryChatModal from "./GymInquiryChatModal";
 
@@ -49,15 +50,21 @@ export default function GymInquiryModal({
   userId = null,
   nickname = "",
   initialKind = "trial",
+  initialIntent = "inquiry",
 }) {
-  const [kind, setKind] = useState(initialKind);
+  const isExchangeProposal = initialIntent === "exchange-proposal";
+  const [kind, setKind] = useState(
+    isExchangeProposal ? "reservation" : initialKind
+  );
   const [contact, setContact] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
   const [timeSlot, setTimeSlot] = useState("");
   const [partySize, setPartySize] = useState("1");
   const [hours, setHours] = useState("2");
   const [experience, setExperience] = useState("hobby");
-  const [purpose, setPurpose] = useState("visit");
+  const [purpose, setPurpose] = useState(
+    isExchangeProposal ? "sparring" : "visit"
+  );
   const [memo, setMemo] = useState("");
   const [error, setError] = useState("");
   const [isDone, setIsDone] = useState(false);
@@ -147,7 +154,9 @@ export default function GymInquiryModal({
       contact: trimmedContact,
       preferredDate: preferredDate.trim(),
       timeSlot: kind === "reservation" ? timeSlot.trim() : "",
-      memo: memo.trim(),
+      memo: isExchangeProposal
+        ? withExchangeProposalMemo(memo)
+        : memo.trim(),
       partySize:
         kind === "rental" || kind === "reservation"
           ? Number(partySize) || 1
@@ -167,6 +176,7 @@ export default function GymInquiryModal({
       track("gym_inquiry_submit", {
         gymId: payload.gymId,
         kind,
+        intent: initialIntent,
         hasPhone: Boolean(gym?.phone),
         acquisitionSource: payload.acquisitionSource,
       });
@@ -205,18 +215,18 @@ export default function GymInquiryModal({
               className="gym-inquiry-privacy-back"
               onClick={() => setPrivacyOpen(false)}
             >
-              ← 문의로 돌아가기
+              ← {isExchangeProposal ? "제안으로" : "문의로"} 돌아가기
             </button>
             <p className="gym-inquiry-kicker">PRIVACY</p>
             <h2 id="gym-inquiry-title">개인정보 안내</h2>
             <p>
-              체육관 문의를 보내면 연락처, 문의 내용, 희망 일정, 링네임과
+              체육관 문의·교류 제안을 보내면 연락처, 내용, 희망 일정, 링네임과
               대화 내용이 문의 전달과 답변을 위해 서버에 저장됩니다.
             </p>
             <h3>제공받는 곳</h3>
             <p>사용자가 선택한 체육관 운영자</p>
             <h3>이용 목적</h3>
-            <p>체험·대여·예약 문의 전달과 답변, 문의 대화 제공</p>
+            <p>체험·대여·예약·교류 제안 전달과 답변, 문의 대화 제공</p>
             <h3>주의</h3>
             <p>
               메모와 채팅에 주민등록번호, 계좌 비밀번호, 건강 진단서 등
@@ -233,12 +243,21 @@ export default function GymInquiryModal({
           </div>
         ) : isDone ? (
           <div className="gym-inquiry-done">
-            <p className="gym-inquiry-kicker">INQUIRY SENT</p>
+            <p className="gym-inquiry-kicker">
+              {isExchangeProposal ? "PROPOSAL SENT" : "INQUIRY SENT"}
+            </p>
             <h2 id="gym-inquiry-title">
-              {synced ? "문의가 전달됐어요" : "문의가 접수됐어요"}
+              {synced
+                ? isExchangeProposal
+                  ? "제안이 전달됐어요"
+                  : "문의가 전달됐어요"
+                : isExchangeProposal
+                  ? "제안이 접수됐어요"
+                  : "문의가 접수됐어요"}
             </h2>
             <p>
-              <strong>{gym.name}</strong> {kindMeta.label} 문의를{" "}
+              <strong>{gym.name}</strong>에{" "}
+              {isExchangeProposal ? "교류 제안을" : `${kindMeta.label} 문의를`}{" "}
               {synced
                 ? "서버에 저장했습니다. 「대화하기」로 관장과 메시지를 주고받을 수 있어요."
                 : "이 기기에만 기록됐습니다."}
@@ -279,7 +298,10 @@ export default function GymInquiryModal({
               nickname={nickname}
               inquiryId={doneInquiry?.id}
               gymName={gym.name}
-              inquiryLabel={inquiryKindLabel(doneInquiry?.kind || kind)}
+              inquiryLabel={inquiryKindLabel(
+                doneInquiry?.kind || kind,
+                doneInquiry?.memo
+              )}
               acquisitionSource={
                 doneInquiry?.acquisitionSource || "organic"
               }
@@ -287,8 +309,12 @@ export default function GymInquiryModal({
           </div>
         ) : (
           <form className="gym-inquiry-form" onSubmit={handleSubmit}>
-            <p className="gym-inquiry-kicker">GYM INQUIRY</p>
-            <h2 id="gym-inquiry-title">{gym.name} 문의</h2>
+            <p className="gym-inquiry-kicker">
+              {isExchangeProposal ? "GYM PROPOSAL" : "GYM INQUIRY"}
+            </p>
+            <h2 id="gym-inquiry-title">
+              {gym.name} {isExchangeProposal ? "교류 제안" : "문의"}
+            </h2>
 
             <div className="gym-inquiry-steps" aria-label="문의 작성 단계">
               <p className="gym-inquiry-step-label">
@@ -321,29 +347,38 @@ export default function GymInquiryModal({
                   ))}
                 </div>
 
-                <div
-                  className="gym-inquiry-kind"
-                  role="group"
-                  aria-label="문의 종류"
-                >
-                  <span className="gym-inquiry-kind-label">문의 종류 *</span>
-                  <div className="gym-inquiry-kind-row gym-inquiry-kind-row--3">
-                    {KIND_OPTIONS.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        className={`gym-inquiry-kind-btn${
-                          kind === option.id ? " is-active" : ""
-                        }`}
-                        onClick={() => switchKind(option.id)}
-                        aria-pressed={kind === option.id}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+                {isExchangeProposal ? (
+                  <div className="gym-inquiry-kind">
+                    <span className="gym-inquiry-kind-label">교류 제안</span>
+                    <p className="gym-inquiry-kind-hint">
+                      합동훈련·스파링을 제안하고 관장과 메시지로 조율합니다.
+                    </p>
                   </div>
-                  <p className="gym-inquiry-kind-hint">{kindMeta.hint}</p>
-                </div>
+                ) : (
+                  <div
+                    className="gym-inquiry-kind"
+                    role="group"
+                    aria-label="문의 종류"
+                  >
+                    <span className="gym-inquiry-kind-label">문의 종류 *</span>
+                    <div className="gym-inquiry-kind-row gym-inquiry-kind-row--3">
+                      {KIND_OPTIONS.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={`gym-inquiry-kind-btn${
+                            kind === option.id ? " is-active" : ""
+                          }`}
+                          onClick={() => switchKind(option.id)}
+                          aria-pressed={kind === option.id}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="gym-inquiry-kind-hint">{kindMeta.hint}</p>
+                  </div>
+                )}
               </>
             ) : null}
 
@@ -505,7 +540,11 @@ export default function GymInquiryModal({
                   <textarea
                     value={memo}
                     onChange={(event) => setMemo(event.target.value)}
-                    placeholder="레슨 코치 · 스파링 체급 등"
+                    placeholder={
+                      isExchangeProposal
+                        ? "합동훈련 목적 · 체급 · 준비물 · 한 줄 인사"
+                        : "레슨 코치 · 스파링 체급 등"
+                    }
                     rows={3}
                   />
                 </label>
@@ -534,7 +573,7 @@ export default function GymInquiryModal({
                     }
                   />
                   <span>
-                    문의 전달을 위해 연락처와 입력 내용을 선택한 체육관에
+                    {isExchangeProposal ? "제안" : "문의"} 전달을 위해 연락처와 입력 내용을 선택한 체육관에
                     제공하는 데 동의합니다.{" "}
                     <button
                       type="button"
@@ -576,7 +615,11 @@ export default function GymInquiryModal({
                   className="gym-inquiry-submit"
                   disabled={submitting || !privacyAgreed}
                 >
-                  {submitting ? "보내는 중..." : kindMeta.submitLabel}
+                  {submitting
+                    ? "보내는 중..."
+                    : isExchangeProposal
+                      ? "교류 제안 보내기"
+                      : kindMeta.submitLabel}
                 </button>
               )}
             </div>

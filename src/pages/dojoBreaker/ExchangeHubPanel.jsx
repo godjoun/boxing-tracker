@@ -94,6 +94,7 @@ export default function ExchangeHubPanel({
   onOpenMeetings,
   onOpenEvent,
   onComposeMeeting,
+  onOpenGyms,
   onOpenRivals,
   onOpenMe,
 }) {
@@ -104,7 +105,7 @@ export default function ExchangeHubPanel({
   const [pastEvents, setPastEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  function openCompose() {
+  function openMeetingCompose() {
     (onComposeMeeting || onOpenMeetings)?.();
   }
 
@@ -174,42 +175,38 @@ export default function ExchangeHubPanel({
         ))}
       </nav>
 
-      {/* 교류 제안 — 보드 제안 양식으로 진입 */}
+      {/* 교류 제안 — 체육관 상세에서 기존 문의·대화로 연결 */}
       {category === "propose" ? (
         <section className="exchange-frame is-propose" aria-label="교류 제안">
           <CategoryHead
             title="교류 제안"
-            lead="대상 · 일시 · 장소 · 메시지를 정해 만남을 보냅니다."
+            lead="함께 훈련하고 싶은 체육관을 고른 뒤 메시지를 보내세요."
           />
 
           <div className="exchange-purpose-body">
             <div className="ex-propose-form" aria-label="제안 구성">
               <div className="ex-propose-field">
-                <span>1. 대상</span>
-                <div className="ex-propose-field-value">체육관 · 지역 모임</div>
+                <span>1. 체육관 찾기</span>
+                <div className="ex-propose-field-value">지역에서 관을 검색합니다</div>
               </div>
               <div className="ex-propose-field">
-                <span>2. 일시 · 장소</span>
-                <div className="ex-propose-field-value">날짜 · 시간 · 주소</div>
+                <span>2. 정보 확인</span>
+                <div className="ex-propose-field-value">소개 · 위치 · 이용 정보를 봅니다</div>
               </div>
               <div className="ex-propose-field">
-                <span>3. 인원 · 참가비</span>
-                <div className="ex-propose-field-value">모집 규모와 비용</div>
-              </div>
-              <div className="ex-propose-field">
-                <span>4. 메시지</span>
-                <div className="ex-propose-field-value">체급 · 준비물 · 한 줄 인사</div>
+                <span>3. 교류 제안</span>
+                <div className="ex-propose-field-value">일시 · 인원 · 메시지를 보냅니다</div>
               </div>
               <div className="ex-propose-field is-later">
-                <span>관 ↔ 관</span>
-                <div className="ex-propose-field-value">출시 후 · 체육관 단위 제안</div>
+                <span>정식 관 ↔ 관</span>
+                <div className="ex-propose-field-value">수락 · 일정 · 완료 기록은 이후</div>
               </div>
             </div>
           </div>
 
           <div className="exchange-purpose-foot">
-            <button type="button" className="exchange-purpose-cta" onClick={openCompose}>
-              제안서 작성하기
+            <button type="button" className="exchange-purpose-cta" onClick={onOpenGyms}>
+              체육관 찾기
             </button>
             {RELEASE_SCOPE.rivals ? (
               <button type="button" className="exchange-purpose-text" onClick={onOpenRivals}>
@@ -286,7 +283,7 @@ export default function ExchangeHubPanel({
                 프로필 흔적 보기
               </button>
             ) : (
-              <button type="button" className="exchange-purpose-cta" onClick={openCompose}>
+              <button type="button" className="exchange-purpose-cta" onClick={openMeetingCompose}>
                 + 일정 만들기
               </button>
             )}

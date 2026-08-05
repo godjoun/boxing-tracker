@@ -5141,7 +5141,7 @@
 
 .gym-detail-sections {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--p-border);
@@ -5237,6 +5237,32 @@
   font-size: 13px;
   line-height: 1.45;
   font-weight: 600;
+}
+
+.gym-detail-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gym-detail-contact-actions a,
+.gym-detail-contact-actions button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--p-border);
+  border-radius: 999px;
+  background: var(--p-bg-card);
+  color: var(--p-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.gym-detail-contact-actions button {
+  border-color: var(--p-accent);
+  color: var(--p-accent);
 }
 
 .gym-detail-passes {
@@ -5597,7 +5623,7 @@
 .gym-inquiry-overlay {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  z-index: 900;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

@@ -7,10 +7,28 @@ import { fetchSentGymInquiries } from "../api/gymInquiryChatApi";
 import { resolveDojoActorId } from "../api/dojoExchangeApi";
 
 const INQUIRIES_KEY = "fitness-league-gym-inquiries";
+export const EXCHANGE_PROPOSAL_MEMO_PREFIX = "[교류 제안]";
 
 export { hasGymInquiryRemote };
 
-export function inquiryKindLabel(kind) {
+export function isExchangeProposalMemo(memo) {
+  return String(memo || "").trimStart().startsWith(EXCHANGE_PROPOSAL_MEMO_PREFIX);
+}
+
+export function withExchangeProposalMemo(memo) {
+  const content = String(memo || "").trim();
+  if (isExchangeProposalMemo(content)) return content;
+  return [EXCHANGE_PROPOSAL_MEMO_PREFIX, content].filter(Boolean).join(" ");
+}
+
+export function displayInquiryMemo(memo) {
+  const content = String(memo || "").trim();
+  if (!isExchangeProposalMemo(content)) return content;
+  return content.slice(EXCHANGE_PROPOSAL_MEMO_PREFIX.length).trim();
+}
+
+export function inquiryKindLabel(kind, memo = "") {
+  if (isExchangeProposalMemo(memo)) return "교류 제안";
   if (kind === "rental") return "대여";
   if (kind === "reservation") return "예약";
   return "체험";

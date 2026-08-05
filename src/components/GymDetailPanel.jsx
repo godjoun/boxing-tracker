@@ -11,6 +11,7 @@ export default function GymDetailPanel({
   onClose,
   onInquire,
   onReserve,
+  onPropose,
   onOpenLedger,
   onSetHomeGym,
   isHomeGym = false,
@@ -29,6 +30,10 @@ export default function GymDetailPanel({
   const hero = photos[safeIndex] || "";
   const isFeatured = Boolean(gym.featured);
   const isListing = gym.source === "listing";
+  const canPropose = isListing && !isOwn;
+  const website = /^https?:\/\//i.test(String(gym.website || "").trim())
+    ? String(gym.website).trim()
+    : "";
   const destination = Number.isFinite(Number(gym.lat)) && Number.isFinite(Number(gym.lon))
     ? `${gym.lat},${gym.lon}`
     : [gym.name, gym.address].filter(Boolean).join(" ");
@@ -95,8 +100,12 @@ export default function GymDetailPanel({
         <nav className="gym-detail-sections" aria-label="체육관 메뉴">
           {[
             { id: "info", label: "정보" },
-            { id: "inquiry", label: "문의" },
-            { id: "reservation", label: "예약" },
+            ...(isListing
+              ? [
+                  { id: "inquiry", label: "문의" },
+                  { id: "reservation", label: "예약" },
+                ]
+              : []),
           ].map((item) => (
             <button
               key={item.id}
@@ -129,6 +138,27 @@ export default function GymDetailPanel({
               <section className="gym-detail-block" aria-label="위치">
                 <p className="gym-detail-label">위치</p>
                 <p className="gym-detail-address">{gym.address}</p>
+              </section>
+            ) : null}
+
+            {gym.phone || website || canPropose ? (
+              <section className="gym-detail-block" aria-label="연락">
+                <p className="gym-detail-label">연락</p>
+                <div className="gym-detail-contact-actions">
+                  {gym.phone ? (
+                    <a href={`tel:${gym.phone}`}>전화</a>
+                  ) : null}
+                  {website ? (
+                    <a href={website} target="_blank" rel="noreferrer">
+                      홈페이지
+                    </a>
+                  ) : null}
+                  {canPropose ? (
+                    <button type="button" onClick={() => onPropose?.(gym)}>
+                      교류 제안
+                    </button>
+                  ) : null}
+                </div>
               </section>
             ) : null}
 

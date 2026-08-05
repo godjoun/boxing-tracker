@@ -1596,6 +1596,58 @@
   margin-top: 14px;
 }
 
+.log-danger-fold {
+  margin-top: 16px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 12px;
+  background: transparent;
+  overflow: hidden;
+}
+
+.log-danger-fold > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.log-danger-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.log-danger-fold > summary span {
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.log-danger-fold > summary strong {
+  color: var(--p-text-muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.log-danger-fold[open] > summary {
+  border-bottom: 1px solid var(--p-border-soft);
+}
+
+.log-danger-copy {
+  margin: 12px 14px 0;
+  color: var(--p-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.log-danger-fold .log-reset-inline {
+  width: calc(100% - 28px);
+  margin: 10px 14px 14px;
+}
+
 .log-category-choice {
   min-height: 72px;
 }

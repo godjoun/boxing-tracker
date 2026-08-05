@@ -14,6 +14,7 @@ import {
   normalizeLogCategory,
 } from "../utils/logCategories";
 import MenuIcon from "../components/MenuIcon";
+import { isDevSurfaceLog } from "../utils/devMode";
 import "./LogPage.css";
 
 const CUSTOM_EXERCISE_VALUE = "직접 입력";
@@ -267,6 +268,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     () =>
       logs.filter(
         (log) =>
+          !isDevSurfaceLog(log) &&
           (historyCategory === "all" ||
             inferLogCategory(log) === historyCategory)
       ),
@@ -663,7 +665,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   }
 
   function handleResetAllLogs() {
-    const ok = window.confirm("모든 운동 기록을 삭제할까요?");
+    const ok = window.confirm(
+      "모든 운동 기록을 삭제할까요?\n이 작업은 되돌릴 수 없습니다."
+    );
     if (!ok) return;
 
     resetAllLogs();
@@ -1226,9 +1230,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                             </details>
                           </div>
                         </div>
-                        {log.publicComment || log.memo ? (
+                        {log.publicComment || log.memo || log.note ? (
                           <p className="log-history-note">
-                            {log.publicComment || log.memo}
+                            {log.publicComment || log.memo || log.note}
                           </p>
                         ) : null}
                       </>
@@ -1373,14 +1377,23 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
             </button>
           ) : null}
 
-          {logs.length > 0 ? (
-            <button
-              type="button"
-              onClick={handleResetAllLogs}
-              className="log-reset-btn log-reset-inline"
-            >
-              전체 초기화
-            </button>
+          {logs.some((log) => !isDevSurfaceLog(log)) ? (
+            <details className="log-danger-fold">
+              <summary>
+                <span>기록 관리</span>
+                <strong>전체 삭제</strong>
+              </summary>
+              <p className="log-danger-copy">
+                저장된 운동 기록을 모두 지웁니다. 백업이 없다면 복구할 수 없습니다.
+              </p>
+              <button
+                type="button"
+                onClick={handleResetAllLogs}
+                className="log-reset-btn log-reset-inline"
+              >
+                전체 초기화
+              </button>
+            </details>
           ) : null}
         </section>
       </div>

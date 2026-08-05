@@ -143,6 +143,20 @@
   border-radius: 18px;
 }
 
+.theme-light .home-page-focus .home-scene-card-hero:not(.has-custom-photo) {
+  border-color: rgba(10, 9, 9, 0.1);
+  background: #f7f4f2;
+  color: #0a0909;
+}
+
+.theme-dark .home-page-focus .home-scene-card-hero:not(.has-custom-photo) {
+  border-color: rgba(138, 46, 46, 0.28);
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(138, 46, 46, 0.28), transparent 55%),
+    #0a0909;
+  color: #f5f1e8;
+}
+
 .home-page-focus .home-scene-card-hero .home-scene-kicker {
   margin: 0;
   font-size: 12px;
@@ -168,17 +182,44 @@
 
 .home-page-focus .home-week-strip-inline {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   margin: 0 0 14px;
   padding: 10px 4px 2px;
 }
 
+.home-page-focus .home-week-strip-inline .home-week-day span {
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.home-page-focus .home-week-strip-inline .home-week-day i {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+}
+
+.home-page-focus .home-week-strip-inline .home-week-day.is-trained i {
+  background: var(--p-action, #8a2e2e);
+  border-color: var(--p-action, #8a2e2e);
+  color: #f5f1e8;
+}
+
+.home-page-focus .home-week-strip-inline .home-week-day.is-today span {
+  color: var(--p-action, #8a2e2e);
+  font-weight: 900;
+}
+
 .home-page-focus .home-week-strip-meta {
   margin: 0;
-  color: var(--p-text-muted);
-  font-size: 12px;
-  font-weight: 750;
+  color: var(--p-text);
+  font-size: 13px;
+  font-weight: 800;
   text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.theme-dark .home-page-focus .home-week-strip-meta {
+  color: #f5f1e8;
 }
 
 .home-page-focus .home-recent-card-slim {
@@ -190,9 +231,23 @@
 }
 
 .home-page-focus .home-recent-item-slim {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
   min-height: 48px;
   padding: 8px 0;
+}
+
+.home-page-focus .home-recent-item-slim .home-recent-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(138, 46, 46, 0.14);
+  color: var(--p-action, #8a2e2e);
+}
+
+.theme-dark .home-page-focus .home-recent-item-slim .home-recent-icon {
+  background: rgba(138, 46, 46, 0.24);
+  color: #cf8b8b;
 }
 
 .home-page-focus .home-level-strip-slim {

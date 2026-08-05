@@ -8,11 +8,18 @@ import {
 import { getLogMinutes } from "../utils/trainingStats";
 import { getTodaysLessonPreview } from "../utils/dailyLesson";
 import { BRAND_NAME } from "../utils/brand";
-import { getLogSummary } from "../utils/logCategories";
+import { getLogSummary, inferLogCategory } from "../utils/logCategories";
 import { isDevSurfaceLog } from "../utils/devMode";
 import MenuIcon from "../components/MenuIcon";
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+
+const RECENT_LOG_ICON = {
+  boxing: "skill",
+  running: "growth",
+  weights: "body",
+  walking: "round",
+};
 
 function getDateKey(value) {
   if (!value) return "";
@@ -369,6 +376,7 @@ export default function HomePage({
             recentLogs.map((log) => {
               const rounds = getRounds(log);
               const minutes = getLogMinutes(log);
+              const category = inferLogCategory(log);
               const metric =
                 rounds > 0
                   ? `${rounds}R`
@@ -382,6 +390,12 @@ export default function HomePage({
                   key={log.id}
                   onClick={() => onOpenCardMaker?.(log.id)}
                 >
+                  <span className="home-recent-icon" aria-hidden="true">
+                    <MenuIcon
+                      name={RECENT_LOG_ICON[category] || "log"}
+                      size={14}
+                    />
+                  </span>
                   <span className="home-recent-copy">
                     <strong>{log.type || "훈련"}</strong>
                     <em>

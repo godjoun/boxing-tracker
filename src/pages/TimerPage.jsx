@@ -52,6 +52,8 @@ import ComposerShell, {
 } from "../components/ComposerShell";
 import {
   INTERVAL_TIMER_PRESET,
+  DEFAULT_BOXING_WORK_SECONDS,
+  DEFAULT_BOXING_REST_SECONDS,
   getTimerPresetById,
 } from "../utils/timerPresets";
 import { BRAND_NAME } from "../utils/brand";
@@ -63,32 +65,32 @@ const MATCH_PRESETS = [
     title: "3R",
     description: "가볍게 실전 감각을 올리는 기본 경기식",
     rounds: 3,
-    workSeconds: 180,
-    restSeconds: 30,
+    workSeconds: DEFAULT_BOXING_WORK_SECONDS,
+    restSeconds: DEFAULT_BOXING_REST_SECONDS,
   },
   {
     id: "match6",
     title: "6R",
     description: "체력과 집중력을 같이 올리는 중간 강도",
     rounds: 6,
-    workSeconds: 180,
-    restSeconds: 30,
+    workSeconds: DEFAULT_BOXING_WORK_SECONDS,
+    restSeconds: DEFAULT_BOXING_REST_SECONDS,
   },
   {
     id: "match9",
     title: "9R",
     description: "길게 버티는 훈련용 경기식",
     rounds: 9,
-    workSeconds: 180,
-    restSeconds: 30,
+    workSeconds: DEFAULT_BOXING_WORK_SECONDS,
+    restSeconds: DEFAULT_BOXING_REST_SECONDS,
   },
   {
     id: "match12",
     title: "12R",
     description: "챔피언 라운드 감각으로 끝까지 버티기",
     rounds: 12,
-    workSeconds: 180,
-    restSeconds: 30,
+    workSeconds: DEFAULT_BOXING_WORK_SECONDS,
+    restSeconds: DEFAULT_BOXING_REST_SECONDS,
   },
 ];
 
@@ -323,7 +325,7 @@ export default function TimerPage({
     setPrepSecondsSetting(saved.prepSecondsSetting ?? 10);
     setCooldownSecondsSetting(saved.cooldownSecondsSetting ?? 0);
     setTotalRounds(saved.totalRounds ?? 3);
-    setWorkSecondsSetting(saved.workSecondsSetting ?? 180);
+    setWorkSecondsSetting(saved.workSecondsSetting ?? DEFAULT_BOXING_WORK_SECONDS);
     setRestSecondsSetting(saved.restSecondsSetting ?? 30);
     setCurrentRound(saved.currentRound ?? 1);
     setPhase(saved.phase ?? "work");

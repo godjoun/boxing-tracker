@@ -3,7 +3,7 @@ export const styles = {
     width: "100%",
     maxWidth: "1040px",
     margin: "0 auto",
-    padding: "18px 16px calc(110px + env(safe-area-inset-bottom, 0px))",
+    padding: "18px 16px 0",
     color: "var(--p-text)",
     boxSizing: "border-box",
   },

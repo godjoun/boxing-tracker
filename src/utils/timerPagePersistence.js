@@ -2,6 +2,12 @@ import {
   loadTimerSession,
   reconcileTimerSession,
 } from "./timerSession";
+import {
+  DEFAULT_BOXING_REST_SECONDS,
+  DEFAULT_BOXING_WORK_SECONDS,
+  getTimerPresetById,
+  isMatchTimerPresetId,
+} from "./timerPresets";
 
 export const TIMER_DEFAULT_STATE = {
   selectedPresetId: "match3",
@@ -20,16 +26,48 @@ export const TIMER_DEFAULT_STATE = {
   prepSecondsSetting: 10,
   cooldownSecondsSetting: 0,
   totalRounds: 3,
-  workSecondsSetting: 180,
-  restSecondsSetting: 30,
+  workSecondsSetting: DEFAULT_BOXING_WORK_SECONDS,
+  restSecondsSetting: DEFAULT_BOXING_REST_SECONDS,
   currentRound: 1,
   phase: "work",
-  remainingTime: 180,
+  remainingTime: DEFAULT_BOXING_WORK_SECONDS,
   isRunning: false,
   hasStartedSession: false,
   hasSavedLog: false,
   soundMode: "basic",
 };
+
+/**
+ * 경기식 프리셋(match3 등)은 코드 기본값에 맞춘다.
+ * selectedPresetId === "custom" 인 사용자 조절값은 덮어쓰지 않는다.
+ * 진행 중 세션도 건드리지 않는다.
+ */
+function alignMatchPresetDurations(saved) {
+  if (!saved || typeof saved !== "object") return saved;
+  if (saved.isRunning || saved.hasStartedSession) return saved;
+  if (!isMatchTimerPresetId(saved.selectedPresetId)) return saved;
+
+  const preset = getTimerPresetById(saved.selectedPresetId);
+  if (!preset) return saved;
+
+  const nextWork = preset.workSeconds;
+  const nextRest = preset.restSeconds;
+  const aligned = {
+    ...saved,
+    workSecondsSetting: nextWork,
+    restSecondsSetting: nextRest,
+    totalRounds: preset.rounds,
+  };
+
+  if (
+    saved.phase === "work" &&
+    Number(saved.remainingTime) === Number(saved.workSecondsSetting)
+  ) {
+    aligned.remainingTime = nextWork;
+  }
+
+  return aligned;
+}
 
 export function readInitialTimerState() {
   const saved = reconcileTimerSession(loadTimerSession());
@@ -38,15 +76,17 @@ export function readInitialTimerState() {
     return { ...TIMER_DEFAULT_STATE };
   }
 
+  const aligned = alignMatchPresetDurations(saved);
+
   return {
     ...TIMER_DEFAULT_STATE,
-    ...saved,
-    curriculumDrills: Array.isArray(saved.curriculumDrills)
-      ? saved.curriculumDrills
+    ...aligned,
+    curriculumDrills: Array.isArray(aligned.curriculumDrills)
+      ? aligned.curriculumDrills
       : [],
-    strengthDayId: saved.strengthDayId || null,
-    canSkipStrengthWarmup: Boolean(saved.canSkipStrengthWarmup),
-    strengthPlan: saved.strengthPlan || null,
+    strengthDayId: aligned.strengthDayId || null,
+    canSkipStrengthWarmup: Boolean(aligned.canSkipStrengthWarmup),
+    strengthPlan: aligned.strengthPlan || null,
   };
 }
 

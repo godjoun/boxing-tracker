@@ -54,7 +54,7 @@ export function clampCooldownSeconds(seconds) {
 
 export function resolveSessionTimerConfig(session) {
   const rounds = Number(session?.rounds) || 3;
-  const workSeconds = Number(session?.workSeconds) || 120;
+  const workSeconds = Number(session?.workSeconds) || 180;
   const restSeconds = Number(session?.restSeconds) || 30;
   const explicitPrepSeconds = Number(session?.prepSeconds);
   const hasExplicitPrep = Number.isFinite(explicitPrepSeconds);
@@ -192,7 +192,7 @@ function pickPrimaryRoundDrill(roundDrills) {
 export function buildSessionDrillGuide(
   syncedDrills = [],
   totalRounds = 3,
-  workSeconds = 120
+  workSeconds = 180
 ) {
   const warmup = syncedDrills.find((drill) => drill.timerRole === "warmup");
   const cooldown = syncedDrills.find((drill) => drill.timerRole === "cooldown");

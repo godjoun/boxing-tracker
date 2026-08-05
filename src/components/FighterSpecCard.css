@@ -229,6 +229,37 @@
   line-height: 1.45;
 }
 
+.fighter-nameplate-bio.is-placeholder {
+  opacity: 0.72;
+}
+
+.fighter-nameplate.is-hub .fighter-nameplate-top {
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+}
+
+.fighter-nameplate.is-hub .fighter-nameplate-photo {
+  width: 72px;
+  height: 72px;
+}
+
+.fighter-nameplate.is-hub .fighter-nameplate-name {
+  margin: 0;
+  font-size: 26px;
+}
+
+.fighter-nameplate.is-hub .fighter-nameplate-grade {
+  margin: 8px 0 0;
+  color: var(--p-text-muted, #6b5e56);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.fighter-nameplate.is-hub .fighter-nameplate-photo-empty strong {
+  display: none;
+}
+
 .fighter-nameplate-badge {
   flex-shrink: 0;
   min-width: 58px;

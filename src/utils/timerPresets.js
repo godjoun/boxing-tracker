@@ -1,3 +1,7 @@
+/** 복싱 라운드(경기식) 기본 운동·휴식 — 새 세션·프리셋·fallback */
+export const DEFAULT_BOXING_WORK_SECONDS = 180;
+export const DEFAULT_BOXING_REST_SECONDS = 30;
+
 export const INTERVAL_TIMER_PRESET = {
   id: "interval30",
   title: "인터벌",
@@ -14,32 +18,32 @@ export const MATCH_TIMER_PRESETS = [
     title: "3R",
     description: "가볍게 실전 감각",
     rounds: 3,
-    workSeconds: 180,
-    restSeconds: 30,
+    workSeconds: DEFAULT_BOXING_WORK_SECONDS,
+    restSeconds: DEFAULT_BOXING_REST_SECONDS,
   },
   {
     id: "match6",
     title: "6R",
     description: "중간 강도",
     rounds: 6,
-    workSeconds: 180,
-    restSeconds: 30,
+    workSeconds: DEFAULT_BOXING_WORK_SECONDS,
+    restSeconds: DEFAULT_BOXING_REST_SECONDS,
   },
   {
     id: "match9",
     title: "9R",
     description: "길게 버티기",
     rounds: 9,
-    workSeconds: 180,
-    restSeconds: 30,
+    workSeconds: DEFAULT_BOXING_WORK_SECONDS,
+    restSeconds: DEFAULT_BOXING_REST_SECONDS,
   },
   {
     id: "match12",
     title: "12R",
     description: "챔피언 라운드",
     rounds: 12,
-    workSeconds: 180,
-    restSeconds: 30,
+    workSeconds: DEFAULT_BOXING_WORK_SECONDS,
+    restSeconds: DEFAULT_BOXING_REST_SECONDS,
   },
 ];
 
@@ -49,6 +53,10 @@ export function getTimerPresetById(id) {
   }
 
   return MATCH_TIMER_PRESETS.find((preset) => preset.id === id) || null;
+}
+
+export function isMatchTimerPresetId(id) {
+  return MATCH_TIMER_PRESETS.some((preset) => preset.id === id);
 }
 
 export function buildPresetTimerLaunch(preset, { autoStart = false } = {}) {

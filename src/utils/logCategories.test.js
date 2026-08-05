@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getLogSummary,
   getRunningPaceLabel,
+  getWeightsExerciseTitle,
   inferLogCategory,
   normalizeLogCategory,
 } from "./logCategories";
@@ -33,7 +34,30 @@ describe("운동 기록 카테고리", () => {
         type: "웨이트",
         metrics: { exerciseName: "스쿼트", sets: 3, weightKg: 40 },
       }),
-    ).toBe("스쿼트 · 3세트 · 40kg");
+    ).toBe("3세트 · 40kg");
+    expect(
+      getWeightsExerciseTitle({
+        category: "weights",
+        type: "웨이트",
+        metrics: { exerciseName: "스쿼트", sets: 3, weightKg: 40 },
+      }),
+    ).toBe("스쿼트");
+  });
+
+  it("웨이트 운동명이 없으면 안전하게 웨이트로 표시한다", () => {
+    expect(getWeightsExerciseTitle({ category: "weights", type: "웨이트" })).toBe(
+      "웨이트",
+    );
+    expect(getWeightsExerciseTitle({ category: "weights", type: "상체" })).toBe(
+      "웨이트",
+    );
+    expect(
+      getWeightsExerciseTitle({
+        category: "weights",
+        type: "벤치프레스",
+        metrics: {},
+      }),
+    ).toBe("벤치프레스");
   });
 
   it("웨이트는 시간 없이도 세트 수로 기록 점수를 만든다", () => {

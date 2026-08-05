@@ -11,6 +11,9 @@ describe("공개 베타 출시 범위", () => {
 
     expect(RELEASE_SCOPE.rivals).toBe(false);
     expect(menuIds).not.toContain("rivals");
+    expect(menuIds).not.toContain("training-log");
+    expect(menuIds).not.toContain("profile");
+    expect(menuIds).not.toContain("timer");
     expect(FEATURE_UNLOCKS.map((feature) => feature.id)).not.toContain(
       "sparring"
     );

@@ -9,125 +9,56 @@ import {
   getLogCategory,
   getLogSummary,
   getRunningPaceLabel,
+  getWeightsExerciseTitle,
   inferLogCategory,
   LOG_CATEGORIES,
   normalizeLogCategory,
 } from "../utils/logCategories";
 import { isDevSurfaceLog } from "../utils/devMode";
+import { DEFAULT_BOXING_WORK_SECONDS } from "../utils/timerPresets";
 import "./LogPage.css";
 
 const CUSTOM_EXERCISE_VALUE = "직접 입력";
+const BOXING_MINUTES_PER_ROUND = DEFAULT_BOXING_WORK_SECONDS / 60;
 const EXERCISE_OPTIONS = [
   ...LOG_CATEGORIES.flatMap((category) => category.subtypes),
   CUSTOM_EXERCISE_VALUE,
 ];
 
-const ROUND_SLIDER_MIN = 1;
-const ROUND_SLIDER_MAX = 12;
+const ROUND_MIN = 1;
+const ROUND_MAX = 12;
+const ROUND_QUICK = [3, 6, 9, 12];
 
-function RoundZoneSlider({ value, onChange, min = ROUND_SLIDER_MIN, max = ROUND_SLIDER_MAX }) {
-  const trackRef = useRef(null);
-  const draggingRef = useRef(false);
+function RoundStepper({ value, onChange, min = ROUND_MIN, max = ROUND_MAX }) {
   const rounds = Number(value);
   const hasValue = Number.isFinite(rounds) && rounds > 0;
   const displayRounds = hasValue
     ? Math.min(max, Math.max(min, Math.round(rounds)))
-    : min;
-  const percent = ((displayRounds - min) / (max - min)) * 100;
-
-  function roundsFromClientX(clientX) {
-    const track = trackRef.current;
-    if (!track) return min;
-    const rect = track.getBoundingClientRect();
-    if (rect.width <= 0) return min;
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    return Math.round(min + ratio * (max - min));
-  }
+    : 0;
 
   function commit(next) {
     onChange(Math.min(max, Math.max(min, next)));
   }
 
-  function commitFromClientX(clientX) {
-    commit(roundsFromClientX(clientX));
-  }
-
-  function handlePointerDown(event) {
-    if (event.button != null && event.button !== 0) return;
-    draggingRef.current = true;
-    event.currentTarget.setPointerCapture(event.pointerId);
-    commitFromClientX(event.clientX);
-  }
-
-  function handlePointerMove(event) {
-    if (!draggingRef.current) return;
-    commitFromClientX(event.clientX);
-  }
-
-  function handlePointerUp(event) {
-    draggingRef.current = false;
-    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  }
-
   return (
-    <div className="log-round-slider">
-      <div className="log-round-slider-head">
-        <span>라운드</span>
-        <strong>{hasValue ? `${displayRounds}R` : "밀어 선택"}</strong>
-      </div>
-      <div className="log-round-slider-row">
+    <div className="log-round-stepper">
+      <span className="log-round-stepper-label">라운드</span>
+      <div className="log-round-stepper-row">
         <button
           type="button"
-          className="log-round-slider-step"
+          className="log-round-stepper-btn"
           aria-label="라운드 줄이기"
           disabled={hasValue && displayRounds <= min}
           onClick={() => commit((hasValue ? displayRounds : min + 1) - 1)}
         >
           −
         </button>
-        <div
-          ref={trackRef}
-          className={`log-round-slider-track${hasValue ? " is-active" : ""}`}
-          role="slider"
-          tabIndex={0}
-          aria-label="라운드"
-          aria-valuemin={min}
-          aria-valuemax={max}
-          aria-valuenow={hasValue ? displayRounds : min}
-          aria-valuetext={hasValue ? `${displayRounds}라운드` : "미선택"}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowRight" || event.key === "ArrowUp") {
-              event.preventDefault();
-              commit(displayRounds + 1);
-            }
-            if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
-              event.preventDefault();
-              commit((hasValue ? displayRounds : min + 1) - 1);
-            }
-          }}
-        >
-          <div
-            className="log-round-slider-fill"
-            style={{ width: hasValue ? `${percent}%` : "0%" }}
-          />
-          <div
-            className="log-round-slider-thumb"
-            style={{
-              left: hasValue
-                ? `clamp(14px, ${percent}%, calc(100% - 14px))`
-                : "14px",
-            }}
-          />
-        </div>
+        <strong className="log-round-stepper-value" aria-live="polite">
+          {hasValue ? `${displayRounds}R` : "—"}
+        </strong>
         <button
           type="button"
-          className="log-round-slider-step"
+          className="log-round-stepper-btn"
           aria-label="라운드 늘리기"
           disabled={hasValue && displayRounds >= max}
           onClick={() => commit((hasValue ? displayRounds : min - 1) + 1)}
@@ -135,6 +66,39 @@ function RoundZoneSlider({ value, onChange, min = ROUND_SLIDER_MIN, max = ROUND_
           +
         </button>
       </div>
+      <div className="log-round-quick" role="group" aria-label="빠른 라운드">
+        {ROUND_QUICK.map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={hasValue && displayRounds === n ? "is-active" : ""}
+            onClick={() => commit(n)}
+          >
+            {n}R
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatDotDate(value) {
+  if (!value) return "";
+  return String(value).replaceAll("-", ".");
+}
+
+function LogDateField({ value, onChange, id = "log-date" }) {
+  return (
+    <div className="log-date-field">
+      <span className="log-date-display">{formatDotDate(value) || "날짜 선택"}</span>
+      <input
+        id={id}
+        type="date"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="log-date-native"
+        aria-label="날짜"
+      />
     </div>
   );
 }
@@ -196,6 +160,12 @@ function createEmptyForm() {
 }
 
 function getFinalExerciseName(formData) {
+  if (formData.category === "weights") {
+    return String(
+      formData.customType || formData.metrics?.exerciseName || ""
+    ).trim();
+  }
+
   if (formData.type === CUSTOM_EXERCISE_VALUE) {
     return formData.customType.trim();
   }
@@ -204,10 +174,10 @@ function getFinalExerciseName(formData) {
 }
 
 function getCorePrompt(categoryId) {
-  if (categoryId === "boxing") return "라운드와 시간만 적으면 됩니다";
-  if (categoryId === "running") return "거리와 시간만 적으면 됩니다";
-  if (categoryId === "weights") return "세트·무게·횟수만 적으면 됩니다";
-  if (categoryId === "walking") return "시간과 거리만 적으면 됩니다";
+  if (categoryId === "boxing") return "라운드만 고르면 됩니다";
+  if (categoryId === "running") return "GPS로 채우거나 직접 입력하세요";
+  if (categoryId === "weights") return "운동명과 세트·횟수를 적으세요";
+  if (categoryId === "walking") return "GPS로 채우거나 시간을 적으세요";
   return "끝난 종류를 고르세요";
 }
 
@@ -215,35 +185,60 @@ function getStepOneStatus(formData) {
   if (!formData.category) {
     return {
       isComplete: false,
-      label: "종류 선택",
-      buttonLabel: "종류 선택",
+      label: "종류를 고르세요",
+      buttonLabel: "기록 저장",
     };
   }
 
   if (formData.category === "weights") {
+    const exerciseName = getFinalExerciseName(formData);
     const hasSets = Number(formData.metrics?.sets || 0) > 0;
     const hasReps = Number(formData.metrics?.reps || 0) > 0;
+
+    if (!exerciseName) {
+      return {
+        isComplete: false,
+        label: "운동명을 입력하세요",
+        buttonLabel: "기록 저장",
+      };
+    }
 
     if (!hasSets) {
       return {
         isComplete: false,
-        label: "세트 입력",
-        buttonLabel: "세트 입력",
+        label: "세트를 입력하세요",
+        buttonLabel: "기록 저장",
       };
     }
 
     if (!hasReps) {
       return {
         isComplete: false,
-        label: "횟수 입력",
-        buttonLabel: "횟수 입력",
+        label: "횟수를 입력하세요",
+        buttonLabel: "기록 저장",
       };
     }
 
     return {
       isComplete: true,
       label: "저장 가능",
-      buttonLabel: "저장",
+      buttonLabel: "기록 저장",
+    };
+  }
+
+  if (formData.category === "boxing") {
+    if (!formData.rounds || Number(formData.rounds) <= 0) {
+      return {
+        isComplete: false,
+        label: "라운드를 고르세요",
+        buttonLabel: "기록 저장",
+      };
+    }
+
+    return {
+      isComplete: true,
+      label: "저장 가능",
+      buttonLabel: "기록 저장",
     };
   }
 
@@ -254,16 +249,16 @@ function getStepOneStatus(formData) {
   ) {
     return {
       isComplete: false,
-      label: "GPS 측정",
-      buttonLabel: "GPS 시작",
+      label: "GPS로 측정하거나 직접 입력하세요",
+      buttonLabel: "기록 저장",
     };
   }
 
   if (!formData.minutes || Number(formData.minutes) <= 0) {
     return {
       isComplete: false,
-      label: "시간 입력",
-      buttonLabel: "시간 입력",
+      label: "시간을 입력하세요",
+      buttonLabel: "기록 저장",
     };
   }
 
@@ -273,15 +268,15 @@ function getStepOneStatus(formData) {
   ) {
     return {
       isComplete: false,
-      label: "거리 입력",
-      buttonLabel: "거리 입력",
+      label: "거리를 입력하세요",
+      buttonLabel: "기록 저장",
     };
   }
 
   return {
     isComplete: true,
     label: "저장 가능",
-    buttonLabel: "저장",
+    buttonLabel: "기록 저장",
   };
 }
 
@@ -352,29 +347,22 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const gpsPhase = autoTracking?.phase || null;
   const gpsIsActive = gpsPhase === "active";
   const gpsIsFailed = gpsPhase === "failed";
-  const canStartGpsFromDock =
-    ["running", "walking"].includes(form.category) &&
-    !gpsIsActive &&
-    (gpsIsFailed || stepOneStatus.buttonLabel === "GPS 시작");
-
-  const dockLabel = canSave
-    ? "기록 저장"
-    : gpsIsActive
-      ? "측정 종료"
-      : gpsIsFailed
-        ? "다시 시도"
-        : canStartGpsFromDock
-          ? "GPS 시작"
-          : stepOneStatus.buttonLabel === "종류 선택"
-            ? "종류를 고르세요"
-            : stepOneStatus.buttonLabel;
-  const dockHint = canSave
-    ? "저장 가능"
-    : gpsIsActive
-      ? "측정 중"
-      : gpsIsFailed
-        ? "권한 확인"
-        : stepOneStatus.label;
+  const gpsIsCompleted = gpsPhase === "completed";
+  const showGpsControls = ["running", "walking"].includes(form.category);
+  const gpsDistanceKm = gpsIsActive
+    ? autoTracking?.distanceKm
+      ? Number(autoTracking.distanceKm).toFixed(2)
+      : form.metrics.distanceKm
+    : form.metrics.distanceKm;
+  const gpsMinutes = form.minutes;
+  const hasGpsValues =
+    Boolean(gpsDistanceKm && Number(gpsDistanceKm) > 0) ||
+    Boolean(gpsMinutes && Number(gpsMinutes) > 0);
+  const showGpsMetrics = gpsIsActive || gpsIsCompleted || hasGpsValues;
+  const latestLog = useMemo(
+    () => logs.find((log) => !isDevSurfaceLog(log)) || null,
+    [logs]
+  );
   const historyCategoryLogs = useMemo(
     () =>
       logs.filter(
@@ -452,13 +440,15 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   function handleCategoryChange(categoryId) {
     const category = getLogCategory(categoryId);
     clearAutoTracking();
+    const isWeights = category.id === "weights";
     setForm((prev) => ({
       ...prev,
       category: category.id,
-      type: category.subtypes[0],
+      type: isWeights ? CUSTOM_EXERCISE_VALUE : category.subtypes[0],
       subtype: category.subtypes[0],
       customType: "",
       rounds: "",
+      minutes: "",
       metrics: {},
     }));
   }
@@ -562,39 +552,42 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
   function handleStopAutoTracking() {
     const current = autoTracking;
-    clearAutoTracking();
-    if (!current || current.phase !== "active" || !current.startedAt) return;
+    clearAutoTrackingWatch();
+    if (!current || current.phase !== "active" || !current.startedAt) {
+      setAutoTracking(null);
+      return;
+    }
 
     const elapsedMinutes = Math.max(
       1,
       Math.round((new Date().getTime() - current.startedAt) / 60000)
     );
+    const distanceKm = current.distanceKm
+      ? current.distanceKm.toFixed(2)
+      : "";
     setForm((prev) => ({
       ...prev,
       minutes: prev.minutes || String(elapsedMinutes),
       metrics: {
         ...prev.metrics,
-        distanceKm:
-          prev.metrics.distanceKm ||
-          (current.distanceKm ? current.distanceKm.toFixed(2) : ""),
+        distanceKm: prev.metrics.distanceKm || distanceKm,
         autoSignals: ["GPS", "시간"],
         autoStoppedAt: new Date().toISOString(),
       },
     }));
+    setAutoTracking({
+      phase: "completed",
+      category: current.category,
+      startedAt: current.startedAt,
+      distanceKm: current.distanceKm,
+      lastPosition: current.lastPosition,
+      status: "측정 완료",
+    });
   }
 
   function handleDockPrimaryAction() {
-    if (canSave) {
-      handleSubmit();
-      return;
-    }
-    if (gpsIsActive) {
-      handleStopAutoTracking();
-      return;
-    }
-    if (canStartGpsFromDock) {
-      handleStartAutoTracking();
-    }
+    if (!canSave) return;
+    handleSubmit();
   }
 
   useEffect(() => {
@@ -646,6 +639,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       return;
     }
 
+    if (form.category === "weights" && !finalExerciseName) {
+      alert("운동명을 입력해줘!");
+      return;
+    }
+
     const savedLog = addLog({
       type: finalExerciseName,
       minutes: Number(form.minutes),
@@ -659,8 +657,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       memo: form.memo,
       publicComment: form.publicComment,
       category: form.category,
-      subtype: form.subtype,
-      metrics: form.metrics,
+      subtype: form.subtype || (form.category === "weights" ? "웨이트" : form.type),
+      metrics:
+        form.category === "weights"
+          ? { ...form.metrics, exerciseName: finalExerciseName }
+          : form.metrics,
       source: form.metrics?.autoSignals?.length ? "auto" : "manual",
     });
 
@@ -687,12 +688,27 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     setEditingId(log.id);
 
     const normalizedLog = normalizeLogCategory(log);
+    const isWeights = normalizedLog.category === "weights";
+    const weightTags = ["웨이트", "상체", "하체", "코어"];
+    const storedName = String(
+      log.metrics?.exerciseName || normalizedLog.type || ""
+    ).trim();
+    const weightName =
+      storedName && !weightTags.includes(storedName) ? storedName : "";
 
     setEditForm({
       category: normalizedLog.category,
-      type: normalizedLog.type || "복싱",
+      type: isWeights
+        ? CUSTOM_EXERCISE_VALUE
+        : EXERCISE_OPTIONS.includes(normalizedLog.type)
+          ? normalizedLog.type
+          : CUSTOM_EXERCISE_VALUE,
       subtype: normalizedLog.subtype || normalizedLog.type || "복싱",
-      customType: "",
+      customType: isWeights
+        ? weightName
+        : EXERCISE_OPTIONS.includes(normalizedLog.type)
+          ? ""
+          : normalizedLog.type || "",
       minutes: String(log.minutes || log.duration || ""),
       rounds: String(getRounds(log) || ""),
       date: log.date || getTodayString(),
@@ -741,6 +757,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       return;
     }
 
+    if (editForm.category === "weights" && !finalExerciseName) {
+      alert("운동명을 입력해줘!");
+      return;
+    }
+
     updateLog(logId, {
       type: finalExerciseName,
       minutes: Number(editForm.minutes),
@@ -754,8 +775,13 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
       memo: editForm.memo,
       publicComment: editForm.publicComment,
       category: editForm.category,
-      subtype: editForm.subtype,
-      metrics: editForm.metrics,
+      subtype:
+        editForm.subtype ||
+        (editForm.category === "weights" ? "웨이트" : editForm.type),
+      metrics:
+        editForm.category === "weights"
+          ? { ...editForm.metrics, exerciseName: finalExerciseName }
+          : editForm.metrics,
     });
 
     setReward({
@@ -877,48 +903,80 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                   className="log-core-panel"
                   aria-label={`${selectedCategory.label} 기록 입력`}
                 >
-                  {["running", "walking"].includes(form.category) ? (
+                  {showGpsControls ? (
                     <section
-                      className={`log-auto-panel${gpsIsFailed ? " is-failed" : ""}`}
+                      className={`log-auto-panel${gpsIsFailed ? " is-failed" : ""}${gpsIsActive ? " is-active" : ""}${gpsIsCompleted ? " is-done" : ""}`}
                       aria-label="GPS 자동 측정"
                     >
                       <div>
                         <strong>
-                          {autoTracking ? autoTracking.status : "GPS로 채우기"}
+                          {gpsIsFailed
+                            ? autoTracking.status
+                            : gpsIsActive
+                              ? "측정 중"
+                              : gpsIsCompleted
+                                ? "측정 완료"
+                                : "GPS로 채우기"}
                         </strong>
                         <p>
                           {gpsIsFailed
-                            ? "권한을 허용한 뒤 아래에서 다시 시도하거나, 직접 입력하세요."
+                            ? "권한을 허용한 뒤 다시 시도하거나, 아래에서 직접 입력하세요."
                             : gpsIsActive
-                              ? "측정이 끝나면 아래에서 종료하세요."
-                              : "시작하면 거리와 시간이 들어갑니다."}
+                              ? "측정이 끝나면 종료하세요. 저장은 아래에서 합니다."
+                              : gpsIsCompleted
+                                ? "값을 확인한 뒤 아래에서 저장하세요."
+                                : "시작하면 거리와 시간이 들어갑니다."}
                         </p>
                       </div>
+                      <button
+                        type="button"
+                        className={`log-gps-panel-action${gpsIsCompleted ? " is-secondary" : ""}`}
+                        onClick={() => {
+                          if (gpsIsActive) {
+                            handleStopAutoTracking();
+                            return;
+                          }
+                          if (gpsIsCompleted) {
+                            clearAutoTracking();
+                          }
+                          handleStartAutoTracking();
+                        }}
+                      >
+                        {gpsIsActive
+                          ? "측정 종료"
+                          : gpsIsCompleted
+                            ? "다시 측정"
+                            : gpsIsFailed
+                              ? "다시 시도"
+                              : "GPS 시작"}
+                      </button>
                     </section>
                   ) : null}
 
                   {form.category === "boxing" ? (
                     <>
-                      <RoundZoneSlider
+                      <RoundStepper
                         value={form.rounds}
                         onChange={(rounds) => {
                           updateFormField("rounds", String(rounds));
-                          updateFormField("minutes", String(rounds * 3));
+                          updateFormField(
+                            "minutes",
+                            String(rounds * BOXING_MINUTES_PER_ROUND)
+                          );
                         }}
                       />
-                      <div className="log-field">
-                        <label className="log-label">시간(분)</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={form.minutes}
-                          onChange={(event) =>
-                            updateFormField("minutes", event.target.value)
-                          }
-                          placeholder="30"
-                          className="log-input"
-                        />
-                      </div>
+                      {form.rounds ? (
+                        <p className="log-derived-minutes">
+                          약{" "}
+                          {form.minutes ||
+                            Number(form.rounds) * BOXING_MINUTES_PER_ROUND}
+                          분 · 라운드당 {BOXING_MINUTES_PER_ROUND}분
+                        </p>
+                      ) : (
+                        <p className="log-derived-minutes is-hint">
+                          라운드를 선택하세요
+                        </p>
+                      )}
                       <label className="log-toggle-row">
                         <input
                           type="checkbox"
@@ -934,33 +992,34 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
                   {form.category === "running" || form.category === "walking" ? (
                     <>
-                      <div className="log-gps-summary" aria-label="측정값">
-                        <div>
-                          <span>거리</span>
-                          <strong>
-                            {form.metrics.distanceKm
-                              ? `${form.metrics.distanceKm}km`
-                              : "GPS 대기"}
-                          </strong>
+                      {showGpsMetrics ? (
+                        <div
+                          className={`log-gps-summary${form.category === "walking" ? " is-walk" : ""}`}
+                          aria-label={gpsIsActive ? "측정 중" : "측정 요약"}
+                        >
+                          {gpsDistanceKm && Number(gpsDistanceKm) > 0 ? (
+                            <div>
+                              <span>거리</span>
+                              <strong>{gpsDistanceKm}km</strong>
+                            </div>
+                          ) : null}
+                          {gpsMinutes && Number(gpsMinutes) > 0 ? (
+                            <div>
+                              <span>시간</span>
+                              <strong>{gpsMinutes}분</strong>
+                            </div>
+                          ) : null}
+                          {form.category === "running" &&
+                          getRunningPaceLabel(gpsDistanceKm, gpsMinutes) ? (
+                            <div>
+                              <span>페이스</span>
+                              <strong>
+                                {getRunningPaceLabel(gpsDistanceKm, gpsMinutes)}
+                              </strong>
+                            </div>
+                          ) : null}
                         </div>
-                        <div>
-                          <span>시간</span>
-                          <strong>
-                            {form.minutes ? `${form.minutes}분` : "자동"}
-                          </strong>
-                        </div>
-                        {form.category === "running" ? (
-                          <div>
-                            <span>페이스</span>
-                            <strong>
-                              {getRunningPaceLabel(
-                                form.metrics.distanceKm,
-                                form.minutes
-                              ) || "—"}
-                            </strong>
-                          </div>
-                        ) : null}
-                      </div>
+                      ) : null}
                       <details className="log-manual-details">
                         <summary>직접 입력</summary>
                         <div className="log-grid-2">
@@ -1004,7 +1063,22 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
                   {form.category === "weights" ? (
                     <div className="log-weights-fields">
-                      <div className="log-grid-3">
+                      <div className="log-field">
+                        <label className="log-label" htmlFor="log-weight-name">
+                          운동명
+                        </label>
+                        <input
+                          id="log-weight-name"
+                          value={form.customType}
+                          onChange={(event) =>
+                            updateFormField("customType", event.target.value)
+                          }
+                          placeholder="예: 벤치프레스, 스쿼트, 데드리프트"
+                          className="log-input"
+                          autoComplete="off"
+                        />
+                      </div>
+                      <div className="log-grid-2">
                         <div className="log-field">
                           <label className="log-label">세트</label>
                           <input
@@ -1015,22 +1089,6 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                               updateFormMetrics({ sets: event.target.value })
                             }
                             placeholder="3"
-                            className="log-input"
-                          />
-                        </div>
-                        <div className="log-field">
-                          <label className="log-label">무게</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.5"
-                            value={form.metrics.weightKg || ""}
-                            onChange={(event) =>
-                              updateFormMetrics({
-                                weightKg: event.target.value,
-                              })
-                            }
-                            placeholder="40"
                             className="log-input"
                           />
                         </div>
@@ -1053,49 +1111,98 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
                   <details className="log-subtype-details">
                     <summary>세부 · 직접 입력 · 메모</summary>
-                    <div className="log-subtype-grid">
-                      {selectedCategory.subtypes.map((exercise) => (
-                        <button
-                          key={exercise}
-                          type="button"
-                          className={form.type === exercise ? "is-active" : ""}
-                          onClick={() => handleTypeChange(exercise)}
-                        >
-                          {exercise}
-                        </button>
-                      ))}
-                      <button
-                        type="button"
-                        className={
-                          form.type === CUSTOM_EXERCISE_VALUE ? "is-active" : ""
-                        }
-                        onClick={() => handleTypeChange(CUSTOM_EXERCISE_VALUE)}
-                      >
-                        직접 입력
-                      </button>
-                    </div>
-                    {form.type === CUSTOM_EXERCISE_VALUE ? (
-                      <div className="log-field log-subtype-custom">
-                        <label className="log-label">운동 이름</label>
+                    {form.category === "boxing" ? (
+                      <div className="log-field">
+                        <label className="log-label">시간(분) · 직접 수정</label>
                         <input
-                          value={form.customType}
+                          type="number"
+                          min="1"
+                          value={form.minutes}
                           onChange={(event) =>
-                            updateFormField("customType", event.target.value)
+                            updateFormField("minutes", event.target.value)
                           }
-                          placeholder="예: 샌드백 집중 훈련"
+                          placeholder="30"
                           className="log-input"
                         />
                       </div>
                     ) : null}
+                    {form.category === "weights" ? (
+                      <div className="log-field">
+                        <label className="log-label">무게(kg) · 선택</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.5"
+                          value={form.metrics.weightKg || ""}
+                          onChange={(event) =>
+                            updateFormMetrics({
+                              weightKg: event.target.value,
+                            })
+                          }
+                          placeholder="40"
+                          className="log-input"
+                        />
+                      </div>
+                    ) : null}
+                    {form.category === "weights" ? (
+                      <div className="log-subtype-grid" role="group" aria-label="부위 분류">
+                        {selectedCategory.subtypes.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            className={form.subtype === tag ? "is-active" : ""}
+                            onClick={() => updateFormField("subtype", tag)}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="log-subtype-grid">
+                          {selectedCategory.subtypes.map((exercise) => (
+                            <button
+                              key={exercise}
+                              type="button"
+                              className={form.type === exercise ? "is-active" : ""}
+                              onClick={() => handleTypeChange(exercise)}
+                            >
+                              {exercise}
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            className={
+                              form.type === CUSTOM_EXERCISE_VALUE ? "is-active" : ""
+                            }
+                            onClick={() => handleTypeChange(CUSTOM_EXERCISE_VALUE)}
+                          >
+                            직접 입력
+                          </button>
+                        </div>
+                        {form.type === CUSTOM_EXERCISE_VALUE ? (
+                          <div className="log-field log-subtype-custom">
+                            <label className="log-label">운동 이름</label>
+                            <input
+                              value={form.customType}
+                              onChange={(event) =>
+                                updateFormField("customType", event.target.value)
+                              }
+                              placeholder="예: 샌드백 집중 훈련"
+                              className="log-input"
+                            />
+                          </div>
+                        ) : null}
+                      </>
+                    )}
                     <div className="log-field">
-                      <label className="log-label">날짜</label>
-                      <input
-                        type="date"
+                      <label className="log-label" htmlFor="log-form-date">
+                        날짜
+                      </label>
+                      <LogDateField
+                        id="log-form-date"
                         value={form.date}
-                        onChange={(event) =>
-                          updateFormField("date", event.target.value)
-                        }
-                        className="log-input"
+                        onChange={(next) => updateFormField("date", next)}
                       />
                     </div>
                     <div className="log-field">
@@ -1119,27 +1226,50 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         {selectedCategory ? (
           <div className={`log-write-dock${canSave ? " is-save" : " is-final"}`}>
             {!canSave ? (
-              <div className="log-write-dock-exp">
-                <span>다음</span>
-                <strong>{dockHint}</strong>
-              </div>
+              <p className="log-write-dock-hint">{stepOneStatus.label}</p>
             ) : null}
             <button
               type="button"
               className="log-submit"
               onClick={handleDockPrimaryAction}
-              disabled={!canSave && !canStartGpsFromDock && !gpsIsActive}
+              disabled={!canSave}
             >
-              {dockLabel}
+              기록 저장
             </button>
           </div>
         ) : null}
 
         <section className="log-list-section" aria-label="기록 목록">
-          <div className="log-recent-head">
-            <h2>최근 기록</h2>
-            <span className="log-list-count">{historySummary.count}회</span>
+          <div className="log-recent-peek">
+            <div className="log-recent-head">
+              <h2>최근 전체 기록</h2>
+            </div>
+            {!latestLog ? (
+              <p className="log-empty log-peek-empty">
+                위에서 오늘 운동을 남기면 여기에 보입니다.
+              </p>
+            ) : (
+              <div className="log-peek-item">
+                <div>
+                  <p className="log-history-date">
+                    {formatDotDate(latestLog.date)}
+                  </p>
+                  <p className="log-item-type">
+                    {inferLogCategory(latestLog) === "weights"
+                      ? getWeightsExerciseTitle(latestLog)
+                      : latestLog.type}
+                  </p>
+                </div>
+                <p className="log-history-metrics">{getLogSummary(latestLog)}</p>
+              </div>
+            )}
           </div>
+
+          <details className="log-history-fold">
+            <summary>
+              전체 기록 보기
+              <strong>{historySummary.count}회</strong>
+            </summary>
 
           <div
             className="log-history-category-row"
@@ -1276,9 +1406,13 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                         <div className="log-history-row">
                           <div>
                             <p className="log-history-date">
-                              {String(log.date || "").replaceAll("-", ".")}
+                              {formatDotDate(log.date)}
                             </p>
-                            <p className="log-item-type">{log.type}</p>
+                            <p className="log-item-type">
+                              {inferLogCategory(log) === "weights"
+                                ? getWeightsExerciseTitle(log)
+                                : log.type}
+                            </p>
                           </div>
                           <div className="log-history-row-right">
                             <p className="log-history-metrics">
@@ -1320,63 +1454,53 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                     ) : (
                       <div>
                         <p className="log-edit-head">기록 수정</p>
-                        <div className="log-field">
-                          <label className="log-label">운동 종류</label>
-                          <select
-                            value={editForm.type}
-                            onChange={(event) =>
-                              handleEditTypeChange(event.target.value)
-                            }
-                            className="log-input"
-                          >
-                            {EXERCISE_OPTIONS.map((exercise) => (
-                              <option key={exercise} value={exercise}>
-                                {exercise}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        {editForm.type === CUSTOM_EXERCISE_VALUE ? (
+                        {editForm.category === "weights" ? (
                           <div className="log-field">
-                            <label className="log-label">운동 이름</label>
+                            <label className="log-label">운동명</label>
                             <input
                               value={editForm.customType}
                               onChange={(event) =>
-                                updateEditField(
-                                  "customType",
-                                  event.target.value
-                                )
+                                updateEditField("customType", event.target.value)
                               }
+                              placeholder="예: 벤치프레스"
                               className="log-input"
                             />
                           </div>
-                        ) : null}
-                        <div className="log-grid-2">
-                          <div className="log-field">
-                            <label className="log-label">시간(분)</label>
-                            <input
-                              type="number"
-                              min="1"
-                              value={editForm.minutes}
-                              onChange={(event) =>
-                                updateEditField("minutes", event.target.value)
-                              }
-                              className="log-input"
-                            />
-                          </div>
-                          <div className="log-field">
-                            <label className="log-label">라운드</label>
-                            <input
-                              type="number"
-                              min="0"
-                              value={editForm.rounds}
-                              onChange={(event) =>
-                                updateEditField("rounds", event.target.value)
-                              }
-                              className="log-input"
-                            />
-                          </div>
-                        </div>
+                        ) : (
+                          <>
+                            <div className="log-field">
+                              <label className="log-label">운동 종류</label>
+                              <select
+                                value={editForm.type}
+                                onChange={(event) =>
+                                  handleEditTypeChange(event.target.value)
+                                }
+                                className="log-input"
+                              >
+                                {EXERCISE_OPTIONS.map((exercise) => (
+                                  <option key={exercise} value={exercise}>
+                                    {exercise}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {editForm.type === CUSTOM_EXERCISE_VALUE ? (
+                              <div className="log-field">
+                                <label className="log-label">운동 이름</label>
+                                <input
+                                  value={editForm.customType}
+                                  onChange={(event) =>
+                                    updateEditField(
+                                      "customType",
+                                      event.target.value
+                                    )
+                                  }
+                                  className="log-input"
+                                />
+                              </div>
+                            ) : null}
+                          </>
+                        )}
                         {editForm.category === "weights" ? (
                           <div className="log-grid-3">
                             <div className="log-field">
@@ -1423,7 +1547,82 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                               />
                             </div>
                           </div>
-                        ) : null}
+                        ) : editForm.category === "running" ||
+                          editForm.category === "walking" ? (
+                          <div className="log-grid-2">
+                            <div className="log-field">
+                              <label className="log-label">거리(km)</label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={editForm.metrics.distanceKm || ""}
+                                onChange={(event) =>
+                                  updateEditMetrics({
+                                    distanceKm: event.target.value,
+                                  })
+                                }
+                                className="log-input"
+                              />
+                            </div>
+                            <div className="log-field">
+                              <label className="log-label">시간(분)</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={editForm.minutes}
+                                onChange={(event) =>
+                                  updateEditField("minutes", event.target.value)
+                                }
+                                className="log-input"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="log-grid-2">
+                            <div className="log-field">
+                              <label className="log-label">라운드</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={editForm.rounds}
+                                onChange={(event) => {
+                                  const rounds = event.target.value;
+                                  updateEditField("rounds", rounds);
+                                  if (Number(rounds) > 0) {
+                                    updateEditField(
+                                      "minutes",
+                                      String(Number(rounds) * 3)
+                                    );
+                                  }
+                                }}
+                                className="log-input"
+                              />
+                            </div>
+                            <div className="log-field">
+                              <label className="log-label">시간(분)</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={editForm.minutes}
+                                onChange={(event) =>
+                                  updateEditField("minutes", event.target.value)
+                                }
+                                className="log-input"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <div className="log-field">
+                          <label className="log-label" htmlFor={`edit-date-${log.id}`}>
+                            날짜
+                          </label>
+                          <LogDateField
+                            id={`edit-date-${log.id}`}
+                            value={editForm.date}
+                            onChange={(next) => updateEditField("date", next)}
+                          />
+                        </div>
                         <div className="log-edit-actions">
                           <button
                             type="button"
@@ -1476,6 +1675,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
               </button>
             </details>
           ) : null}
+          </details>
         </section>
       </div>
     </main>

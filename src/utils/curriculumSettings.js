@@ -52,7 +52,7 @@ export function clampRounds(value) {
 }
 
 export function clampWorkSeconds(value) {
-  return Math.max(60, Math.min(600, Number(value) || 120));
+  return Math.max(60, Math.min(600, Number(value) || 180));
 }
 
 export function clampRestSeconds(value) {

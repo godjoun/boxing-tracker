@@ -16,6 +16,7 @@ import {
 import { suggestWeightClass } from "../data/proBoxingWeightClasses";
 import { BRAND_NAME } from "../utils/brand";
 import { RELEASE_SCOPE } from "../utils/releaseScope";
+import { isDevSurfaceLog } from "../utils/devMode";
 import { styles } from "./ProfilePage.styles";
 import {
   getDisplayComment,
@@ -44,9 +45,9 @@ export default function ProfilePage({
   scrollTarget,
   cardMakerFocusLogId = null,
   onStudioModeChange,
+  onStudioBack,
   onOpenGrowth,
   onGoLog,
-  onGoBack,
 }) {
   const {
     logs,
@@ -228,42 +229,25 @@ export default function ProfilePage({
     return () => clearTimeout(timer);
   }, [profile]);
 
-  const profileSpecSummary = useMemo(() => {
+  const profileTrustMeta = useMemo(() => {
     const parts = [];
-
-    if (heightCm || profile.heightCm) {
-      parts.push(`${heightCm || profile.heightCm}cm`);
-    }
-    if (weightKg || profile.weightKg) {
-      parts.push(`${weightKg || profile.weightKg}kg`);
-    }
-    if (reachCm || profile.reachCm) {
-      parts.push(`리치 ${reachCm || profile.reachCm}cm`);
-    }
+    if (area || profile.area) parts.push(area || profile.area);
+    if (profile.homeGymName) parts.push(profile.homeGymName);
     if (weightClass || profile.weightClass) {
       parts.push(weightClass || profile.weightClass);
     }
     if (experience || profile.experience) {
       parts.push(experience || profile.experience);
     }
-    if (area || profile.area) {
-      parts.push(area || profile.area);
-    }
-
     return parts.join(" · ");
   }, [
-    heightCm,
-    weightKg,
-    reachCm,
+    area,
     weightClass,
     experience,
-    area,
-    profile.heightCm,
-    profile.weightKg,
-    profile.reachCm,
+    profile.area,
+    profile.homeGymName,
     profile.weightClass,
     profile.experience,
-    profile.area,
   ]);
 
   const profileStats = useMemo(() => {
@@ -2284,7 +2268,14 @@ export default function ProfilePage({
     SIMPLE_CARD_LOOKS.find((look) => look.id === selectedFilter) ||
     SIMPLE_CARD_LOOKS[0];
   const tierState = getCareerTierState(profileStats.level);
-  const recentLogs = logs.slice(0, 3);
+  const recentLogs = logs
+    .filter((log) => {
+      if (isDevSurfaceLog(log)) return false;
+      const rounds = getRounds(log);
+      const minutes = Number(log.minutes || log.duration || 0);
+      return rounds > 0 || minutes > 0;
+    })
+    .slice(0, 2);
   const communityTraces = useMemo(
     () =>
       buildCommunityTraces({
@@ -2294,21 +2285,26 @@ export default function ProfilePage({
       }),
     [profile, exchangeEvents, logs]
   );
+  const hasTrainingTrace =
+    profileStats.totalRounds > 0 || profileStats.totalMinutes > 0;
+  const hasExchangeTrace =
+    communityTraces.recent.length > 0 ||
+    Number(communityTraces.summary?.exchangeCount || 0) > 0 ||
+    Number(communityTraces.summary?.sparringCount || 0) > 0 ||
+    Number(communityTraces.summary?.gymCount || 0) > 0;
+  const fighterProgress = getFighterProgress(logs);
 
   return (
     <main style={styles.page} className="profile-page">
       {profileView === "nameplate" && (
         <>
-      <header className="profile-page-header">
-        <button type="button" onClick={onGoBack} aria-label="전체 메뉴로 돌아가기">
-          ←
-        </button>
+      <header className="profile-page-header profile-page-header-tab">
         <h1>프로필</h1>
-        <span aria-hidden="true" />
       </header>
       <div className="profile-hub-layout">
       <div className="profile-hub-primary">
       <FighterSpecCard
+        layout="hub"
         profile={{
           ...profile,
           nickname,
@@ -2322,13 +2318,10 @@ export default function ProfilePage({
         }}
         logs={logs}
         weeklyScore={weeklyScore}
-        titleBadge={profileStats.fighterTitleEn}
         careerStageKo={profileStats.careerStageKo}
         streakDays={levelUpStreakDays}
-        onUploadPhoto={() => fileInputRef.current?.click()}
-        onRemovePhoto={handleRemovePhoto}
-        showSpecChips={!isProfileEditOpen}
-        showProgress
+        showSpecChips={false}
+        showProgress={false}
         showStats={false}
       >
         <input
@@ -2338,6 +2331,10 @@ export default function ProfilePage({
           onChange={handlePhotoChange}
           style={{ display: "none" }}
         />
+
+        {!isProfileEditOpen && profileTrustMeta ? (
+          <p className="profile-trust-meta">{profileTrustMeta}</p>
+        ) : null}
 
         <button
           type="button"
@@ -2353,9 +2350,8 @@ export default function ProfilePage({
               style={styles.profileEditToggleHint}
             >
               {isProfileEditOpen
-                ? "닉네임, 소개, 키·체중·체급 등을 수정할 수 있어요."
-                : profileSpecSummary ||
-                  "사진 · 닉네임 · 지역 · 스펙을 수정하세요."}
+                ? "사진 · 닉네임 · 소개 · 스펙을 수정합니다."
+                : "사진 · 닉네임 · 소개를 수정하세요."}
             </span>
           </div>
           <span
@@ -2375,6 +2371,25 @@ export default function ProfilePage({
               >
                 PROFILE
               </p>
+
+              <div className="profile-edit-photo-row">
+                <button
+                  type="button"
+                  className="profile-edit-photo-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {profile?.photo ? "사진 변경" : "사진 추가"}
+                </button>
+                {profile?.photo ? (
+                  <button
+                    type="button"
+                    className="profile-edit-photo-btn is-ghost"
+                    onClick={handleRemovePhoto}
+                  >
+                    삭제
+                  </button>
+                ) : null}
+              </div>
 
               <label style={styles.fieldLabel}>
                 닉네임
@@ -2512,7 +2527,7 @@ export default function ProfilePage({
                 <div style={styles.fieldLabel}>
                   내 체육관
                   <span style={styles.fieldHint}>
-                    커뮤니티에서 변경할 수 있습니다
+                    전체 → 함께하기에서 변경할 수 있습니다
                   </span>
                   <strong>{profile.homeGymName}</strong>
                   {profile.homeGymAddress ? (
@@ -2542,7 +2557,7 @@ export default function ProfilePage({
       <section className="profile-trace-summary" aria-label="내 훈련의 흔적">
         <p className="home-section-label">MY TRACE</p>
         <h2>내 훈련의 흔적</h2>
-        <div className="profile-trace-stats">
+        <div className="profile-trace-stats is-inline">
           <div>
             <span>누적 라운드</span>
             <strong>{profileStats.totalRounds}R</strong>
@@ -2553,15 +2568,74 @@ export default function ProfilePage({
           </div>
           <div>
             <span>연속 훈련</span>
-            <strong>{levelUpStreakDays || 0}일</strong>
+            <strong>
+              {hasTrainingTrace ? levelUpStreakDays || 0 : 0}일
+            </strong>
           </div>
         </div>
       </section>
 
+      <section className="profile-hub-card profile-recent-logs" aria-label="최근 훈련">
+        <div className="profile-season-head">
+          <div>
+            <p className="home-section-label">RECENT</p>
+            <h2>최근 훈련</h2>
+          </div>
+          {onGoLog ? (
+            <button
+              type="button"
+              className="profile-section-link is-inline"
+              onClick={onGoLog}
+            >
+              기록 탭으로
+            </button>
+          ) : null}
+        </div>
+
+        {recentLogs.length === 0 ? (
+          <div className="profile-empty-block">
+            <p className="profile-empty-copy">아직 남겨진 훈련이 없습니다.</p>
+            <p className="profile-empty-copy is-secondary">
+              첫 훈련이 이곳에 쌓입니다.
+            </p>
+          </div>
+        ) : (
+          <ul className="profile-recent-list">
+            {recentLogs.map((log) => (
+              <li key={log.id}>
+                <strong>{log.type || "훈련"}</strong>
+                <span>
+                  {getRounds(log) ? `${getRounds(log)}R · ` : ""}
+                  {log.minutes || log.duration || 0}분 ·{" "}
+                  {String(log.date || "").replaceAll("-", ".")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      </div>
+
+      <div className="profile-hub-secondary">
+      <button
+        type="button"
+        className="profile-studio-entry profile-hub-card is-secondary-cta"
+        style={styles.cardStudioEntry}
+        onClick={scrollToCardMaker}
+      >
+        <span style={styles.cardStudioEntryKicker}>NAMEPLATE</span>
+        <strong style={styles.cardStudioEntryTitle}>훈련 명패 만들기</strong>
+        <span style={styles.cardStudioEntryDesc}>
+          오늘 버텨낸 훈련을 한 장면으로 남깁니다.
+        </span>
+        <span style={styles.cardStudioEntryCta}>명패 만들기 →</span>
+      </button>
+
+      {hasExchangeTrace ? (
       <section className="profile-trace-summary profile-exchange-traces" aria-label="교류의 흔적">
         <p className="home-section-label">EXCHANGE TRACE</p>
         <h2>교류의 흔적</h2>
-        <div className="profile-trace-stats">
+        <div className="profile-trace-stats is-inline">
           <div>
             <span>교류</span>
             <strong>{communityTraces.summary.exchangeCount}</strong>
@@ -2575,13 +2649,9 @@ export default function ProfilePage({
             <strong>{communityTraces.summary.gymCount}</strong>
           </div>
         </div>
-        {communityTraces.recent.length === 0 ? (
-          <p className="profile-rival-card-desc">
-            모임·스파링·내 관이 쌓이면 여기에 남습니다.
-          </p>
-        ) : (
+        {communityTraces.recent.length > 0 ? (
           <ul className="profile-recent-list profile-exchange-list">
-            {communityTraces.recent.map((item) => (
+            {communityTraces.recent.slice(0, 3).map((item) => (
               <li key={item.id}>
                 <strong>
                   <em className="profile-exchange-type">{item.type}</em>
@@ -2591,69 +2661,40 @@ export default function ProfilePage({
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
       </section>
+      ) : null}
 
-      <section className="profile-hub-card profile-recent-logs" aria-label="최근 운동 기록">
-        <div className="profile-season-head">
-          <div>
-            <p className="home-section-label">RECENT</p>
-            <h2>최근 운동 기록</h2>
-          </div>
-          {onGoLog ? (
-            <button
-              type="button"
-              className="profile-section-link is-inline"
-              onClick={onGoLog}
-            >
-              전체 기록 보기
-            </button>
-          ) : null}
+      <section className="profile-level-strip" aria-label="레벨 · EXP">
+        <div className="profile-level-strip-head">
+          <strong>LV.{fighterProgress.level}</strong>
+          <span>
+            {fighterProgress.isMaxLevel
+              ? "MAX"
+              : `${fighterProgress.currentLevelExp} / ${fighterProgress.nextLevelExp} EXP`}
+          </span>
         </div>
-
-        {recentLogs.length === 0 ? (
-          <p className="profile-rival-card-desc">아직 기록이 없습니다.</p>
-        ) : (
-          <ul className="profile-recent-list">
-            {recentLogs.map((log) => (
-              <li key={log.id}>
-                <strong>{log.type || "훈련"}</strong>
-                <span>
-                  {getRounds(log)}R · {log.minutes || log.duration || 0}분 ·{" "}
-                  {log.date}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="profile-level-strip-bar" aria-hidden="true">
+          <i style={{ width: `${fighterProgress.progressPercent}%` }} />
+        </div>
+        {onOpenGrowth ? (
+          <button
+            type="button"
+            className="profile-section-link is-inline"
+            onClick={onOpenGrowth}
+          >
+            성장 자세히
+          </button>
+        ) : null}
       </section>
-      </div>
 
-      <div className="profile-hub-secondary">
-      <button
-        type="button"
-        className="profile-studio-entry profile-hub-card"
-        style={styles.cardStudioEntry}
-        onClick={scrollToCardMaker}
-      >
-        <span style={styles.cardStudioEntryKicker}>NAMEPLATE</span>
-        <strong style={styles.cardStudioEntryTitle}>오늘의 명패 만들기</strong>
-        <span style={styles.cardStudioEntryDesc}>
-          오늘 버텨낸 훈련을 한 장면으로 남깁니다.
-        </span>
-        <span style={styles.cardStudioEntryCta}>명패 만들기 →</span>
-      </button>
-
+      {RELEASE_SCOPE.rivals ? (
       <details
         className="profile-hub-card profile-more-fold"
         open={supportDetailsOpen}
         onToggle={(event) => setSupportDetailsOpen(event.currentTarget.open)}
       >
-        <summary>
-          {RELEASE_SCOPE.rivals ? "라이벌 카드 · 성장 자세히" : "성장 자세히"}
-        </summary>
-
-      {RELEASE_SCOPE.rivals ? (
+        <summary>라이벌 카드 · 성장 자세히</summary>
         <section
           id="profile-rival-card"
           ref={rivalCardRef}
@@ -2669,22 +2710,6 @@ export default function ProfilePage({
           </div>
           <SparringPartnerPanel variant="profile" embedded />
         </section>
-      ) : null}
-
-      <section className="profile-growth-summary" aria-label="성장 요약">
-        <p className="home-section-label">GROWTH</p>
-        <h2>성장 요약</h2>
-        <div className="profile-growth-grid">
-          <div>
-            <span>현재 레벨</span>
-            <strong>LV.{profileStats.level}</strong>
-          </div>
-          <div>
-            <span>이번 주 라운드</span>
-            <strong>{profileStats.weeklyRounds}R</strong>
-          </div>
-        </div>
-      </section>
 
       <section className="profile-season-summary" aria-label="이번 시즌">
         <div className="profile-season-head">
@@ -2705,17 +2730,9 @@ export default function ProfilePage({
             style={{ width: `${tierState.progressPercent}%` }}
           />
         </div>
-        {onOpenGrowth ? (
-          <button
-            type="button"
-            className="profile-section-link"
-            onClick={onOpenGrowth}
-          >
-            성장 화면 보기 →
-          </button>
-        ) : null}
       </section>
       </details>
+      ) : null}
       </div>
       </div>
         </>
@@ -2726,9 +2743,9 @@ export default function ProfilePage({
       <button
         type="button"
         style={styles.studioBackButton}
-        onClick={backToNameplate}
+        onClick={onStudioBack || backToNameplate}
       >
-        ← 명패로 돌아가기
+        ← {onStudioBack ? "전체 메뉴로" : "명패로 돌아가기"}
       </button>
 
       <section ref={cardMakerRef} style={styles.cardMakerSection} className="nameplate-simple-studio">

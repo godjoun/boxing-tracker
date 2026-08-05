@@ -129,6 +129,12 @@ const ICONS = {
       <path d="M18.5 6.5V10h-3.5" />
     </>
   ),
+  lock: (
+    <>
+      <rect x="6.5" y="11" width="11" height="9" rx="1.5" />
+      <path d="M8.5 11V8.5a3.5 3.5 0 0 1 7 0V11" />
+    </>
+  ),
 };
 
 export default function MenuIcon({ name, size = 18, className = "" }) {

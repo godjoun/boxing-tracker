@@ -9,14 +9,14 @@ export const TIMER_MENU_CARD = {
   accent: "red",
 };
 
-/** 전체 메뉴 바로가기 정의 */
+/** 메뉴·바로가기 항목 정의 (라우트·기능은 유지, 전체 노출은 MENU_GROUPS만) */
 const SHORTCUTS = {
   timer: TIMER_MENU_CARD,
   "fighter-card": {
     id: "fighter-card",
     icon: "card",
     title: "훈련 명패 만들기",
-    description: "사진 · 문구 · 스타일",
+    description: "오늘의 훈련을 한 장으로 남깁니다.",
     action: "card-maker",
     accent: "gold",
   },
@@ -32,7 +32,7 @@ const SHORTCUTS = {
     id: "curriculum",
     icon: "skill",
     title: "루틴 보기",
-    description: "4주 기술 코스",
+    description: "저장한 훈련 루틴을 확인합니다.",
     route: "curriculum",
     accent: "red",
   },
@@ -40,7 +40,7 @@ const SHORTCUTS = {
     id: "strength",
     icon: "body",
     title: "몸 만들기",
-    description: "근력 · 워밍업",
+    description: "복싱을 위한 보조 운동을 봅니다.",
     route: "strength",
     accent: "orange",
   },
@@ -48,7 +48,7 @@ const SHORTCUTS = {
     id: "combo-creator",
     icon: "combo",
     title: "콤보 만들기",
-    description: "내 콤보 · 선수 콤보",
+    description: "나만의 복싱 콤보를 구성합니다.",
     route: "combo-creator",
     accent: "gold",
     featureId: "combo-creator",
@@ -65,7 +65,7 @@ const SHORTCUTS = {
     id: "growth",
     icon: "growth",
     title: "내 성장 보기",
-    description: "커리어 · 마일스톤",
+    description: "누적 훈련 흐름을 확인합니다.",
     route: "growth",
     accent: "gold",
   },
@@ -82,7 +82,7 @@ const SHORTCUTS = {
     id: "hub",
     icon: "dojo",
     title: "커뮤니티",
-    description: "피드 · 교류 · 모임",
+    description: "복싱 교류와 소식을 확인합니다.",
     route: "gym",
     gymView: "feed",
     accent: "slate",
@@ -91,7 +91,7 @@ const SHORTCUTS = {
     id: "gyms",
     icon: "dojo",
     title: "체육관 찾기",
-    description: "지도 · 문의 · 찜",
+    description: "주변 복싱 체육관을 찾습니다.",
     route: "gym",
     gymView: "gyms",
     accent: "slate",
@@ -100,19 +100,18 @@ const SHORTCUTS = {
     id: "backup",
     icon: "backup",
     title: "백업 관리",
-    description: "저장 · 복원 · 초기화",
+    description: "저장 · 복원 · 초기화를 관리합니다.",
     route: "backup",
     accent: "slate",
   },
 };
 
+/** 전체 메뉴 — 하단 탭에 없는 부가 기능만 */
 export const MENU_GROUPS = [
   {
     id: "training",
-    title: "운동하기",
+    title: "운동 확장",
     items: [
-      SHORTCUTS["training-log"],
-      SHORTCUTS.timer,
       SHORTCUTS.curriculum,
       SHORTCUTS.strength,
       SHORTCUTS["combo-creator"],
@@ -120,8 +119,8 @@ export const MENU_GROUPS = [
   },
   {
     id: "profile",
-    title: "나를 보기",
-    items: [SHORTCUTS.profile, SHORTCUTS.growth, SHORTCUTS["fighter-card"]],
+    title: "나를 확장",
+    items: [SHORTCUTS.growth, SHORTCUTS["fighter-card"]],
   },
   {
     id: "community",

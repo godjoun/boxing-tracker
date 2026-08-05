@@ -161,7 +161,7 @@ export function buildComboDrill(name, movesOrZones, rounds = 4) {
     title: name || `콤보 · ${notation}`,
     goal: `${notation} 콤보 반복`,
     rounds,
-    workSeconds: 120,
+    workSeconds: 180,
     restSeconds: 30,
     isCustom: true,
     code: "COMBO",

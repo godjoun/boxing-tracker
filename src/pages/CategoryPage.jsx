@@ -14,7 +14,6 @@ export default function CategoryPage({
     <main className="category-page">
       <AppMenuBoard
         fighterLevel={fighterLevel}
-        variant="category"
         onGoBack={onGoHome}
         onNavigate={onNavigate}
         onNavigateGym={onNavigateGym}

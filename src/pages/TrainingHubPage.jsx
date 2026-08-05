@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
-import { MATCH_TIMER_PRESETS } from "../utils/timerPresets";
+import { MATCH_TIMER_PRESETS, DEFAULT_BOXING_WORK_SECONDS } from "../utils/timerPresets";
 import { startTimerAudioSession } from "../utils/timerAudio";
 import { isDevSurfaceLog } from "../utils/devMode";
 import MenuIcon from "../components/MenuIcon";
@@ -69,7 +69,9 @@ export default function TrainingHubPage({
     BOXING_KINDS.find((kind) => kind.id === boxingKindId) || BOXING_KINDS[0];
 
   const sessionRounds = Number(selectedRoundPreset?.rounds || 3);
-  const workSeconds = Number(selectedRoundPreset?.workSeconds || 180);
+  const workSeconds = Number(
+    selectedRoundPreset?.workSeconds || DEFAULT_BOXING_WORK_SECONDS
+  );
   const restSeconds = Number(selectedRoundPreset?.restSeconds || 30);
   const workMinutes = Math.round(workSeconds / 60);
   const roundSummary = `${sessionRounds}R · 운동 ${workMinutes}분 · 휴식 ${formatRestLabel(

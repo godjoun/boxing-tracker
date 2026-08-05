@@ -16,6 +16,8 @@ export default function FighterSpecCard({
   showSpecChips = true,
   showProgress = true,
   showStats = true,
+  /** 프로필 탭 허브: 사진·닉·소개 중심, 등급 중복 제거 */
+  layout = "default",
   children,
 }) {
   const [showCareerScene, setShowCareerScene] = useState(false);
@@ -23,6 +25,7 @@ export default function FighterSpecCard({
   const nameplateTier = getNameplateTier(fighter.level);
   const veteranBadges = getVeteranBadges(fighter.level);
   const hasEditor = Boolean(children);
+  const isHub = layout === "hub";
 
   const specItems = [
     profile?.weightClass && { label: "체급", value: profile.weightClass },
@@ -32,12 +35,18 @@ export default function FighterSpecCard({
     profile?.reachCm && { label: "리치", value: `${profile.reachCm}cm` },
   ].filter(Boolean);
 
+  const gradeLabel =
+    careerStageKo || fighter.careerStageKo || fighter.fighterTitle || "복서";
+
   return (
-    <section className="fighter-nameplate" aria-label="명패">
+    <section
+      className={`fighter-nameplate${isHub ? " is-hub" : ""}`}
+      aria-label={isHub ? "프로필" : "명패"}
+    >
       <div className={`fighter-nameplate-frame tier-${nameplateTier}`}>
         <div className="fighter-nameplate-accent" aria-hidden="true" />
 
-        {veteranBadges.length > 0 ? (
+        {!isHub && veteranBadges.length > 0 ? (
           <div className="fighter-nameplate-veteran-badges" aria-label="베테랑 인증">
             {veteranBadges.map((badge) => (
               <span key={badge} className="fighter-nameplate-veteran-badge">
@@ -48,7 +57,17 @@ export default function FighterSpecCard({
         ) : null}
 
         <div className="fighter-nameplate-top">
-          {onUploadPhoto ? (
+          {isHub ? (
+            <div className="fighter-nameplate-photo">
+              {profile?.photo ? (
+                <img src={profile.photo} alt="" />
+              ) : (
+                <span className="fighter-nameplate-photo-empty">
+                  <em>사진</em>
+                </span>
+              )}
+            </div>
+          ) : onUploadPhoto ? (
             <button
               type="button"
               className="fighter-nameplate-photo fighter-nameplate-photo-btn"
@@ -78,34 +97,58 @@ export default function FighterSpecCard({
           )}
 
           <div className="fighter-nameplate-identity">
-            <p className="fighter-nameplate-kicker">
-              {fighter.careerStageEn || "NAMEPLATE"}
-            </p>
-            <h2 className="fighter-nameplate-name">{profile?.nickname || "나"}</h2>
-            <p className="fighter-nameplate-title">{fighter.fighterTitle}</p>
-            {fighter.fighterTitleEn || titleBadge ? (
-              <p className="fighter-nameplate-title-en">
-                {fighter.fighterTitleEn || titleBadge}
-              </p>
-            ) : null}
-            {profile?.bio ? (
-              <p className="fighter-nameplate-bio">{profile.bio}</p>
-            ) : null}
+            {isHub ? (
+              <>
+                <h2 className="fighter-nameplate-name">
+                  {profile?.nickname || "나"}
+                </h2>
+                {profile?.bio ? (
+                  <p className="fighter-nameplate-bio">{profile.bio}</p>
+                ) : (
+                  <p className="fighter-nameplate-bio is-placeholder">
+                    한 줄로 오늘을 남겨 보세요
+                  </p>
+                )}
+                <p className="fighter-nameplate-grade">
+                  LV.{fighter.level} · {gradeLabel}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="fighter-nameplate-kicker">
+                  {fighter.careerStageEn || "NAMEPLATE"}
+                </p>
+                <h2 className="fighter-nameplate-name">
+                  {profile?.nickname || "나"}
+                </h2>
+                <p className="fighter-nameplate-title">{fighter.fighterTitle}</p>
+                {fighter.fighterTitleEn || titleBadge ? (
+                  <p className="fighter-nameplate-title-en">
+                    {fighter.fighterTitleEn || titleBadge}
+                  </p>
+                ) : null}
+                {profile?.bio ? (
+                  <p className="fighter-nameplate-bio">{profile.bio}</p>
+                ) : null}
+              </>
+            )}
           </div>
 
-          <button
-            type="button"
-            className="fighter-nameplate-badge"
-            onClick={() => setShowCareerScene(true)}
-            aria-label={`레벨 ${fighter.level} 커리어 보기`}
-          >
-            <span className="fighter-nameplate-badge-label">LV</span>
-            <strong>{fighter.level}</strong>
-            <small>{careerStageKo || fighter.careerStageKo || "일반인"}</small>
-          </button>
+          {!isHub ? (
+            <button
+              type="button"
+              className="fighter-nameplate-badge"
+              onClick={() => setShowCareerScene(true)}
+              aria-label={`레벨 ${fighter.level} 커리어 보기`}
+            >
+              <span className="fighter-nameplate-badge-label">LV</span>
+              <strong>{fighter.level}</strong>
+              <small>{careerStageKo || fighter.careerStageKo || "일반인"}</small>
+            </button>
+          ) : null}
         </div>
 
-        {onUploadPhoto ? (
+        {!isHub && onUploadPhoto ? (
           <div className="fighter-nameplate-photo-actions">
             <button
               type="button"
@@ -126,7 +169,7 @@ export default function FighterSpecCard({
           </div>
         ) : null}
 
-        {showSpecChips && specItems.length > 0 ? (
+        {!isHub && showSpecChips && specItems.length > 0 ? (
           <div className="fighter-nameplate-specs">
             {specItems.map((item) => (
               <span key={item.label} className="fighter-nameplate-spec">
@@ -137,13 +180,13 @@ export default function FighterSpecCard({
           </div>
         ) : null}
 
-        {showSpecChips && specItems.length === 0 ? (
+        {!isHub && showSpecChips && specItems.length === 0 ? (
           <p className="fighter-nameplate-spec-empty">
             프로필에서 신체 스펙을 입력하면 명패에 표시됩니다
           </p>
         ) : null}
 
-        {showProgress ? (
+        {!isHub && showProgress ? (
           <div className="fighter-nameplate-progress">
             <div className="fighter-nameplate-progress-head">
               <span>{fighter.levelLabel}</span>
@@ -164,7 +207,7 @@ export default function FighterSpecCard({
           </div>
         ) : null}
 
-        {showStats ? (
+        {!isHub && showStats ? (
           <div className="fighter-nameplate-grid">
             <div className="fighter-nameplate-stat">
               <span>이번 주</span>

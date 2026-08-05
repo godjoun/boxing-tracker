@@ -58,6 +58,16 @@ export function normalizeLogCategory(log = {}) {
   };
 }
 
+const WEIGHT_BODY_TAGS = new Set(["웨이트", "상체", "하체", "코어"]);
+
+/** 웨이트 표시명. 운동명이 없거나 부위 태그만 있으면 "웨이트"로 안전하게 표시. */
+export function getWeightsExerciseTitle(log = {}) {
+  const metrics = log.metrics || {};
+  const name = String(metrics.exerciseName || log.type || "").trim();
+  if (!name || WEIGHT_BODY_TAGS.has(name)) return "웨이트";
+  return name;
+}
+
 export function getLogSummary(log = {}) {
   const category = inferLogCategory(log);
   const metrics = log.metrics || {};
@@ -75,7 +85,6 @@ export function getLogSummary(log = {}) {
     const weightKg = Number(metrics.weightKg || 0);
     const reps = Number(metrics.reps || 0);
     return [
-      metrics.exerciseName || log.type,
       sets ? `${sets}세트` : "",
       weightKg ? `${weightKg}kg` : "",
       reps ? `${reps}회` : "",

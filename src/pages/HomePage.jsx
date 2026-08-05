@@ -156,8 +156,10 @@ export default function HomePage({
   const todayRounds = dashboard.trainingByDate[todayKey]?.rounds || 0;
   const nickname = profile?.nickname || "나";
   const greeting = getGreeting();
-  const homeHeroPhoto = profile?.homeHeroPhoto || "";
+  // Explicit home hero only — never fall back to profile.photo / general shots.
+  const homeHeroPhoto = String(profile?.homeHeroPhoto || "").trim();
   const recentLogs = surfaceLogs.slice(0, 2);
+  const hasAnyRecords = surfaceLogs.length > 0;
   const weeklyRounds = dashboard.weekStrip.reduce(
     (sum, day) => sum + day.rounds,
     0
@@ -261,17 +263,17 @@ export default function HomePage({
         </div>
         <button
           type="button"
-          className="home-alert-button"
-          aria-label="전체 메뉴"
-          onClick={() => onNavigate?.("category")}
+          className="home-alert-button home-alert-button-icon"
+          aria-label="알림"
+          title="알림"
         >
-          <MenuIcon name="notification" size={20} />
+          <MenuIcon name="notification" size={18} />
         </button>
       </header>
 
       <section
         className={`home-scene-card home-scene-card-hero${
-          homeHeroPhoto ? " has-custom-photo" : ""
+          homeHeroPhoto ? " has-custom-photo" : " home-scene-card-hero-default"
         }`}
         aria-label="오늘의 훈련"
       >
@@ -285,7 +287,9 @@ export default function HomePage({
             />
             <div className="home-scene-card-shade" aria-hidden="true" />
           </>
-        ) : null}
+        ) : (
+          <div className="home-scene-card-default-stage" aria-hidden="true" />
+        )}
         <div className="home-scene-photo-control">
           <button
             type="button"
@@ -341,23 +345,36 @@ export default function HomePage({
         </div>
       </section>
 
-      <section className="home-week-strip-inline" aria-label="이번 주">
-        <div className="home-week-strip-days">
-          {dashboard.weekStrip.map((day) => (
-            <div
-              key={day.key}
-              className={`home-week-day${day.isToday ? " is-today" : ""}${
-                day.trained ? " is-trained" : ""
-              }`}
-            >
-              <span>{day.label}</span>
-              <i aria-hidden="true">{day.trained ? "✓" : ""}</i>
+      <section
+        className={`home-week-strip-inline${
+          hasAnyRecords ? " has-records" : " is-empty"
+        }`}
+        aria-label="이번 주"
+      >
+        {hasAnyRecords ? (
+          <>
+            <div className="home-week-strip-days">
+              {dashboard.weekStrip.map((day) => (
+                <div
+                  key={day.key}
+                  className={`home-week-day${day.isToday ? " is-today" : ""}${
+                    day.trained ? " is-trained" : ""
+                  }`}
+                >
+                  <span>{day.label}</span>
+                  <i aria-hidden="true">{day.trained ? "✓" : ""}</i>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <p className="home-week-strip-meta">
-          {trainedDaysThisWeek}일 훈련 · {weeklyRounds}R
-        </p>
+            <p className="home-week-strip-meta">
+              {trainedDaysThisWeek}일 훈련 · {weeklyRounds}R
+            </p>
+          </>
+        ) : (
+          <p className="home-week-strip-empty">
+            이번 주 첫 훈련을 시작해보세요
+          </p>
+        )}
       </section>
 
       <section className="home-recent-card home-recent-card-slim" aria-label="최근 기록">

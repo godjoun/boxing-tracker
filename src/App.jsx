@@ -367,6 +367,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             onOpenCurriculum={goCurriculum}
             onOpenComboCreator={() => goPage("combo-creator")}
             onOpenStrength={() => goPage("strength")}
+            onOpenLog={() => goPage("log")}
           />
         )}
 

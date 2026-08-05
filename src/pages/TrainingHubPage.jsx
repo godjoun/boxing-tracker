@@ -22,9 +22,10 @@ export default function TrainingHubPage({
   onOpenCurriculum,
   onOpenComboCreator,
   onOpenStrength,
+  onOpenLog,
 }) {
   const { logs } = useTraining();
-  const [selectedModeId, setSelectedModeId] = useState("general");
+  const [selectedModeId, setSelectedModeId] = useState("boxing");
 
   const todaySummary = useMemo(() => {
     const todayLogs = logs.filter(
@@ -62,88 +63,142 @@ export default function TrainingHubPage({
 
   const trainingModes = [
     {
-      id: "general",
-      icon: "round",
-      title: "일반 훈련",
+      id: "boxing",
+      icon: "skill",
+      title: "복싱 훈련",
       detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "타이머로 바로 시작",
+      hint: "라운드 타이머로 시작",
+      ctaLabel: "훈련 시작",
       start: () => startRoundTraining(),
     },
     {
-      id: "bag",
-      icon: "skill",
-      title: "샌드백",
+      id: "running",
+      icon: "growth",
+      title: "러닝",
       detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "타격 라운드 시작",
-      start: () => startRoundTraining("샌드백"),
+      hint: "러닝으로 기록할 세션",
+      ctaLabel: "훈련 시작",
+      start: () => startRoundTraining("러닝"),
     },
     {
-      id: "sparring",
-      icon: "combo",
-      title: "스파링",
-      detail: `${sessionRounds}R · ${sessionMinutes}분`,
-      hint: "스파링 라운드 시작",
-      start: () => startRoundTraining("스파링"),
-    },
-    {
-      id: "conditioning",
+      id: "weights",
       icon: "body",
-      title: "근력 · 체력",
+      title: "웨이트",
       detail: "컨디셔닝",
-      hint: "루틴으로 시작",
+      hint: "근력 · 체력 루틴",
+      ctaLabel: "루틴 열기",
       start: onOpenStrength,
+    },
+    {
+      id: "mitt",
+      icon: "combo",
+      title: "미트 훈련",
+      detail: `${sessionRounds}R · ${sessionMinutes}분`,
+      hint: "미트 중심으로 시작",
+      ctaLabel: "훈련 시작",
+      start: () => startRoundTraining("미트 훈련"),
+    },
+    {
+      id: "free",
+      icon: "log",
+      title: "자유 기록",
+      detail: "직접 남기기",
+      hint: "이미 끝난 운동을 적습니다",
+      ctaLabel: "기록 열기",
+      start: () => onOpenLog?.(),
     },
   ];
 
   const selectedMode =
     trainingModes.find((mode) => mode.id === selectedModeId) || trainingModes[0];
 
-  function handleModeSelect(mode) {
-    if (mode.id === selectedModeId) {
-      mode.start?.();
-      return;
-    }
-    setSelectedModeId(mode.id);
-  }
+  const moreTools = [
+    {
+      id: "bag",
+      label: "샌드백",
+      hint: "타격 라운드 시작",
+      onClick: () => startRoundTraining("샌드백"),
+    },
+    {
+      id: "sparring",
+      label: "스파링",
+      hint: "스파링 라운드 시작",
+      onClick: () => startRoundTraining("스파링"),
+    },
+    {
+      id: "settings",
+      label: "라운드 직접 설정",
+      hint: "타이머 시간 · 라운드 조절",
+      onClick: onOpenTimer,
+    },
+    {
+      id: "curriculum",
+      label: "기술 루틴",
+      hint: "커리큘럼으로 이어가기",
+      onClick: onOpenCurriculum,
+    },
+    {
+      id: "combo",
+      label: "콤보 만들기",
+      hint: "나만의 흐름",
+      onClick: onOpenComboCreator,
+    },
+  ];
 
   return (
     <main className="hub-page levelup-page training-page">
       <header className="levelup-header">
         <h1 className="levelup-title">훈련</h1>
-        <p className="training-page-sub">지금 벨을 울립니다</p>
+        <p className="training-page-sub">집중할 훈련을 고르세요</p>
       </header>
 
       <section className="training-mode-section" aria-label="훈련 모드">
+        <div className="training-section-heading">
+          <div>
+            <p>MODE</p>
+            <h2>훈련 모드 선택</h2>
+          </div>
+          <span className="training-today-chip">
+            오늘 {todaySummary.rounds}R · {todaySummary.minutes}분
+          </span>
+        </div>
         <div className="training-mode-grid">
-          {trainingModes.map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              className={`training-mode-card${
-                selectedMode.id === mode.id ? " is-selected" : ""
-              }`}
-              aria-pressed={selectedMode.id === mode.id}
-              onClick={() => handleModeSelect(mode)}
-            >
-              <span className="training-mode-card-icon" aria-hidden="true">
-                <MenuIcon name={mode.icon} size={18} />
-              </span>
-              <span className="training-mode-card-copy">
-                <strong>{mode.title}</strong>
-                <small>{mode.hint}</small>
-              </span>
-            </button>
-          ))}
+          {trainingModes.map((mode) => {
+            const selected = selectedMode.id === mode.id;
+            return (
+              <button
+                key={mode.id}
+                type="button"
+                className={`training-mode-card${selected ? " is-selected" : ""}`}
+                aria-pressed={selected}
+                onClick={() => setSelectedModeId(mode.id)}
+              >
+                <span className="training-mode-card-icon" aria-hidden="true">
+                  <MenuIcon name={mode.icon} size={18} />
+                </span>
+                <span className="training-mode-card-copy">
+                  <strong>{mode.title}</strong>
+                  <small>{mode.hint}</small>
+                </span>
+                <span
+                  className={`training-mode-card-check${selected ? " is-on" : ""}`}
+                  aria-hidden="true"
+                >
+                  {selected ? "✓" : ""}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
       <section className="training-session-card" aria-label="시작할 세션">
         <div className="training-session-head">
           <div>
-            <p>시작할 세션</p>
+            <p>선택한 세션</p>
             <h2>{selectedMode.title}</h2>
           </div>
-          {selectedMode.id !== "conditioning" ? (
+          {selectedMode.id !== "weights" && selectedMode.id !== "free" ? (
             <button
               type="button"
               className="training-session-edit"
@@ -155,11 +210,24 @@ export default function TrainingHubPage({
           ) : null}
         </div>
         <div className="training-session-stats">
-          {selectedMode.id === "conditioning" ? (
+          {selectedMode.id === "weights" ? (
             <>
               <div>
                 <span>구성</span>
                 <strong>컨디셔닝</strong>
+              </div>
+              <div>
+                <span>오늘</span>
+                <strong>
+                  {todaySummary.rounds}R · {todaySummary.minutes}분
+                </strong>
+              </div>
+            </>
+          ) : selectedMode.id === "free" ? (
+            <>
+              <div>
+                <span>방식</span>
+                <strong>직접 입력</strong>
               </div>
               <div>
                 <span>오늘</span>
@@ -192,25 +260,22 @@ export default function TrainingHubPage({
       <details className="training-tools-details">
         <summary className="training-tools-summary">
           <span>더 보기</span>
-          <strong>기술 · 콤보</strong>
+          <strong>샌드백 · 스파링 · 기술</strong>
         </summary>
-        <section className="training-tools-section" aria-label="기술 · 콤보">
-          <button type="button" onClick={onOpenCurriculum}>
-            <span>기술 루틴</span>
-            <small>커리큘럼으로 이어가기</small>
-            <b>›</b>
-          </button>
-          <button type="button" onClick={onOpenComboCreator}>
-            <span>콤보 만들기</span>
-            <small>나만의 흐름</small>
-            <b>›</b>
-          </button>
+        <section className="training-tools-section" aria-label="추가 훈련 도구">
+          {moreTools.map((tool) => (
+            <button key={tool.id} type="button" onClick={tool.onClick}>
+              <span>{tool.label}</span>
+              <small>{tool.hint}</small>
+              <b>›</b>
+            </button>
+          ))}
         </section>
       </details>
 
       <div className="training-start-dock">
-        <button type="button" onClick={selectedMode.start}>
-          훈련 시작
+        <button type="button" onClick={() => selectedMode.start?.()}>
+          {selectedMode.ctaLabel}
           <small>
             {selectedMode.title} · {selectedMode.detail}
           </small>

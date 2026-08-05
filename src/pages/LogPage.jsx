@@ -13,7 +13,6 @@ import {
   LOG_CATEGORIES,
   normalizeLogCategory,
 } from "../utils/logCategories";
-import MenuIcon from "../components/MenuIcon";
 import { isDevSurfaceLog } from "../utils/devMode";
 import "./LogPage.css";
 
@@ -23,14 +22,122 @@ const EXERCISE_OPTIONS = [
   CUSTOM_EXERCISE_VALUE,
 ];
 
-const ROUND_PRESETS = [3, 5, 8];
+const ROUND_SLIDER_MIN = 1;
+const ROUND_SLIDER_MAX = 12;
 
-const CATEGORY_ICON = {
-  boxing: "skill",
-  running: "growth",
-  weights: "body",
-  walking: "round",
-};
+function RoundZoneSlider({ value, onChange, min = ROUND_SLIDER_MIN, max = ROUND_SLIDER_MAX }) {
+  const trackRef = useRef(null);
+  const draggingRef = useRef(false);
+  const rounds = Number(value);
+  const hasValue = Number.isFinite(rounds) && rounds > 0;
+  const displayRounds = hasValue
+    ? Math.min(max, Math.max(min, Math.round(rounds)))
+    : min;
+  const percent = ((displayRounds - min) / (max - min)) * 100;
+
+  function roundsFromClientX(clientX) {
+    const track = trackRef.current;
+    if (!track) return min;
+    const rect = track.getBoundingClientRect();
+    if (rect.width <= 0) return min;
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    return Math.round(min + ratio * (max - min));
+  }
+
+  function commit(next) {
+    onChange(Math.min(max, Math.max(min, next)));
+  }
+
+  function commitFromClientX(clientX) {
+    commit(roundsFromClientX(clientX));
+  }
+
+  function handlePointerDown(event) {
+    if (event.button != null && event.button !== 0) return;
+    draggingRef.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    commitFromClientX(event.clientX);
+  }
+
+  function handlePointerMove(event) {
+    if (!draggingRef.current) return;
+    commitFromClientX(event.clientX);
+  }
+
+  function handlePointerUp(event) {
+    draggingRef.current = false;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  return (
+    <div className="log-round-slider">
+      <div className="log-round-slider-head">
+        <span>라운드</span>
+        <strong>{hasValue ? `${displayRounds}R` : "밀어 선택"}</strong>
+      </div>
+      <div className="log-round-slider-row">
+        <button
+          type="button"
+          className="log-round-slider-step"
+          aria-label="라운드 줄이기"
+          disabled={hasValue && displayRounds <= min}
+          onClick={() => commit((hasValue ? displayRounds : min + 1) - 1)}
+        >
+          −
+        </button>
+        <div
+          ref={trackRef}
+          className={`log-round-slider-track${hasValue ? " is-active" : ""}`}
+          role="slider"
+          tabIndex={0}
+          aria-label="라운드"
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-valuenow={hasValue ? displayRounds : min}
+          aria-valuetext={hasValue ? `${displayRounds}라운드` : "미선택"}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+              event.preventDefault();
+              commit(displayRounds + 1);
+            }
+            if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+              event.preventDefault();
+              commit((hasValue ? displayRounds : min + 1) - 1);
+            }
+          }}
+        >
+          <div
+            className="log-round-slider-fill"
+            style={{ width: hasValue ? `${percent}%` : "0%" }}
+          />
+          <div
+            className="log-round-slider-thumb"
+            style={{
+              left: hasValue
+                ? `clamp(14px, ${percent}%, calc(100% - 14px))`
+                : "14px",
+            }}
+          />
+        </div>
+        <button
+          type="button"
+          className="log-round-slider-step"
+          aria-label="라운드 늘리기"
+          disabled={hasValue && displayRounds >= max}
+          onClick={() => commit((hasValue ? displayRounds : min - 1) + 1)}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function getTodayString() {
   const today = new Date();
@@ -237,11 +344,9 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const [historyCategory, setHistoryCategory] = useState("all");
   const [historyPeriod, setHistoryPeriod] = useState("week");
   const [autoTracking, setAutoTracking] = useState(null);
-  const [pickingCategory, setPickingCategory] = useState(false);
   const watchIdRef = useRef(null);
 
   const selectedCategory = form.category ? getLogCategory(form.category) : null;
-  const showCategoryPicker = !selectedCategory || pickingCategory;
   const stepOneStatus = getStepOneStatus(form);
   const canSave = stepOneStatus.isComplete;
   const gpsPhase = autoTracking?.phase || null;
@@ -253,12 +358,16 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     (gpsIsFailed || stepOneStatus.buttonLabel === "GPS 시작");
 
   const dockLabel = canSave
-    ? "저장"
+    ? "기록 저장"
     : gpsIsActive
       ? "측정 종료"
       : gpsIsFailed
         ? "다시 시도"
-        : stepOneStatus.buttonLabel;
+        : canStartGpsFromDock
+          ? "GPS 시작"
+          : stepOneStatus.buttonLabel === "종류 선택"
+            ? "종류를 고르세요"
+            : stepOneStatus.buttonLabel;
   const dockHint = canSave
     ? "저장 가능"
     : gpsIsActive
@@ -343,7 +452,6 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   function handleCategoryChange(categoryId) {
     const category = getLogCategory(categoryId);
     clearAutoTracking();
-    setPickingCategory(false);
     setForm((prev) => ({
       ...prev,
       category: category.id,
@@ -564,7 +672,6 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     clearAutoTracking();
     const delta = getCompletionDelta(logs, savedLog);
     setForm(createEmptyForm());
-    setPickingCategory(false);
     setHistoryLimit(5);
     setReward({
       type: "growth",
@@ -696,9 +803,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
   return (
     <main
-      className={`log-page${
-        selectedCategory && !pickingCategory ? " has-write-dock" : ""
-      }`}
+      className={`log-page${selectedCategory ? " has-write-dock" : ""}`}
     >
       <div className="log-container">
         <header className="log-hero">
@@ -747,63 +852,27 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
         <section className="log-card log-form-card">
           <form onSubmit={handleSubmit}>
             <div className="log-form-block">
-              <div
-                className={`log-step-heading${
-                  showCategoryPicker ? " is-picker" : ""
-                }`}
-              >
+              <div className="log-step-heading">
                 <p className="log-step-kicker">오늘</p>
-                <h2>직접 남기기</h2>
+                <h2>운동 기록</h2>
                 <span>{getCorePrompt(form.category)}</span>
               </div>
 
-              {showCategoryPicker ? (
-                <div className="log-category-grid" role="group" aria-label="운동 카테고리">
-                  {LOG_CATEGORIES.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      className={`log-category-choice${
-                        form.category === category.id ? " is-active" : ""
-                      }`}
-                      aria-pressed={form.category === category.id}
-                      onClick={() => handleCategoryChange(category.id)}
-                    >
-                      <span className="log-category-icon" aria-hidden="true">
-                        <MenuIcon name={CATEGORY_ICON[category.id]} size={18} />
-                      </span>
-                      <span className="log-category-copy">
-                        <strong>{category.label}</strong>
-                        <small>{category.description}</small>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="log-selected-category" aria-label="선택한 운동">
-                  <div className="log-selected-category-main">
-                    <span className="log-category-icon" aria-hidden="true">
-                      <MenuIcon
-                        name={CATEGORY_ICON[selectedCategory.id]}
-                        size={18}
-                      />
-                    </span>
-                    <span className="log-category-copy">
-                      <strong>{selectedCategory.label}</strong>
-                      <small>{selectedCategory.description}</small>
-                    </span>
-                  </div>
+              <div className="log-category-pills" role="group" aria-label="운동 종류">
+                {LOG_CATEGORIES.map((category) => (
                   <button
+                    key={category.id}
                     type="button"
-                    className="log-selected-category-change"
-                    onClick={() => setPickingCategory(true)}
+                    className={form.category === category.id ? "is-active" : ""}
+                    aria-pressed={form.category === category.id}
+                    onClick={() => handleCategoryChange(category.id)}
                   >
-                    바꾸기
+                    {category.label}
                   </button>
-                </div>
-              )}
+                ))}
+              </div>
 
-              {selectedCategory && !pickingCategory ? (
+              {selectedCategory ? (
                 <section
                   className="log-core-panel"
                   aria-label={`${selectedCategory.label} 기록 입력`}
@@ -830,57 +899,25 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
                   {form.category === "boxing" ? (
                     <>
-                      <div
-                        className="log-quick-choice-grid"
-                        role="group"
-                        aria-label="라운드 빠른 선택"
-                      >
-                        {ROUND_PRESETS.map((rounds) => (
-                          <button
-                            key={rounds}
-                            type="button"
-                            className={`log-quick-choice${
-                              Number(form.rounds) === rounds ? " is-active" : ""
-                            }`}
-                            aria-pressed={Number(form.rounds) === rounds}
-                            onClick={() => {
-                              updateFormField("rounds", String(rounds));
-                              if (!form.minutes) {
-                                updateFormField("minutes", String(rounds * 3));
-                              }
-                            }}
-                          >
-                            {rounds}R
-                          </button>
-                        ))}
-                      </div>
-                      <div className="log-grid-2">
-                        <div className="log-field">
-                          <label className="log-label">라운드</label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.rounds}
-                            onChange={(event) =>
-                              updateFormField("rounds", event.target.value)
-                            }
-                            placeholder="5"
-                            className="log-input"
-                          />
-                        </div>
-                        <div className="log-field">
-                          <label className="log-label">시간(분)</label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={form.minutes}
-                            onChange={(event) =>
-                              updateFormField("minutes", event.target.value)
-                            }
-                            placeholder="30"
-                            className="log-input"
-                          />
-                        </div>
+                      <RoundZoneSlider
+                        value={form.rounds}
+                        onChange={(rounds) => {
+                          updateFormField("rounds", String(rounds));
+                          updateFormField("minutes", String(rounds * 3));
+                        }}
+                      />
+                      <div className="log-field">
+                        <label className="log-label">시간(분)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={form.minutes}
+                          onChange={(event) =>
+                            updateFormField("minutes", event.target.value)
+                          }
+                          placeholder="30"
+                          className="log-input"
+                        />
                       </div>
                       <label className="log-toggle-row">
                         <input
@@ -1079,12 +1116,14 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
           </form>
         </section>
 
-        {selectedCategory && !pickingCategory ? (
-          <div className="log-write-dock is-final">
-            <div className="log-write-dock-exp">
-              <span>다음</span>
-              <strong>{dockHint}</strong>
-            </div>
+        {selectedCategory ? (
+          <div className={`log-write-dock${canSave ? " is-save" : " is-final"}`}>
+            {!canSave ? (
+              <div className="log-write-dock-exp">
+                <span>다음</span>
+                <strong>{dockHint}</strong>
+              </div>
+            ) : null}
             <button
               type="button"
               className="log-submit"

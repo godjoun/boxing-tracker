@@ -798,15 +798,16 @@
 .home-week-strip-days {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
+  gap: 6px;
+  margin-top: 12px;
 }
 
 .home-week-day {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   justify-items: center;
-  padding: 6px 2px;
-  border-radius: 12px;
+  padding: 0;
+  border-radius: 0;
   color: var(--p-text-muted);
 }
 
@@ -823,30 +824,47 @@
 }
 
 .home-week-day i {
-  width: 6px;
-  height: 6px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: rgba(10, 9, 9, 0.12);
+  border: 1px solid rgba(10, 9, 9, 0.1);
+  background: transparent;
+  color: transparent;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .theme-dark .home-week-day i {
-  background: rgba(138, 46, 46, 0.14);
+  border-color: rgba(245, 241, 232, 0.14);
+  background: transparent;
 }
 
 .home-week-day.is-trained i {
-  background: #8a2e2e;
+  border-color: var(--p-action, #8a2e2e);
+  background: var(--p-action, #8a2e2e);
+  color: #f5f1e8;
 }
 
 .home-week-day.is-today {
-  background: rgba(10, 9, 9, 0.04);
+  color: var(--p-text);
+  background: transparent;
 }
 
 .theme-dark .home-week-day.is-today {
-  background: rgba(138, 46, 46, 0.08);
+  color: #f5f1e8;
+  background: transparent;
+}
+
+.home-week-day.is-today span {
+  color: var(--p-action, #8a2e2e);
 }
 
 .home-week-day.is-today strong {
-  color: #8a2e2e;
+  color: var(--p-text);
 }
 
 .home-recent-line {

@@ -1312,31 +1312,51 @@
 }
 
 .training-kind-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
 .training-kind-chip {
-  min-height: 36px;
-  padding: 0 12px;
-  border: 1px solid var(--p-border-soft);
-  border-radius: 999px;
-  background: transparent;
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: rgba(245, 241, 232, 0.04);
   color: var(--p-text-muted);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   cursor: pointer;
+  touch-action: manipulation;
+}
+
+.theme-light .training-kind-chip {
+  background: rgba(10, 9, 9, 0.04);
+  color: rgba(10, 9, 9, 0.58);
 }
 
 .theme-dark .training-kind-chip {
-  border-color: rgba(245, 241, 232, 0.12);
+  background: rgba(245, 241, 232, 0.05);
+  color: rgba(245, 241, 232, 0.62);
 }
 
 .training-kind-chip.is-selected {
-  border-color: var(--p-action);
-  background: rgba(138, 46, 46, 0.16);
+  border-color: transparent;
+  background: rgba(138, 46, 46, 0.14);
   color: var(--p-text);
+  box-shadow: none;
+}
+
+.theme-light .training-kind-chip.is-selected {
+  background: rgba(138, 46, 46, 0.1);
+  color: #0a0909;
+}
+
+.theme-dark .training-kind-chip.is-selected {
+  background: rgba(138, 46, 46, 0.22);
+  color: #f5f1e8;
 }
 
 .training-round-row {
@@ -1393,6 +1413,39 @@
 .training-round-picker {
   display: grid;
   gap: 8px;
+}
+
+.training-round-chip-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.training-round-chip {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border: 1px solid var(--p-border-soft);
+  border-radius: 12px;
+  background: var(--p-bg-page);
+  color: var(--p-text-muted);
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.theme-dark .training-round-chip {
+  background: #121012;
+  border-color: rgba(245, 241, 232, 0.1);
+  color: rgba(245, 241, 232, 0.7);
+}
+
+.training-round-chip.is-selected {
+  border-color: var(--p-action);
+  background: rgba(138, 46, 46, 0.16);
+  color: var(--p-text);
+  box-shadow: inset 0 0 0 1px var(--p-action);
 }
 
 .training-round-option {

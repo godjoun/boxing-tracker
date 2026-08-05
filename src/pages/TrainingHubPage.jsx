@@ -261,32 +261,25 @@ export default function TrainingHubPage({
 
           {settingsOpen ? (
             <div className="training-round-picker" role="group" aria-label="라운드 설정">
-              {MATCH_TIMER_PRESETS.map((preset) => {
-                const selected = roundPresetId === preset.id;
-                const minutes = Math.round(
-                  (Number(preset.workSeconds || 180) * Number(preset.rounds || 3)) /
-                    60
-                );
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    className={`training-round-option${selected ? " is-selected" : ""}`}
-                    aria-pressed={selected}
-                    onClick={() => {
-                      setRoundPresetId(preset.id);
-                      setSettingsOpen(false);
-                    }}
-                  >
-                    <strong>{preset.rounds}R</strong>
-                    <small>
-                      운동 {Math.round(Number(preset.workSeconds || 180) / 60)}분 · 휴식{" "}
-                      {formatRestLabel(Number(preset.restSeconds || 30))}
-                    </small>
-                    <span>{minutes}분</span>
-                  </button>
-                );
-              })}
+              <div className="training-round-chip-row">
+                {MATCH_TIMER_PRESETS.map((preset) => {
+                  const selected = roundPresetId === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`training-round-chip${selected ? " is-selected" : ""}`}
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setRoundPresetId(preset.id);
+                        setSettingsOpen(false);
+                      }}
+                    >
+                      {preset.rounds}R
+                    </button>
+                  );
+                })}
+              </div>
               <button
                 type="button"
                 className="training-round-option training-round-option-custom"
@@ -306,7 +299,7 @@ export default function TrainingHubPage({
 
       <details className="training-tools-details">
         <summary className="training-tools-summary">
-          <span>더 보기</span>
+          <span>기타 기능 보기</span>
           <strong>기록 · 기술 · 콤보</strong>
         </summary>
         <section className="training-tools-section" aria-label="추가 훈련 도구">

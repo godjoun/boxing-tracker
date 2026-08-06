@@ -27,6 +27,7 @@
 | 링 메뉴 라벨 | `src/utils/appMenu.js` |
 | 이름·슬로건 | `src/utils/brand.js` |
 | 오프닝 | `src/components/EntryBanner.jsx` · 온보딩 환영 · 세션 입장 배너 |
+| 부트 스플래시 | **동결 (2026-08-07 · `9fda203`)** · `index.html` `#boot-splash` · `src/utils/bootSplash.js` · `theme.js` · `public/splash/*` · 192 PNG data URI 유지 · 추가 최적화 금지 |
 | 로고 | `public/logo-mark.png` · `docs/brand/logo-locked.png` |
 
 짐 구현 폴더 요약: `src/pages/dojoBreaker/README.md`

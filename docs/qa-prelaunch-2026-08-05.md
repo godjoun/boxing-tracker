@@ -101,4 +101,28 @@
 
 최상위: 함께하기 · 훈련 카드 만들기 · 앱 설정.
 
+## 부트 스플래시 — iPhone 냉간 마감·동결 (2026-08-07)
+
+**상태: PASS · 완료 · 동결.** 현재 구현 유지. PNG/WebP/SVG 추가 최적화·전환 재작업 **금지**.
+
+동결 커밋: `9fda203` · 프로덕션: `https://boxing-tracker.vercel.app`
+
+| 항목 | 결과 |
+|------|------|
+| 첫 프레임부터 MANTLE 로고 | **PASS** |
+| 빈 흰 화면 없음 | **PASS** |
+| 로고·홈 겹침 없음 | **PASS** |
+| 하단 검정줄 없음 | **PASS** |
+| 전환 지연 없음 | **PASS** |
+| light → light 홈 / dark → dark 홈 | **PASS** (중간 light 홈 플래시 없음) |
+
+동결 구현 요약:
+- 흰 배경 정적 `#boot-splash` (`index.html`)
+- 192×192 압축 PNG **data URI 인라인** 유지 (추가 압축·포맷 변경 없음)
+- `#root`는 `.app-ready` 전 숨김 · 준비 후 스플래시 제거 → 저장 테마 홈 즉시 표시
+- 인위적 1.1s / opacity 페이드 없음
+- iOS `apple-touch-startup-image` (`public/splash/*`) 포함
+
+관련 파일 (동결): `index.html` · `src/utils/bootSplash.js` · `src/utils/theme.js` · `src/App.jsx` · `src/index.css` · `public/splash/*`
+
 나머지 실기(풀 루프·GPS·치명 잘림 등)는 **계속 대기** — 제품 코드 추가 수정 없이 다음 iPhone QA 결과를 기다린다.

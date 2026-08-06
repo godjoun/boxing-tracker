@@ -125,4 +125,27 @@
 
 관련 파일 (동결): `index.html` · `src/utils/bootSplash.js` · `src/utils/theme.js` · `src/App.jsx` · `src/index.css` · `public/splash/*`
 
+## 복싱 체력 — iPhone 실기 마감·동결 (2026-08-07)
+
+**상태: PASS · 완료 · 동결.** 현재 구현 유지. 타이머 엔진·운동 구성·화면 구조 추가 수정 **금지**.
+
+동결 커밋: `b2ef8d9` · 프로덕션: `https://boxing-tracker.vercel.app`  
+표기명: **복싱 체력** (route/`strength` id 유지)
+
+| 항목 | 결과 |
+|------|------|
+| 40초 운동 / 20초 휴식 | **PASS** |
+| 동작명·바퀴·진행 표시 | **PASS** |
+| 사이드 플랭크 1바퀴 왼쪽 · 2바퀴 오른쪽 | **PASS** |
+| 운동·휴식·완료 알림음 | **PASS** |
+| 완료 기록 1건 (`신체 · 10분 코어` 등) | **PASS** |
+| 앱 재실행 후 기록 유지 | **PASS** |
+
+동결 구현 요약:
+- 3루틴: 10분 코어 · 10분 하체 · 10분 상체·어깨 (소요 보조 표기 **약 10분** · 실측 9:40)
+- 10R × 40초 work / 20초 rest · 마지막 라운드 뒤 휴식 없음
+- 집·무도구 · 월~토 헬스장 표·줄넘기 필수 워밍업 제거
+
+관련 파일 (동결): `src/utils/strengthProgram.js` · `StrengthProgramPage.jsx/.css` · `StrengthTimerGuide.jsx/.css` · `TimerPage.jsx`(strength 연동부) · `appMenu.js` · `TrainingHubPage.jsx`
+
 나머지 실기(풀 루프·GPS·치명 잘림 등)는 **계속 대기** — 제품 코드 추가 수정 없이 다음 iPhone QA 결과를 기다린다.

@@ -23,7 +23,7 @@
 | 모임 SQL | `supabase/dojo_exchange.sql` |
 | 라운드(타이머) | `src/pages/TimerPage.jsx` |
 | 기술(4주 코스) | `src/pages/CurriculumPage.jsx` |
-| 신체(몸 만들기) | `src/pages/StrengthProgramPage.jsx` |
+| 복싱 체력 | **동결 (2026-08-07 · `b2ef8d9`)** · `StrengthProgramPage.jsx` · `utils/strengthProgram.js` · `StrengthTimerGuide.jsx` · 3×약10분 무도구 · 타이머·구성·화면 추가 수정 금지 |
 | 링 메뉴 라벨 | `src/utils/appMenu.js` |
 | 이름·슬로건 | `src/utils/brand.js` |
 | 오프닝 | `src/components/EntryBanner.jsx` · 온보딩 환영 · 세션 입장 배너 |

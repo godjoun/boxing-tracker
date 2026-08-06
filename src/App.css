@@ -11207,10 +11207,34 @@
 }
 
 .onboarding-page--entry {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
   padding: 0;
   place-items: stretch;
   background: #ffffff;
   color: #161616;
+}
+
+/* 첫 환영 화면은 항상 라이트 스테이지 — 다크 html/shell이 하단 틈으로 비치지 않게 */
+html:has(.onboarding-page--entry) {
+  background: #ffffff;
+}
+
+html:has(.onboarding-page--entry) body {
+  background-color: #ffffff;
+}
+
+html:has(.onboarding-page--entry) #root {
+  background-color: #ffffff;
+}
+
+.app-shell:has(> .onboarding-page--entry) {
+  background: #ffffff;
 }
 
 .onboarding-page--street {

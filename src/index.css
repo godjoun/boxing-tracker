@@ -66,16 +66,18 @@ body {
   background-color: var(--root-bg);
 }
 
+/* 준비 전까지 앱 root 비표시 — 스플래시 아래로 홈이 비치지 않게 */
+html:not(.app-ready) #root {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* 부트 스플래시 표시 중에는 하단 캔버스를 흰색으로 고정 (다크 테마 틈 방지) */
 html:has(#boot-splash),
 html:has(#boot-splash) body,
 html:has(#boot-splash) #root {
   background: #ffffff;
   background-color: #ffffff;
-}
-
-html:has(#boot-splash) .app-shell {
-  background: #ffffff;
 }
 
 input,

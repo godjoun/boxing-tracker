@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import { track } from "@vercel/analytics";
 import { TrainingProvider, useTraining } from "./store/TrainingContext";
@@ -98,22 +98,10 @@ function AppFlow() {
     applyDocumentTheme(theme);
   }, [theme]);
 
-  // HTML 부트 스플래시 → React 첫 화면이 덮은 뒤 제거 (앱이 먼저 비치지 않게)
-  useEffect(() => {
-    let timeoutId;
-    const frame = window.requestAnimationFrame(() => {
-      if (onboarding) {
-        dismissBootSplash({ fade: false });
-        return;
-      }
-      timeoutId = window.setTimeout(() => dismissBootSplash({ fade: true }), 1100);
-    });
-    return () => {
-      window.cancelAnimationFrame(frame);
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
-    // Cold-boot handoff only — initial cover state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // 앱 셸(온보딩/홈)이 준비되면 즉시 스플래시 → 앱 한 번만 전환.
+  // 인위적 최소 표시 시간·페이드 겹침 없음. #root는 .app-ready 전까지 숨김.
+  useLayoutEffect(() => {
+    dismissBootSplash();
   }, []);
 
   function toggleTheme() {

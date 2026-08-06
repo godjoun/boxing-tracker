@@ -1,24 +1,22 @@
 import { applyDocumentTheme, getStoredTheme } from "./theme";
 
-/** HTML 최초 페인트용 부트 스플래시 (#boot-splash) 제거 */
-
-export function dismissBootSplash({ fade = true } = {}) {
+/**
+ * HTML 최초 페인트용 부트 스플래시 (#boot-splash) 제거.
+ * 순서: 저장 테마로 root 준비 → splash 제거 → app root 표시.
+ * opacity 페이드로 splash/홈을 겹치지 않는다.
+ */
+export function dismissBootSplash() {
   if (typeof document === "undefined") return;
 
   const el = document.getElementById("boot-splash");
-  if (!el) return;
+  const theme = getStoredTheme();
 
-  const remove = () => {
+  // 스플래시가 아직 덮고 있는 동안 최종 테마를 문서에 적용한다.
+  applyDocumentTheme(theme, { force: true });
+
+  if (el) {
     el.remove();
-    // 스플래시 동안 강제했던 라이트 캔버스를 저장된 테마로 되돌린다.
-    applyDocumentTheme(getStoredTheme());
-  };
-
-  if (!fade || el.classList.contains("is-leaving")) {
-    remove();
-    return;
   }
 
-  el.classList.add("is-leaving");
-  window.setTimeout(remove, 380);
+  document.documentElement.classList.add("app-ready");
 }

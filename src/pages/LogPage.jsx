@@ -1259,6 +1259,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                       ? getWeightsExerciseTitle(latestLog)
                       : latestLog.type}
                   </p>
+                  {latestLog.workoutDetails ? (
+                    <p className="log-history-details">
+                      {latestLog.workoutDetails}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="log-history-metrics">{getLogSummary(latestLog)}</p>
               </div>
@@ -1445,6 +1450,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
                             </details>
                           </div>
                         </div>
+                        {log.workoutDetails ? (
+                          <p className="log-history-details">
+                            {log.workoutDetails}
+                          </p>
+                        ) : null}
                         {log.publicComment || log.memo || log.note ? (
                           <p className="log-history-note">
                             {log.publicComment || log.memo || log.note}

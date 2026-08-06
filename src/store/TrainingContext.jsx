@@ -336,6 +336,7 @@ function TrainingProviderState({ children, userId }) {
     totalRounds = 0,
     completedRounds = 0,
     publicComment = "",
+    workoutDetails = "",
     category,
     subtype,
     metrics = {},
@@ -371,6 +372,7 @@ function TrainingProviderState({ children, userId }) {
       conditionLabel: getConditionLabel(condition),
       memo,
       publicComment,
+      workoutDetails: String(workoutDetails || "").trim(),
       source: finalSource,
       sourceLabel: getRecordSourceLabel(finalSource),
       isEdited: false,
@@ -378,6 +380,10 @@ function TrainingProviderState({ children, userId }) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+
+    if (!newLog.workoutDetails) {
+      delete newLog.workoutDetails;
+    }
 
     newLog.score = calculateLogScore(newLog);
 

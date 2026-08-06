@@ -3,7 +3,13 @@ import { useTraining } from "../store/TrainingContext";
 import { MATCH_TIMER_PRESETS, DEFAULT_BOXING_WORK_SECONDS } from "../utils/timerPresets";
 import { startTimerAudioSession } from "../utils/timerAudio";
 import { isDevSurfaceLog } from "../utils/devMode";
+import {
+  WORKOUT_DETAILS_MAX_LENGTH,
+  loadRecentWorkoutDetails,
+  normalizeWorkoutDetails,
+} from "../utils/workoutDetails";
 import MenuIcon from "../components/MenuIcon";
+import WorkoutDetailsQuickBar from "../components/WorkoutDetailsQuickBar";
 
 function getTodayString() {
   const today = new Date();
@@ -48,6 +54,8 @@ export default function TrainingHubPage({
     MATCH_TIMER_PRESETS[0]?.id || "match3"
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [workoutDetails, setWorkoutDetails] = useState("");
+  const [recentWorkoutDetails] = useState(() => loadRecentWorkoutDetails());
 
   const todaySummary = useMemo(() => {
     const todayLogs = logs.filter(
@@ -89,6 +97,7 @@ export default function TrainingHubPage({
       routineTitle: logType
         ? `${logType} · ${sessionRounds}R`
         : `${sessionRounds}R 라운드 훈련`,
+      workoutDetails: normalizeWorkoutDetails(workoutDetails),
     };
   }
 
@@ -110,6 +119,7 @@ export default function TrainingHubPage({
       restSeconds: 0,
       logType: "러닝",
       routineTitle: "러닝 · 30분",
+      workoutDetails: normalizeWorkoutDetails(workoutDetails),
     });
   }
 
@@ -294,6 +304,51 @@ export default function TrainingHubPage({
                 <small>라운드 · 운동 · 휴식 직접 조절</small>
                 <span>›</span>
               </button>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {categoryId === "boxing" || categoryId === "running" ? (
+        <section
+          className="training-workout-details-block"
+          aria-label="오늘 할 운동"
+        >
+          <label className="training-workout-details">
+            <span>오늘 할 운동</span>
+            <input
+              type="text"
+              value={workoutDetails}
+              maxLength={WORKOUT_DETAILS_MAX_LENGTH}
+              placeholder="예: 줄넘기 2R · 쉐도우 3R · 샌드백 4R"
+              onChange={(event) => setWorkoutDetails(event.target.value)}
+              autoComplete="off"
+              enterKeyHint="done"
+            />
+          </label>
+          {categoryId === "boxing" ? (
+            <WorkoutDetailsQuickBar
+              value={workoutDetails}
+              onChange={setWorkoutDetails}
+            />
+          ) : null}
+          {recentWorkoutDetails.length > 0 ? (
+            <div
+              className="training-workout-recent"
+              role="list"
+              aria-label="최근 운동 내용"
+            >
+              {recentWorkoutDetails.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  role="listitem"
+                  className="training-workout-recent-chip"
+                  onClick={() => setWorkoutDetails(item)}
+                >
+                  {item}
+                </button>
+              ))}
             </div>
           ) : null}
         </section>

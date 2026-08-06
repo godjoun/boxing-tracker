@@ -35,6 +35,7 @@ export const TIMER_DEFAULT_STATE = {
   hasStartedSession: false,
   hasSavedLog: false,
   soundMode: "basic",
+  workoutDetails: "",
 };
 
 /**
@@ -118,6 +119,7 @@ export function buildTimerSnapshot(state, now = Date.now()) {
     hasSavedLog: state.hasSavedLog,
     soundMode: state.soundMode,
     routineTitle: state.routineTitle,
+    workoutDetails: state.workoutDetails || "",
     updatedAt: now,
   };
 }

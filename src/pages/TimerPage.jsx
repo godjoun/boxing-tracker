@@ -46,6 +46,13 @@ import {
   mergeRunningTimerPersistSnapshot,
   readInitialTimerState,
 } from "../utils/timerPagePersistence";
+import {
+  WORKOUT_DETAILS_MAX_LENGTH,
+  loadRecentWorkoutDetails,
+  normalizeWorkoutDetails,
+  rememberWorkoutDetails,
+} from "../utils/workoutDetails";
+import WorkoutDetailsQuickBar from "../components/WorkoutDetailsQuickBar";
 import { styles } from "./TimerPage.styles";
 import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
 import StrengthTimerGuide from "../components/StrengthTimerGuide";
@@ -177,7 +184,7 @@ export default function TimerPage({
   backLabel = "링",
   onGoProfile,
 }) {
-  const { addLog, logs, profile } = useTraining();
+  const { addLog, updateLog, logs, profile } = useTraining();
   const initialTimerState = readInitialTimerState();
 
   const [selectedPresetId, setSelectedPresetId] = useState(
@@ -258,6 +265,12 @@ export default function TimerPage({
   const [completedLogId, setCompletedLogId] = useState(null);
   const [completedAt, setCompletedAt] = useState(null);
   const [soundMode, setSoundMode] = useState(initialTimerState.soundMode);
+  const [workoutDetails, setWorkoutDetails] = useState(
+    () => normalizeWorkoutDetails(initialTimerState.workoutDetails)
+  );
+  const [recentWorkoutDetails, setRecentWorkoutDetails] = useState(() =>
+    loadRecentWorkoutDetails()
+  );
 
   const savedLogRef = useRef(initialTimerState.hasSavedLog);
   const previousPhaseRef = useRef(initialTimerState.phase);
@@ -355,6 +368,9 @@ export default function TimerPage({
     setHasStartedSession(Boolean(saved.hasStartedSession));
     setHasSavedLog(Boolean(saved.hasSavedLog));
     setSoundMode(saved.soundMode ?? "basic");
+    if (typeof saved.workoutDetails === "string") {
+      setWorkoutDetails(normalizeWorkoutDetails(saved.workoutDetails));
+    }
     savedLogRef.current = Boolean(saved.hasSavedLog);
   }, []);
 
@@ -421,6 +437,7 @@ export default function TimerPage({
         hasSavedLog,
         soundMode,
         routineTitle,
+        workoutDetails,
       }),
       loaded
     );
@@ -454,6 +471,7 @@ export default function TimerPage({
     hasSavedLog,
     soundMode,
     routineTitle,
+    workoutDetails,
   ]);
 
   useEffect(() => {
@@ -611,6 +629,7 @@ export default function TimerPage({
 
     savedLogRef.current = true;
 
+    const details = normalizeWorkoutDetails(workoutDetails);
     const savedLog = addLog({
       type: curriculumLogType || `${totalRounds}R 라운드 훈련`,
       minutes: totalWorkMinutes,
@@ -628,6 +647,7 @@ export default function TimerPage({
       publicComment: curriculumSessionId
         ? `${routineTitle} 완료. 기술 코스 한 세션 더 버텼다.`
         : `${totalRounds}R 완료. 오늘도 끝까지 버텼다.`,
+      workoutDetails: details,
     });
 
     if (curriculumSessionId) {
@@ -635,6 +655,9 @@ export default function TimerPage({
     }
 
     window.setTimeout(() => {
+      if (details) {
+        setRecentWorkoutDetails(rememberWorkoutDetails(details));
+      }
       setCompletionResult(getCompletionDelta(logs, savedLog));
       setCompletedLogId(savedLog.id);
       setCompletedAt(new Date());
@@ -654,6 +677,7 @@ export default function TimerPage({
     curriculumSessionId,
     activePrepSeconds,
     isCurriculumSession,
+    workoutDetails,
   ]);
 
   const resetTimerState = (nextWorkSeconds = workSecondsSetting) => {
@@ -688,6 +712,7 @@ export default function TimerPage({
 
     savedLogRef.current = true;
 
+    const details = normalizeWorkoutDetails(workoutDetails);
     const savedLog = addLog({
       type: curriculumLogType || `${safeRounds}R 라운드 훈련`,
       minutes,
@@ -703,7 +728,12 @@ export default function TimerPage({
       publicComment: curriculumSessionId
         ? `${routineTitle} · ${safeRounds}라운드까지 기록했다.`
         : `${safeRounds}R 기록. 오늘은 여기까지 벨을 울렸다.`,
+      workoutDetails: details,
     });
+
+    if (details) {
+      setRecentWorkoutDetails(rememberWorkoutDetails(details));
+    }
 
     setCompletionResult(getCompletionDelta(logs, savedLog));
     setCompletedLogId(savedLog.id);
@@ -733,6 +763,7 @@ export default function TimerPage({
     setStrengthPlan(config.strengthPlan || null);
     setPrepSecondsSetting(config.prepSeconds ?? 10);
     setCooldownSecondsSetting(config.cooldownSeconds ?? 0);
+    setWorkoutDetails(normalizeWorkoutDetails(config.workoutDetails));
     resetTimerState(config.workSeconds);
   };
 
@@ -1014,6 +1045,7 @@ export default function TimerPage({
   };
 
   const handleGoProfile = () => {
+    flushWorkoutDetailsToLog();
     if (onGoProfile) {
       onGoProfile(completedLogId);
       return;
@@ -1023,6 +1055,36 @@ export default function TimerPage({
       onGoHome();
     }
   };
+
+  function commitWorkoutDetails(nextValue) {
+    const details = normalizeWorkoutDetails(nextValue);
+    setWorkoutDetails(details);
+    if (completedLogId) {
+      updateLog(completedLogId, { workoutDetails: details });
+      if (details) {
+        setRecentWorkoutDetails(rememberWorkoutDetails(details));
+      }
+    }
+    return details;
+  }
+
+  function flushWorkoutDetailsToLog() {
+    const details = normalizeWorkoutDetails(workoutDetails);
+    if (!completedLogId) return details;
+    updateLog(completedLogId, { workoutDetails: details });
+    if (details) {
+      setRecentWorkoutDetails(rememberWorkoutDetails(details));
+    }
+    return details;
+  }
+
+  useEffect(() => {
+    if (!completedLogId) return;
+    const details = normalizeWorkoutDetails(workoutDetails);
+    updateLog(completedLogId, { workoutDetails: details });
+    // 완료 직후 log id가 생긴 뒤, 그 사이 수정한 값을 같은 기록에 맞춤.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when id appears
+  }, [completedLogId]);
 
   const isComplete = phase === "done";
   const isFocusMode = hasStartedSession && !isComplete;
@@ -1163,6 +1225,7 @@ export default function TimerPage({
         soundMode,
         routineTitle,
         hasSavedLog,
+        workoutDetails,
       },
       now
     );
@@ -1316,6 +1379,50 @@ export default function TimerPage({
                 </div>
               </div>
             </div>
+
+            <label className="timer-workout-details">
+              <span>오늘 할 운동</span>
+              <input
+                type="text"
+                value={workoutDetails}
+                maxLength={WORKOUT_DETAILS_MAX_LENGTH}
+                placeholder="예: 줄넘기 2R · 쉐도우 3R · 샌드백 4R"
+                onChange={(event) =>
+                  setWorkoutDetails(event.target.value.slice(0, WORKOUT_DETAILS_MAX_LENGTH))
+                }
+                onBlur={(event) =>
+                  setWorkoutDetails(
+                    normalizeWorkoutDetails(event.target.value)
+                  )
+                }
+                autoComplete="off"
+                enterKeyHint="done"
+                disabled={isRunning}
+              />
+            </label>
+            <WorkoutDetailsQuickBar
+              value={workoutDetails}
+              disabled={isRunning}
+              onChange={setWorkoutDetails}
+            />
+            {recentWorkoutDetails.length > 0 ? (
+              <div className="training-workout-recent" role="list">
+                {recentWorkoutDetails.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    role="listitem"
+                    className="training-workout-recent-chip"
+                    onClick={() => {
+                      setWorkoutDetails(item);
+                    }}
+                    disabled={isRunning}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            ) : null}
 
             <details className="timer-sound-details">
               <summary>
@@ -1573,6 +1680,45 @@ export default function TimerPage({
               </p>
             </div>
 
+            <label className="timer-workout-details timer-workout-details-complete">
+              <span>오늘 한 운동</span>
+              <input
+                type="text"
+                value={workoutDetails}
+                maxLength={WORKOUT_DETAILS_MAX_LENGTH}
+                placeholder="예: 줄넘기 2R · 쉐도우 3R · 샌드백 4R"
+                onChange={(event) => {
+                  const next = event.target.value.slice(
+                    0,
+                    WORKOUT_DETAILS_MAX_LENGTH
+                  );
+                  setWorkoutDetails(next);
+                }}
+                onBlur={(event) => commitWorkoutDetails(event.target.value)}
+                autoComplete="off"
+                enterKeyHint="done"
+              />
+            </label>
+            <WorkoutDetailsQuickBar
+              value={workoutDetails}
+              onChange={commitWorkoutDetails}
+            />
+            {recentWorkoutDetails.length > 0 ? (
+              <div className="training-workout-recent" role="list">
+                {recentWorkoutDetails.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    role="listitem"
+                    className="training-workout-recent-chip"
+                    onClick={() => commitWorkoutDetails(item)}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
             <div className="timer-still-actions">
               <button
                 type="button"
@@ -1583,13 +1729,31 @@ export default function TimerPage({
               </button>
 
               <div className="timer-complete-links">
-                <button type="button" onClick={handleStart}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    flushWorkoutDetailsToLog();
+                    handleStart();
+                  }}
+                >
                   다시 시작
                 </button>
-                <button type="button" onClick={() => onGoHome?.()}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    flushWorkoutDetailsToLog();
+                    onGoHome?.();
+                  }}
+                >
                   홈으로
                 </button>
-                <button type="button" onClick={() => onGoLog?.()}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    flushWorkoutDetailsToLog();
+                    onGoLog?.();
+                  }}
+                >
                   기록 보기
                 </button>
               </div>

@@ -73,6 +73,7 @@ export function buildPresetTimerLaunch(preset, { autoStart = false } = {}) {
     cooldownSeconds: 0,
     routineTitle: preset.routineTitle || defaultTitle,
     logType: preset.logType || defaultTitle,
+    workoutDetails: preset.workoutDetails || "",
     autoStart,
   };
 }

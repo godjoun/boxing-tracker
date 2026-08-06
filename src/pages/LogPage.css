@@ -2546,6 +2546,24 @@
   -webkit-line-clamp: 2;
 }
 
+.log-history-details {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 4px 30px 0 0;
+  color: var(--p-text);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.log-peek-item .log-history-details {
+  margin: 4px 0 0;
+}
+
 @media (max-width: 420px) {
   .log-category-grid {
     gap: 8px;

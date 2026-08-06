@@ -2093,6 +2093,10 @@
   font-weight: 700;
 }
 
+.app-menu-category-grid > .category-legal-links {
+  grid-column: 1 / -1;
+}
+
 .category-legal-links a {
   color: inherit;
   text-decoration: underline;

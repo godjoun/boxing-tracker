@@ -1,5 +1,3 @@
-import { RELEASE_SCOPE } from "./releaseScope";
-
 export const TIMER_MENU_CARD = {
   id: "timer",
   icon: "round",
@@ -15,8 +13,8 @@ const SHORTCUTS = {
   "fighter-card": {
     id: "fighter-card",
     icon: "card",
-    title: "훈련 명패 만들기",
-    description: "오늘의 훈련을 한 장으로 남깁니다.",
+    title: "훈련 카드 만들기",
+    description: "훈련을 한 장면으로 남기기",
     action: "card-maker",
     accent: "gold",
   },
@@ -81,8 +79,8 @@ const SHORTCUTS = {
   hub: {
     id: "hub",
     icon: "dojo",
-    title: "커뮤니티",
-    description: "복싱 교류와 소식을 확인합니다.",
+    title: "함께하기",
+    description: "체육관과 다른 복서 만나기",
     route: "gym",
     gymView: "feed",
     accent: "slate",
@@ -104,47 +102,38 @@ const SHORTCUTS = {
     route: "backup",
     accent: "slate",
   },
+  settings: {
+    id: "settings",
+    icon: "more",
+    title: "앱 설정",
+    description: "테마, 백업, 도움말 관리",
+    action: "settings",
+    accent: "slate",
+  },
 };
 
-/** 전체 메뉴 — 하단 탭에 없는 부가 기능만 */
+/**
+ * 전체 메뉴 최상위 — 선택지 3개만.
+ * 루틴·몸·콤보·성장·체육관 단독·라이벌은 노출하지 않음 (라우트·다른 탭 진입은 유지).
+ */
 export const MENU_GROUPS = [
   {
-    id: "training",
-    title: "운동 확장",
-    items: [
-      SHORTCUTS.curriculum,
-      SHORTCUTS.strength,
-      SHORTCUTS["combo-creator"],
-    ],
-  },
-  {
-    id: "profile",
-    title: "나를 확장",
-    items: [SHORTCUTS.growth, SHORTCUTS["fighter-card"]],
-  },
-  {
-    id: "community",
-    title: "함께하기",
-    items: [
-      SHORTCUTS.hub,
-      SHORTCUTS.gyms,
-      ...(RELEASE_SCOPE.rivals ? [SHORTCUTS.rivals] : []),
-    ],
-  },
-  {
-    id: "app",
-    title: "앱 관리",
-    items: [SHORTCUTS.backup],
+    id: "primary",
+    title: null,
+    items: [SHORTCUTS.hub, SHORTCUTS["fighter-card"], SHORTCUTS.settings],
   },
 ];
+
+/** 앱 설정 패널 — 백업 (테마·튜토리얼·약관은 UI에서 합침) */
+export const SETTINGS_MENU_ITEMS = [SHORTCUTS.backup];
 
 export function getAllMenuItems() {
   return MENU_GROUPS.flatMap((group) => group.items);
 }
 
-/** 홈 대시보드에서 고를 수 있는 바로가기 풀 */
+/** 홈 대시보드에서 고를 수 있는 바로가기 풀 (레거시 풀 유지) */
 export const DASHBOARD_SHORTCUT_POOL = [
-  SHORTCUTS.timer,
+  TIMER_MENU_CARD,
   SHORTCUTS["fighter-card"],
   SHORTCUTS["training-log"],
   SHORTCUTS.curriculum,

@@ -10,7 +10,13 @@ describe("공개 베타 출시 범위", () => {
     );
 
     expect(RELEASE_SCOPE.rivals).toBe(false);
+    expect(menuIds).toEqual(["hub", "fighter-card", "settings"]);
     expect(menuIds).not.toContain("rivals");
+    expect(menuIds).not.toContain("gyms");
+    expect(menuIds).not.toContain("curriculum");
+    expect(menuIds).not.toContain("strength");
+    expect(menuIds).not.toContain("combo-creator");
+    expect(menuIds).not.toContain("growth");
     expect(menuIds).not.toContain("training-log");
     expect(menuIds).not.toContain("profile");
     expect(menuIds).not.toContain("timer");

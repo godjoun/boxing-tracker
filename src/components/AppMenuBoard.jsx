@@ -1,12 +1,8 @@
-import {
-  getUnlockLevel,
-  isFeatureUnlocked,
-} from "../utils/featureUnlocks";
-import { MENU_GROUPS } from "../utils/appMenu";
+import { useState } from "react";
+import { MENU_GROUPS, SETTINGS_MENU_ITEMS } from "../utils/appMenu";
 import MenuIcon from "./MenuIcon";
 
 export default function AppMenuBoard({
-  fighterLevel = 1,
   showBack = false,
   onGoBack,
   onNavigate,
@@ -16,7 +12,14 @@ export default function AppMenuBoard({
   theme = "dark",
   onToggleTheme,
 }) {
+  const [panel, setPanel] = useState("root");
+
   function selectItem(item) {
+    if (item.action === "settings") {
+      setPanel("settings");
+      return;
+    }
+
     if (item.action === "card-maker") {
       onOpenCardMaker?.();
       return;
@@ -31,35 +34,32 @@ export default function AppMenuBoard({
   }
 
   function renderMenuRow(item) {
-    const locked =
-      item.featureId && !isFeatureUnlocked(item.featureId, fighterLevel);
-    const unlockLevel = item.featureId ? getUnlockLevel(item.featureId) : null;
-
     return (
       <button
         type="button"
-        className={`app-menu-row${locked ? " is-locked" : ""}`}
+        className="app-menu-row"
         key={item.id}
         onClick={() => (item.onSelect ? item.onSelect() : selectItem(item))}
-        aria-label={`${item.title}${locked ? `, 레벨 ${unlockLevel} 해금` : ""}`}
+        aria-label={item.title}
       >
         <span className="app-menu-row-icon" aria-hidden="true">
           <MenuIcon name={item.icon} size={18} />
         </span>
         <span className="app-menu-row-copy">
           <strong>{item.title}</strong>
-          <small>
-            {locked ? `LV.${unlockLevel} 해금` : item.description}
-          </small>
+          <small>{item.description}</small>
         </span>
         <span className="app-menu-row-arrow" aria-hidden="true">
-          {locked ? <MenuIcon name="lock" size={14} /> : "›"}
+          ›
         </span>
       </button>
     );
   }
 
-  const utilityItems = [
+  const isSettings = panel === "settings";
+  const primaryItems = MENU_GROUPS.flatMap((group) => group.items);
+
+  const settingsRows = [
     ...(onToggleTheme
       ? [
           {
@@ -74,6 +74,7 @@ export default function AppMenuBoard({
           },
         ]
       : []),
+    ...SETTINGS_MENU_ITEMS,
     ...(onReplayTutorial
       ? [
           {
@@ -90,42 +91,69 @@ export default function AppMenuBoard({
   return (
     <div className="app-menu-board is-category">
       <header className="app-menu-header app-menu-category-header">
-        {showBack ? (
+        {isSettings || showBack ? (
           <button
             className="app-menu-back"
             type="button"
-            onClick={onGoBack}
-            aria-label="홈으로 돌아가기"
+            onClick={() => {
+              if (isSettings) {
+                setPanel("root");
+                return;
+              }
+              onGoBack?.();
+            }}
+            aria-label={isSettings ? "전체 메뉴로 돌아가기" : "홈으로 돌아가기"}
           >
             <span aria-hidden="true">←</span>
           </button>
         ) : null}
         <div className="app-menu-header-copy">
-          <h1>전체 메뉴</h1>
+          <h1>{isSettings ? "앱 설정" : "전체 메뉴"}</h1>
         </div>
       </header>
 
-      <div className="app-menu-category-grid" role="navigation" aria-label="전체 메뉴">
-        {MENU_GROUPS.map((group) => {
-          const items =
-            group.id === "app"
-              ? [...group.items, ...utilityItems]
-              : group.items;
-
-          return (
-            <section
-              className="app-menu-group"
-              key={group.id}
-              aria-labelledby={`menu-group-${group.id}`}
+      {isSettings ? (
+        <div
+          className="app-menu-category-grid"
+          role="navigation"
+          aria-label="앱 설정"
+        >
+          <section className="app-menu-group" aria-label="앱 설정 항목">
+            <div className="app-menu-row-list">
+              {settingsRows.map((item) => renderMenuRow(item))}
+            </div>
+          </section>
+          <footer className="category-legal-links" aria-label="서비스 안내">
+            <a
+              href={`${import.meta.env.BASE_URL}privacy.html`}
+              target="_blank"
+              rel="noreferrer"
             >
-              <h2 id={`menu-group-${group.id}`}>{group.title}</h2>
-              <div className="app-menu-row-list">
-                {items.map((item) => renderMenuRow(item))}
-              </div>
-            </section>
-          );
-        })}
-      </div>
+              개인정보처리방침
+            </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href={`${import.meta.env.BASE_URL}terms.html`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              이용약관
+            </a>
+          </footer>
+        </div>
+      ) : (
+        <div
+          className="app-menu-category-grid"
+          role="navigation"
+          aria-label="전체 메뉴"
+        >
+          <section className="app-menu-group" aria-label="주요 메뉴">
+            <div className="app-menu-row-list">
+              {primaryItems.map((item) => renderMenuRow(item))}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

@@ -353,7 +353,6 @@ function MainAppShell({ theme, onToggleTheme }) {
 
         {currentPage === "category" && (
           <CategoryPage
-            fighterLevel={fighterLevel}
             onGoHome={() => goPage("home")}
             onNavigate={goFromCategory}
             onNavigateGym={goGymFromCategory}

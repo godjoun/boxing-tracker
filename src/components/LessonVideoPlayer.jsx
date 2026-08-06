@@ -14,12 +14,7 @@ function getLessonEmbedUrl(videoUrl) {
 
 export default function LessonVideoPlayer({ videoUrl, title }) {
   if (!videoUrl) {
-    return (
-      <div className="curriculum-lesson-placeholder">
-        <span>영상 준비 중</span>
-        <p>촬영 후 lessonCatalog.js에 URL을 등록하세요.</p>
-      </div>
-    );
+    return null;
   }
 
   const embedUrl = getLessonEmbedUrl(videoUrl);

@@ -733,22 +733,20 @@ export default function CurriculumPage({
                       </div>
 
                       <div className="curriculum-session-media-row">
-                        <button
-                          type="button"
-                          className="curriculum-session-media-button"
-                          onClick={() =>
-                            setExpandedVideoId((current) =>
-                              current === session.id ? null : session.id
-                            )
-                          }
-                          aria-expanded={videoOpen}
-                        >
-                          {videoOpen
-                            ? "영상 접기"
-                            : sessionLesson?.hasVideo
-                              ? "① 영상"
-                              : "① 영상 준비 중"}
-                        </button>
+                        {sessionLesson?.hasVideo ? (
+                          <button
+                            type="button"
+                            className="curriculum-session-media-button"
+                            onClick={() =>
+                              setExpandedVideoId((current) =>
+                                current === session.id ? null : session.id
+                              )
+                            }
+                            aria-expanded={videoOpen}
+                          >
+                            {videoOpen ? "영상 접기" : "① 영상"}
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           className="curriculum-drill-toggle curriculum-session-media-button"
@@ -763,9 +761,9 @@ export default function CurriculumPage({
                         </button>
                       </div>
 
-                      {videoOpen ? (
+                      {videoOpen && sessionLesson?.hasVideo ? (
                         <LessonVideoPlayer
-                          videoUrl={sessionLesson?.videoUrl || ""}
+                          videoUrl={sessionLesson.videoUrl}
                           title={session.title}
                         />
                       ) : null}

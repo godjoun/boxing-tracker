@@ -34,17 +34,36 @@
     <link rel="manifest" href="/manifest.webmanifest" />
 
     <style>
-      html,
-      body {
+      html {
         margin: 0;
         height: 100%;
+        height: -webkit-fill-available;
         background: #ffffff;
+        background-color: #ffffff;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100%;
+        min-height: 100dvh;
+        min-height: -webkit-fill-available;
+        background: #ffffff;
+        background-color: #ffffff;
       }
 
       #boot-splash {
         position: fixed;
-        inset: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
         z-index: 10000;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        min-height: 100%;
+        min-height: -webkit-fill-available;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -54,7 +73,9 @@
           max(28px, env(safe-area-inset-top, 0px))
           24px
           max(28px, env(safe-area-inset-bottom, 0px));
-        background:
+        /* solid first — 다크 html/body가 하단 틈으로 비치지 않게 */
+        background-color: #ffffff;
+        background-image:
           radial-gradient(
             ellipse 80% 50% at 50% 0%,
             rgba(138, 46, 46, 0.06),

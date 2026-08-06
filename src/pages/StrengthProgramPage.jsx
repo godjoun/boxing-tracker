@@ -1,36 +1,98 @@
-import { useMemo, useState } from "react";
-import ComposerShell, {
-  ComposerDockPrimary,
-  ComposerSegmentTabs,
-} from "../components/ComposerShell";
+import { useState } from "react";
+import ComposerShell, { ComposerDockPrimary } from "../components/ComposerShell";
 import {
   buildStrengthDayLaunch,
-  getTodayStrengthDay,
-  STRENGTH_TIPS,
-  STRENGTH_WARMUP,
-  STRENGTH_WEEK,
+  STRENGTH_ROUTINES,
+  STRENGTH_SEGMENT,
 } from "../utils/strengthProgram";
 import "./StrengthProgramPage.css";
 
 export default function StrengthProgramPage({ onGoBack, onStartDay }) {
-  const todayPlan = useMemo(() => getTodayStrengthDay(), []);
-  const [activeDayId, setActiveDayId] = useState(todayPlan.id);
-  const activeDay =
-    STRENGTH_WEEK.find((day) => day.id === activeDayId) || todayPlan;
+  const [selectedId, setSelectedId] = useState(null);
+  const selected =
+    STRENGTH_ROUTINES.find((routine) => routine.id === selectedId) || null;
 
-  const dayTabs = STRENGTH_WEEK.map((day) => ({
-    id: day.id,
-    label: day.shortDay,
-  }));
+  if (selected) {
+    return (
+      <ComposerShell
+        className="strength-page"
+        back={
+          <button
+            className="category-back"
+            type="button"
+            onClick={() => setSelectedId(null)}
+          >
+            ← 목록
+          </button>
+        }
+        kicker="CONDITIONING"
+        title={selected.title}
+        summary={
+          <>
+            <p className="strength-detail-purpose">{selected.purpose}</p>
+            <p className="strength-summary-warmup">
+              운동 {STRENGTH_SEGMENT.workSeconds}초 · 휴식{" "}
+              {STRENGTH_SEGMENT.restSeconds}초 · 동작 {selected.exercises.length}
+              개 × {STRENGTH_SEGMENT.laps}바퀴 · {selected.durationLabel}
+            </p>
+          </>
+        }
+        dock={
+          <ComposerDockPrimary
+            label="훈련 시작"
+            onClick={() => onStartDay?.(buildStrengthDayLaunch(selected))}
+          />
+        }
+      >
+        <article className={`strength-day-panel tone-${selected.tone}`}>
+          <header className="strength-day-head">
+            <div>
+              <p>동작</p>
+              <h2>{selected.exercises.length}개 · 2바퀴</h2>
+              <span>도구 없이 · 좁은 공간</span>
+            </div>
+          </header>
 
-  const mainTimer = activeDay.timer || {
-    rounds: 5,
-    workSeconds: 180,
-    restSeconds: 60,
-  };
-  const warmupRounds = STRENGTH_WARMUP.rounds;
-  const totalRounds = warmupRounds + mainTimer.rounds;
-  const workMin = Math.round(mainTimer.workSeconds / 60);
+          <section className="strength-block">
+            <ol className="strength-exercise-list">
+              {selected.exercises.map((item, index) => (
+                <li key={item.id}>
+                  <div className="strength-exercise-top">
+                    <strong>
+                      {index + 1}. {item.name}
+                    </strong>
+                    <span>{item.cue}</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className="strength-block">
+            <div className="strength-block-head">
+              <h3>초보 대체</h3>
+            </div>
+            <ul className="strength-note-list">
+              {selected.beginners.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="strength-block">
+            <div className="strength-block-head">
+              <h3>주의사항</h3>
+            </div>
+            <ul className="strength-note-list">
+              {selected.cautions.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </section>
+        </article>
+      </ComposerShell>
+    );
+  }
 
   return (
     <ComposerShell
@@ -41,87 +103,40 @@ export default function StrengthProgramPage({ onGoBack, onStartDay }) {
         </button>
       }
       kicker="CONDITIONING"
-      title="신체"
+      title="복싱 체력"
       summary={
         <>
-          <span className="composer-meta-label">오늘 추천</span>
-          <strong>
-            {todayPlan.day} · {todayPlan.theme}
-          </strong>
-          <p>{todayPlan.focus} · 복싱을 위한 컨디셔닝 루틴입니다</p>
-          <p className="strength-summary-warmup">
-            시작 시 줄넘기 워밍업 {warmupRounds}R 포함 · 타이머에서 제외 가능
+          <p>
+            가드·스탠스·이동을 버티는 집 안 무도구 보조 루틴입니다. 약 10분 · 동작
+            5개 · 2바퀴.
           </p>
         </>
       }
-      segments={
-        <ComposerSegmentTabs
-          tabs={dayTabs}
-          activeId={activeDayId}
-          onChange={setActiveDayId}
-          ariaLabel="요일 선택"
-        />
-      }
-      dock={
-        <ComposerDockPrimary
-          label={`${activeDay.shortDay} · 타이머 시작 (${totalRounds}R)`}
-          onClick={() =>
-            onStartDay?.(buildStrengthDayLaunch(activeDay, { skipWarmup: false }))
-          }
-        />
-      }
     >
-      <article className={`strength-day-panel tone-${activeDay.tone}`}>
-        <header className="strength-day-head">
-          <div>
-            <p>{activeDay.day}</p>
-            <h2>{activeDay.theme}</h2>
-            <span>{activeDay.focus}</span>
-          </div>
-          <p className="strength-day-timer-meta">
-            타이머 · 줄넘기 {warmupRounds}R + 본운동 {mainTimer.rounds}R (
-            {workMin}분 / 휴식 {mainTimer.restSeconds}초)
-          </p>
-        </header>
-
-        {activeDay.blocks.map((block) => (
-          <section
-            className="strength-block"
-            key={`${activeDay.id}-${block.title}`}
+      <div className="strength-routine-list">
+        {STRENGTH_ROUTINES.map((routine) => (
+          <article
+            key={routine.id}
+            className={`strength-routine-card tone-${routine.tone}`}
           >
-            <div className="strength-block-head">
-              <h3>{block.title}</h3>
-              {block.prescription ? <em>{block.prescription}</em> : null}
+            <div className="strength-routine-card-body">
+              <h2>{routine.title}</h2>
+              <p>{routine.purpose}</p>
+              <div className="strength-routine-meta">
+                <span>{routine.durationLabel}</span>
+                <span>동작 {routine.exercises.length}개</span>
+              </div>
             </div>
-            <ol className="strength-exercise-list">
-              {block.items.map((item) => (
-                <li key={`${block.title}-${item.name}`}>
-                  <div className="strength-exercise-top">
-                    <strong>{item.name}</strong>
-                    <span>{item.prescription}</span>
-                  </div>
-                  {item.note ? <p>{item.note}</p> : null}
-                </li>
-              ))}
-            </ol>
-          </section>
+            <button
+              type="button"
+              className="strength-routine-start"
+              onClick={() => setSelectedId(routine.id)}
+            >
+              시작
+            </button>
+          </article>
         ))}
-      </article>
-
-      <section className="strength-card strength-tips-card">
-        <div className="strength-card-head">
-          <p>TIPS</p>
-          <h2>캠프 루틴 팁</h2>
-        </div>
-        <div className="strength-tips-list">
-          {STRENGTH_TIPS.map((tip) => (
-            <article key={tip.title}>
-              <strong>{tip.title}</strong>
-              <p>{tip.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      </div>
     </ComposerShell>
   );
 }

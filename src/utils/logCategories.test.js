@@ -13,6 +13,7 @@ describe("운동 기록 카테고리", () => {
     expect(inferLogCategory({ type: "샌드백" })).toBe("boxing");
     expect(inferLogCategory({ type: "러닝" })).toBe("running");
     expect(inferLogCategory({ type: "신체 · 월요일" })).toBe("weights");
+    expect(inferLogCategory({ type: "신체 · 10분 코어" })).toBe("weights");
     expect(inferLogCategory({ type: "걷기" })).toBe("walking");
   });
 

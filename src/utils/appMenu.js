@@ -37,8 +37,8 @@ const SHORTCUTS = {
   strength: {
     id: "strength",
     icon: "body",
-    title: "몸 만들기",
-    description: "복싱을 위한 보조 운동을 봅니다.",
+    title: "복싱 체력",
+    description: "집에서도 하는 10분 보조 체력 루틴",
     route: "strength",
     accent: "orange",
   },

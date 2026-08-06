@@ -30,7 +30,7 @@ export const CATEGORY_IDS = LOG_CATEGORIES.map((category) => category.id);
 const CATEGORY_PATTERNS = {
   running: /러닝|조깅|run/i,
   walking: /걷기|walking|회복 페이스/i,
-  weights: /웨이트|근력|신체 ·|몸강화|덤벨|스쿼트|벤치|데드리프트/i,
+  weights: /웨이트|근력|신체 ·|몸강화|복싱 체력|10분 코어|10분 하체|10분 상체/i,
   boxing: /스파링|sparring|복싱|샌드백|쉐도우|미트|줄넘기|풋워크|기술 ·|커스텀 훈련|라운드 훈련|인터벌/i,
 };
 

@@ -10,6 +10,7 @@ import { getTrainingStreak } from "./profilePage/profileCardUtils";
 import {
   buildStrengthDayLaunch,
   getStrengthDay,
+  resolveStrengthSegment,
 } from "../utils/strengthProgram";
 import {
   getCurriculumPhaseFocus,
@@ -893,7 +894,7 @@ export default function TimerPage({
 
   const handleEndCurriculum = () => {
     const completedRounds = getCompletedRoundsSoFar();
-    const endLabel = strengthPlan ? "신체" : "기술";
+    const endLabel = strengthPlan ? "복싱 체력" : "기술";
 
     if (completedRounds >= 1) {
       const ok = window.confirm(
@@ -1026,10 +1027,20 @@ export default function TimerPage({
 
   const getCurrentRoundName = () => {
     if (phase === "prep") {
-      return `${formatTimerDurationLabel(activePrepSeconds)} 준비 후 1라운드 시작`;
+      return `${formatTimerDurationLabel(activePrepSeconds)} 준비 후 시작`;
     }
     if (phase === "cooldown") return "쿨다운 · 스트레칭";
     if (phase === "done") return "훈련 완료";
+
+    if (strengthPlan?.exercises?.length) {
+      const segment = resolveStrengthSegment(strengthPlan, currentRound, phase);
+      if (phase === "rest") {
+        return segment.nextExercise
+          ? `휴식 · 다음 ${segment.nextExercise.name}`
+          : "휴식";
+      }
+      return `${segment.exercise?.name || strengthPlan.title} · ${segment.segmentIndex}/${segment.totalSegments}`;
+    }
 
     if (curriculumRoutineTitle) {
       return `${curriculumRoutineTitle} · ${currentRound}라운드`;
@@ -1488,6 +1499,7 @@ export default function TimerPage({
                 plan={strengthPlan}
                 phase={phase}
                 currentRound={currentRound}
+                remainingTime={remainingTime}
               />
             </>
           ) : null}
@@ -1582,6 +1594,7 @@ export default function TimerPage({
             plan={strengthPlan}
             phase={phase}
             currentRound={currentRound}
+            remainingTime={remainingTime}
             onEnd={handleEndCurriculum}
           />
         ) : curriculumDrills.length > 0 && phase !== "done" ? (

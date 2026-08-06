@@ -2,8 +2,16 @@
   color: var(--p-text);
 }
 
-.strength-day-timer-meta {
-  margin: 10px 0 0;
+.strength-detail-purpose {
+  margin: 0;
+  color: var(--p-text);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.strength-summary-warmup {
+  margin: 8px 0 0;
   color: var(--p-text-muted);
   font-size: 12px;
   font-weight: 700;
@@ -17,58 +25,57 @@
   letter-spacing: 0.1em;
 }
 
-.strength-card,
-.strength-day-panel {
+.strength-routine-list {
+  display: grid;
+  gap: 12px;
+}
+
+.strength-routine-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
   border: 1px solid var(--p-border-soft);
   border-radius: 20px;
   background: var(--p-bg-subtle);
 }
 
-.strength-card {
-  padding: 16px;
-  margin-bottom: 12px;
-}
-
-.strength-card-head p {
-  margin: 0 0 4px;
-  color: var(--p-brass, #cf8b8b);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-}
-
-.strength-card-head h2 {
-  margin: 0;
+.strength-routine-card-body h2 {
+  margin: 0 0 6px;
   font-size: 17px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
 }
 
-.strength-warmup-desc {
-  margin: 10px 0 0;
+.strength-routine-card-body p {
+  margin: 0;
   color: var(--p-text-muted);
   font-size: 13px;
   line-height: 1.45;
 }
 
-.strength-warmup-meta {
+.strength-routine-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
-.strength-warmup-meta span {
-  padding: 5px 10px;
+.strength-routine-meta span {
+  padding: 4px 10px;
   border-radius: 999px;
-  background: var(--p-bg-inner);
+  background: var(--p-bg-inner, rgba(0, 0, 0, 0.05));
   color: var(--p-text-soft);
   font-size: 11px;
   font-weight: 800;
 }
 
-.strength-warmup-button {
-  width: 100%;
-  margin-top: 12px;
-  padding: 12px 14px;
+.strength-routine-start {
+  flex-shrink: 0;
+  min-width: 72px;
+  min-height: 44px;
+  padding: 10px 14px;
   border: none;
   border-radius: 14px;
   background: #8a2e2e;
@@ -76,93 +83,21 @@
   font-size: 13px;
   font-weight: 900;
   cursor: pointer;
-  transition: background-color 160ms ease, transform 160ms ease;
 }
 
-.strength-warmup-button:hover {
+.strength-routine-start:hover {
   background: #742525;
 }
 
-.strength-warmup-button:active {
+.strength-routine-start:active {
   background: #5f1e1e;
-  transform: translateY(1px);
 }
 
-.strength-today-card {
-  display: grid;
-  gap: 4px;
-  margin-bottom: 12px;
-  padding: 14px 16px;
-  border: 1px solid rgba(160, 160, 165, 0.22);
-  border-radius: 16px;
-  background: rgba(160, 160, 165, 0.08);
-}
-
-.strength-today-card > span {
-  color: var(--p-brass-soft);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-}
-
-.strength-today-card strong {
-  font-size: 15px;
-  line-height: 1.35;
-}
-
-.strength-today-card small {
-  color: var(--p-text-muted);
-  font-size: 12px;
-}
-
-.strength-day-chips {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.strength-day-chip {
-  display: grid;
-  gap: 2px;
-  min-height: 58px;
-  padding: 10px 8px;
+.strength-card,
+.strength-day-panel {
   border: 1px solid var(--p-border-soft);
-  border-radius: 14px;
-  background: var(--p-bg-deep);
-  color: var(--p-text-body);
-  text-align: left;
-  cursor: pointer;
-}
-
-.strength-day-chip em {
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 900;
-}
-
-.strength-day-chip span {
-  overflow: hidden;
-  font-size: 10px;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.strength-day-chip.is-active {
-  border-color: rgba(138, 46, 46, 0.34);
-  background: rgba(138, 46, 46, 0.12);
-  color: var(--p-text);
-}
-
-.strength-day-chip.tone-blue.is-active {
-  border-color: rgba(160, 160, 165, 0.4);
-  background: rgba(160, 160, 165, 0.14);
-  color: var(--p-text);
-}
-
-.strength-day-chip.is-today:not(.is-active) {
-  box-shadow: inset 0 0 0 1px rgba(138, 46, 46, 0.28);
+  border-radius: 20px;
+  background: var(--p-bg-subtle);
 }
 
 .strength-day-panel {
@@ -170,12 +105,11 @@
   margin-bottom: 12px;
 }
 
-.strength-day-panel.tone-red {
-  border-color: rgba(138, 46, 46, 0.18);
-}
-
-.strength-day-panel.tone-blue {
-  border-color: rgba(160, 160, 165, 0.22);
+.strength-day-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .strength-day-head p {
@@ -188,125 +122,82 @@
 .strength-day-head h2 {
   margin: 0;
   font-size: 18px;
-  line-height: 1.25;
+  font-weight: 950;
 }
 
 .strength-day-head span {
-  display: block;
+  display: inline-block;
   margin-top: 6px;
-  color: var(--p-text-muted);
+  color: var(--p-text-soft);
   font-size: 12px;
+  font-weight: 700;
 }
 
 .strength-block {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--p-border-soft);
-}
-
-.strength-block:first-of-type {
   margin-top: 14px;
-  padding-top: 0;
-  border-top: none;
+  padding-top: 12px;
+  border-top: 1px solid var(--p-border-soft);
 }
 
 .strength-block-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .strength-block-head h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 900;
 }
 
-.strength-block-head em {
-  color: var(--p-text-faint);
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 800;
-  text-align: right;
-}
-
-.strength-exercise-list {
+.strength-exercise-list,
+.strength-note-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: grid;
-  gap: 8px;
 }
 
-.strength-exercise-list li {
-  padding: 12px;
-  border-radius: 14px;
-  background: var(--p-bg-inner);
+.strength-exercise-list li,
+.strength-note-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--p-border-soft);
+}
+
+.strength-exercise-list li:last-child,
+.strength-note-list li:last-child {
+  border-bottom: none;
 }
 
 .strength-exercise-top {
   display: flex;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .strength-exercise-top strong {
-  flex: 1;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .strength-exercise-top span {
-  flex-shrink: 0;
-  color: var(--p-brass-soft);
-  font-size: 11px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.strength-exercise-list p {
-  margin: 6px 0 0;
   color: var(--p-text-muted);
   font-size: 12px;
-  line-height: 1.45;
+  font-weight: 700;
 }
 
-.strength-tips-list {
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.strength-tips-list article {
-  padding: 12px;
-  border-radius: 14px;
-  background: var(--p-bg-inner);
-}
-
-.strength-tips-list strong {
-  display: block;
+.strength-note-list li {
+  color: var(--p-text-muted);
   font-size: 13px;
-}
-
-.strength-tips-list p {
-  margin: 6px 0 0;
-  color: var(--p-text-muted);
-  font-size: 12px;
   line-height: 1.45;
+  font-weight: 650;
 }
 
-.theme-light .strength-card,
-
-.theme-light .strength-day-panel,
-
-.theme-light .strength-tabs,
-
-.theme-light .strength-day-tab {
-
-  border: 0 !important;
-
-  box-shadow: none !important;
-
+.theme-dark .strength-routine-card,
+.theme-dark .strength-day-panel {
+  background: rgba(255, 255, 255, 0.04);
 }

@@ -148,8 +148,8 @@ export default function TrainingHubPage({
     {
       id: "weights",
       icon: "body",
-      title: "웨이트",
-      detail: "근력 · 체력 루틴",
+      title: "복싱 체력",
+      detail: "10분 · 무도구 보조",
     },
   ];
 
@@ -184,7 +184,7 @@ export default function TrainingHubPage({
       : categoryId === "weights"
         ? {
             label: "루틴 열기",
-            detail: "근력 · 체력 루틴",
+            detail: "10분 · 무도구 보조",
             onClick: () => onOpenStrength?.(),
           }
         : {

@@ -405,7 +405,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             backLabel={{
               home: "홈",
               curriculum: "기술",
-              strength: "신체",
+              strength: "복싱 체력",
               gym: "체육관",
               profile: "명패",
               growth: "성장",

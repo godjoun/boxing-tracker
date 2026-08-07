@@ -34,9 +34,9 @@ import { isDevMode } from "./utils/devMode";
 import {
   applyDocumentTheme,
   getStoredTheme,
+  revealAppShell,
   setStoredTheme,
 } from "./utils/theme";
-import { dismissBootSplash } from "./utils/bootSplash";
 import "./App.css";
 import "./reference-layout.css";
 
@@ -98,10 +98,9 @@ function AppFlow() {
     applyDocumentTheme(theme);
   }, [theme]);
 
-  // 앱 셸(온보딩/홈)이 준비되면 즉시 스플래시 → 앱 한 번만 전환.
-  // 인위적 최소 표시 시간·페이드 겹침 없음. #root는 .app-ready 전까지 숨김.
+  // onboarding/home 셸이 커밋되면 #root 표시. branded splash 없음.
   useLayoutEffect(() => {
-    dismissBootSplash();
+    revealAppShell();
   }, []);
 
   function toggleTheme() {

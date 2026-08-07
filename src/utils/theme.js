@@ -22,22 +22,32 @@ export function setStoredTheme(theme) {
 }
 
 /**
+ * data-theme만 적용. 배경색은 CSS(--root-bg / onboarding :has)에 맡긴다.
  * @param {"light"|"dark"} theme
- * @param {{ force?: boolean }} [options]
- *   force: splash 제거 직전 등 — 스플래시가 있어도 저장 테마를 문서에 적용
  */
-export function applyDocumentTheme(theme, options = {}) {
+export function applyDocumentTheme(theme) {
   const next = theme === "light" ? "light" : "dark";
-  // 스플래시가 떠 있는 동안 기본은 라이트 캔버스 유지(하단 틈 방지).
-  // reveal 시에는 force로 최종 테마를 먼저 깐다.
-  const splashUp = Boolean(document.getElementById("boot-splash"));
-  const paint = !options.force && splashUp ? "light" : next;
 
-  document.documentElement.dataset.theme = paint;
-  document.documentElement.style.colorScheme = paint;
+  document.documentElement.dataset.theme = next;
+  document.documentElement.style.colorScheme = next;
 
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    meta.setAttribute("content", paint === "light" ? "#ffffff" : "#0a0909");
+    meta.setAttribute("content", next === "dark" ? "#0a0909" : "#ffffff");
   }
+}
+
+/**
+ * React가 onboarding/home 첫 페인트에 준비되면 #root를 표시한다.
+ * branded HTML splash는 없다 — iOS startup image만 splash 역할.
+ */
+export function revealAppShell() {
+  if (typeof document === "undefined") return;
+  applyDocumentTheme(getStoredTheme());
+  // theme-boot.js의 선행 인라인 배경 제거 → CSS / onboarding :has가 제어
+  document.documentElement.style.removeProperty("background-color");
+  if (document.body) {
+    document.body.style.removeProperty("background-color");
+  }
+  document.documentElement.classList.add("app-ready");
 }

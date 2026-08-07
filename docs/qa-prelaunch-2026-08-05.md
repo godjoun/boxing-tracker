@@ -101,28 +101,30 @@
 
 최상위: 함께하기 · 훈련 카드 만들기 · 앱 설정.
 
-## 부트 스플래시 — iPhone 냉간 마감·동결 (2026-08-07)
+## 앱 진입 lifecycle — iPhone 냉간 승인·동결 (2026-08-07)
 
-**상태: PASS · 완료 · 동결.** 현재 구현 유지. PNG/WebP/SVG 추가 최적화·전환 재작업 **금지**.
+**상태: PASS · 승인 · 동결.** 현재 구현 유지. HTML/React branded splash 재도입 · crossfade/overlay · 최소 지연 · splash 위치/opacity 보정 **금지**.
 
-동결 커밋: `9fda203` · 프로덕션: `https://boxing-tracker.vercel.app`
+동결 커밋: `55050f5` · 프로덕션: `https://boxing-tracker.vercel.app`
 
 | 항목 | 결과 |
 |------|------|
-| 첫 프레임부터 MANTLE 로고 | **PASS** |
-| 빈 흰 화면 없음 | **PASS** |
-| 로고·홈 겹침 없음 | **PASS** |
-| 하단 검정줄 없음 | **PASS** |
-| 전환 지연 없음 | **PASS** |
-| light → light 홈 / dark → dark 홈 | **PASS** (중간 light 홈 플래시 없음) |
+| iOS startup image만 splash | **PASS** |
+| HTML/React branded splash 없음 | **PASS** |
+| 첫 사용자 → onboarding | **PASS** |
+| 기존 사용자 → home | **PASS** |
+| crossfade / overlay / 최소 지연 없음 | **PASS** |
+| splash·onboarding 겹침 없음 | **PASS** |
+| dark → dark 홈 (light flash 없음) | **PASS** |
 
-동결 구현 요약 (역사 · 2026-08-07 당시):
-- 흰 배경 정적 `#boot-splash` (`index.html`) — **이후 제거됨 (2026-08 진입 재설계)**
-- 현재: iOS `apple-touch-startup-image`만 splash · HTML/React branded splash 없음 · `theme-boot.js` + `revealAppShell()`
-- `#root`는 `.app-ready` 전 숨김 · React가 onboarding/home 커밋 후 즉시 표시
-- 인위적 최소 표시시간 / opacity 페이드 / crossfade 없음
+동결 구현 요약:
+- iOS `apple-touch-startup-image` (`public/splash/*`) = 유일한 MANTLE splash
+- HTML `#boot-splash` / `bootSplash.js` 제거
+- React 전: `theme-boot.js` 테마만 · `#root`는 `.app-ready` 전 숨김
+- React 후: `revealAppShell()` → onboarding 또는 home 즉시 완성본
+- 온보딩 첫 화면: EntryBanner stagger fade 없음
 
-관련 파일 (현행): `index.html` · `public/theme-boot.js` · `src/utils/theme.js` · `src/App.jsx` · `src/index.css` · `public/splash/*`
+관련 파일 (동결): `index.html` · `public/theme-boot.js` · `public/splash/*` · `src/utils/theme.js` · `src/App.jsx` · `src/index.css` · `src/components/EntryBanner.jsx` · `EntryBanner.css`
 
 ## 복싱 체력 — iPhone 실기 마감·동결 (2026-08-07)
 

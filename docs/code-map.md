@@ -27,7 +27,7 @@
 | 링 메뉴 라벨 | `src/utils/appMenu.js` |
 | 이름·슬로건 | `src/utils/brand.js` |
 | 오프닝 | `src/components/EntryBanner.jsx` · 온보딩 환영 · 세션 입장 배너 |
-| 앱 진입 | iOS `apple-touch-startup-image`만 splash · HTML/React branded splash 없음 · `theme-boot.js` + `revealAppShell()` · onboarding/home 즉시 렌더 |
+| 앱 진입 | **동결 (2026-08-07 · `55050f5`)** · iOS `apple-touch-startup-image`만 splash · HTML/React branded splash 없음 · `theme-boot.js` + `revealAppShell()` · 첫 사용자 onboarding / 기존 사용자 home · crossfade·overlay·최소 지연·위치 보정 금지 |
 | 로고 | `public/logo-mark.png` · `docs/brand/logo-locked.png` |
 
 짐 구현 폴더 요약: `src/pages/dojoBreaker/README.md`

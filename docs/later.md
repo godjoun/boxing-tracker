@@ -100,7 +100,7 @@ Vision Loop (고정):
 화면별 재설계 단계는 **종료**. 구조·디자인 추가 수정 없음.  
 **자동·데스크톱 QA 마감** · **실기(iPhone) QA 진행 중** (`docs/qa-prelaunch-2026-08-05.md`).  
 **타이머 P0 · 오디오 P1 · 전체 메뉴 IA 닫음 (2026-08-06).** 구현 유지 · 추가 리팩터·오디오 분석 중단.  
-**부트 스플래시 닫음·동결 (2026-08-07 · `9fda203`).** 흰 스플래시 + 192 PNG data URI 유지 · 추가 최적화 금지.  
+**앱 진입 lifecycle 닫음·동결 (2026-08-07 · `55050f5`).** iOS startup만 splash · HTML/React branded splash 없음 · 추가 보정 금지.  
 **복싱 체력 닫음·동결 (2026-08-07 · `b2ef8d9`).** 10분 무도구 3루틴 · 타이머·구성·화면 추가 수정 금지.  
 나머지 실기(GPS·풀 루프 등)는 제품 코드 수정 없이 다음 QA 결과를 기다린다.
 
@@ -123,11 +123,11 @@ Vision Loop (고정):
 최상위 3개: **함께하기** · **훈련 카드 만들기** · **앱 설정**.  
 iPhone 13 뷰포트 검증 PASS · 커밋 `74b9199` · **UI/라우팅/문구 동결**.
 
-### 부트 스플래시 (완료·동결 · 2026-08-07)
+### 앱 진입 lifecycle (승인·동결 · 2026-08-07)
 
-iPhone 냉간 **PASS** · 커밋 `9fda203`.  
-흰 MANTLE 스플래시 · 192×192 PNG data URI 인라인 · `#root` 준비 전 숨김 · 즉시 테마 핸드오프.  
-**동결** — PNG/WebP/SVG 재압축·전환 재작업 하지 않음. 상세: `docs/qa-prelaunch-2026-08-05.md`.
+iPhone 냉간 **PASS·승인** · 커밋 `55050f5`.  
+iOS `apple-touch-startup-image`만 splash · HTML/React branded splash 없음 · 첫 사용자 onboarding / 기존 사용자 home · crossfade·overlay·최소 지연 없음.  
+**동결** — splash 재도입·위치/opacity 보정·전환 효과 수정 금지. 상세: `docs/qa-prelaunch-2026-08-05.md`.
 
 ### 복싱 체력 (완료·동결 · 2026-08-07)
 

@@ -1,15 +1,30 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
 import { MATCH_TIMER_PRESETS, DEFAULT_BOXING_WORK_SECONDS } from "../utils/timerPresets";
 import { startTimerAudioSession } from "../utils/timerAudio";
 import { isDevSurfaceLog } from "../utils/devMode";
 import {
+  WORKOUT_DETAIL_PRESETS_LIMIT,
+  WORKOUT_DETAIL_PRESET_NAME_MAX,
   WORKOUT_DETAILS_MAX_LENGTH,
+  deleteWorkoutDetailPreset,
   loadRecentWorkoutDetails,
+  loadWorkoutDetailPresets,
   normalizeWorkoutDetails,
+  normalizeWorkoutPresetName,
+  renameWorkoutDetailPreset,
+  saveWorkoutDetailPreset,
 } from "../utils/workoutDetails";
 import MenuIcon from "../components/MenuIcon";
 import WorkoutDetailsQuickBar from "../components/WorkoutDetailsQuickBar";
+
+function presetErrorMessage(error) {
+  if (error === "duplicate") return "같은 이름이 이미 있어요";
+  if (error === "full") return "최대 3개까지 저장할 수 있어요";
+  if (error === "empty") return "이름과 운동 내용을 입력해 주세요";
+  if (error === "missing") return "저장한 운동을 찾을 수 없어요";
+  return "저장하지 못했어요";
+}
 
 function getTodayString() {
   const today = new Date();
@@ -47,7 +62,7 @@ export default function TrainingHubPage({
   onOpenStrength,
   onOpenLog,
 }) {
-  const { logs } = useTraining();
+  const { logs, userId } = useTraining();
   const [categoryId, setCategoryId] = useState("boxing");
   const [boxingKindId, setBoxingKindId] = useState("round");
   const [roundPresetId, setRoundPresetId] = useState(
@@ -56,6 +71,30 @@ export default function TrainingHubPage({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [workoutDetails, setWorkoutDetails] = useState("");
   const [recentWorkoutDetails] = useState(() => loadRecentWorkoutDetails());
+  const [savedWorkouts, setSavedWorkouts] = useState(() =>
+    loadWorkoutDetailPresets(userId)
+  );
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [nameModal, setNameModal] = useState(null);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameError, setNameError] = useState("");
+  const savedMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpenId) return undefined;
+    function handlePointerDown(event) {
+      if (savedMenuRef.current && !savedMenuRef.current.contains(event.target)) {
+        setMenuOpenId(null);
+      }
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [menuOpenId]);
+
+  const normalizedWorkoutDetails = normalizeWorkoutDetails(workoutDetails);
+  const presetsFull = savedWorkouts.length >= WORKOUT_DETAIL_PRESETS_LIMIT;
+  const canSaveCurrent =
+    Boolean(normalizedWorkoutDetails) && !presetsFull;
 
   const todaySummary = useMemo(() => {
     const todayLogs = logs.filter(
@@ -130,6 +169,82 @@ export default function TrainingHubPage({
       return;
     }
     onOpenTimer?.(preset);
+  }
+
+  function openSaveNameModal() {
+    if (!canSaveCurrent) return;
+    setMenuOpenId(null);
+    setNameDraft("");
+    setNameError("");
+    setNameModal({ mode: "save" });
+  }
+
+  function openRenameModal(preset) {
+    setMenuOpenId(null);
+    setNameDraft(preset.name);
+    setNameError("");
+    setNameModal({ mode: "rename", presetId: preset.id });
+  }
+
+  function closeNameModal() {
+    setNameModal(null);
+    setNameDraft("");
+    setNameError("");
+  }
+
+  function submitNameModal() {
+    if (!nameModal) return;
+    const nextName = normalizeWorkoutPresetName(nameDraft);
+    if (!nextName) {
+      setNameError(presetErrorMessage("empty"));
+      return;
+    }
+
+    if (nameModal.mode === "save") {
+      const result = saveWorkoutDetailPreset(userId, {
+        name: nextName,
+        details: normalizedWorkoutDetails,
+      });
+      setSavedWorkouts(result.presets);
+      if (!result.ok) {
+        setNameError(presetErrorMessage(result.error));
+        return;
+      }
+      closeNameModal();
+      return;
+    }
+
+    const result = renameWorkoutDetailPreset(
+      userId,
+      nameModal.presetId,
+      nextName
+    );
+    setSavedWorkouts(result.presets);
+    if (!result.ok) {
+      setNameError(presetErrorMessage(result.error));
+      return;
+    }
+    closeNameModal();
+  }
+
+  function applySavedWorkout(preset) {
+    setMenuOpenId(null);
+    const nextDetails = normalizeWorkoutDetails(preset.details);
+    const current = normalizeWorkoutDetails(workoutDetails);
+    if (current === nextDetails) return;
+    if (current) {
+      const ok = window.confirm("지금 내용을 바꿀까요?");
+      if (!ok) return;
+    }
+    setWorkoutDetails(nextDetails);
+  }
+
+  function deleteSavedWorkout(preset) {
+    setMenuOpenId(null);
+    const ok = window.confirm(`‘${preset.name}’을(를) 삭제할까요?`);
+    if (!ok) return;
+    const result = deleteWorkoutDetailPreset(userId, preset.id);
+    setSavedWorkouts(result.presets);
   }
 
   const categories = [
@@ -351,7 +466,135 @@ export default function TrainingHubPage({
               ))}
             </div>
           ) : null}
+          <div className="training-workout-saved" aria-label="저장한 운동">
+            <div className="training-workout-saved-header">
+              <span className="training-workout-saved-label">저장한 운동</span>
+              <button
+                type="button"
+                className="training-workout-save-btn"
+                disabled={!canSaveCurrent}
+                onClick={openSaveNameModal}
+              >
+                현재 운동 저장
+              </button>
+            </div>
+            {savedWorkouts.length > 0 ? (
+              <div
+                className="training-workout-saved-list"
+                role="list"
+                ref={savedMenuRef}
+              >
+                {savedWorkouts.map((preset) => (
+                  <div
+                    key={preset.id}
+                    className="training-workout-saved-row"
+                    role="listitem"
+                  >
+                    <button
+                      type="button"
+                      className="training-workout-saved-name"
+                      onClick={() => applySavedWorkout(preset)}
+                    >
+                      {preset.name}
+                    </button>
+                    <div className="training-workout-saved-menu-wrap">
+                      <button
+                        type="button"
+                        className="training-workout-saved-menu-btn"
+                        aria-label={`${preset.name} 메뉴`}
+                        aria-expanded={menuOpenId === preset.id}
+                        onClick={() =>
+                          setMenuOpenId((current) =>
+                            current === preset.id ? null : preset.id
+                          )
+                        }
+                      >
+                        ⋯
+                      </button>
+                      {menuOpenId === preset.id ? (
+                        <div
+                          className="training-workout-saved-menu"
+                          role="menu"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => openRenameModal(preset)}
+                          >
+                            이름 변경
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => deleteSavedWorkout(preset)}
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {presetsFull ? (
+              <p className="training-workout-saved-hint">
+                최대 3개까지 저장할 수 있어요
+              </p>
+            ) : null}
+          </div>
         </section>
+      ) : null}
+
+      {nameModal ? (
+        <div
+          className="training-workout-name-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label={nameModal.mode === "save" ? "운동 이름 저장" : "이름 변경"}
+        >
+          <button
+            type="button"
+            className="training-workout-name-modal-backdrop"
+            aria-label="닫기"
+            onClick={closeNameModal}
+          />
+          <div className="training-workout-name-modal-panel">
+            <strong>
+              {nameModal.mode === "save" ? "운동 이름" : "이름 변경"}
+            </strong>
+            <input
+              type="text"
+              value={nameDraft}
+              maxLength={WORKOUT_DETAIL_PRESET_NAME_MAX}
+              placeholder="예: 기본 훈련"
+              autoFocus
+              autoComplete="off"
+              enterKeyHint="done"
+              onChange={(event) => {
+                setNameDraft(event.target.value);
+                setNameError("");
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  submitNameModal();
+                }
+              }}
+            />
+            {nameError ? (
+              <p className="training-workout-name-modal-error">{nameError}</p>
+            ) : null}
+            <div className="training-workout-name-modal-actions">
+              <button type="button" onClick={closeNameModal}>
+                취소
+              </button>
+              <button type="button" onClick={submitNameModal}>
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <details className="training-tools-details">

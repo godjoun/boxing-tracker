@@ -1,7 +1,12 @@
 const WORKOUT_DETAILS_RECENT_KEY = "fitness-league-workout-details-recent";
+const WORKOUT_DETAIL_PRESETS_KEY = "fitness-league-workout-detail-presets";
+/** TrainingContext GUEST_USER_ID와 동일 — 레거시(접미사 없음) 키 */
+const GUEST_USER_ID = "local-user";
 
 export const WORKOUT_DETAILS_MAX_LENGTH = 120;
 export const WORKOUT_DETAILS_RECENT_LIMIT = 3;
+export const WORKOUT_DETAIL_PRESETS_LIMIT = 3;
+export const WORKOUT_DETAIL_PRESET_NAME_MAX = 12;
 
 /** 복싱 빠른 종목 — 모드 칩과 별개 */
 export const QUICK_WORKOUT_KINDS = [
@@ -18,6 +23,144 @@ export function normalizeWorkoutDetails(value) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, WORKOUT_DETAILS_MAX_LENGTH);
+}
+
+export function normalizeWorkoutPresetName(value) {
+  if (value == null) return "";
+  return String(value)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, WORKOUT_DETAIL_PRESET_NAME_MAX);
+}
+
+/**
+ * 로그 키와 동일한 사용자 접미사 규칙.
+ * guest/local-user → 접미사 없음, 그 외 → `-${userId}`
+ */
+export function getWorkoutDetailPresetsStorageKey(userId) {
+  const id = String(userId || "").trim();
+  if (!id || id === GUEST_USER_ID) {
+    return WORKOUT_DETAIL_PRESETS_KEY;
+  }
+  return `${WORKOUT_DETAIL_PRESETS_KEY}-${id}`;
+}
+
+function createPresetId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `wdp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function namesEqual(a, b) {
+  return a.toLocaleLowerCase("ko") === b.toLocaleLowerCase("ko");
+}
+
+function sanitizePreset(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const name = normalizeWorkoutPresetName(raw.name);
+  const details = normalizeWorkoutDetails(raw.details);
+  if (!name || !details) return null;
+  const id = String(raw.id || "").trim() || createPresetId();
+  const createdAt =
+    typeof raw.createdAt === "string" && raw.createdAt
+      ? raw.createdAt
+      : new Date().toISOString();
+  const updatedAt =
+    typeof raw.updatedAt === "string" && raw.updatedAt ? raw.updatedAt : createdAt;
+  return { id, name, details, createdAt, updatedAt };
+}
+
+function writePresets(userId, presets) {
+  const key = getWorkoutDetailPresetsStorageKey(userId);
+  try {
+    localStorage.setItem(key, JSON.stringify(presets));
+  } catch {
+    // ignore quota / private mode
+  }
+  return presets;
+}
+
+export function loadWorkoutDetailPresets(userId) {
+  try {
+    const raw = localStorage.getItem(getWorkoutDetailPresetsStorageKey(userId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((item) => sanitizePreset(item))
+      .filter(Boolean)
+      .slice(0, WORKOUT_DETAIL_PRESETS_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * @returns {{ ok: true, presets: object[] } | { ok: false, error: string, presets: object[] }}
+ */
+export function saveWorkoutDetailPreset(userId, { name, details }) {
+  const presets = loadWorkoutDetailPresets(userId);
+  const nextName = normalizeWorkoutPresetName(name);
+  const nextDetails = normalizeWorkoutDetails(details);
+
+  if (!nextName || !nextDetails) {
+    return { ok: false, error: "empty", presets };
+  }
+  if (presets.length >= WORKOUT_DETAIL_PRESETS_LIMIT) {
+    return { ok: false, error: "full", presets };
+  }
+  if (presets.some((item) => namesEqual(item.name, nextName))) {
+    return { ok: false, error: "duplicate", presets };
+  }
+
+  const now = new Date().toISOString();
+  const next = [
+    ...presets,
+    {
+      id: createPresetId(),
+      name: nextName,
+      details: nextDetails,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+  return { ok: true, presets: writePresets(userId, next) };
+}
+
+/**
+ * @returns {{ ok: true, presets: object[] } | { ok: false, error: string, presets: object[] }}
+ */
+export function renameWorkoutDetailPreset(userId, presetId, nextNameRaw) {
+  const presets = loadWorkoutDetailPresets(userId);
+  const id = String(presetId || "").trim();
+  const nextName = normalizeWorkoutPresetName(nextNameRaw);
+  if (!nextName) {
+    return { ok: false, error: "empty", presets };
+  }
+  const index = presets.findIndex((item) => item.id === id);
+  if (index < 0) {
+    return { ok: false, error: "missing", presets };
+  }
+  if (
+    presets.some((item, i) => i !== index && namesEqual(item.name, nextName))
+  ) {
+    return { ok: false, error: "duplicate", presets };
+  }
+
+  const next = presets.map((item, i) =>
+    i === index
+      ? { ...item, name: nextName, updatedAt: new Date().toISOString() }
+      : item
+  );
+  return { ok: true, presets: writePresets(userId, next) };
+}
+
+export function deleteWorkoutDetailPreset(userId, presetId) {
+  const presets = loadWorkoutDetailPresets(userId);
+  const id = String(presetId || "").trim();
+  const next = presets.filter((item) => item.id !== id);
+  return { ok: true, presets: writePresets(userId, next) };
 }
 
 /**

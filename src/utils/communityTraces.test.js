@@ -40,6 +40,32 @@ describe("communityTraces", () => {
     expect(result.summary.exchangeCount).toBe(0);
   });
 
+  it("includes gym exchange participations without win/loss framing", () => {
+    const result = buildCommunityTraces({
+      profile: {},
+      gymExchangeParticipations: [
+        {
+          eventId: "mantle-gym-exchange-dev-fixture",
+          sparringRounds: 4,
+          joinedAt: "2026-09-20T10:00:00Z",
+        },
+      ],
+    });
+
+    if (!import.meta.env.DEV) {
+      expect(result.recent.some((item) => item.type === "체육관 교류")).toBe(
+        false
+      );
+      return;
+    }
+
+    const item = result.recent.find((row) => row.type === "체육관 교류");
+    expect(item).toBeTruthy();
+    expect(item.title).toContain("×");
+    expect(item.meta).toContain("스파링 4R");
+    expect(item.meta).not.toMatch(/승|패|랭킹|EXP/i);
+  });
+
   it("picks sparring logs by type", () => {
     expect(
       pickSparringLogs([

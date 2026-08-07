@@ -40,6 +40,7 @@ import {
   pickSparringLogs,
 } from "../utils/communityTraces";
 import { listExchangeEventsAsync } from "../utils/dojoExchange";
+import { listMyGymExchangeParticipations } from "../api/gymExchangeParticipationApi";
 
 export default function ProfilePage({
   scrollTarget,
@@ -109,6 +110,9 @@ export default function ProfilePage({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [exchangeEvents, setExchangeEvents] = useState([]);
+  const [gymExchangeParticipations, setGymExchangeParticipations] = useState(
+    []
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +124,15 @@ export default function ProfilePage({
       })
       .catch(() => {
         if (!cancelled) setExchangeEvents([]);
+      });
+    listMyGymExchangeParticipations()
+      .then((rows) => {
+        if (!cancelled) {
+          setGymExchangeParticipations(Array.isArray(rows) ? rows : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setGymExchangeParticipations([]);
       });
     return () => {
       cancelled = true;
@@ -2282,8 +2295,9 @@ export default function ProfilePage({
         profile,
         exchangeEvents,
         sparringLogs: pickSparringLogs(logs),
+        gymExchangeParticipations,
       }),
-    [profile, exchangeEvents, logs]
+    [profile, exchangeEvents, logs, gymExchangeParticipations]
   );
   const hasTrainingTrace =
     profileStats.totalRounds > 0 || profileStats.totalMinutes > 0;

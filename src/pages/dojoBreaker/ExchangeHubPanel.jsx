@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTraining } from "../../store/TrainingContext";
 import {
+  formatGymExchangeDate,
+  getGymExchangeStatusLabel,
+  listPublishableGymExchangeEvents,
+} from "../../data/gymExchangeEvent";
+import {
   listExchangeEventsAsync,
   listPastExchangeEventsAsync,
 } from "../../utils/dojoExchange";
 import { RELEASE_SCOPE } from "../../utils/releaseScope";
+import "../../components/GymExchangeEventPanel.css";
 
 /**
  * 교류 도구 카테고리 (커뮤니티 첫 화면 피드는 상위 탭).
@@ -90,9 +96,32 @@ function CategoryHead({ title, lead }) {
   );
 }
 
+function GymExchangeEventCard({ event, onOpen }) {
+  return (
+    <button
+      type="button"
+      className="gym-exchange-event-card"
+      onClick={() => onOpen?.(event)}
+      data-testid="gym-exchange-event-card"
+    >
+      <div className="gym-exchange-event-card-top">
+        <em>{getGymExchangeStatusLabel(event.status)}</em>
+        <span>{formatGymExchangeDate(event.date)}</span>
+      </div>
+      <strong>{event.title}</strong>
+      <p>
+        {event.gymA} × {event.gymB}
+      </p>
+      <small>{event.location}</small>
+      <small>상세 보기</small>
+    </button>
+  );
+}
+
 export default function ExchangeHubPanel({
   onOpenMeetings,
   onOpenEvent,
+  onOpenGymExchangeEvent,
   onComposeMeeting,
   onOpenGyms,
   onOpenRivals,
@@ -104,6 +133,10 @@ export default function ExchangeHubPanel({
   const [events, setEvents] = useState([]);
   const [pastEvents, setPastEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const gymExchangeEvents = useMemo(
+    () => listPublishableGymExchangeEvents(),
+    []
+  );
 
   function openMeetingCompose() {
     (onComposeMeeting || onOpenMeetings)?.();
@@ -246,9 +279,24 @@ export default function ExchangeHubPanel({
           </div>
 
           <div className="exchange-purpose-body">
+            {gymExchangeEvents.length > 0 ? (
+              <div
+                className="gym-exchange-event-list"
+                aria-label="체육관 교류 이벤트"
+              >
+                {gymExchangeEvents.map((event) => (
+                  <GymExchangeEventCard
+                    key={`gx-${event.id}`}
+                    event={event}
+                    onOpen={onOpenGymExchangeEvent}
+                  />
+                ))}
+              </div>
+            ) : null}
+
             {loading ? (
               <p className="exchange-hub-empty">불러오는 중…</p>
-            ) : scheduleItems.length === 0 ? (
+            ) : scheduleItems.length === 0 && gymExchangeEvents.length === 0 ? (
               <div className="exchange-hub-empty-card">
                 <strong>
                   {scheduleTab === "upcoming"
@@ -263,7 +311,7 @@ export default function ExchangeHubPanel({
                     : "일정을 만들면 여기에 모입니다."}
                 </span>
               </div>
-            ) : (
+            ) : scheduleItems.length === 0 ? null : (
               <div className="ex-schedule-list">
                 {scheduleItems.map((event) => (
                   <ScheduleCard

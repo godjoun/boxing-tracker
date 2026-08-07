@@ -25,6 +25,8 @@ export default function GymFinderPage({
   fighterLevel = 1,
   onGoRivalProfile,
   onStartTraining,
+  focusGymExchangeEventId = null,
+  onGymExchangeFocusConsumed,
 }) {
   const [view, setView] = useState(() => resolveView(initialView));
   const [rivals, setRivals] = useState([]);
@@ -72,6 +74,8 @@ export default function GymFinderPage({
         onGoRivalProfile={onGoRivalProfile}
         rivals={rivals}
         rivalBridge={rivalBridge}
+        focusGymExchangeEventId={focusGymExchangeEventId}
+        onGymExchangeFocusConsumed={onGymExchangeFocusConsumed}
         rivalContent={
           showSparringLock ? (
             <FeatureLockScreen

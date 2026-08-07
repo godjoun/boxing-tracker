@@ -48,6 +48,8 @@ import {
 } from "../../utils/gymFavorites";
 import { BRAND_NAME } from "../../utils/brand";
 import { groupRivalsByArea } from "../../utils/rivalAreaMap";
+import GymExchangeEventPanel from "../../components/GymExchangeEventPanel";
+import { getPublishableGymExchangeEventById } from "../../data/gymExchangeEvent";
 import { RELEASE_SCOPE } from "../../utils/releaseScope";
 
 const MAP_OVERVIEW = {
@@ -102,6 +104,8 @@ export default function NearbyGymsPanel({
   rivals = [],
   rivalBridge = null,
   rivalContent = null,
+  focusGymExchangeEventId = null,
+  onGymExchangeFocusConsumed,
 }) {
   const { profile, userId, updateProfile } = useTraining();
   const [section, setSection] = useState("find");
@@ -136,9 +140,16 @@ export default function NearbyGymsPanel({
   const [draftLayer, setDraftLayer] = useState(activeLayer);
   const [recentSearches, setRecentSearches] = useState(readRecentSearches);
   const [meetingFocus, setMeetingFocus] = useState(null);
+  const [gymExchangeEvent, setGymExchangeEvent] = useState(null);
   const initialAreaLoaded = useRef(false);
   const prevLayerRef = useRef(activeLayer);
   const searchRequestIdRef = useRef(0);
+
+  const gymExchangeDetailEvent =
+    gymExchangeEvent ||
+    (focusGymExchangeEventId
+      ? getPublishableGymExchangeEventById(focusGymExchangeEventId)
+      : null);
 
   const rivalAreas = useMemo(() => groupRivalsByArea(rivals), [rivals]);
   const rivalsInArea = useMemo(() => {
@@ -1144,6 +1155,9 @@ export default function NearbyGymsPanel({
           switchSection("find");
         }}
         onOpenEvent={openMeetingEvent}
+        onOpenGymExchangeEvent={(event) => {
+          setGymExchangeEvent(event);
+        }}
         onOpenRivals={() => {
           onSelectLayer?.("sparring");
           switchSection("find");
@@ -1825,6 +1839,19 @@ export default function NearbyGymsPanel({
       </GymMapSidePanel>
 
       {utilityOverlay}
+
+      {gymExchangeDetailEvent ? (
+        <div className="gym-exchange-detail-overlay" role="dialog" aria-modal="true">
+          <GymExchangeEventPanel
+            key={gymExchangeDetailEvent.id}
+            event={gymExchangeDetailEvent}
+            onClose={() => {
+              setGymExchangeEvent(null);
+              onGymExchangeFocusConsumed?.();
+            }}
+          />
+        </div>
+      ) : null}
 
       {inquiryGym ? (
         <GymInquiryModal

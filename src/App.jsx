@@ -31,6 +31,7 @@ import {
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
 import { recordAppOpen } from "./utils/retentionMetrics";
 import { isDevMode } from "./utils/devMode";
+import { getPublishableGymExchangeEventById } from "./data/gymExchangeEvent";
 import {
   applyDocumentTheme,
   getStoredTheme,
@@ -44,6 +45,38 @@ const TIMER_RETURN_PAGE_KEY = "mantle-timer-return-page";
 const LEGACY_TIMER_RETURN_PAGE_KEY = "anima-timer-return-page";
 const CURRICULUM_RETURN_STYLE_KEY = "mantle-curriculum-return-style";
 const LEGACY_CURRICULUM_RETURN_STYLE_KEY = "anima-curriculum-return-style";
+
+/** Deep link ?exchange=ID — 모듈 로드 시 1회 소비 */
+function readExchangeDeepLinkBootstrap() {
+  if (typeof window === "undefined") {
+    return { page: "home", gymView: "feed", focusId: null };
+  }
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const exchangeId = String(params.get("exchange") || "").trim();
+    if (!exchangeId) {
+      return { page: "home", gymView: "feed", focusId: null };
+    }
+
+    params.delete("exchange");
+    const nextQuery = params.toString();
+    const nextUrl = `${window.location.pathname}${
+      nextQuery ? `?${nextQuery}` : ""
+    }${window.location.hash || ""}`;
+    window.history.replaceState({}, "", nextUrl);
+
+    const event = getPublishableGymExchangeEventById(exchangeId);
+    if (!event) {
+      return { page: "home", gymView: "feed", focusId: null };
+    }
+
+    return { page: "gym", gymView: "hub", focusId: event.id };
+  } catch {
+    return { page: "home", gymView: "feed", focusId: null };
+  }
+}
+
+const EXCHANGE_DEEP_LINK_BOOTSTRAP = readExchangeDeepLinkBootstrap();
 
 function readTimerReturnPage() {
   if (typeof sessionStorage === "undefined") return "train";
@@ -125,10 +158,15 @@ function AppFlow() {
 function MainAppShell({ theme, onToggleTheme }) {
   const { logs, profile, grantFighterLevel } = useTraining();
   const appMainRef = useRef(null);
-  const [currentPage, setCurrentPage] = useState("home");
+  const [currentPage, setCurrentPage] = useState(
+    EXCHANGE_DEEP_LINK_BOOTSTRAP.page
+  );
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialComplete());
   const [tutorialSession, setTutorialSession] = useState(0);
-  const [gymView, setGymView] = useState("feed");
+  const [gymView, setGymView] = useState(EXCHANGE_DEEP_LINK_BOOTSTRAP.gymView);
+  const [gymExchangeFocusId, setGymExchangeFocusId] = useState(
+    EXCHANGE_DEEP_LINK_BOOTSTRAP.focusId
+  );
   const [profileScrollTarget, setProfileScrollTarget] = useState(null);
   const [cardMakerLogId, setCardMakerLogId] = useState(null);
   const [timerLaunch, setTimerLaunch] = useState(null);
@@ -356,6 +394,8 @@ function MainAppShell({ theme, onToggleTheme }) {
             fighterLevel={fighterLevel}
             onGoRivalProfile={goRivalProfile}
             onStartTraining={() => openTimerFrom("gym")}
+            focusGymExchangeEventId={gymExchangeFocusId}
+            onGymExchangeFocusConsumed={() => setGymExchangeFocusId(null)}
           />
         )}
 

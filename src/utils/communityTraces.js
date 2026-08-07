@@ -3,11 +3,17 @@
  * 완료·소속만. 문의·좋아요·배지 없음.
  */
 
+import {
+  formatGymExchangeDate,
+  getGymExchangeEventById,
+} from "../data/gymExchangeEvent";
+
 export function buildCommunityTraces({
   profile = {},
   exchangeEvents = [],
   appliedEventIds = [],
   sparringLogs = [],
+  gymExchangeParticipations = [],
 } = {}) {
   const items = [];
 
@@ -19,6 +25,25 @@ export function buildCommunityTraces({
       meta: profile.homeGymAddress || profile.area || "내 체육관",
       date: "",
       sortAt: Number.MAX_SAFE_INTEGER,
+    });
+  }
+
+  for (const participation of gymExchangeParticipations) {
+    const event = getGymExchangeEventById(participation.eventId);
+    if (!event) continue;
+
+    const rounds = Number(participation.sparringRounds) || 0;
+    const dateLabel = formatGymExchangeDate(event.date);
+    items.push({
+      id: `gym-ex-${participation.eventId}`,
+      type: "체육관 교류",
+      title: `${event.gymA} × ${event.gymB}`.trim() || event.title || "체육관 교류",
+      meta: [`스파링 ${rounds}R`, dateLabel].filter(Boolean).join(" · "),
+      date: dateLabel,
+      sortAt:
+        Date.parse(event.date) ||
+        Date.parse(participation.joinedAt) ||
+        0,
     });
   }
 
@@ -69,12 +94,15 @@ export function buildCommunityTraces({
     .sort((a, b) => b.sortAt - a.sortAt);
 
   const gymCount = profile.homeGymName ? 1 : 0;
+  const gymExchangeCount = history.filter(
+    (item) => item.type === "체육관 교류"
+  ).length;
   const meetCount = history.filter((item) => item.type === "모임").length;
   const sparCount = history.filter((item) => item.type === "스파링").length;
 
   return {
     summary: {
-      exchangeCount: meetCount + sparCount,
+      exchangeCount: meetCount + sparCount + gymExchangeCount,
       sparringCount: sparCount,
       gymCount,
     },

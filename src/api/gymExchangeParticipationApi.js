@@ -56,14 +56,34 @@ function requireConfigured() {
   }
 }
 
+/** 기존 세션만 확인. 없으면 null (익명 로그인 강제 없음). */
+export async function getExchangeAuthUserIdIfPresent() {
+  if (!isSupabaseConfigured) return null;
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user?.id || null;
+}
+
 /**
- * 내 participation만 조회 (RLS: auth.uid() = user_id).
+ * 내 participation만 조회.
+ * ensureAuth=false(기본): 세션 없으면 null (참가 전 상세용).
+ * ensureAuth=true: join 직후 등 세션 확보 후 조회.
  * @param {string} eventId
+ * @param {{ ensureAuth?: boolean }} [options]
  */
-export async function getMyGymExchangeParticipation(eventId) {
+export async function getMyGymExchangeParticipation(eventId, options = {}) {
   const id = assertEventId(eventId);
   requireConfigured();
-  await ensureExchangeAuthSession();
+
+  if (options.ensureAuth) {
+    await ensureExchangeAuthSession();
+  } else {
+    const uid = await getExchangeAuthUserIdIfPresent();
+    if (!uid) return null;
+  }
 
   const supabase = getSupabase();
   const { data, error } = await supabase
@@ -80,8 +100,31 @@ export async function getMyGymExchangeParticipation(eventId) {
 }
 
 /**
- * 행사 참가. user_id는 RPC가 auth.uid()로 고정.
- * 동일 (event_id, user_id)면 기존 row 반환.
+ * 프로필 흔적용 — 세션이 있을 때만 내 participation 목록.
+ * 세션 없으면 [] (ensureExchangeAuthSession 호출 안 함).
+ */
+export async function listMyGymExchangeParticipations() {
+  if (!isSupabaseConfigured || !getSupabase()) {
+    return [];
+  }
+  const uid = await getExchangeAuthUserIdIfPresent();
+  if (!uid) return [];
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("dojo_gym_exchange_participations")
+    .select("*")
+    .order("joined_at", { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return (Array.isArray(data) ? data : []).map(mapParticipation);
+}
+
+/**
+ * 행사 참가. 이때만 ensureExchangeAuthSession.
  * @param {string} eventId
  * @param {string} nickname
  * @param {string} gymName
@@ -108,8 +151,7 @@ export async function joinGymExchange(eventId, nickname, gymName) {
 }
 
 /**
- * 내 스파링 라운드를 최종값으로 저장 (절대값). ±1 UI는 나중.
- * 타인 row는 RLS/RPC가 거부.
+ * 내 스파링 라운드 최종값 저장.
  * @param {string} eventId
  * @param {number} rounds
  */

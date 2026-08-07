@@ -17,13 +17,16 @@
 | 8 | `모임채팅 · dojo_chat` | `dojo_chat.sql` |
 | 9 | `라이벌 · dojo_sparring_v1` | `dojo_sparring_v1.sql` |
 | 10 | `라이벌채팅 · dojo_sparring_chat` | `dojo_sparring_chat.sql` |
-| 11 | `베타RLS · beta_rls_hardening` | `beta_rls_hardening.sql` ← **마지막** |
+| 11 | `베타RLS · beta_rls_hardening` | `beta_rls_hardening.sql` ← **마지막(기존)** |
+| 12 | `교류참가 · dojo_gym_exchange_participations` | `dojo_gym_exchange_participations.sql` · **Anonymous Auth ON 후 Run** |
 
 전부 다시 Run 하지 말 것. 고장 난 기능만.  
 라이벌 상호 관심 채팅을 켤 때 → **#10만 Run**.
 
 지도형 체육관 찾기의 입점관 좌표를 켤 때 → 기존 DB에서는 **#2를 Run한 뒤
 #11을 다시 Run**한다. 새 DB는 #1부터 순서대로 실행하면 된다.
+
+체육관 교류 행사 participation(Phase 1) → Auth Anonymous 켠 뒤 **#12만 Run**.
 
 ## later/ (아직 안 붙여도 됨)
 

@@ -25,7 +25,8 @@ MANTLE에서 핵심 기능이 **실제로 쓰이는지**만 보는 참고 지표
 ## 클라이언트
 
 - `src/utils/productFunnel.js` → `trackProductEvent(name)`
-- `import.meta.env.PROD`일 때만 Supabase insert
+- `import.meta.env.PROD` **그리고** hostname `boxing-tracker.vercel.app`일 때만 Supabase insert
+- localhost / Vercel Preview는 전송하지 않음
 - 실패해도 앱 기능·UI에 영향 없음 (fire-and-forget)
 
 기존 `@vercel/analytics` / `track`와는 별개다.

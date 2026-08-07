@@ -10,13 +10,17 @@ export const PRODUCT_FUNNEL_EVENTS = Object.freeze([
 
 const ALLOWED = new Set(PRODUCT_FUNNEL_EVENTS);
 
+const PRODUCTION_HOST = "boxing-tracker.vercel.app";
+
 /**
  * Fire-and-forget product funnel counter.
- * PROD + configured Supabase only. Never throws. No PII / payload.
+ * Production host + PROD + configured Supabase only. Never throws. No PII / payload.
  */
 export function trackProductEvent(eventName) {
   try {
     if (!import.meta.env.PROD) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hostname !== PRODUCTION_HOST) return;
     if (!ALLOWED.has(eventName)) return;
     if (!isSupabaseConfigured) return;
 

@@ -19,6 +19,7 @@
 | 10 | `라이벌채팅 · dojo_sparring_chat` | `dojo_sparring_chat.sql` |
 | 11 | `베타RLS · beta_rls_hardening` | `beta_rls_hardening.sql` ← **마지막(기존)** |
 | 12 | `교류참가 · dojo_gym_exchange_participations` | `dojo_gym_exchange_participations.sql` · **Anonymous Auth ON 후 Run** |
+| 13 | `퍼널 · product_funnel_events` | `product_funnel_events.sql` · INSERT-only · 기존 dojo와 무관 |
 
 전부 다시 Run 하지 말 것. 고장 난 기능만.  
 라이벌 상호 관심 채팅을 켤 때 → **#10만 Run**.

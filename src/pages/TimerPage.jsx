@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
+import { trackProductEvent } from "../utils/productFunnel";
 import { useTraining } from "../store/TrainingContext";
 import {
   getCompletionDelta,
@@ -651,6 +652,8 @@ export default function TimerPage({
       workoutDetails: details,
     });
 
+    trackProductEvent("training_complete");
+
     if (curriculumSessionId) {
       markCurriculumSessionComplete(curriculumSessionId);
     }
@@ -801,6 +804,7 @@ export default function TimerPage({
 
       if (launchConfig.autoStart) {
         track("training_start", { mode: "timer" });
+        trackProductEvent("training_start");
         setHasStartedSession(true);
         setCurrentRound(1);
         setPhase("prep");
@@ -823,6 +827,7 @@ export default function TimerPage({
       track("training_start", {
         mode: launchConfig?.curriculumSessionId ? "curriculum" : "timer",
       });
+      trackProductEvent("training_start");
     }
 
     if (soundMode !== "mute") {

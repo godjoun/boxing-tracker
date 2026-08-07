@@ -30,6 +30,7 @@ import {
 } from "./utils/timerPresets";
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
 import { recordAppOpen } from "./utils/retentionMetrics";
+import { trackProductEvent } from "./utils/productFunnel";
 import { isDevMode } from "./utils/devMode";
 import { getPublishableGymExchangeEventById } from "./data/gymExchangeEvent";
 import {
@@ -186,9 +187,13 @@ function MainAppShell({ theme, onToggleTheme }) {
     FULLSCREEN_PAGES.has(currentPage) ||
     (currentPage === "profile" && profileStudioOpen);
   const isEdgeToNavPage = EDGE_TO_NAV_PAGES.has(currentPage);
+  const appOpenTrackedRef = useRef(false);
 
   useEffect(() => {
     recordAppOpen();
+    if (appOpenTrackedRef.current) return;
+    appOpenTrackedRef.current = true;
+    trackProductEvent("app_open");
   }, []);
 
   useEffect(() => {

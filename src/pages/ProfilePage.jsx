@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
+import { trackProductEvent } from "../utils/productFunnel";
 import { useTraining } from "../store/TrainingContext";
 import FighterSpecCard from "../components/FighterSpecCard";
 import { getFighterProgress } from "../utils/fighterProgress";
@@ -66,6 +67,7 @@ export default function ProfilePage({
   const cardMakerRef = useRef(null);
   const rivalCardRef = useRef(null);
   const videoObjectUrlRef = useRef(null);
+  const profileViewTrackedRef = useRef(false);
 
   const startsInQuickCardFlow =
     scrollTarget === "cardMaker" && Boolean(cardMakerFocusLogId);
@@ -76,6 +78,12 @@ export default function ProfilePage({
   const [supportDetailsOpen, setSupportDetailsOpen] = useState(
     RELEASE_SCOPE.rivals && scrollTarget === "rivalCard"
   );
+
+  useEffect(() => {
+    if (profileViewTrackedRef.current) return;
+    profileViewTrackedRef.current = true;
+    trackProductEvent("profile_view");
+  }, []);
 
   useEffect(() => {
     onStudioModeChange?.(profileView === "studio");
@@ -2180,6 +2188,7 @@ export default function ProfilePage({
         link.remove();
       }
       setSavedShareReady(true);
+      trackProductEvent("training_card_create");
     }
 
     if (

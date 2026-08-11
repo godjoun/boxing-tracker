@@ -16,6 +16,8 @@ import TrainingHubPage from "./pages/TrainingHubPage";
 import GrowthHubPage from "./pages/GrowthHubPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
+import EventV0ParticipantPage from "./pages/EventV0ParticipantPage";
+import EventV0OperatorPage from "./pages/EventV0OperatorPage";
 import FirstVisitTutorial from "./components/FirstVisitTutorial";
 import MenuIcon from "./components/MenuIcon";
 import AppErrorBoundary from "./components/AppErrorBoundary";
@@ -78,6 +80,29 @@ function readExchangeDeepLinkBootstrap() {
 }
 
 const EXCHANGE_DEEP_LINK_BOOTSTRAP = readExchangeDeepLinkBootstrap();
+
+/** Deep link ?event=ID[&mode=operator] — EVENT v0 (keep query for refresh). */
+function readEventV0DeepLinkBootstrap() {
+  if (typeof window === "undefined") {
+    return { eventId: null, mode: "participant" };
+  }
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const eventId = String(params.get("event") || "").trim();
+    if (!eventId || eventId.length > 120) {
+      return { eventId: null, mode: "participant" };
+    }
+    const modeRaw = String(params.get("mode") || "")
+      .trim()
+      .toLowerCase();
+    const mode = modeRaw === "operator" ? "operator" : "participant";
+    return { eventId, mode };
+  } catch {
+    return { eventId: null, mode: "participant" };
+  }
+}
+
+const EVENT_V0_DEEP_LINK_BOOTSTRAP = readEventV0DeepLinkBootstrap();
 
 function readTimerReturnPage() {
   if (typeof sessionStorage === "undefined") return "train";
@@ -143,6 +168,21 @@ function AppFlow() {
       setStoredTheme(next);
       return next;
     });
+  }
+
+  // EVENT v0 QR: skip app onboarding / main chrome.
+  if (EVENT_V0_DEEP_LINK_BOOTSTRAP.eventId) {
+    const eventId = EVENT_V0_DEEP_LINK_BOOTSTRAP.eventId;
+    const isOperator = EVENT_V0_DEEP_LINK_BOOTSTRAP.mode === "operator";
+    return (
+      <div className={`app-shell theme-${theme} is-fullscreen`}>
+        {isOperator ? (
+          <EventV0OperatorPage eventId={eventId} />
+        ) : (
+          <EventV0ParticipantPage eventId={eventId} />
+        )}
+      </div>
+    );
   }
 
   if (onboarding) {

@@ -83,9 +83,13 @@ function mapRequest(row) {
 
 function mapPairing(row) {
   if (!row) return null;
+  const orderNumber = Number(row.order_number) || 0;
+  const displayOrder =
+    row.display_order == null ? orderNumber : Number(row.display_order) || 0;
   return {
     pairingId: row.pairing_id,
-    orderNumber: Number(row.order_number) || 0,
+    orderNumber,
+    displayOrder,
     pairingStatus: row.pairing_status,
     myParticipantId: row.my_participant_id,
     opponentParticipantId: row.opponent_participant_id,
@@ -221,6 +225,64 @@ export async function registerEventV0Sparring({
   return { participant, request };
 }
 
+/** Update own profile. Blocked by RPC when active pairing exists. */
+export async function updateMyEventV0Participant({
+  eventId,
+  displayName,
+  gymName,
+  weightKg,
+  experience,
+}) {
+  const id = assertEventId(eventId);
+  const name = assertDisplayName(displayName);
+  const gym = assertGymName(gymName);
+  const weight = assertWeightKg(weightKg);
+  const exp = assertExperience(experience);
+  requireConfigured();
+  await ensureEventV0AuthSession();
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc("event_v0_update_my_participant", {
+    p_event_id: id,
+    p_display_name: name,
+    p_gym_name: gym,
+    p_weight_kg: weight,
+    p_experience: exp,
+  });
+  if (error) throw error;
+  return mapParticipant(unwrapRow(data));
+}
+
+/** Cancel own waiting sparring request. Does not delete participant. */
+export async function cancelMyEventV0SparringRequest(eventId) {
+  const id = assertEventId(eventId);
+  requireConfigured();
+  await ensureEventV0AuthSession();
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(
+    "event_v0_cancel_my_sparring_request",
+    { p_event_id: id }
+  );
+  if (error) throw error;
+  return mapRequest(unwrapRow(data));
+}
+
+/** Re-queue waiting after cancel/complete (existing participant). */
+export async function createMyEventV0SparringRequest(eventId) {
+  const id = assertEventId(eventId);
+  requireConfigured();
+  await ensureEventV0AuthSession();
+
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc(
+    "event_v0_create_sparring_request",
+    { p_event_id: id }
+  );
+  if (error) throw error;
+  return mapRequest(unwrapRow(data));
+}
+
 /** Open sparring requests for current user (waiting / assigned). */
 export async function getMyEventV0SparringRequests(eventId) {
   const id = assertEventId(eventId);
@@ -249,7 +311,22 @@ export async function getMyEventV0Pairings(eventId) {
     p_event_id: id,
   });
   if (error) throw error;
-  return asRowArray(data).map(mapPairing).filter(Boolean);
+  const rows = asRowArray(data).map(mapPairing).filter(Boolean);
+
+  // Prefer SECURITY DEFINER helper so participant matches operator (needs hotfix).
+  await Promise.all(
+    rows.map(async (row) => {
+      const { data: display, error: displayErr } = await supabase.rpc(
+        "event_v0_pairing_display_order",
+        { p_event_id: id, p_order_number: row.orderNumber }
+      );
+      if (!displayErr && display != null) {
+        row.displayOrder = Number(display) || row.orderNumber;
+      }
+    })
+  );
+
+  return rows;
 }
 
 /** Combined status poll for participant UI. */

@@ -1,5 +1,6 @@
 import { getSupabase, isSupabaseConfigured } from "../lib/supabaseClient";
 import { ensureEventV0AuthSession } from "../utils/eventV0Auth";
+import { computeEventV0DisplayOrder } from "../utils/eventV0DisplayOrder";
 
 const DISPLAY_NAME_MAX = 40;
 const GYM_NAME_MAX = 80;
@@ -163,7 +164,13 @@ export async function operatorListPairings(eventId, secret) {
     opArgs(eventId, secret)
   );
   if (error) throw error;
-  return (Array.isArray(data) ? data : []).map(mapPairing).filter(Boolean);
+  const rows = (Array.isArray(data) ? data : data ? [data] : [])
+    .map(mapPairing)
+    .filter(Boolean);
+  return rows.map((row) => ({
+    ...row,
+    displayOrder: computeEventV0DisplayOrder(row.orderNumber, rows),
+  }));
 }
 
 export async function operatorLoadBoard(eventId, secret) {

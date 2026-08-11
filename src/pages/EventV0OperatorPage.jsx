@@ -18,6 +18,7 @@ import {
   isInvalidOperatorSecretError,
   setEventV0OperatorSecret,
 } from "../utils/eventV0OperatorSession";
+import { computeEventV0DisplayOrder } from "../utils/eventV0DisplayOrder";
 import "./EventV0OperatorPage.css";
 
 const EXPERIENCE_OPTIONS = [
@@ -95,14 +96,27 @@ export default function EventV0OperatorPage({ eventId }) {
     [pairings]
   );
 
-  /** participantId → active pairing order number */
-  const activeOrderByParticipantId = useMemo(() => {
+  /** participantId → field display order (skips cancelled) */
+  const activeDisplayByParticipantId = useMemo(() => {
     const map = new Map();
     for (const pair of activePairings) {
-      map.set(pair.participantAId, pair.orderNumber);
-      map.set(pair.participantBId, pair.orderNumber);
+      const display =
+        pair.displayOrder ??
+        computeEventV0DisplayOrder(pair.orderNumber, pairings);
+      map.set(pair.participantAId, display);
+      map.set(pair.participantBId, display);
     }
     return map;
+  }, [activePairings, pairings]);
+
+  /** true if participant is in an active pairing */
+  const activePairedIdSet = useMemo(() => {
+    const set = new Set();
+    for (const pair of activePairings) {
+      set.add(pair.participantAId);
+      set.add(pair.participantBId);
+    }
+    return set;
   }, [activePairings]);
 
   const refreshBoard = useCallback(
@@ -218,7 +232,7 @@ export default function EventV0OperatorPage({ eventId }) {
 
   function toggleSelect(participantId) {
     // Only true waiting (not already in an active pairing) can enter selection.
-    if (activeOrderByParticipantId.has(participantId)) return;
+    if (activePairedIdSet.has(participantId)) return;
     if (!waitingIdSet.has(participantId)) return;
 
     setSelectedIds((current) => {
@@ -510,14 +524,14 @@ export default function EventV0OperatorPage({ eventId }) {
           <ul className="event-v0-op-list">
             {participants.map((p) => {
               const isWaiting = waitingIdSet.has(p.id);
-              const activeOrder = activeOrderByParticipantId.get(p.id);
-              const inActive = activeOrder != null;
+              const activeDisplay = activeDisplayByParticipantId.get(p.id);
+              const inActive = activePairedIdSet.has(p.id);
               const canSelect = isWaiting && !inActive;
               const selected = selectedIds.includes(p.id);
 
               let statusText = "대기 아님";
               if (inActive) {
-                statusText = `대진 중 · ${activeOrder}번`;
+                statusText = `대진 중 · ${activeDisplay}번`;
               } else if (selected) {
                 statusText = "선택됨 ✓";
               } else if (canSelect) {
@@ -763,10 +777,13 @@ export default function EventV0OperatorPage({ eventId }) {
               const a = participantMap.get(pair.participantAId);
               const b = participantMap.get(pair.participantBId);
               const open = actionPairingId === pair.id;
+              const displayOrder =
+                pair.displayOrder ??
+                computeEventV0DisplayOrder(pair.orderNumber, pairings);
               return (
                 <li key={pair.id} className="event-v0-op-board-row">
                   <div className="event-v0-op-board-main">
-                    <span className="event-v0-op-order">{pair.orderNumber}</span>
+                    <span className="event-v0-op-order">{displayOrder}</span>
                     <div className="event-v0-op-fighters">
                       <p>
                         {a?.displayName || "?"} {weightLabel(a?.weightKg)}
@@ -823,7 +840,7 @@ export default function EventV0OperatorPage({ eventId }) {
 
                   {open && actionMode === "opponent" ? (
                     <div className="event-v0-op-inline">
-                      <p>상대 변경 · 대진 번호 {pair.orderNumber} 유지</p>
+                      <p>상대 변경 · 대진 번호 {displayOrder} 유지</p>
                       <label>
                         교체할 쪽
                         <select
@@ -890,7 +907,11 @@ export default function EventV0OperatorPage({ eventId }) {
                             .filter((p) => p.id !== pair.id)
                             .map((p) => (
                               <option key={p.id} value={p.orderNumber}>
-                                {p.orderNumber}번
+                                {computeEventV0DisplayOrder(
+                                  p.orderNumber,
+                                  pairings
+                                )}
+                                번
                               </option>
                             ))}
                         </select>

@@ -19,6 +19,7 @@ import {
   setEventV0OperatorSecret,
 } from "../utils/eventV0OperatorSession";
 import { computeEventV0DisplayOrder } from "../utils/eventV0DisplayOrder";
+import { groupEventV0WaitingByWeightBand } from "../utils/eventV0WeightBands";
 import "./EventV0OperatorPage.css";
 
 const EXPERIENCE_OPTIONS = [
@@ -118,6 +119,28 @@ export default function EventV0OperatorPage({ eventId }) {
     }
     return set;
   }, [activePairings]);
+
+  /** Waiting only — 5kg bands, earliest request first within band */
+  const waitingByWeightBand = useMemo(
+    () => groupEventV0WaitingByWeightBand(waiting),
+    [waiting]
+  );
+
+  const waitingQueueByParticipantId = useMemo(() => {
+    const map = new Map();
+    for (const group of waitingByWeightBand) {
+      for (const item of group.items) {
+        map.set(item.participantId, item.queueIndex);
+      }
+    }
+    return map;
+  }, [waitingByWeightBand]);
+
+  /** Not currently waiting (paired or idle) — keep edit / requeue access */
+  const nonWaitingParticipants = useMemo(
+    () => participants.filter((p) => !waitingIdSet.has(p.id)),
+    [participants, waitingIdSet]
+  );
 
   const refreshBoard = useCallback(
     async (secret) => {
@@ -521,85 +544,179 @@ export default function EventV0OperatorPage({ eventId }) {
             </button>
           </div>
 
-          <ul className="event-v0-op-list">
-            {participants.map((p) => {
-              const isWaiting = waitingIdSet.has(p.id);
-              const activeDisplay = activeDisplayByParticipantId.get(p.id);
-              const inActive = activePairedIdSet.has(p.id);
-              const canSelect = isWaiting && !inActive;
-              const selected = selectedIds.includes(p.id);
+          <div className="event-v0-op-people-board">
+            {waiting.length === 0 ? (
+              <p className="event-v0-op-note">대기 중인 참가자가 없습니다.</p>
+            ) : null}
 
-              let statusText = "대기 아님";
-              if (inActive) {
-                statusText = `대진 중 · ${activeDisplay}번`;
-              } else if (selected) {
-                statusText = "선택됨 ✓";
-              } else if (canSelect) {
-                statusText = "대기 중 · 탭해서 선택";
-              }
+            {waitingByWeightBand.map((group) => (
+              <div
+                key={group.bandFloor == null ? "none" : String(group.bandFloor)}
+                className="event-v0-op-weight-group"
+              >
+                <h2 className="event-v0-op-weight-head">
+                  {group.label} · {group.items.length}명
+                </h2>
+                <ul className="event-v0-op-list">
+                  {group.items.map((w) => {
+                    const p = participantMap.get(w.participantId) || {
+                      id: w.participantId,
+                      displayName: w.displayName,
+                      gymName: w.gymName,
+                      weightKg: w.weightKg,
+                      experience: w.experience,
+                    };
+                    const inActive = activePairedIdSet.has(p.id);
+                    const canSelect = !inActive;
+                    const selected = selectedIds.includes(p.id);
+                    const queueIndex = waitingQueueByParticipantId.get(p.id);
+                    const activeDisplay = activeDisplayByParticipantId.get(p.id);
 
-              const cardClass = [
-                "event-v0-op-card",
-                selected ? "is-selected" : "",
-                inActive ? "is-paired" : "",
-                canSelect ? "is-waiting" : "",
-              ]
-                .filter(Boolean)
-                .join(" ");
+                    let statusText = "대기 중 · 탭해서 선택";
+                    if (inActive) {
+                      statusText = `대진 중 · ${activeDisplay}번`;
+                    } else if (selected) {
+                      statusText = "선택됨 ✓";
+                    }
 
-              return (
-                <li key={p.id} className={cardClass}>
-                  <button
-                    type="button"
-                    className="event-v0-op-card-main"
-                    disabled={!canSelect || busy}
-                    aria-disabled={!canSelect || busy}
-                    aria-pressed={selected}
-                    onClick={() => {
-                      if (canSelect) toggleSelect(p.id);
-                    }}
-                  >
-                    <strong>{p.displayName}</strong>
-                    <span>
-                      {p.gymName} · {weightLabel(p.weightKg)} ·{" "}
-                      {p.experience || "경력 없음"}
-                    </span>
-                    <em
-                      className={`event-v0-op-status${
-                        inActive
-                          ? " is-paired"
-                          : selected
-                            ? " is-selected"
-                            : canSelect
-                              ? " is-waiting"
-                              : ""
-                      }`}
-                    >
-                      {statusText}
-                    </em>
-                  </button>
-                  <div className="event-v0-op-card-actions">
-                    <button
-                      type="button"
-                      className="event-v0-op-mini"
-                      disabled={busy}
-                      onClick={() => startEdit(p)}
-                    >
-                      수정
-                    </button>
-                    <button
-                      type="button"
-                      className="event-v0-op-mini"
-                      disabled={busy || isWaiting || inActive}
-                      onClick={() => handleRequeue(p.id)}
-                    >
-                      다시 대기
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                    const cardClass = [
+                      "event-v0-op-card",
+                      selected ? "is-selected" : "",
+                      inActive ? "is-paired" : "",
+                      canSelect ? "is-waiting" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
+                    return (
+                      <li key={p.id} className={cardClass}>
+                        <button
+                          type="button"
+                          className="event-v0-op-card-main"
+                          disabled={!canSelect || busy}
+                          aria-disabled={!canSelect || busy}
+                          aria-pressed={selected}
+                          onClick={() => {
+                            if (canSelect) toggleSelect(p.id);
+                          }}
+                        >
+                          <strong>{p.displayName}</strong>
+                          <span>
+                            {p.gymName} · {weightLabel(p.weightKg)} ·{" "}
+                            {p.experience || "경력 없음"}
+                          </span>
+                          {queueIndex != null && canSelect ? (
+                            <span className="event-v0-op-queue">
+                              대기 {queueIndex}번째
+                            </span>
+                          ) : null}
+                          <em
+                            className={`event-v0-op-status${
+                              inActive
+                                ? " is-paired"
+                                : selected
+                                  ? " is-selected"
+                                  : canSelect
+                                    ? " is-waiting"
+                                    : ""
+                            }`}
+                          >
+                            {statusText}
+                          </em>
+                        </button>
+                        <div className="event-v0-op-card-actions">
+                          <button
+                            type="button"
+                            className="event-v0-op-mini"
+                            disabled={busy}
+                            onClick={() => startEdit(p)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            className="event-v0-op-mini"
+                            disabled
+                            onClick={() => handleRequeue(p.id)}
+                          >
+                            다시 대기
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+
+            {nonWaitingParticipants.length > 0 ? (
+              <div className="event-v0-op-weight-group">
+                <h2 className="event-v0-op-weight-head">
+                  대기 아님 · {nonWaitingParticipants.length}명
+                </h2>
+                <ul className="event-v0-op-list">
+                  {nonWaitingParticipants.map((p) => {
+                    const activeDisplay = activeDisplayByParticipantId.get(p.id);
+                    const inActive = activePairedIdSet.has(p.id);
+
+                    let statusText = "대기 아님";
+                    if (inActive) {
+                      statusText = `대진 중 · ${activeDisplay}번`;
+                    }
+
+                    const cardClass = [
+                      "event-v0-op-card",
+                      inActive ? "is-paired" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
+                    return (
+                      <li key={p.id} className={cardClass}>
+                        <button
+                          type="button"
+                          className="event-v0-op-card-main"
+                          disabled
+                          aria-disabled
+                        >
+                          <strong>{p.displayName}</strong>
+                          <span>
+                            {p.gymName} · {weightLabel(p.weightKg)} ·{" "}
+                            {p.experience || "경력 없음"}
+                          </span>
+                          <em
+                            className={`event-v0-op-status${
+                              inActive ? " is-paired" : ""
+                            }`}
+                          >
+                            {statusText}
+                          </em>
+                        </button>
+                        <div className="event-v0-op-card-actions">
+                          <button
+                            type="button"
+                            className="event-v0-op-mini"
+                            disabled={busy}
+                            onClick={() => startEdit(p)}
+                          >
+                            수정
+                          </button>
+                          <button
+                            type="button"
+                            className="event-v0-op-mini"
+                            disabled={busy || inActive}
+                            onClick={() => handleRequeue(p.id)}
+                          >
+                            다시 대기
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ) : null}
+          </div>
 
           {editId ? (
             <form className="event-v0-op-form" onSubmit={handleSaveEdit}>

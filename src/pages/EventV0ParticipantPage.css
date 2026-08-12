@@ -7,12 +7,31 @@
   --ev0-on-accent: #f5f1e8;
   --ev0-bg: #ffffff;
   box-sizing: border-box;
-  min-height: 100%;
-  width: 100%;
+  /*
+   * Independent scrollport for iPhone Safari.
+   * Ancestors (html/body/#root/.app-shell) are overflow:hidden — without a
+   * bounded scroller the join form bottom (CTA) sits under the Safari chrome
+   * and cannot be reached. Mirror operator: fixed + 100dvh + pan-y.
+   */
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: min(100%, 480px);
   max-width: 480px;
   margin: 0 auto;
+  height: 100%;
+  height: 100dvh;
+  max-height: 100%;
+  max-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  /* Extra bottom room for Safari toolbar beyond safe-area alone */
   padding: max(16px, env(safe-area-inset-top, 16px)) 20px
-    max(28px, env(safe-area-inset-bottom, 28px));
+    calc(env(safe-area-inset-bottom, 0px) + 112px);
   background: var(--ev0-bg);
   color: var(--ev0-ink);
   font-family: inherit;
@@ -184,6 +203,8 @@
   display: grid;
   gap: 10px;
   margin-top: 8px;
+  /* Keep final CTA clear of Safari bottom chrome while scrolling */
+  padding-bottom: 8px;
 }
 
 .event-v0-status {

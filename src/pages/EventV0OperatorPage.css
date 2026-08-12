@@ -180,27 +180,31 @@
 
 .event-v0-op-people-board {
   display: grid;
-  gap: 18px;
+  gap: 28px;
 }
 
 .event-v0-op-weight-group {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .event-v0-op-weight-head {
   margin: 0;
-  padding: 8px 2px 0;
-  font-size: 0.95rem;
+  padding: 12px 14px;
+  font-size: 1.15rem;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
   color: var(--op-ink);
-  border-top: 1px solid var(--op-line);
+  background: rgba(10, 9, 9, 0.06);
+  border: 1.5px solid var(--op-line);
+  border-left: 4px solid var(--op-accent);
+  border-radius: 10px;
 }
 
-.event-v0-op-weight-group:first-child .event-v0-op-weight-head {
-  border-top: none;
-  padding-top: 0;
+.event-v0-op-weight-group + .event-v0-op-weight-group {
+  padding-top: 4px;
+  border-top: 1px solid var(--op-line);
 }
 
 .event-v0-op-queue {

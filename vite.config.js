@@ -6,4 +6,7 @@ import { env } from 'node:process'
 export default defineConfig({
   plugins: [react()],
   base: env.GITHUB_PAGES === 'true' ? '/boxing-tracker/' : '/',
+  test: {
+    setupFiles: ['./src/test/setup.js'],
+  },
 })

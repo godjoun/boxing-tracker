@@ -1,0 +1,32 @@
+function createMemoryStorage() {
+  let store = new Map();
+
+  return {
+    get length() {
+      return store.size;
+    },
+    clear() {
+      store = new Map();
+    },
+    getItem(key) {
+      const normalizedKey = String(key);
+      return store.has(normalizedKey) ? store.get(normalizedKey) : null;
+    },
+    key(index) {
+      return Array.from(store.keys())[index] ?? null;
+    },
+    removeItem(key) {
+      store.delete(String(key));
+    },
+    setItem(key, value) {
+      store.set(String(key), String(value));
+    },
+  };
+}
+
+if (typeof globalThis.sessionStorage === 'undefined') {
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    configurable: true,
+    value: createMemoryStorage(),
+  });
+}

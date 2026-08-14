@@ -1,0 +1,159 @@
+name: MANTLE AI Task
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  implement:
+    if: github.event.issue.user.login == github.repository_owner && startsWith(github.event.issue.title, '[AI]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      BRANCH_NAME: ai/issue-${{ github.event.issue.number }}
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies before sandboxed AI work
+        run: npm ci
+
+      - name: Create task branch
+        run: |
+          git config user.name "MANTLE AI"
+          git config user.email "actions@github.com"
+          git checkout -b "$BRANCH_NAME"
+
+      - name: Run Codex on approved issue
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":workspace"
+          prompt: |
+            You are implementing one owner-approved task in the MANTLE boxing app repository.
+
+            First read and obey AGENTS.md. Treat it as the repository's product and engineering constitution.
+            Do not expand scope beyond the issue. Do not deploy, merge to main, modify production secrets,
+            or invent a new product direction. If the issue is ambiguous enough that implementation would
+            require guessing product intent, make no risky change and explain the ambiguity in your final message.
+
+            Implement the smallest safe change that satisfies this issue.
+
+            Issue #${{ github.event.issue.number }}
+            Title:
+            ${{ github.event.issue.title }}
+
+            Body:
+            ${{ github.event.issue.body }}
+
+            You may inspect and edit files in the checked-out repository and run local commands.
+            Dependencies have already been installed. Do not require network access.
+
+      - name: Run tests
+        id: tests
+        continue-on-error: true
+        run: npm test
+
+      - name: Run lint
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Run build
+        id: build
+        continue-on-error: true
+        run: npm run build
+
+      - name: Report failed validation
+        if: steps.tests.outcome != 'success' || steps.lint.outcome != 'success' || steps.build.outcome != 'success'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const body = [
+              'AI 작업은 실행됐지만 자동 검증을 통과하지 못해 PR을 만들지 않았습니다.',
+              '',
+              `- test: ${{ steps.tests.outcome }}`,
+              `- lint: ${{ steps.lint.outcome }}`,
+              `- build: ${{ steps.build.outcome }}`,
+              '',
+              'Actions 로그를 확인한 뒤 사람이 검토해야 합니다.'
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Stop when validation fails
+        if: steps.tests.outcome != 'success' || steps.lint.outcome != 'success' || steps.build.outcome != 'success'
+        run: exit 1
+
+      - name: Detect code changes
+        id: changes
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report no-op task
+        if: steps.changes.outputs.changed == 'false'
+        uses: actions/github-script@v7
+        env:
+          CODEX_FINAL_MESSAGE: ${{ steps.codex.outputs.final-message }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const detail = process.env.CODEX_FINAL_MESSAGE || 'Codex made no repository changes.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `AI 작업 결과 변경된 코드가 없어 PR을 만들지 않았습니다.\n\n${detail}`,
+            });
+
+      - name: Commit changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git add -A
+          git commit -m "AI: implement issue #$ISSUE_NUMBER"
+
+      - name: Push task branch
+        if: steps.changes.outputs.changed == 'true'
+        run: git push --set-upstream origin "$BRANCH_NAME"
+
+      - name: Create draft pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_URL=$(gh pr create \
+            --draft \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "$ISSUE_TITLE" \
+            --body "Automated implementation for issue #$ISSUE_NUMBER.\n\nValidation completed in GitHub Actions:\n- npm test\n- npm run lint\n- npm run build\n\nThis PR is intentionally a draft. The repository owner remains the final approver. Nothing is merged or deployed automatically.")
+
+          gh issue comment "$ISSUE_NUMBER" --body "AI 작업과 자동 검증이 끝났습니다. 최종 승인을 위해 Draft PR을 만들었습니다: $PR_URL"

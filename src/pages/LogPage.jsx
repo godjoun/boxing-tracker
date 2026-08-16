@@ -646,6 +646,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
 
     const savedLog = addLog({
       type: finalExerciseName,
+      trainingType: finalExerciseName,
       minutes: Number(form.minutes),
       duration: Number(form.minutes),
       rounds: Number(form.rounds || 0),
@@ -663,6 +664,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
           ? { ...form.metrics, exerciseName: finalExerciseName }
           : form.metrics,
       source: form.metrics?.autoSignals?.length ? "auto" : "manual",
+      recordSource: "manual",
+      startedAt: autoTracking?.startedAt
+        ? new Date(autoTracking.startedAt).toISOString()
+        : undefined,
+      endedAt: new Date().toISOString(),
     });
 
     track("log_save", {

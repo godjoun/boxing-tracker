@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildStyleDrillSession,
   getStyleCategories,
+  getStyleDrillWorkSummary,
   getTechniqueCatalog,
 } from "./techniqueCatalog";
 import {
@@ -46,10 +47,33 @@ describe("스타일 기술 흐름", () => {
     const timer = resolveSessionTimerConfig(session);
 
     expect(session.styleId).toBe(style.id);
+    expect(session.styleCategoryId).toBe(style.stages[0].id);
     expect(timer.rounds).toBe(session.rounds);
     expect(timer.workSeconds).toBe(180);
     expect(timer.prepSeconds).toBe(10);
     expect(timer.syncedDrills).toHaveLength(session.rounds);
+  });
+
+  it("기술 STEP 총 운동시간은 rounds × 180초이며 타이머 1R은 3분이다", () => {
+    expect(getStyleDrillWorkSummary(3)).toEqual({
+      rounds: 3,
+      workMinutes: 9,
+      summary: "운동 9분 · 3라운드",
+    });
+    expect(getStyleDrillWorkSummary(4)).toEqual({
+      rounds: 4,
+      workMinutes: 12,
+      summary: "운동 12분 · 4라운드",
+    });
+
+    const style = getTechniqueCatalog()[0];
+    const threeRound = buildStyleDrillSession(style, style.stages[0]);
+    const fourRound = buildStyleDrillSession(style, style.stages[2]);
+
+    expect(threeRound.rounds).toBe(3);
+    expect(threeRound.workSeconds).toBe(180);
+    expect(fourRound.rounds).toBe(4);
+    expect(fourRound.workSeconds).toBe(180);
   });
 });
 

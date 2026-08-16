@@ -27,7 +27,8 @@ function getAudioContext() {
 export async function resumeTimerAudio() {
   const context = getAudioContext();
 
-  if (context?.state === "suspended") {
+  // iOS는 긴 WORK 뒤에 suspended 뿐 아니라 interrupted가 된다.
+  if (context && context.state !== "running") {
     try {
       await context.resume();
     } catch {
@@ -42,6 +43,21 @@ export async function resumeTimerAudio() {
       // noop
     }
   }
+}
+
+export function resolveTimerPhaseBeep(fromPhase, toPhase, restSeconds = 30) {
+  if (!toPhase || fromPhase === toPhase) return null;
+  if (toPhase === "rest" && !(Number(restSeconds) > 0)) return null;
+  if (
+    toPhase === "prep" ||
+    toPhase === "work" ||
+    toPhase === "rest" ||
+    toPhase === "cooldown" ||
+    toPhase === "done"
+  ) {
+    return toPhase;
+  }
+  return null;
 }
 
 function startSilentKeepAlive() {
@@ -98,7 +114,13 @@ export async function playTimerBeep(soundMode = "basic", type = "work") {
   const context = getAudioContext();
   if (!context) return;
 
-  await resumeTimerAudio();
+  await startTimerAudioSession();
+
+  if (context.state !== "running") {
+    await resumeTimerAudio();
+  }
+
+  if (context.state !== "running") return;
 
   const now = context.currentTime;
 

@@ -2,13 +2,9 @@
   margin-top: 18px;
   padding: 16px;
   border-radius: 22px;
-  background: linear-gradient(
-    165deg,
-    rgba(138, 46, 46, 0.14) 0%,
-    rgba(13, 13, 14, 0.92) 42%
-  );
-  border: 1px solid rgba(138, 46, 46, 0.28);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  background: var(--p-bg-panel);
+  border: 1px solid var(--p-border);
+  box-shadow: none;
   text-align: left;
 }
 
@@ -29,16 +25,22 @@
 .curriculum-timer-badge {
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(138, 46, 46, 0.16);
-  color: var(--p-brass-soft);
+  background: var(--p-accent-bg);
+  color: var(--p-accent);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.08em;
 }
 
 .curriculum-timer-badge.is-muted {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.58);
+  background: var(--p-bg-inner);
+  color: var(--p-text-muted);
+}
+
+.curriculum-timer-badge.is-step {
+  background: var(--p-accent-bg);
+  color: var(--p-action);
+  letter-spacing: 0.1em;
 }
 
 .curriculum-timer-round-ring {
@@ -60,14 +62,64 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--p-text-strong);
   font-size: 11px;
+  font-weight: 900;
+}
+
+.curriculum-timer-round-ring span.has-round-label {
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.05;
+}
+
+.curriculum-timer-round-ring span.has-round-label small {
+  color: var(--p-text-muted);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.curriculum-timer-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 8px 0 0;
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.curriculum-timer-flow > span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.curriculum-timer-flow-arrow {
+  margin: 0 4px;
+  color: var(--p-text-faint);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.curriculum-timer-flow em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--p-text-muted);
+}
+
+.curriculum-timer-flow em.is-current {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--p-accent-bg);
+  color: var(--p-action);
   font-weight: 900;
 }
 
 .curriculum-timer-title-block h3 {
   margin: 0;
-  color: #fff;
+  color: var(--p-text-strong);
   font-size: 18px;
   font-weight: 950;
   line-height: 1.25;
@@ -76,7 +128,7 @@
 
 .curriculum-timer-title-block p {
   margin: 6px 0 0;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -84,40 +136,40 @@
 .curriculum-timer-focus {
   padding: 14px 16px;
   border-radius: 18px;
-  background: rgba(0, 0, 0, 0.34);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--p-bg-inner);
+  border: 1px solid var(--p-border);
 }
 
 .curriculum-timer-focus.is-rest {
-  border-color: rgba(160, 160, 165, 0.28);
-  background: rgba(160, 160, 165, 0.12);
+  border-color: var(--p-border-strong);
+  background: var(--p-bg-subtle);
 }
 
 .curriculum-timer-focus.is-prep {
-  border-color: rgba(160, 160, 165, 0.28);
-  background: rgba(160, 160, 165, 0.1);
+  border-color: var(--p-border-strong);
+  background: var(--p-bg-subtle);
 }
 
 .curriculum-timer-focus-label {
   display: block;
   margin-bottom: 6px;
-  color: var(--p-brass-soft);
+  color: var(--p-action);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.1em;
 }
 
 .curriculum-timer-focus.is-rest .curriculum-timer-focus-label {
-  color: #a0a0a5;
+  color: var(--p-text-muted);
 }
 
 .curriculum-timer-focus.is-prep .curriculum-timer-focus-label {
-  color: #c4c4c8;
+  color: var(--p-text-muted);
 }
 
 .curriculum-timer-focus strong {
   display: block;
-  color: #fff;
+  color: var(--p-text-strong);
   font-size: 22px;
   font-weight: 950;
   line-height: 1.2;
@@ -128,15 +180,15 @@
   margin-top: 8px;
   padding: 3px 9px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.62);
+  background: var(--p-bg-subtle);
+  color: var(--p-text-muted);
   font-size: 10px;
   font-weight: 800;
 }
 
 .curriculum-timer-focus p {
   margin: 10px 0 0;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--p-text);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -151,9 +203,9 @@
 .curriculum-timer-combo-chip {
   padding: 5px 10px;
   border-radius: 10px;
-  background: rgba(138, 46, 46, 0.18);
-  border: 1px solid rgba(138, 46, 46, 0.34);
-  color: #cf8b8b;
+  background: var(--p-accent-bg);
+  border: 1px solid var(--p-accent-border);
+  color: var(--p-action);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.04em;
@@ -172,19 +224,19 @@
   min-width: 72px;
   padding: 8px 10px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--p-border);
+  background: var(--p-bg-inner);
   text-align: center;
 }
 
 .curriculum-timer-step.is-active {
-  border-color: rgba(138, 46, 46, 0.55);
-  background: rgba(138, 46, 46, 0.14);
+  border-color: var(--p-accent-border);
+  background: var(--p-accent-bg);
 }
 
 .curriculum-timer-step span {
   display: block;
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--p-text-muted);
   font-size: 9px;
   font-weight: 800;
 }
@@ -192,7 +244,7 @@
 .curriculum-timer-step strong {
   display: block;
   margin-top: 3px;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--p-text);
   font-size: 11px;
   font-weight: 900;
   white-space: nowrap;
@@ -201,7 +253,7 @@
 }
 
 .curriculum-timer-step.is-active strong {
-  color: #fff;
+  color: var(--p-action);
 }
 
 .curriculum-timer-focus-solo {
@@ -230,21 +282,21 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--p-border-strong);
 }
 
 .curriculum-timer-drill-dot.is-done {
-  background: rgba(138, 46, 46, 0.45);
+  background: var(--p-accent-border);
 }
 
 .curriculum-timer-drill-dot.is-active {
   width: 18px;
-  background: var(--p-brass);
+  background: var(--p-action);
 }
 
 .curriculum-timer-drill-progress em {
   margin-left: auto;
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--p-text-muted);
   font-size: 10px;
   font-style: normal;
   font-weight: 800;
@@ -252,7 +304,7 @@
 
 .curriculum-timer-rest-hint {
   margin: 10px 0 0;
-  color: rgba(160, 160, 165, 0.85);
+  color: var(--p-text-muted);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -274,15 +326,15 @@
 }
 
 .curriculum-timer-toggle {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--p-border);
+  background: var(--p-bg-inner);
+  color: var(--p-text);
 }
 
 .curriculum-timer-end {
   border: 1px solid var(--p-accent-border);
   background: transparent;
-  color: var(--p-accent-soft);
+  color: var(--p-action);
 }
 
 .curriculum-timer-drill-list {
@@ -296,25 +348,25 @@
 .curriculum-timer-drill-item {
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.24);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--p-bg-inner);
+  border: 1px solid var(--p-border);
 }
 
 .curriculum-timer-drill-item.is-active {
-  border-color: rgba(138, 46, 46, 0.45);
-  background: rgba(138, 46, 46, 0.1);
+  border-color: var(--p-accent-border);
+  background: var(--p-accent-bg);
 }
 
 .curriculum-timer-drill-item strong {
   display: block;
-  color: #fff;
+  color: var(--p-text-strong);
   font-size: 13px;
 }
 
 .curriculum-timer-drill-item em {
   display: inline-block;
   margin-top: 4px;
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--p-text-muted);
   font-size: 10px;
   font-style: normal;
   font-weight: 800;
@@ -322,7 +374,19 @@
 
 .curriculum-timer-drill-item p {
   margin: 4px 0 0;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--p-text);
   font-size: 12px;
   line-height: 1.45;
+}
+
+@media (max-width: 430px) {
+  .curriculum-timer-panel {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .curriculum-timer-focus {
+    padding: 12px 14px;
+  }
 }

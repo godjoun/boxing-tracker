@@ -345,6 +345,7 @@ function MainAppShell({ theme, onToggleTheme }) {
   };
 
   const [curriculumFocus, setCurriculumFocus] = useState(null);
+  const [curriculumTab, setCurriculumTab] = useState(null);
 
   const goReadLesson = (session) => {
     if (!session?.id) return;
@@ -354,7 +355,45 @@ function MainAppShell({ theme, onToggleTheme }) {
     });
     setToolReturnPage("home");
     rememberCurriculumReturnStyle(null);
+    setCurriculumTab("program");
     setCurriculumFocus({ sessionId: session.id, openDrills: true });
+    setCurrentPage("curriculum");
+  };
+
+  const goNextTraining = (target) => {
+    if (target?.kind === "style" && target.styleId && target.stageId) {
+      rememberCurriculumReturnStyle({
+        styleId: target.styleId,
+        categoryId: target.stageId,
+      });
+      setCurriculumTab("techniques");
+      setCurriculumFocus(null);
+      setToolReturnPage("home");
+      setCurrentPage("curriculum");
+      return;
+    }
+
+    if (target?.kind === "curriculum" && target.sessionId) {
+      rememberCurriculumReturnStyle(null);
+      setCurriculumTab("program");
+      setCurriculumFocus({
+        sessionId: target.sessionId,
+        openDrills: true,
+      });
+      setToolReturnPage("home");
+      setCurrentPage("curriculum");
+    }
+  };
+
+  const goStyleContinue = (target) => {
+    if (!target?.styleId || !target?.stageId) return;
+    rememberCurriculumReturnStyle({
+      styleId: target.styleId,
+      categoryId: target.stageId,
+    });
+    setCurriculumTab("techniques");
+    setCurriculumFocus(null);
+    setToolReturnPage("home");
     setCurrentPage("curriculum");
   };
 
@@ -362,11 +401,31 @@ function MainAppShell({ theme, onToggleTheme }) {
     setCurriculumFocus(null);
   };
 
-  const goCurriculum = (returnPage = "train") => {
-    setToolReturnPage(returnPage);
+  const goCurriculum = (returnPage = "train", options = {}) => {
+    const tabOption = options?.tab;
+    const returnIsTab = returnPage === "program" || returnPage === "techniques";
+    const tab = tabOption || (returnIsTab ? returnPage : null);
+    setToolReturnPage(returnIsTab || !returnPage ? "train" : returnPage);
     rememberCurriculumReturnStyle(null);
     setCurriculumFocus(null);
+    setCurriculumTab(
+      tab === "techniques" || tab === "program" ? tab : null
+    );
     setCurrentPage("curriculum");
+  };
+
+  const leaveCurriculum = () => {
+    const target = toolReturnPage;
+    if (
+      !target ||
+      target === "curriculum" ||
+      target === "program" ||
+      target === "techniques"
+    ) {
+      goPage("train");
+      return;
+    }
+    goPage(target);
   };
 
   const goFromCategory = (page) => {
@@ -418,6 +477,7 @@ function MainAppShell({ theme, onToggleTheme }) {
             onOpenCurriculum={() => goCurriculum("home")}
             onOpenGrowth={() => goPage("growth")}
             onReadLesson={goReadLesson}
+            onContinueStyle={goStyleContinue}
           />
         )}
 
@@ -463,7 +523,7 @@ function MainAppShell({ theme, onToggleTheme }) {
               }
               openTimerFrom("train");
             }}
-            onOpenCurriculum={() => goCurriculum("train")}
+            onOpenCurriculum={(tab) => goCurriculum("train", { tab })}
             onOpenComboCreator={() => {
               setToolReturnPage("curriculum");
               goPage("combo-creator");
@@ -495,6 +555,7 @@ function MainAppShell({ theme, onToggleTheme }) {
               growth: "성장",
             }[timerReturnPage] || "훈련"}
             onGoProfile={goProfileCardMaker}
+            onGoNextTraining={goNextTraining}
           />
         )}
 
@@ -537,14 +598,20 @@ function MainAppShell({ theme, onToggleTheme }) {
 
         {currentPage === "curriculum" && (
           <CurriculumPage
+            key={[
+              curriculumTab || "default",
+              curriculumReturnStyle?.styleId || "",
+              curriculumReturnStyle?.categoryId || "",
+            ].join(":")}
             fighterLevel={fighterLevel}
             initialStyleId={curriculumReturnStyle?.styleId || null}
             initialCategoryId={curriculumReturnStyle?.categoryId || null}
+            initialTab={curriculumTab}
             focusSessionId={curriculumFocus?.sessionId || null}
             focusOpenDrills={Boolean(curriculumFocus?.openDrills)}
             focusOpenVideo={Boolean(curriculumFocus?.openVideo)}
             onFocusConsumed={clearCurriculumFocus}
-            onGoBack={() => goPage(toolReturnPage)}
+            onGoBack={leaveCurriculum}
             onStartSession={goTimerWithSession}
             onOpenComboCreator={() => {
               setToolReturnPage(

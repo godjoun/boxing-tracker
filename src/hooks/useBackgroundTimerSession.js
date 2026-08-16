@@ -110,6 +110,7 @@ export function shouldApplyLaunchConfig(launchConfig) {
   if (!existing?.hasStartedSession) return true;
   if (existing.phase === "done") return true;
   if (launchConfig.curriculumSessionId) return true;
+  if (launchConfig.styleId) return true;
 
   return !hasActiveTimerSession(existing);
 }

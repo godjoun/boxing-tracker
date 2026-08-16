@@ -7,6 +7,7 @@ import {
 } from "./profilePage/profileCardUtils";
 import { getLogMinutes } from "../utils/trainingStats";
 import { getTodaysLessonPreview } from "../utils/dailyLesson";
+import { getLastStyleContinue } from "../utils/styleProgress";
 import { BRAND_NAME } from "../utils/brand";
 import { getLogSummary, inferLogCategory } from "../utils/logCategories";
 import { isDevSurfaceLog } from "../utils/devMode";
@@ -115,6 +116,7 @@ export default function HomePage({
   onOpenCardMaker,
   onOpenGrowth,
   onReadLesson,
+  onContinueStyle,
 }) {
   const { logs = [], profile, updateProfile } = useTraining();
   const [isHeroMenuOpen, setIsHeroMenuOpen] = useState(false);
@@ -152,6 +154,7 @@ export default function HomePage({
   }, [logs, surfaceLogs]);
 
   const todaysLesson = useMemo(() => getTodaysLessonPreview(), []);
+  const styleContinue = getLastStyleContinue();
   const todayKey = getTodayKey();
   const todayRounds = dashboard.trainingByDate[todayKey]?.rounds || 0;
   const nickname = profile?.nickname || "나";
@@ -376,6 +379,23 @@ export default function HomePage({
           </p>
         )}
       </section>
+
+      {styleContinue ? (
+        <section className="home-style-continue" aria-label="이어서 하기">
+          <p className="home-style-continue-kicker">이어서 하기</p>
+          <p className="home-style-continue-meta">
+            {styleContinue.styleTitle} · STEP {styleContinue.order}
+          </p>
+          <strong>{styleContinue.stageTitle}</strong>
+          <button
+            type="button"
+            className="home-style-continue-cta"
+            onClick={() => onContinueStyle?.(styleContinue)}
+          >
+            이어서 훈련
+          </button>
+        </section>
+      ) : null}
 
       <section className="home-recent-card home-recent-card-slim" aria-label="최근 기록">
         <div className="home-section-row">

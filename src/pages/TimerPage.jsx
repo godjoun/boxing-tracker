@@ -15,9 +15,19 @@ import {
 } from "../utils/strengthProgram";
 import {
   getCurriculumPhaseFocus,
+  getCurriculumProgressionView,
+  isCurriculumSessionComplete,
   markCurriculumSessionComplete,
 } from "../utils/homeCurriculum";
+import {
+  canMarkStyleStageComplete,
+  getStyleProgressionView,
+  getStyleTimerStep,
+  isStyleStageComplete,
+  recordStyleProgressIfFullComplete,
+} from "../utils/styleProgress";
 import { formatTimerDurationLabel } from "../utils/curriculumTimerSync";
+import { STYLE_ROUND_WORK_SECONDS } from "../utils/techniqueCatalog";
 import {
   shouldApplyLaunchConfig,
   useTimerSessionListener,
@@ -37,11 +47,14 @@ import {
 import {
   playTimerBeep,
   previewTimerBeep,
+  resolveTimerPhaseBeep,
   resumeTimerAudio,
   startTimerAudioSession,
   stopTimerAudioSession,
   supportsHeadphoneTimerAudio,
 } from "../utils/timerAudio";
+import { RECORD_SOURCE } from "../utils/recordSource";
+import { getTimerFocusDrill } from "../utils/timerFocusDrill";
 import {
   buildTimerSnapshot,
   buildSkipPrepSession,
@@ -176,6 +189,78 @@ const clampSeconds = (value, min, max) => {
   return Math.max(min, Math.min(max, number));
 };
 
+function resolveProgressionLoop({
+  phase,
+  endedEarly,
+  hasSavedLog,
+  styleId,
+  styleCategoryId,
+  curriculumSessionId,
+}) {
+  if (phase !== "done") return null;
+  if (endedEarly) return null;
+
+  if (
+    canMarkStyleStageComplete({
+      isFullComplete: true,
+      styleId,
+      styleCategoryId,
+    })
+  ) {
+    if (!isStyleStageComplete(styleId, styleCategoryId) && hasSavedLog) {
+      return null;
+    }
+    return getStyleProgressionView(styleId, styleCategoryId);
+  }
+
+  if (!curriculumSessionId) return null;
+  if (!isCurriculumSessionComplete(curriculumSessionId) && hasSavedLog) {
+    return null;
+  }
+  return getCurriculumProgressionView(curriculumSessionId);
+}
+
+function getCompleteSessionLabel({
+  progressionLoop,
+  styleTimerStep,
+  curriculumSessionCode,
+  curriculumSessionTitle,
+  curriculumLogType,
+  routineTitle,
+  strengthPlan,
+  isIntervalMode,
+}) {
+  if (progressionLoop?.kind === "style") {
+    if (progressionLoop.styleTitle && progressionLoop.stageTitle) {
+      return `${progressionLoop.styleTitle} · ${progressionLoop.stageTitle}`;
+    }
+    return progressionLoop.styleTitle || progressionLoop.stageTitle || "";
+  }
+
+  if (styleTimerStep?.styleTitle) {
+    return styleTimerStep.stageTitle
+      ? `${styleTimerStep.styleTitle} · ${styleTimerStep.stageTitle}`
+      : styleTimerStep.styleTitle;
+  }
+
+  if (progressionLoop?.kind === "curriculum") {
+    if (progressionLoop.code && progressionLoop.title) {
+      return `${progressionLoop.code} · ${progressionLoop.title}`;
+    }
+    return progressionLoop.title || progressionLoop.code || "";
+  }
+
+  if (curriculumSessionCode && curriculumSessionTitle) {
+    return `${curriculumSessionCode} · ${curriculumSessionTitle}`;
+  }
+
+  if (curriculumSessionTitle) return curriculumSessionTitle;
+  if (strengthPlan?.title) return strengthPlan.title;
+  if (curriculumLogType) return curriculumLogType;
+  if (routineTitle && routineTitle !== "직접 설정 루틴") return routineTitle;
+  return isIntervalMode ? "인터벌 훈련" : "라운드 훈련";
+}
+
 export default function TimerPage({
   launchConfig = null,
   onLaunchConsumed,
@@ -185,8 +270,9 @@ export default function TimerPage({
   onGoBack,
   backLabel = "링",
   onGoProfile,
+  onGoNextTraining,
 }) {
-  const { addLog, updateLog, logs, profile } = useTraining();
+  const { addLog, updateLog, logs } = useTraining();
   const initialTimerState = readInitialTimerState();
 
   const [selectedPresetId, setSelectedPresetId] = useState(
@@ -194,6 +280,10 @@ export default function TimerPage({
   );
   const [curriculumSessionId, setCurriculumSessionId] = useState(
     initialTimerState.curriculumSessionId
+  );
+  const [styleId, setStyleId] = useState(initialTimerState.styleId || null);
+  const [styleCategoryId, setStyleCategoryId] = useState(
+    initialTimerState.styleCategoryId || null
   );
   const [curriculumRoutineTitle, setCurriculumRoutineTitle] = useState(
     initialTimerState.curriculumRoutineTitle
@@ -263,6 +353,10 @@ export default function TimerPage({
     initialTimerState.hasStartedSession
   );
   const [hasSavedLog, setHasSavedLog] = useState(initialTimerState.hasSavedLog);
+  const [endedEarly, setEndedEarly] = useState(false);
+  const [sessionStartedAt, setSessionStartedAt] = useState(
+    initialTimerState.sessionStartedAt || null
+  );
   const [completionResult, setCompletionResult] = useState(null);
   const [completedLogId, setCompletedLogId] = useState(null);
   const [completedAt, setCompletedAt] = useState(null);
@@ -322,6 +416,34 @@ export default function TimerPage({
     [curriculumDrills, phase, currentRound, totalRounds]
   );
 
+  const strengthSegment = useMemo(
+    () =>
+      strengthPlan
+        ? resolveStrengthSegment(strengthPlan, currentRound, phase)
+        : null,
+    [strengthPlan, currentRound, phase]
+  );
+
+  const focusDrill = useMemo(
+    () =>
+      getTimerFocusDrill({
+        phase,
+        currentRound,
+        totalRounds,
+        curriculumFocus,
+        strengthSegment,
+        workoutDetails,
+      }),
+    [
+      phase,
+      currentRound,
+      totalRounds,
+      curriculumFocus,
+      strengthSegment,
+      workoutDetails,
+    ]
+  );
+
   const applyPersistedState = useCallback((saved, { silent = false } = {}) => {
     if (!saved) return;
 
@@ -338,13 +460,27 @@ export default function TimerPage({
     }
     lastAppliedFingerprintRef.current = fingerprint;
 
-    // 복귀 catch-up: 최종 phase만 반영하고 놓친 전환음은 재생하지 않음.
+    const nextPhase = saved.phase ?? "work";
+    const fromPhase = previousPhaseRef.current;
+
     if (silent) {
-      previousPhaseRef.current = saved.phase ?? "work";
+      previousPhaseRef.current = nextPhase;
+    } else {
+      const beepType = resolveTimerPhaseBeep(
+        fromPhase,
+        nextPhase,
+        saved.restSecondsSetting
+      );
+      previousPhaseRef.current = nextPhase;
+      if (beepType) {
+        playTimerBeep(saved.soundMode ?? "basic", beepType);
+      }
     }
 
     setSelectedPresetId(saved.selectedPresetId ?? "match3");
     setCurriculumSessionId(saved.curriculumSessionId ?? null);
+    setStyleId(saved.styleId || null);
+    setStyleCategoryId(saved.styleCategoryId || null);
     setCurriculumRoutineTitle(saved.curriculumRoutineTitle ?? "");
     setCurriculumLogType(saved.curriculumLogType ?? "");
     setCurriculumSessionTitle(saved.curriculumSessionTitle ?? "");
@@ -364,11 +500,12 @@ export default function TimerPage({
     setWorkSecondsSetting(saved.workSecondsSetting ?? DEFAULT_BOXING_WORK_SECONDS);
     setRestSecondsSetting(saved.restSecondsSetting ?? 30);
     setCurrentRound(saved.currentRound ?? 1);
-    setPhase(saved.phase ?? "work");
+    setPhase(nextPhase);
     setRemainingTime(saved.remainingTime ?? 180);
     setIsRunning(Boolean(saved.isRunning));
     setHasStartedSession(Boolean(saved.hasStartedSession));
     setHasSavedLog(Boolean(saved.hasSavedLog));
+    setSessionStartedAt(saved.sessionStartedAt || null);
     setSoundMode(saved.soundMode ?? "basic");
     if (typeof saved.workoutDetails === "string") {
       setWorkoutDetails(normalizeWorkoutDetails(saved.workoutDetails));
@@ -394,6 +531,8 @@ export default function TimerPage({
 
   function clearCurriculumContext() {
     setCurriculumSessionId(null);
+    setStyleId(null);
+    setStyleCategoryId(null);
     setCurriculumRoutineTitle("");
     setCurriculumLogType("");
     setCurriculumSessionTitle("");
@@ -415,6 +554,8 @@ export default function TimerPage({
       buildTimerSnapshot({
         selectedPresetId,
         curriculumSessionId,
+        styleId,
+        styleCategoryId,
         curriculumRoutineTitle,
         curriculumLogType,
         curriculumSessionTitle,
@@ -440,6 +581,7 @@ export default function TimerPage({
         soundMode,
         routineTitle,
         workoutDetails,
+        sessionStartedAt,
       }),
       loaded
     );
@@ -449,6 +591,8 @@ export default function TimerPage({
   }, [
     selectedPresetId,
     curriculumSessionId,
+    styleId,
+    styleCategoryId,
     curriculumRoutineTitle,
     curriculumLogType,
     curriculumSessionTitle,
@@ -474,6 +618,7 @@ export default function TimerPage({
     soundMode,
     routineTitle,
     workoutDetails,
+    sessionStartedAt,
   ]);
 
   useEffect(() => {
@@ -595,34 +740,44 @@ export default function TimerPage({
   }, [isRunning]);
 
   useEffect(() => {
-    if (previousPhaseRef.current === phase) return;
+    const fromPhase = previousPhaseRef.current;
+    if (fromPhase === phase) return;
 
-    if (phase === "prep") {
-      playTimerBeep(soundMode, "prep");
-    }
-
-    if (phase === "work") {
-      playTimerBeep(soundMode, "work");
-    }
-
-    if (phase === "rest") {
-      playTimerBeep(soundMode, "rest");
-    }
-
-    if (phase === "cooldown") {
-      playTimerBeep(soundMode, "cooldown");
-    }
-
-    if (phase === "done") {
-      playTimerBeep(soundMode, "done");
-
-      setTimeout(() => {
-        playTimerBeep(soundMode, "done");
-      }, 180);
-    }
-
+    const beepType = resolveTimerPhaseBeep(
+      fromPhase,
+      phase,
+      restSecondsSetting
+    );
     previousPhaseRef.current = phase;
-  }, [phase, soundMode]);
+    if (beepType) {
+      playTimerBeep(soundMode, beepType);
+    }
+  }, [phase, restSecondsSetting, soundMode]);
+
+  const buildMantleSessionLogFields = useCallback(
+    ({ type, minutes, rounds, memo, publicComment, details }) => {
+      const endedAt = new Date().toISOString();
+      return {
+        type,
+        trainingType: type,
+        minutes,
+        duration: minutes,
+        rounds,
+        totalRounds: rounds,
+        completedRounds: rounds,
+        difficulty: "normal",
+        source: "timer",
+        recordSource: RECORD_SOURCE.MANTLE_SESSION,
+        startedAt: sessionStartedAt || null,
+        endedAt,
+        activities: details || undefined,
+        workoutDetails: details,
+        memo,
+        publicComment,
+      };
+    },
+    [sessionStartedAt]
+  );
 
   useEffect(() => {
     if (phase !== "done") return;
@@ -632,31 +787,34 @@ export default function TimerPage({
     savedLogRef.current = true;
 
     const details = normalizeWorkoutDetails(workoutDetails);
-    const savedLog = addLog({
-      type: curriculumLogType || `${totalRounds}R 라운드 훈련`,
-      minutes: totalWorkMinutes,
-      duration: totalWorkMinutes,
-      rounds: totalRounds,
-      totalRounds,
-      completedRounds: totalRounds,
-      difficulty: "normal",
-      source: "timer",
-      memo: `${routineTitle} · ${totalRounds}라운드 완료 / 운동 ${formatDurationLabel(
-        workSecondsSetting
-      )} / 휴식 ${formatDurationLabel(
-        restSecondsSetting
-      )} / 준비 ${isCurriculumSession ? formatTimerDurationLabel(activePrepSeconds) : `${PREP_SECONDS}초`}`,
-      publicComment: curriculumSessionId
-        ? `${routineTitle} 완료. 기술 코스 한 세션 더 버텼다.`
-        : `${totalRounds}R 완료. 오늘도 끝까지 버텼다.`,
-      workoutDetails: details,
-    });
+    const savedLog = addLog(
+      buildMantleSessionLogFields({
+        type: curriculumLogType || `${totalRounds}R 라운드 훈련`,
+        minutes: totalWorkMinutes,
+        rounds: totalRounds,
+        details,
+        memo: `${routineTitle} · ${totalRounds}라운드 완료 / 운동 ${formatDurationLabel(
+          workSecondsSetting
+        )} / 휴식 ${formatDurationLabel(
+          restSecondsSetting
+        )} / 준비 ${isCurriculumSession ? formatTimerDurationLabel(activePrepSeconds) : `${PREP_SECONDS}초`}`,
+        publicComment: curriculumSessionId
+          ? `${routineTitle} 완료. 기술 코스 한 세션 더 버텼다.`
+          : `${totalRounds}R 완료. 오늘도 끝까지 버텼다.`,
+      })
+    );
 
     trackProductEvent("training_complete");
 
     if (curriculumSessionId) {
       markCurriculumSessionComplete(curriculumSessionId);
     }
+
+    recordStyleProgressIfFullComplete({
+      isFullComplete: true,
+      styleId,
+      styleCategoryId,
+    });
 
     window.setTimeout(() => {
       if (details) {
@@ -679,9 +837,13 @@ export default function TimerPage({
     logs,
     curriculumLogType,
     curriculumSessionId,
+    styleId,
+    styleCategoryId,
     activePrepSeconds,
     isCurriculumSession,
     workoutDetails,
+    sessionStartedAt,
+    buildMantleSessionLogFields,
   ]);
 
   const resetTimerState = (nextWorkSeconds = workSecondsSetting) => {
@@ -692,11 +854,19 @@ export default function TimerPage({
     setRemainingTime(nextWorkSeconds);
     setHasStartedSession(false);
     setHasSavedLog(false);
+    setEndedEarly(false);
     setCompletionResult(null);
     setCompletedLogId(null);
     setCompletedAt(null);
+    setSessionStartedAt(null);
     savedLogRef.current = false;
   };
+
+  function beginSessionClock() {
+    const iso = new Date().toISOString();
+    setSessionStartedAt(iso);
+    return iso;
+  }
 
   function getCompletedRoundsSoFar() {
     if (!hasStartedSession) return 0;
@@ -717,23 +887,20 @@ export default function TimerPage({
     savedLogRef.current = true;
 
     const details = normalizeWorkoutDetails(workoutDetails);
-    const savedLog = addLog({
-      type: curriculumLogType || `${safeRounds}R 라운드 훈련`,
-      minutes,
-      duration: minutes,
-      rounds: safeRounds,
-      totalRounds: safeRounds,
-      completedRounds: safeRounds,
-      difficulty: "normal",
-      source: "timer",
-      memo: `${routineTitle} · ${safeRounds}/${totalRounds}라운드 기록 / 운동 ${formatDurationLabel(
-        workSecondsSetting
-      )} / 휴식 ${formatDurationLabel(restSecondsSetting)}`,
-      publicComment: curriculumSessionId
-        ? `${routineTitle} · ${safeRounds}라운드까지 기록했다.`
-        : `${safeRounds}R 기록. 오늘은 여기까지 벨을 울렸다.`,
-      workoutDetails: details,
-    });
+    const savedLog = addLog(
+      buildMantleSessionLogFields({
+        type: curriculumLogType || `${safeRounds}R 라운드 훈련`,
+        minutes,
+        rounds: safeRounds,
+        details,
+        memo: `${routineTitle} · ${safeRounds}/${totalRounds}라운드 기록 / 운동 ${formatDurationLabel(
+          workSecondsSetting
+        )} / 휴식 ${formatDurationLabel(restSecondsSetting)}`,
+        publicComment: curriculumSessionId
+          ? `${routineTitle} · ${safeRounds}라운드까지 기록했다.`
+          : `${safeRounds}R 기록. 오늘은 여기까지 벨은 울렸다.`,
+      })
+    );
 
     if (details) {
       setRecentWorkoutDetails(rememberWorkoutDetails(details));
@@ -743,6 +910,7 @@ export default function TimerPage({
     setCompletedLogId(savedLog.id);
     setCompletedAt(new Date());
     setHasSavedLog(true);
+    setEndedEarly(true);
     return savedLog;
   }
 
@@ -751,9 +919,14 @@ export default function TimerPage({
 
     setSelectedPresetId(config.presetId || "custom");
     setTotalRounds(config.rounds);
-    setWorkSecondsSetting(config.workSeconds);
+    const nextWorkSeconds = config.styleId
+      ? STYLE_ROUND_WORK_SECONDS
+      : config.workSeconds;
+    setWorkSecondsSetting(nextWorkSeconds);
     setRestSecondsSetting(config.restSeconds);
     setCurriculumSessionId(config.curriculumSessionId || null);
+    setStyleId(config.styleId || null);
+    setStyleCategoryId(config.styleCategoryId || null);
     setCurriculumRoutineTitle(config.routineTitle || "");
     setCurriculumLogType(config.logType || "");
     setCurriculumSessionTitle(config.curriculumTitle || "");
@@ -768,7 +941,7 @@ export default function TimerPage({
     setPrepSecondsSetting(config.prepSeconds ?? 10);
     setCooldownSecondsSetting(config.cooldownSeconds ?? 0);
     setWorkoutDetails(normalizeWorkoutDetails(config.workoutDetails));
-    resetTimerState(config.workSeconds);
+    resetTimerState(nextWorkSeconds);
   };
 
   function handleSkipStrengthWarmup() {
@@ -805,6 +978,7 @@ export default function TimerPage({
       if (launchConfig.autoStart) {
         track("training_start", { mode: "timer" });
         trackProductEvent("training_start");
+        beginSessionClock();
         setHasStartedSession(true);
         setCurrentRound(1);
         setPhase("prep");
@@ -838,6 +1012,7 @@ export default function TimerPage({
       resetTimerState();
 
       setTimeout(() => {
+        beginSessionClock();
         setHasStartedSession(true);
         setCurrentRound(1);
         setPhase("prep");
@@ -850,6 +1025,7 @@ export default function TimerPage({
     }
 
     if (!hasStartedSession) {
+      beginSessionClock();
       setHasStartedSession(true);
       setCurrentRound(1);
       setPhase("prep");
@@ -977,7 +1153,7 @@ export default function TimerPage({
   };
 
   const handleWorkSecondsChange = (deltaSeconds) => {
-    if (isRunning) return;
+    if (isRunning || styleId) return;
 
     const nextSeconds = clampSeconds(
       workSecondsSetting + deltaSeconds,
@@ -1072,6 +1248,12 @@ export default function TimerPage({
     }
   };
 
+  const handleGoNextTraining = () => {
+    if (!progressionLoop?.next) return;
+    flushWorkoutDetailsToLog();
+    onGoNextTraining?.(progressionLoop.next);
+  };
+
   function commitWorkoutDetails(nextValue) {
     const details = normalizeWorkoutDetails(nextValue);
     setWorkoutDetails(details);
@@ -1104,7 +1286,22 @@ export default function TimerPage({
 
   const isComplete = phase === "done";
   const isFocusMode = hasStartedSession && !isComplete;
-  const isSetupMode = !hasStartedSession && !isComplete;
+  const isLaunchedSession = Boolean(
+    styleId ||
+      curriculumSessionId ||
+      curriculumDrills.length > 0 ||
+      strengthPlan
+  );
+  const isSetupMode = !hasStartedSession && !isComplete && !isLaunchedSession;
+  const progressionLoop = resolveProgressionLoop({
+    phase,
+    endedEarly,
+    hasSavedLog,
+    styleId,
+    styleCategoryId,
+    curriculumSessionId,
+  });
+  const styleTimerStep = getStyleTimerStep(styleId, styleCategoryId);
 
   const completedMoment = completedAt || new Date();
   const completedDateLabel = `${completedMoment.getFullYear()}.${String(
@@ -1118,6 +1315,16 @@ export default function TimerPage({
   const stillCountLabel = isIntervalMode
     ? `${totalRounds}세트`
     : `${totalRounds}R`;
+  const completeSessionLabel = getCompleteSessionLabel({
+    progressionLoop,
+    styleTimerStep,
+    curriculumSessionCode,
+    curriculumSessionTitle,
+    curriculumLogType,
+    routineTitle,
+    strengthPlan,
+    isIntervalMode,
+  });
   const cumulativeRounds =
     completionResult?.totalRounds ?? getTotalRoundsFromLogs(logs);
   const cumulativeMinutes = getTotalMinutesFromLogs(logs);
@@ -1125,7 +1332,6 @@ export default function TimerPage({
     cumulativeMinutes >= 60
       ? `${Math.floor(cumulativeMinutes / 60)}시간`
       : `${cumulativeMinutes}분`;
-  const stillPlace = (profile?.area || "").trim();
   const trainingStreak = getTrainingStreak(logs);
 
   function handleTimerSurfaceTap() {
@@ -1222,6 +1428,8 @@ export default function TimerPage({
       {
         selectedPresetId,
         curriculumSessionId,
+        styleId,
+        styleCategoryId,
         curriculumRoutineTitle,
         curriculumLogType,
         curriculumSessionTitle,
@@ -1242,6 +1450,7 @@ export default function TimerPage({
         routineTitle,
         hasSavedLog,
         workoutDetails,
+        sessionStartedAt,
       },
       now
     );
@@ -1254,11 +1463,12 @@ export default function TimerPage({
   const timerCardStyle = {
     ...styles.timerCard,
     ...(isFocusMode ? { marginBottom: 0 } : {}),
+    ...(isComplete ? { padding: 0, marginBottom: 0, boxShadow: "none" } : {}),
   };
 
   const timeTextStyle = {
     ...styles.timeText,
-    ...(isFocusMode ? { fontSize: "clamp(72px, 22vw, 96px)", margin: "20px 0 12px" } : {}),
+    ...(isFocusMode ? { fontSize: "clamp(36px, 11vw, 56px)", margin: "10px 0 8px" } : {}),
   };
 
   return (
@@ -1266,7 +1476,14 @@ export default function TimerPage({
       className={`timer-page${isSetupMode ? " timer-page-setup" : ""}${
         isFocusMode ? " timer-page-focus" : ""
       }${isComplete ? " timer-page-complete" : ""}`}
-      style={isSetupMode ? undefined : styles.page}
+      style={
+        isSetupMode
+          ? undefined
+          : {
+              ...styles.page,
+              ...(isComplete ? { padding: "2px 14px 16px" } : {}),
+            }
+      }
     >
       {isSetupMode ? (
         <ComposerShell
@@ -1543,18 +1760,36 @@ export default function TimerPage({
           </p>
         ) : null}
 
-        {phase !== "done" ? (
-          <div className={isFocusMode ? "timer-focus-time" : ""} style={timeTextStyle}>
-            {formatTime(remainingTime)}
+        {isFocusMode && phase !== "prep" && phase !== "done" ? (
+          <>
+            {styleTimerStep ? (
+              <p className="timer-focus-step-kicker">
+                STEP {styleTimerStep.order} / {styleTimerStep.total}
+              </p>
+            ) : null}
+            <p className="timer-focus-round-hero">
+              {phase === "rest"
+                ? `REST · ${formatTime(remainingTime)}`
+                : isIntervalMode
+                  ? `SET ${currentRound} / ${totalRounds}`
+                  : `ROUND ${currentRound} / ${totalRounds}`}
+            </p>
+          </>
+        ) : null}
+
+        {isFocusMode && focusDrill ? (
+          <div className="timer-focus-drill" aria-live="polite">
+            {focusDrill.mode === "next" ? (
+              <span className="timer-focus-drill-kicker">NEXT</span>
+            ) : null}
+            <strong className="timer-focus-drill-text">{focusDrill.text}</strong>
           </div>
         ) : null}
 
-        {isFocusMode && phase !== "prep" && phase !== "done" ? (
-          <p className="timer-focus-round-hero">
-            {isIntervalMode
-              ? `SET ${currentRound} / ${totalRounds}`
-              : `ROUND ${currentRound} / ${totalRounds}`}
-          </p>
+        {phase !== "done" && !(isFocusMode && phase === "rest") ? (
+          <div className={isFocusMode ? "timer-focus-time" : ""} style={timeTextStyle}>
+            {formatTime(remainingTime)}
+          </div>
         ) : null}
 
         {isFocusMode && phase === "prep" ? (
@@ -1585,7 +1820,7 @@ export default function TimerPage({
           </div>
         ) : null}
 
-        {phase !== "done" && (
+        {phase !== "done" && !(isFocusMode && focusDrill) && (
           <div
             className={isFocusMode ? "timer-focus-name" : ""}
             style={styles.currentRoundName}
@@ -1614,6 +1849,7 @@ export default function TimerPage({
             totalRounds={totalRounds}
             focus={curriculumFocus}
             drills={curriculumDrills}
+            styleStep={styleTimerStep}
             onEndCurriculum={handleEndCurriculum}
           />
         ) : null}
@@ -1647,11 +1883,20 @@ export default function TimerPage({
           <div className="timer-still" aria-live="polite">
             <div className="timer-still-poster">
               <p className="timer-still-kicker">ROUND COMPLETE</p>
-
-              <p className="timer-still-credit">
-                {(profile?.nickname || "나").trim()}
-                {stillPlace ? ` · ${stillPlace}` : ""}
-              </p>
+              {completeSessionLabel ? (
+                <p className="timer-still-session">{completeSessionLabel}</p>
+              ) : null}
+              {progressionLoop?.kind === "style" ? (
+                <p className="timer-still-progress-note">
+                  STEP {progressionLoop.completedCount} / {progressionLoop.total}{" "}
+                  완료
+                </p>
+              ) : progressionLoop?.kind === "curriculum" ? (
+                <p className="timer-still-progress-note">
+                  {progressionLoop.completedCount} / {progressionLoop.totalSessions}{" "}
+                  세션 완료
+                </p>
+              ) : null}
 
               <div className="timer-still-headline">
                 <span className="timer-still-rounds">{stillCountLabel}</span>
@@ -1682,10 +1927,26 @@ export default function TimerPage({
                 <strong className="timer-still-bell">
                   {cumulativeRounds}번째 벨
                 </strong>
+                <span className="timer-still-meta-dot" aria-hidden="true">
+                  ·
+                </span>
                 <span className="timer-still-hours">
                   링 위에서 {cumulativeTimeLabel}
                 </span>
               </div>
+
+              {progressionLoop?.next ? (
+                <div className="timer-still-next">
+                  <span>다음</span>
+                  <strong>
+                    {progressionLoop.kind === "style"
+                      ? `STEP ${progressionLoop.next.order} · ${progressionLoop.next.title}`
+                      : progressionLoop.next.code
+                        ? `${progressionLoop.next.code} · ${progressionLoop.next.title}`
+                        : progressionLoop.next.title}
+                  </strong>
+                </div>
+              ) : null}
 
               {completionResult?.didLevelUp && completionResult.newTitle ? (
                 <p className="timer-still-chapter">
@@ -1698,66 +1959,19 @@ export default function TimerPage({
               </p>
             </div>
 
-            <label className="timer-workout-details timer-workout-details-complete">
-              <span>오늘 한 운동</span>
-              <input
-                type="text"
-                value={workoutDetails}
-                maxLength={WORKOUT_DETAILS_MAX_LENGTH}
-                placeholder="예: 줄넘기 2R · 쉐도우 3R · 샌드백 4R"
-                onChange={(event) => {
-                  const next = event.target.value.slice(
-                    0,
-                    WORKOUT_DETAILS_MAX_LENGTH
-                  );
-                  setWorkoutDetails(next);
-                }}
-                onBlur={(event) => commitWorkoutDetails(event.target.value)}
-                autoComplete="off"
-                enterKeyHint="done"
-              />
-            </label>
-            <WorkoutDetailsQuickBar
-              value={workoutDetails}
-              onChange={commitWorkoutDetails}
-            />
-            {recentWorkoutDetails.length > 0 ? (
-              <div className="training-workout-recent" role="list">
-                {recentWorkoutDetails.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    role="listitem"
-                    className="training-workout-recent-chip"
-                    onClick={() => commitWorkoutDetails(item)}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
             <div className="timer-still-actions">
-              <button
-                type="button"
-                className="timer-complete-card-cta"
-                onClick={handleGoProfile}
-              >
-                인증 카드 만들기
-              </button>
-
-              <div className="timer-complete-links">
+              {progressionLoop?.next ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    flushWorkoutDetailsToLog();
-                    handleStart();
-                  }}
+                  className="timer-complete-card-cta"
+                  onClick={handleGoNextTraining}
                 >
-                  다시 시작
+                  다음 훈련 보기
                 </button>
+              ) : (
                 <button
                   type="button"
+                  className="timer-complete-card-cta"
                   onClick={() => {
                     flushWorkoutDetailsToLog();
                     onGoHome?.();
@@ -1765,6 +1979,9 @@ export default function TimerPage({
                 >
                   홈으로
                 </button>
+              )}
+
+              <div className="timer-complete-links">
                 <button
                   type="button"
                   onClick={() => {
@@ -1774,8 +1991,84 @@ export default function TimerPage({
                 >
                   기록 보기
                 </button>
+                {progressionLoop?.next ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      flushWorkoutDetailsToLog();
+                      onGoHome?.();
+                    }}
+                  >
+                    홈으로
+                  </button>
+                ) : null}
               </div>
+
+              <button
+                type="button"
+                className="timer-complete-aux"
+                onClick={handleGoProfile}
+              >
+                인증 카드 만들기
+              </button>
+
+              {endedEarly ||
+              progressionLoop ||
+              styleId ||
+              curriculumSessionId ? null : (
+                <button
+                  type="button"
+                  className="timer-complete-restart"
+                  onClick={() => {
+                    flushWorkoutDetailsToLog();
+                    handleStart();
+                  }}
+                >
+                  같은 훈련 다시 하기
+                </button>
+              )}
             </div>
+
+            <details className="timer-complete-notes">
+              <summary>오늘 한 운동</summary>
+              <label className="timer-workout-details timer-workout-details-complete">
+                <input
+                  type="text"
+                  value={workoutDetails}
+                  maxLength={WORKOUT_DETAILS_MAX_LENGTH}
+                  placeholder="예: 줄넘기 2R · 쉐도우 3R · 샌드백 4R"
+                  onChange={(event) => {
+                    const next = event.target.value.slice(
+                      0,
+                      WORKOUT_DETAILS_MAX_LENGTH
+                    );
+                    setWorkoutDetails(next);
+                  }}
+                  onBlur={(event) => commitWorkoutDetails(event.target.value)}
+                  autoComplete="off"
+                  enterKeyHint="done"
+                />
+              </label>
+              <WorkoutDetailsQuickBar
+                value={workoutDetails}
+                onChange={commitWorkoutDetails}
+              />
+              {recentWorkoutDetails.length > 0 ? (
+                <div className="training-workout-recent" role="list">
+                  {recentWorkoutDetails.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      role="listitem"
+                      className="training-workout-recent-chip"
+                      onClick={() => commitWorkoutDetails(item)}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </details>
           </div>
         )}
 

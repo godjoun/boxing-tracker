@@ -12,6 +12,8 @@ import {
 export const TIMER_DEFAULT_STATE = {
   selectedPresetId: "match3",
   curriculumSessionId: null,
+  styleId: null,
+  styleCategoryId: null,
   curriculumRoutineTitle: "",
   curriculumLogType: "",
   curriculumSessionTitle: "",
@@ -36,6 +38,7 @@ export const TIMER_DEFAULT_STATE = {
   hasSavedLog: false,
   soundMode: "basic",
   workoutDetails: "",
+  sessionStartedAt: null,
 };
 
 /**
@@ -85,6 +88,8 @@ export function readInitialTimerState() {
     curriculumDrills: Array.isArray(aligned.curriculumDrills)
       ? aligned.curriculumDrills
       : [],
+    styleId: aligned.styleId || null,
+    styleCategoryId: aligned.styleCategoryId || null,
     strengthDayId: aligned.strengthDayId || null,
     canSkipStrengthWarmup: Boolean(aligned.canSkipStrengthWarmup),
     strengthPlan: aligned.strengthPlan || null,
@@ -95,6 +100,8 @@ export function buildTimerSnapshot(state, now = Date.now()) {
   return {
     selectedPresetId: state.selectedPresetId,
     curriculumSessionId: state.curriculumSessionId,
+    styleId: state.styleId || null,
+    styleCategoryId: state.styleCategoryId || null,
     curriculumRoutineTitle: state.curriculumRoutineTitle,
     curriculumLogType: state.curriculumLogType,
     curriculumSessionTitle: state.curriculumSessionTitle,
@@ -120,6 +127,7 @@ export function buildTimerSnapshot(state, now = Date.now()) {
     soundMode: state.soundMode,
     routineTitle: state.routineTitle,
     workoutDetails: state.workoutDetails || "",
+    sessionStartedAt: state.sessionStartedAt || null,
     updatedAt: now,
   };
 }

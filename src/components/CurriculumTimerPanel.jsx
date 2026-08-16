@@ -1,7 +1,7 @@
 import { getCurriculumDrillForRound } from "../utils/homeCurriculum";
 import "./CurriculumTimerPanel.css";
 
-function RoundRing({ currentRound, totalRounds }) {
+function RoundRing({ currentRound, totalRounds, roundLabel = "" }) {
   const progress = totalRounds > 0 ? currentRound / totalRounds : 0;
   const radius = 22;
   const circumference = 2 * Math.PI * radius;
@@ -15,7 +15,7 @@ function RoundRing({ currentRound, totalRounds }) {
           cy="27"
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.08)"
+          stroke="var(--p-border-strong)"
           strokeWidth="4"
         />
         <circle
@@ -23,14 +23,15 @@ function RoundRing({ currentRound, totalRounds }) {
           cy="27"
           r={radius}
           fill="none"
-          stroke="var(--p-brass)"
+          stroke="var(--p-action)"
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
         />
       </svg>
-      <span>
+      <span className={roundLabel ? "has-round-label" : ""}>
+        {roundLabel ? <small>{roundLabel}</small> : null}
         {currentRound}/{totalRounds}
       </span>
     </div>
@@ -66,6 +67,7 @@ export default function CurriculumTimerPanel({
   totalRounds,
   focus,
   drills = [],
+  styleStep = null,
   onEndCurriculum,
 }) {
   const focusClass =
@@ -129,14 +131,50 @@ export default function CurriculumTimerPanel({
             {sessionCode ? (
               <span className="curriculum-timer-badge is-muted">{sessionCode}</span>
             ) : null}
-            {weekTheme ? (
+            {styleStep ? (
+              <span className="curriculum-timer-badge is-step">
+                STEP {styleStep.order} / {styleStep.total}
+              </span>
+            ) : weekTheme ? (
               <span className="curriculum-timer-badge is-muted">{weekTheme}</span>
             ) : null}
           </div>
           <h3>{sessionTitle}</h3>
-          {sessionGoal ? <p>{sessionGoal}</p> : null}
+          {styleStep?.flowSteps?.length > 0 ? (
+            <>
+              <p className="curriculum-timer-flow" aria-label="스타일 흐름">
+                {styleStep.flowSteps.map((step, index) => (
+                  <span key={`${step}-${index}`}>
+                    {index > 0 ? (
+                      <i className="curriculum-timer-flow-arrow" aria-hidden="true">
+                        →
+                      </i>
+                    ) : null}
+                    <em
+                      className={
+                        index === styleStep.currentFlowIndex
+                          ? "is-current"
+                          : undefined
+                      }
+                    >
+                      {step}
+                    </em>
+                  </span>
+                ))}
+              </p>
+              {styleStep.stageTitle ? (
+                <p>{styleStep.stageTitle}</p>
+              ) : null}
+            </>
+          ) : sessionGoal ? (
+            <p>{sessionGoal}</p>
+          ) : null}
         </div>
-        <RoundRing currentRound={currentRound} totalRounds={totalRounds} />
+        <RoundRing
+          currentRound={currentRound}
+          totalRounds={totalRounds}
+          roundLabel={styleStep ? "ROUND" : ""}
+        />
       </div>
 
       {phase === "rest" && !focus?.nextDrill ? (

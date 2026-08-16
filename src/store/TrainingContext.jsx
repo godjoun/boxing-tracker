@@ -34,6 +34,7 @@ import { registerNickname } from "../api/nicknameApi";
 import { resetTutorial } from "../utils/tutorial";
 import { normalizeLogCategory } from "../utils/logCategories";
 import { markFreshOnboardingMigrationComplete } from "../utils/profileMigration";
+import { normalizeProofLog, resolveRecordSource } from "../utils/recordSource";
 
 const TrainingContext = createContext(null);
 const GUEST_USER_ID = "local-user";
@@ -110,7 +111,11 @@ function loadUserState(userId) {
   };
 
   return {
-    logs: normalizeLogScores(loadStorage(keys.logs, []).map(normalizeLogCategory)),
+    logs: normalizeLogScores(
+      loadStorage(keys.logs, []).map((log) =>
+        normalizeProofLog(normalizeLogCategory(log))
+      )
+    ),
     feed: loadStorage(keys.feed, []),
     profile,
     mode: localStorage.getItem(keys.mode) || "solo",
@@ -337,10 +342,15 @@ function TrainingProviderState({ children, userId }) {
     completedRounds = 0,
     publicComment = "",
     workoutDetails = "",
+    activities,
     category,
     subtype,
     metrics = {},
     source,
+    recordSource,
+    startedAt,
+    endedAt,
+    trainingType,
   }) {
     const finalMinutes = Number(minutes || duration || 0);
     const finalRounds = getFinalRounds({
@@ -349,40 +359,51 @@ function TrainingProviderState({ children, userId }) {
       completedRounds,
     });
     const finalDate = date || getTodayString();
-    const finalType = type || "복싱 훈련";
+    const finalType = type || trainingType || "복싱 훈련";
+    const nowIso = new Date().toISOString();
 
-    const finalSource =
-      source || (finalRounds > 0 && memo.includes("라운드") ? "timer" : "manual");
+    const finalSource = source || "manual";
+    const details = String(workoutDetails || activities || "").trim();
 
-    const newLog = normalizeLogCategory({
-      id: crypto.randomUUID(),
-      date: finalDate,
-      type: finalType,
-      category,
-      subtype,
-      metrics,
-      minutes: finalMinutes,
-      duration: finalMinutes,
-      rounds: finalRounds,
-      totalRounds: finalRounds,
-      completedRounds: finalRounds,
-      difficulty,
-      difficultyLabel: DIFFICULTY_LABEL[difficulty] || "보통",
-      condition: condition || "normal",
-      conditionLabel: getConditionLabel(condition),
-      memo,
-      publicComment,
-      workoutDetails: String(workoutDetails || "").trim(),
-      source: finalSource,
-      sourceLabel: getRecordSourceLabel(finalSource),
-      isEdited: false,
-      score: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    const newLog = normalizeProofLog(
+      normalizeLogCategory({
+        id: crypto.randomUUID(),
+        date: finalDate,
+        type: finalType,
+        trainingType: trainingType || finalType,
+        category,
+        subtype,
+        metrics,
+        minutes: finalMinutes,
+        duration: finalMinutes,
+        rounds: finalRounds,
+        totalRounds: finalRounds,
+        completedRounds: finalRounds,
+        difficulty,
+        difficultyLabel: DIFFICULTY_LABEL[difficulty] || "보통",
+        condition: condition || "normal",
+        conditionLabel: getConditionLabel(condition),
+        memo,
+        publicComment,
+        workoutDetails: details,
+        activities: activities || details || undefined,
+        source: finalSource,
+        recordSource: resolveRecordSource({ recordSource, source: finalSource }),
+        sourceLabel: getRecordSourceLabel(finalSource),
+        isEdited: false,
+        score: 0,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        ...(startedAt ? { startedAt } : {}),
+        ...(endedAt ? { endedAt } : {}),
+      })
+    );
 
     if (!newLog.workoutDetails) {
       delete newLog.workoutDetails;
+    }
+    if (!newLog.activities) {
+      delete newLog.activities;
     }
 
     newLog.score = calculateLogScore(newLog);
@@ -412,24 +433,31 @@ function TrainingProviderState({ children, userId }) {
         });
 
         const nextSource = updates.source || log.source || "manual";
-
-        const nextLog = normalizeLogCategory({
-          ...log,
-          ...updates,
-          minutes: nextMinutes,
-          duration: nextMinutes,
-          rounds: nextRounds,
-          totalRounds: nextRounds,
-          completedRounds: nextRounds,
-          difficulty: nextDifficulty,
-          difficultyLabel: DIFFICULTY_LABEL[nextDifficulty] || "보통",
-          condition: nextCondition,
-          conditionLabel: getConditionLabel(nextCondition),
+        const nextRecordSource = resolveRecordSource({
+          recordSource: updates.recordSource || log.recordSource,
           source: nextSource,
-          sourceLabel: getRecordSourceLabel(nextSource),
-          isEdited: true,
-          updatedAt: new Date().toISOString(),
         });
+
+        const nextLog = normalizeProofLog(
+          normalizeLogCategory({
+            ...log,
+            ...updates,
+            minutes: nextMinutes,
+            duration: nextMinutes,
+            rounds: nextRounds,
+            totalRounds: nextRounds,
+            completedRounds: nextRounds,
+            difficulty: nextDifficulty,
+            difficultyLabel: DIFFICULTY_LABEL[nextDifficulty] || "보통",
+            condition: nextCondition,
+            conditionLabel: getConditionLabel(nextCondition),
+            source: nextSource,
+            recordSource: nextRecordSource,
+            sourceLabel: getRecordSourceLabel(nextSource),
+            isEdited: true,
+            updatedAt: new Date().toISOString(),
+          })
+        );
 
         return {
           ...nextLog,
@@ -491,8 +519,14 @@ function TrainingProviderState({ children, userId }) {
     }
 
     const nextLogs = merge
-      ? normalizeLogScores(mergeLogs(logs, data.logs).map(normalizeLogCategory))
-      : normalizeLogScores(data.logs.map(normalizeLogCategory));
+      ? normalizeLogScores(
+          mergeLogs(logs, data.logs).map((log) =>
+            normalizeProofLog(normalizeLogCategory(log))
+          )
+        )
+      : normalizeLogScores(
+          data.logs.map((log) => normalizeProofLog(normalizeLogCategory(log)))
+        );
 
     const nextFeed = merge ? mergeFeed(feed, data.feed || []) : data.feed || [];
     const safeImportedProfile = sanitizeProfileForStorage(data.profile);

@@ -285,7 +285,9 @@ export function buildAllTimeStats(logs) {
   const sparringCount = logs.filter(isSparringLog).length;
   const breakdown = buildTypeBreakdown(logs);
   const weeklyReport = buildWeeklyReport(logs);
-  const timerLogs = logs.filter((log) => log.source === "timer").length;
+  const timerLogs = logs.filter(
+    (log) => log.source === "timer" || log.recordSource === "mantle_session"
+  ).length;
   const topRoundDay = buildDailyActivity(logs).sort((a, b) => b.rounds - a.rounds)[0];
 
   return {

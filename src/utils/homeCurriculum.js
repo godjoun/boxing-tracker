@@ -1,4 +1,5 @@
 import { resolveSessionTimerConfig } from "./curriculumTimerSync";
+import { STYLE_ROUND_WORK_SECONDS } from "./techniqueCatalog";
 
 const STORAGE_KEY = "fitness-league-curriculum-progress";
 
@@ -41,7 +42,7 @@ export const HOME_CURRICULUM = {
           id: "w1-s1",
           code: "DAY 1",
           title: "스탠스와 가드",
-          goal: "오소틱·가드 위치를 몸에 익힌다",
+          goal: "왼발을 앞에 두는 기본 자세와 가드 위치를 몸에 익힌다",
           rounds: 3,
           workSeconds: 120,
           restSeconds: 30,
@@ -55,7 +56,7 @@ export const HOME_CURRICULUM = {
               name: "스탠스 체크",
               duration: "3분",
               description:
-                "왼발 앞·오른발 뒤(오소틱). 발 너비는 어깨보다 살짝 넓게, 무게는 발바닥 전체에 고르게 두십시오",
+                "왼발을 앞에 두고 오른발은 뒤에 둡니다. 발 너비는 어깨보다 살짝 넓게, 무게는 발바닥 전체에 고르게 두십시오",
             },
             {
               name: "가드 유지 섀도우",
@@ -516,17 +517,22 @@ export function buildCurriculumTimerLaunch(session) {
   if (!session) return null;
 
   const isCustom = Boolean(session.isCustom);
+  const isStyleSession = Boolean(session.styleId);
   const timerConfig = resolveSessionTimerConfig(session);
 
   return {
     presetId: `curriculum-${session.id}`,
     rounds: timerConfig.rounds,
-    workSeconds: timerConfig.workSeconds,
+    workSeconds: isStyleSession
+      ? STYLE_ROUND_WORK_SECONDS
+      : timerConfig.workSeconds,
     restSeconds: timerConfig.restSeconds,
     prepSeconds: timerConfig.prepSeconds,
     cooldownSeconds: timerConfig.cooldownSeconds,
     scheduleSummary: timerConfig.scheduleSummary,
     curriculumSessionId: isCustom ? null : session.id,
+    styleId: session.styleId || null,
+    styleCategoryId: session.styleCategoryId || null,
     curriculumSessionCode: session.code || "",
     curriculumWeekLabel: session.weekLabel || "",
     curriculumWeekTheme: session.weekTheme || "",
@@ -539,6 +545,45 @@ export function buildCurriculumTimerLaunch(session) {
     logType: isCustom
       ? `커스텀 훈련 · ${session.title}`
       : `기술 · ${session.title}`,
+    autoStart: true,
+  };
+}
+
+export function getCurriculumProgressionView(
+  sessionId,
+  progress = getCurriculumProgress()
+) {
+  const session = getCurriculumSessionById(sessionId);
+  const already = Boolean(
+    session?.id && progress.completedSessionIds.includes(session.id)
+  );
+  const completedCount = session
+    ? already
+      ? progress.completedCount
+      : progress.completedCount + 1
+    : progress.completedCount;
+  const completedSet = new Set(progress.completedSessionIds);
+  if (session?.id) completedSet.add(session.id);
+
+  const next =
+    getAllCurriculumSessions().find((item) => !completedSet.has(item.id)) ||
+    null;
+
+  return {
+    kind: "curriculum",
+    sessionId: session?.id || sessionId || null,
+    code: session?.code || "",
+    title: session?.title || "",
+    completedCount,
+    totalSessions: progress.totalSessions,
+    next: next
+      ? {
+          kind: "curriculum",
+          sessionId: next.id,
+          code: next.code || "",
+          title: next.title,
+        }
+      : null,
   };
 }
 

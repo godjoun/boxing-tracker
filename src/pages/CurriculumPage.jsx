@@ -33,8 +33,15 @@ import { getLessonBySessionId } from "../utils/lessonCatalog";
 import {
   buildStyleDrillSession,
   getStyleCategories,
+  getStyleDrillWorkSummary,
   getTechniqueCatalog,
 } from "../utils/techniqueCatalog";
+import {
+  getNextStyleStage,
+  getStyleStageStats,
+  isStyleStageComplete,
+  readStyleProgress,
+} from "../utils/styleProgress";
 import ComposerShell, {
   ComposerDockPrimary,
   ComposerSegmentTabs,
@@ -141,6 +148,7 @@ function WeekProgressRing({ percent }) {
 
 export default function CurriculumPage({
   fighterLevel = 1,
+  initialTab = null,
   initialStyleId = null,
   initialCategoryId = null,
   focusSessionId = null,
@@ -160,9 +168,15 @@ export default function CurriculumPage({
   const [sessionDrafts, setSessionDrafts] = useState({});
   const [expandedDrillId, setExpandedDrillId] = useState(null);
   const [expandedVideoId, setExpandedVideoId] = useState(null);
-  const [activeTab, setActiveTab] = useState(
-    initialStyleId ? "techniques" : "program"
-  );
+  const restoreStyleId = initialTab === "program" ? null : initialStyleId;
+  const restoreCategoryId = restoreStyleId ? initialCategoryId : null;
+  const [activeTab, setActiveTab] = useState(() => {
+    if (initialTab === "techniques" || initialTab === "program") {
+      return initialTab;
+    }
+    if (restoreStyleId) return "techniques";
+    return "program";
+  });
   const [openWeekId, setOpenWeekId] = useState(() => {
     const next = getRecommendedSession(progress);
     return next?.weekId || HOME_CURRICULUM.weeks[0]?.id || null;
@@ -181,13 +195,20 @@ export default function CurriculumPage({
   const sessions = useMemo(() => getAllCurriculumSessions(), []);
   const weekOverviews = useMemo(() => getCurriculumWeekOverviews(), []);
   const techniqueCatalog = useMemo(() => getTechniqueCatalog(), []);
-  const [selectedStyleId, setSelectedStyleId] = useState(initialStyleId);
+  const styleProgress = readStyleProgress();
+  const [selectedStyleId, setSelectedStyleId] = useState(restoreStyleId);
   const [selectedCategoryId, setSelectedCategoryId] =
-    useState(initialCategoryId);
+    useState(restoreCategoryId);
   const selectedStyle = useMemo(
     () => techniqueCatalog.find((style) => style.id === selectedStyleId) || null,
     [techniqueCatalog, selectedStyleId]
   );
+  const selectedStyleStats = selectedStyle
+    ? getStyleStageStats(selectedStyle.id, styleProgress)
+    : { completed: 0, total: 0 };
+  const nextStyleStage = selectedStyle
+    ? getNextStyleStage(selectedStyle.id, styleProgress)
+    : null;
   const styleCategories = useMemo(
     () => getStyleCategories(selectedStyle),
     [selectedStyle]
@@ -285,6 +306,14 @@ export default function CurriculumPage({
       return;
     }
     setSelectedStyleId(null);
+  }
+
+  function handleBack() {
+    if (isCategoryDetail || isStyleDetail) {
+      handleCloseStyle();
+      return;
+    }
+    onGoBack?.();
   }
 
   function handleOpenCategory(categoryId) {
@@ -385,7 +414,7 @@ export default function CurriculumPage({
         <button
           className="curriculum-back"
           type="button"
-          onClick={isStyleDetail ? handleCloseStyle : onGoBack}
+          onClick={handleBack}
         >
           {isCategoryDetail
             ? "← 카테고리"
@@ -420,9 +449,18 @@ export default function CurriculumPage({
             </>
           ) : isStyleDetail ? (
             <>
-              <span className="composer-meta-label">카테고리</span>
-              <strong>{selectedStyle.title} 안에서 고르기</strong>
-              <p>{selectedStyle.summary}</p>
+              <span className="composer-meta-label">진행</span>
+              <strong>
+                {selectedStyleStats.completed} / {selectedStyleStats.total} 완료
+              </strong>
+              <p>
+                {nextStyleStage
+                  ? `다음 · ${nextStyleStage.stageTitle}`
+                  : selectedStyleStats.total > 0 &&
+                    selectedStyleStats.completed === selectedStyleStats.total
+                  ? "이 스타일 단계를 모두 마쳤습니다."
+                  : selectedStyle.summary}
+              </p>
               {selectedStyle.advanced ? (
                 <p className="style-detail-advanced">
                   숙련자 권장 · 균형이 잡힌 뒤 연습하세요
@@ -489,7 +527,9 @@ export default function CurriculumPage({
       {activeTab === "techniques" && !selectedStyle ? (
         <section className="style-lab">
           <div className="style-picker" aria-label="복싱 스타일 선택">
-            {techniqueCatalog.map((style) => (
+            {techniqueCatalog.map((style) => {
+              const stats = getStyleStageStats(style.id, styleProgress);
+              return (
               <button
                 type="button"
                 className="style-picker-card"
@@ -502,10 +542,16 @@ export default function CurriculumPage({
                 <span className="style-picker-en">{style.en}</span>
                 <strong>{style.title}</strong>
                 <p>{style.summary}</p>
+                {stats.total > 0 ? (
+                  <span className="style-picker-progress">
+                    {stats.completed} / {stats.total} 완료
+                  </span>
+                ) : null}
                 {style.advanced ? <em>숙련자 권장</em> : null}
                 <span className="style-picker-enter">들어가기 →</span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -516,10 +562,23 @@ export default function CurriculumPage({
           aria-label={`${selectedStyle.title} 카테고리`}
         >
           <div className="style-category-grid">
-            {styleCategories.map((category) => (
+            {styleCategories.map((category) => {
+              const stageComplete =
+                category.kind === "stage" &&
+                isStyleStageComplete(
+                  selectedStyle.id,
+                  category.stage.id,
+                  styleProgress
+                );
+              const isNext =
+                category.kind === "stage" &&
+                nextStyleStage?.stageId === category.stage.id;
+              return (
               <button
                 type="button"
-                className={`style-category-card kind-${category.kind}`}
+                className={`style-category-card kind-${category.kind}${
+                  stageComplete ? " is-complete" : ""
+                }${isNext ? " is-next" : ""}`}
                 key={category.id}
                 onClick={() => handleOpenCategory(category.id)}
               >
@@ -532,9 +591,15 @@ export default function CurriculumPage({
                 </span>
                 <strong>{category.label}</strong>
                 <p>{category.title}</p>
+                {stageComplete ? (
+                  <span className="style-category-status">✓ 완료</span>
+                ) : isNext ? (
+                  <span className="style-category-status is-next">← NEXT</span>
+                ) : null}
                 <span className="style-picker-enter">보기 →</span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </section>
       ) : null}
@@ -576,20 +641,19 @@ export default function CurriculumPage({
           {selectedCategory.kind === "stage" ? (
             <article className="style-category-panel">
               <p className="style-category-panel-label">
-                단계 {String(selectedCategory.order).padStart(2, "0")} · 드릴
+                STEP {selectedCategory.order} / {selectedStyle.stages.length}
               </p>
               <h2>{selectedCategory.stage.title}</h2>
               <p>{selectedCategory.stage.purpose}</p>
 
               <div className="style-drill style-detail-drill">
-                <div className="style-drill-head">
-                  <div>
-                    <span>DRILL · 3분 기준</span>
-                    <strong>{selectedCategory.stage.drill.title}</strong>
-                  </div>
-                  <em>{selectedCategory.stage.drill.rounds}R</em>
-                </div>
-                <p>{selectedCategory.stage.drill.goal}</p>
+                <p className="style-drill-load">
+                  {
+                    getStyleDrillWorkSummary(selectedCategory.stage.drill.rounds)
+                      .summary
+                  }
+                </p>
+                <p className="style-drill-rest">라운드 사이 휴식 30초</p>
                 <ol>
                   {selectedCategory.stage.drill.cues.map((cue) => (
                     <li key={cue}>{cue}</li>
@@ -605,7 +669,7 @@ export default function CurriculumPage({
                     )
                   }
                 >
-                  {selectedCategory.stage.drill.rounds}R 드릴 시작
+                  훈련 시작
                 </button>
               </div>
             </article>

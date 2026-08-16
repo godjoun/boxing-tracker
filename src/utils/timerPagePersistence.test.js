@@ -61,6 +61,32 @@ describe("timerPagePersistence boxing defaults", () => {
     expect(state.workSecondsSetting).toBe(120);
     expect(state.restSecondsSetting).toBe(45);
   });
+
+  it("preserves style drill context across snapshots", () => {
+    loadTimerSession.mockReturnValue({
+      selectedPresetId: "curriculum-style-infighter-entry",
+      styleId: "infighter",
+      styleCategoryId: "entry",
+      curriculumSessionId: null,
+      totalRounds: 3,
+      workSecondsSetting: 180,
+      restSecondsSetting: 30,
+      remainingTime: 180,
+      phase: "work",
+      isRunning: true,
+      hasStartedSession: true,
+    });
+
+    const state = readInitialTimerState();
+    expect(state.styleId).toBe("infighter");
+    expect(state.styleCategoryId).toBe("entry");
+    expect(state.curriculumSessionId).toBeNull();
+
+    const snapshot = buildTimerSnapshot(state);
+    expect(snapshot.styleId).toBe("infighter");
+    expect(snapshot.styleCategoryId).toBe("entry");
+    expect(snapshot.curriculumSessionId).toBeNull();
+  });
 });
 
 describe("mergeRunningTimerPersistSnapshot", () => {

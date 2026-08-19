@@ -7,16 +7,20 @@ import SparringPartnerPanel from "./dojoBreaker/SparringPartnerPanel";
 
 /** Community IA: feed | hub | gyms | sparring | meeting (+ favorites filter alias) */
 function resolveView(view) {
-  if (view === "feed" || view === "community") return "feed";
-  if (view === "hub" || view === "exchange") return "hub";
-  if (view === "gyms" || view === "favorites") return view;
-  if (view === "meeting") return "meeting";
+  if (view === "favorites") return "favorites";
   if (
     RELEASE_SCOPE.rivals &&
     (view === "sparring" || view === "sparring-lock" || view === "rivals")
   ) {
     return "sparring";
   }
+  if (!RELEASE_SCOPE.dojoServer) {
+    return "gyms";
+  }
+  if (view === "feed" || view === "community") return "feed";
+  if (view === "hub" || view === "exchange") return "hub";
+  if (view === "gyms") return "gyms";
+  if (view === "meeting") return "meeting";
   return "feed";
 }
 

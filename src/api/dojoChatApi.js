@@ -1,10 +1,13 @@
 import { getSupabase, isSupabaseConfigured } from "../lib/supabaseClient";
+import { isDojoServerEnabled } from "../utils/releaseScope";
 import { resolveDojoActorId } from "./dojoExchangeApi";
 
 export { resolveDojoActorId };
 
 export function hasDojoChatRemote() {
-  return isSupabaseConfigured && Boolean(getSupabase());
+  return (
+    isDojoServerEnabled() && isSupabaseConfigured && Boolean(getSupabase())
+  );
 }
 
 function isRemoteUnavailable(error) {

@@ -1,3 +1,5 @@
+import { RELEASE_SCOPE } from "./releaseScope";
+
 export const TIMER_MENU_CARD = {
   id: "timer",
   icon: "round",
@@ -82,7 +84,7 @@ const SHORTCUTS = {
     title: "함께하기",
     description: "체육관과 다른 복서 만나기",
     route: "gym",
-    gymView: "feed",
+    gymView: RELEASE_SCOPE.dojoServer ? "feed" : "gyms",
     accent: "slate",
   },
   gyms: {

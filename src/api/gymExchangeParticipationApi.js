@@ -1,5 +1,6 @@
 import { getSupabase, isSupabaseConfigured } from "../lib/supabaseClient";
 import { ensureExchangeAuthSession } from "../utils/exchangeAuth";
+import { isDojoServerEnabled } from "../utils/releaseScope";
 
 const NICKNAME_MAX = 40;
 const GYM_NAME_MAX = 80;
@@ -51,6 +52,9 @@ function assertEventId(eventId) {
 }
 
 function requireConfigured() {
+  if (!isDojoServerEnabled()) {
+    throw new Error("Dojo server features are locked for launch 1");
+  }
   if (!isSupabaseConfigured || !getSupabase()) {
     throw new Error("Supabase is not configured");
   }
@@ -58,7 +62,7 @@ function requireConfigured() {
 
 /** 기존 세션만 확인. 없으면 null (익명 로그인 강제 없음). */
 export async function getExchangeAuthUserIdIfPresent() {
-  if (!isSupabaseConfigured) return null;
+  if (!isDojoServerEnabled() || !isSupabaseConfigured) return null;
   const supabase = getSupabase();
   if (!supabase) return null;
   const {
@@ -104,7 +108,7 @@ export async function getMyGymExchangeParticipation(eventId, options = {}) {
  * 세션 없으면 [] (ensureExchangeAuthSession 호출 안 함).
  */
 export async function listMyGymExchangeParticipations() {
-  if (!isSupabaseConfigured || !getSupabase()) {
+  if (!isDojoServerEnabled() || !isSupabaseConfigured || !getSupabase()) {
     return [];
   }
   const uid = await getExchangeAuthUserIdIfPresent();

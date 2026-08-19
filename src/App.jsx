@@ -15,6 +15,7 @@ import StrengthProgramPage from "./pages/StrengthProgramPage";
 import TrainingHubPage from "./pages/TrainingHubPage";
 import GrowthHubPage from "./pages/GrowthHubPage";
 import FeatureLockScreen from "./components/FeatureLockScreen";
+import { RELEASE_SCOPE } from "./utils/releaseScope";
 import OnboardingSetupPage from "./pages/OnboardingSetupPage";
 import EventV0ParticipantPage from "./pages/EventV0ParticipantPage";
 import EventV0OperatorPage from "./pages/EventV0OperatorPage";
@@ -69,8 +70,8 @@ function readExchangeDeepLinkBootstrap() {
     window.history.replaceState({}, "", nextUrl);
 
     const event = getPublishableGymExchangeEventById(exchangeId);
-    if (!event) {
-      return { page: "home", gymView: "feed", focusId: null };
+    if (!event || !RELEASE_SCOPE.dojoServer) {
+      return { page: "home", gymView: "gyms", focusId: null };
     }
 
     return { page: "gym", gymView: "hub", focusId: event.id };
@@ -280,7 +281,7 @@ function MainAppShell({ theme, onToggleTheme }) {
     setCurrentPage("profile");
   };
 
-  const goGym = (view = "feed") => {
+  const goGym = (view = RELEASE_SCOPE.dojoServer ? "feed" : "gyms") => {
     setGymView(view);
     setCurrentPage("gym");
   };

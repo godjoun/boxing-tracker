@@ -1,4 +1,5 @@
 import { getSupabase, isSupabaseConfigured } from "../lib/supabaseClient";
+import { isDojoServerEnabled } from "../utils/releaseScope";
 
 const ACTOR_KEY = "fitness-league-dojo-actor-id";
 
@@ -33,7 +34,9 @@ export function resolveDojoActorId(userId) {
 }
 
 export function hasDojoExchangeRemote() {
-  return isSupabaseConfigured && Boolean(getSupabase());
+  return (
+    isDojoServerEnabled() && isSupabaseConfigured && Boolean(getSupabase())
+  );
 }
 
 function mapRemoteEvent(row, actorId) {

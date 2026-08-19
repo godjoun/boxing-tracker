@@ -3,6 +3,12 @@
 레포의 SQL 원본. Supabase SQL Editor에 **복붙 → Save**.  
 이미 돌아가는 DB는 장부를 지우지 말고, 스니펫만 이 목록으로 맞춘다.
 
+## 출시 1차 lockdown (아직 production Run 금지)
+
+운영자가 SQL Editor에서 **직접** Run: `launch1_dojo_lockdown.sql`  
+입점/문의/모임/DM/라이벌 서버 테이블·RPC만 차단. **row 삭제 없음. EVENT v0 미포함.**  
+다시 켤 때는 아래 dojo 스니펫을 Auth/RLS 개선본으로 재적용한다.
+
 ## 지금 쓰는 것 (11개)
 
 | # | 저장 이름 | 파일 |

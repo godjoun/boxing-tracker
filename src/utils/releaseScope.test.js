@@ -1,9 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { FEATURE_UNLOCKS, isSparringUnlocked } from "./featureUnlocks";
 import { MENU_GROUPS } from "./appMenu";
-import { RELEASE_SCOPE } from "./releaseScope";
+import { RELEASE_SCOPE, isDojoServerEnabled } from "./releaseScope";
 
 describe("공개 베타 출시 범위", () => {
+  it("출시 1차에서 입점·문의·모임·DM·라이벌 서버를 끈다", () => {
+    const hub = MENU_GROUPS.flatMap((group) => group.items).find(
+      (item) => item.id === "hub"
+    );
+
+    expect(RELEASE_SCOPE.dojoServer).toBe(false);
+    expect(isDojoServerEnabled()).toBe(false);
+    expect(hub?.gymView).toBe("gyms");
+  });
+
   it("라이벌·스파링을 출시 메뉴와 커뮤니티에서 숨긴다", () => {
     const menuIds = MENU_GROUPS.flatMap((group) =>
       group.items.map((item) => item.id)

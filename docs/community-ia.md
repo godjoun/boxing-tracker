@@ -1,12 +1,14 @@
 # 커뮤니티 IA — 최종 잠금
 
+> **상태:** 미래 확장 참고 설계. 현재 핵심 출시·시장 검증 범위가 아니며,
+> 현재 Core Loop와 우선순위는 `docs/product-philosophy.md`를 따른다.
 > **잠금:** 2026-08-04  
 > Vision Loop · 허브 · 프로필 신뢰 흔적.  
 > 철학: `docs/product-philosophy.md` · UI 설계: `docs/community-ui.md`  
 > 관↔관 스키마(이후): `docs/gym-exchange.md`  
 > **첫 화면:** 커뮤니티 기본 랜딩 = **피드** (단순 카드 + FAB). 좋아요·댓글 없음.
 
-## Vision Loop (제품 핵심 순환)
+## 미래 커뮤니티 확장 루프
 
 모든 기능은 이 순환 안의 역할만 가진다. 순환 밖 기능은 넣지 않는다.
 

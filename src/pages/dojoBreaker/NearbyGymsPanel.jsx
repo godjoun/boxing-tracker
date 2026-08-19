@@ -87,11 +87,15 @@ function writeRecentSearch(label) {
 }
 
 const LAYER_FILTERS = [
-  { id: "feed", label: "피드" },
-  { id: "hub", label: "교류" },
+  ...(RELEASE_SCOPE.dojoServer
+    ? [
+        { id: "feed", label: "피드" },
+        { id: "hub", label: "교류" },
+      ]
+    : []),
   ...(RELEASE_SCOPE.rivals ? [{ id: "sparring", label: "스파링" }] : []),
   { id: "gyms", label: "체육관" },
-  { id: "meeting", label: "모임" },
+  ...(RELEASE_SCOPE.dojoServer ? [{ id: "meeting", label: "모임" }] : []),
 ];
 
 const isFeedOrHub = (layer) => layer === "feed" || layer === "hub";
@@ -820,7 +824,7 @@ export default function NearbyGymsPanel({
                   {locating ? "위치…" : "내 위치"}
                 </button>
               ) : null}
-              {!needsLocationGate ? (
+              {RELEASE_SCOPE.dojoServer && !needsLocationGate ? (
                 <button
                   type="button"
                   className={`gym-map-chrome-btn${
@@ -1260,6 +1264,7 @@ export default function NearbyGymsPanel({
               >
                 내 주변 <em>{mapGyms.length}</em>
               </button>
+              {RELEASE_SCOPE.dojoServer ? (
               <button
                 type="button"
                 className={gymListScope === "listed" ? "is-active" : ""}
@@ -1271,6 +1276,7 @@ export default function NearbyGymsPanel({
               >
                 전체 입점관 <em>{approvedListedGyms.length}</em>
               </button>
+              ) : null}
               <button
                 type="button"
                 className={gymListScope === "favorites" ? "is-active" : ""}
@@ -1369,13 +1375,15 @@ export default function NearbyGymsPanel({
           >
             찜한 체육관
           </button>
-          <button
-            type="button"
-            className="gym-map-side-menu-item"
-            onClick={() => runFromSideMenu(() => switchSection("sent"))}
-          >
-            내 문의
-          </button>
+          {RELEASE_SCOPE.dojoServer ? (
+            <button
+              type="button"
+              className="gym-map-side-menu-item"
+              onClick={() => runFromSideMenu(() => switchSection("sent"))}
+            >
+              내 문의
+            </button>
+          ) : null}
           {RELEASE_SCOPE.rivals ? (
             <button
               type="button"
@@ -1387,29 +1395,32 @@ export default function NearbyGymsPanel({
           ) : null}
         </div>
 
-        <hr className="gym-map-side-menu-divider" />
-
-        <div className="gym-map-side-menu-group">
-          <button
-            type="button"
-            className="gym-map-side-menu-item is-emphasis"
-            onClick={() => runFromSideMenu(() => openRegister("community"))}
-          >
-            체육관 등록
-          </button>
-          <button
-            type="button"
-            className="gym-map-side-menu-item"
-            onClick={() =>
-              runFromSideMenu(() => {
-                setSection("owner");
-                setOwnerMode(null);
-              })
-            }
-          >
-            관장 입점 관리
-          </button>
-        </div>
+        {RELEASE_SCOPE.dojoServer ? (
+          <>
+            <hr className="gym-map-side-menu-divider" />
+            <div className="gym-map-side-menu-group">
+              <button
+                type="button"
+                className="gym-map-side-menu-item is-emphasis"
+                onClick={() => runFromSideMenu(() => openRegister("community"))}
+              >
+                체육관 등록
+              </button>
+              <button
+                type="button"
+                className="gym-map-side-menu-item"
+                onClick={() =>
+                  runFromSideMenu(() => {
+                    setSection("owner");
+                    setOwnerMode(null);
+                  })
+                }
+              >
+                관장 입점 관리
+              </button>
+            </div>
+          </>
+        ) : null}
 
         {activeLayer !== "gyms" || section !== "find" ? (
           <>
@@ -1431,18 +1442,21 @@ export default function NearbyGymsPanel({
           </>
         ) : null}
 
-        <p className="gym-map-side-menu-note">
-          목록에 없는 체육관은 등록해 주세요. 승인 후 다른 사용자도 찾을 수
-          있습니다.
-        </p>
+        {RELEASE_SCOPE.dojoServer ? (
+          <p className="gym-map-side-menu-note">
+            목록에 없는 체육관은 등록해 주세요. 승인 후 다른 사용자도 찾을 수
+            있습니다.
+          </p>
+        ) : null}
       </nav>
     </>
   ) : null;
 
   const utilityOverlay =
-    section === "sent" ||
-    section === "meeting" ||
-    section === "owner" ||
+    (RELEASE_SCOPE.dojoServer &&
+      (section === "sent" ||
+        section === "meeting" ||
+        section === "owner")) ||
     section === "me" ||
     activeLayer === "me" ? (
       <div className="gym-map-utility-overlay" role="dialog" aria-modal="true">
@@ -1605,9 +1619,9 @@ export default function NearbyGymsPanel({
             String(profile?.homeGymId || "") === String(detailGym?.id || "")
           }
           onClose={closeDetail}
-          onInquire={openInquiry}
-          onReserve={openReservation}
-          onPropose={openProposal}
+          onInquire={RELEASE_SCOPE.dojoServer ? openInquiry : undefined}
+          onReserve={RELEASE_SCOPE.dojoServer ? openReservation : undefined}
+          onPropose={RELEASE_SCOPE.dojoServer ? openProposal : undefined}
           onSetHomeGym={handleSetHomeGym}
           homeGymNotice={homeGymNotice}
           onOpenLedger={() => {
@@ -1672,7 +1686,9 @@ export default function NearbyGymsPanel({
               >
                 정보
               </button>
-              {isListing && !isOwnListedGym(selectedGym, userId) ? (
+              {RELEASE_SCOPE.dojoServer &&
+              isListing &&
+              !isOwnListedGym(selectedGym, userId) ? (
                 <button
                   type="button"
                   className="gym-place-action"
@@ -1840,7 +1856,7 @@ export default function NearbyGymsPanel({
 
       {utilityOverlay}
 
-      {gymExchangeDetailEvent ? (
+      {RELEASE_SCOPE.dojoServer && gymExchangeDetailEvent ? (
         <div className="gym-exchange-detail-overlay" role="dialog" aria-modal="true">
           <GymExchangeEventPanel
             key={gymExchangeDetailEvent.id}
@@ -1853,7 +1869,7 @@ export default function NearbyGymsPanel({
         </div>
       ) : null}
 
-      {inquiryGym ? (
+      {RELEASE_SCOPE.dojoServer && inquiryGym ? (
         <GymInquiryModal
           gym={inquiryGym}
           userId={userId}
@@ -1867,16 +1883,18 @@ export default function NearbyGymsPanel({
         />
       ) : null}
 
-      <GymInquiryChatModal
-        open={Boolean(chatInquiry)}
-        onClose={closeChatAndRefresh}
-        userId={userId}
-        nickname={profile?.nickname || ""}
-        inquiryId={chatInquiry?.id}
-        gymName={chatInquiry?.gymName || ""}
-        inquiryLabel={inquiryKindLabel(chatInquiry?.kind, chatInquiry?.memo)}
-        acquisitionSource={chatInquiry?.acquisitionSource || "organic"}
-      />
+      {RELEASE_SCOPE.dojoServer ? (
+        <GymInquiryChatModal
+          open={Boolean(chatInquiry)}
+          onClose={closeChatAndRefresh}
+          userId={userId}
+          nickname={profile?.nickname || ""}
+          inquiryId={chatInquiry?.id}
+          gymName={chatInquiry?.gymName || ""}
+          inquiryLabel={inquiryKindLabel(chatInquiry?.kind, chatInquiry?.memo)}
+          acquisitionSource={chatInquiry?.acquisitionSource || "organic"}
+        />
+      ) : null}
     </div>
   );
 }

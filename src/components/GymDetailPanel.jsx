@@ -30,7 +30,7 @@ export default function GymDetailPanel({
   const hero = photos[safeIndex] || "";
   const isFeatured = Boolean(gym.featured);
   const isListing = gym.source === "listing";
-  const canPropose = isListing && !isOwn;
+  const canPropose = Boolean(onPropose) && isListing && !isOwn;
   const website = /^https?:\/\//i.test(String(gym.website || "").trim())
     ? String(gym.website).trim()
     : "";
@@ -189,7 +189,7 @@ export default function GymDetailPanel({
                 ? "체육관에 전달할 내용을 작성합니다."
                 : "지도에서 찾은 장소라 온라인 문의와 예약 정보를 아직 확인할 수 없습니다."}
             </p>
-            {isListing ? (
+            {isListing && onInquire ? (
               <button
                 type="button"
                 className="gym-listing-submit"
@@ -219,7 +219,7 @@ export default function GymDetailPanel({
             {homeGymNotice}
           </p>
         ) : null}
-        {isOwn ? (
+        {isOwn && onOpenLedger ? (
           <button
             type="button"
             className="gym-listing-submit"
@@ -227,7 +227,7 @@ export default function GymDetailPanel({
           >
             받은 문의 보기
           </button>
-        ) : (
+        ) : onInquire || !isListing ? (
           <button
             type="button"
             className="gym-listing-submit"
@@ -235,7 +235,7 @@ export default function GymDetailPanel({
           >
             {isListing ? "문의하기" : "정보 보기"}
           </button>
-        )}
+        ) : null}
         <a className="gym-detail-directions" href={directionsUrl} target="_blank" rel="noreferrer">
           길찾기
         </a>

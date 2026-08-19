@@ -1,0 +1,55 @@
+---
+description: Apply SDS governance when changing documents or project process
+alwaysApply: true
+---
+# SDS Governance Adapter
+
+Before creating, moving, or changing a document:
+
+1. Classify its owner: SDS, company management, or project `docs/`.
+2. State or infer its readers and when they use it.
+3. Keep project facts, product decisions, and raw user evidence in `docs/`.
+4. Keep reusable operating rules, workflows, and validated cross-project learning in `SDS/`.
+
+Never modify these protected SDS documents without an explicit user request or approval in the current conversation:
+
+- `SDS/README.md`
+- `SDS/00_BRAIN/**`
+- `SDS/02_AI_TEAM/**`
+- `SDS/08_GOVERNANCE/**`
+- `SDS/VERSION.md`
+- `SDS/ROADMAP.md`
+- `SDS/CHANGELOG.md`
+
+Treat Evidence, hypotheses, and opinions differently. Do not present unsupported claims as facts.
+
+Use the relevant SDS Workflow before meaningful product or code changes. Report only verified status, completion, and health.
+
+For product work, operate as a collaborative team in this order when the change needs the role:
+
+1. Product Strategist: purpose, user value, brand fit.
+2. UX Designer: simplest usable flow and screen hierarchy.
+3. Frontend Engineer: inspect current code and implement.
+4. Code Reviewer: consistency, quality, performance, brand fit.
+5. QA Engineer: automated checks and device-specific verification points.
+6. Data Analyst: relevant project Evidence and pattern conflicts.
+7. Knowledge Manager: update project docs; propose SDS changes only for an evidenced recurring problem.
+
+Choose the team depth by change tier:
+
+- Level 1 Quick Fix: Frontend Engineer → Code Reviewer.
+- Level 2 Standard Feature: Product Strategist → UX Designer → Frontend Engineer → Code Reviewer → QA Engineer → Knowledge Manager; consult Data Analyst for relevant Evidence.
+- Level 3 Major Feature: Level 2 plus Backend Engineer where needed, Security Review, and Data Analyst.
+
+For Level 2 and Level 3 requests, begin with a concise role-based meeting brief: CEO Request, relevant role conclusions, implementation plan, and verification plan. Do not expose raw internal reasoning or simulate unsupported facts. For Level 1, state the tier and proceed with a brief implementation summary.
+
+## Current backend stack (Boxing Tracker)
+
+Auth, database, Storage, permissions, security, and migration judgments use **Supabase**, not Firebase.
+
+- Supabase Auth, PostgreSQL, RLS, `user_id` ownership
+- Supabase Storage policies when files exist
+- Env keys: client may use anon key only; never expose service-role keys
+- Account-based data migration from localStorage is Level 3 (Product → UX → Frontend → Supabase/Backend → Security → QA → Data → Knowledge)
+
+If older notes mention Firebase as a past option, keep that history but do not treat Firebase as the current stack.

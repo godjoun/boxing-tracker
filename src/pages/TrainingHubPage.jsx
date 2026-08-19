@@ -17,6 +17,13 @@ import {
 } from "../utils/workoutDetails";
 import MenuIcon from "../components/MenuIcon";
 import WorkoutDetailsQuickBar from "../components/WorkoutDetailsQuickBar";
+import {
+  RUNNING_GOAL_DEFAULT,
+  RUNNING_GOAL_MIN_MESSAGE,
+  RUNNING_GOAL_PRESETS,
+  buildRunningLaunchConfig,
+  parseRunningGoalMinutes,
+} from "../utils/runningGoal";
 
 function presetErrorMessage(error) {
   if (error === "duplicate") return "같은 이름이 이미 있어요";
@@ -54,10 +61,6 @@ const BOXING_KINDS = [
   { id: "shadow", title: "쉐도우", logType: "쉐도우" },
 ];
 
-const RUNNING_GOAL_PRESETS = [30, 45, 60];
-const RUNNING_GOAL_MIN = 5;
-const RUNNING_GOAL_MAX = 180;
-
 export default function TrainingHubPage({
   onStartPreset,
   onOpenTimer,
@@ -73,7 +76,9 @@ export default function TrainingHubPage({
     MATCH_TIMER_PRESETS[0]?.id || "match3"
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [runningGoalMinutes, setRunningGoalMinutes] = useState(30);
+  const [runningGoalMinutes, setRunningGoalMinutes] = useState(
+    RUNNING_GOAL_DEFAULT
+  );
   const [runningCustomDraft, setRunningCustomDraft] = useState("");
   const [workoutDetails, setWorkoutDetails] = useState("");
   const [recentWorkoutDetails] = useState(() => loadRecentWorkoutDetails());
@@ -132,14 +137,9 @@ export default function TrainingHubPage({
     restSeconds
   )}`;
 
-  function clampRunningGoalMinutes(value) {
-    const number = Number(value);
-    if (!Number.isFinite(number)) return 30;
-    return Math.min(RUNNING_GOAL_MAX, Math.max(RUNNING_GOAL_MIN, Math.round(number)));
-  }
-
   function applyRunningGoalMinutes(minutes) {
-    const next = clampRunningGoalMinutes(minutes);
+    const next = parseRunningGoalMinutes(minutes);
+    if (next == null) return;
     setRunningGoalMinutes(next);
     setRunningCustomDraft("");
     setSettingsOpen(false);
@@ -147,7 +147,8 @@ export default function TrainingHubPage({
 
   function commitRunningCustomMinutes() {
     if (runningCustomDraft === "") return;
-    const next = clampRunningGoalMinutes(runningCustomDraft);
+    const next = parseRunningGoalMinutes(runningCustomDraft);
+    if (next == null) return;
     setRunningGoalMinutes(next);
     setRunningCustomDraft(String(next));
     setSettingsOpen(false);
@@ -175,17 +176,19 @@ export default function TrainingHubPage({
   }
 
   async function startRunningSession() {
+    const raw =
+      runningCustomDraft !== "" ? runningCustomDraft : runningGoalMinutes;
+    const minutes = parseRunningGoalMinutes(raw);
+    if (minutes == null) {
+      window.alert(RUNNING_GOAL_MIN_MESSAGE);
+      return;
+    }
+
+    setRunningGoalMinutes(minutes);
+    setRunningCustomDraft("");
     await startTimerAudioSession();
-    const minutes = clampRunningGoalMinutes(runningGoalMinutes);
     onStartPreset?.({
-      id: `running-time-${minutes}`,
-      title: "러닝",
-      description: "시간 목표 러닝",
-      rounds: 1,
-      workSeconds: minutes * 60,
-      restSeconds: 0,
-      logType: "러닝",
-      routineTitle: `러닝 · ${minutes}분`,
+      ...buildRunningLaunchConfig(minutes),
       workoutDetails: normalizeWorkoutDetails(workoutDetails),
     });
   }

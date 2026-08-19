@@ -29,9 +29,15 @@ import {
 import { formatTimerDurationLabel } from "../utils/curriculumTimerSync";
 import { STYLE_ROUND_WORK_SECONDS } from "../utils/techniqueCatalog";
 import {
+  ACTIVE_SESSION_LAUNCH_BLOCK_MESSAGE,
   shouldApplyLaunchConfig,
   useTimerSessionListener,
 } from "../hooks/useBackgroundTimerSession";
+import {
+  getCompletedRoundsSoFar as getCompletedRoundsFromState,
+  getEarlyEndSavePlan,
+  canWriteTimerSessionLog,
+} from "../utils/timerEarlyEnd";
 import {
   clearTimerSession,
   getTimerSessionSummary,
@@ -869,12 +875,24 @@ export default function TimerPage({
   }
 
   function getCompletedRoundsSoFar() {
-    if (!hasStartedSession) return 0;
-    if (phase === "prep") return 0;
-    if (phase === "work") return Math.max(0, currentRound - 1);
-    if (phase === "rest") return currentRound;
-    if (phase === "cooldown" || phase === "done") return totalRounds;
-    return 0;
+    return getCompletedRoundsFromState({
+      hasStartedSession,
+      phase,
+      currentRound,
+      totalRounds,
+    });
+  }
+
+  function readEarlyEndPlan() {
+    return getEarlyEndSavePlan({
+      curriculumLogType,
+      hasStartedSession,
+      phase,
+      currentRound,
+      totalRounds,
+      remainingTime,
+      workSecondsSetting,
+    });
   }
 
   function savePartialSession(completedRounds) {
@@ -899,6 +917,45 @@ export default function TimerPage({
         publicComment: curriculumSessionId
           ? `${routineTitle} · ${safeRounds}라운드까지 기록했다.`
           : `${safeRounds}R 기록. 오늘은 여기까지 벨은 울렸다.`,
+      })
+    );
+
+    if (details) {
+      setRecentWorkoutDetails(rememberWorkoutDetails(details));
+    }
+
+    setCompletionResult(getCompletionDelta(logs, savedLog));
+    setCompletedLogId(savedLog.id);
+    setCompletedAt(new Date());
+    setHasSavedLog(true);
+    setEndedEarly(true);
+    return savedLog;
+  }
+
+  function saveRunningPartialSession(plan) {
+    if (
+      !canWriteTimerSessionLog({
+        hasSavedLog,
+        savedLogFlag: savedLogRef.current,
+      })
+    ) {
+      return null;
+    }
+    if (!plan || plan.kind !== "running" || plan.minutes < 1) return null;
+
+    savedLogRef.current = true;
+
+    const details = normalizeWorkoutDetails(workoutDetails);
+    const savedLog = addLog(
+      buildMantleSessionLogFields({
+        type: curriculumLogType || "러닝",
+        minutes: plan.minutes,
+        rounds: 1,
+        details,
+        memo: `${routineTitle} · 1라운드 기록 / 운동 ${formatDurationLabel(
+          plan.elapsedSeconds
+        )} / 휴식 ${formatDurationLabel(restSecondsSetting)}`,
+        publicComment: `${plan.minutes}분 러닝 기록. 오늘은 여기까지 벨은 울렸다.`,
       })
     );
 
@@ -968,8 +1025,11 @@ export default function TimerPage({
   useEffect(() => {
     if (!launchConfig) return;
     if (!shouldApplyLaunchConfig(launchConfig)) {
-      onLaunchConsumed?.();
-      return;
+      const timeoutId = window.setTimeout(() => {
+        window.alert(ACTIVE_SESSION_LAUNCH_BLOCK_MESSAGE);
+        onLaunchConsumed?.();
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
     }
 
     const timeoutId = window.setTimeout(() => {
@@ -1043,6 +1103,22 @@ export default function TimerPage({
   };
 
   const handleReset = () => {
+    const earlyEndPlan = readEarlyEndPlan();
+
+    if (hasStartedSession && phase !== "done" && earlyEndPlan?.kind === "running") {
+      const ok = window.confirm(
+        `지금까지 러닝 ${earlyEndPlan.minutes}분을 기록하고 초기화할까요?`
+      );
+      if (!ok) return;
+
+      setIsRunning(false);
+      saveRunningPartialSession(earlyEndPlan);
+      setPhase("done");
+      clearTimerMediaSession();
+      stopTimerAudioSession();
+      return;
+    }
+
     const completedRounds = getCompletedRoundsSoFar();
 
     if (hasStartedSession && phase !== "done" && completedRounds >= 1) {
@@ -1351,6 +1427,22 @@ export default function TimerPage({
   }
 
   function handleFocusStop() {
+    const earlyEndPlan = readEarlyEndPlan();
+
+    if (earlyEndPlan?.kind === "running") {
+      const ok = window.confirm(
+        `지금까지 러닝 ${earlyEndPlan.minutes}분을 기록하고 종료할까요?`
+      );
+      if (!ok) return;
+
+      setIsRunning(false);
+      saveRunningPartialSession(earlyEndPlan);
+      setPhase("done");
+      clearTimerMediaSession();
+      stopTimerAudioSession();
+      return;
+    }
+
     const completedRounds = getCompletedRoundsSoFar();
 
     if (completedRounds >= 1) {
@@ -1383,6 +1475,23 @@ export default function TimerPage({
     if (!onGoBack) return;
 
     if (isComplete || !hasStartedSession) {
+      onGoBack();
+      return;
+    }
+
+    const earlyEndPlan = readEarlyEndPlan();
+
+    if (earlyEndPlan?.kind === "running") {
+      const ok = window.confirm(
+        `지금까지 러닝 ${earlyEndPlan.minutes}분을 기록하고 나갈까요?`
+      );
+      if (!ok) return;
+
+      setIsRunning(false);
+      saveRunningPartialSession(earlyEndPlan);
+      clearTimerMediaSession();
+      stopTimerAudioSession();
+      clearTimerSession();
       onGoBack();
       return;
     }

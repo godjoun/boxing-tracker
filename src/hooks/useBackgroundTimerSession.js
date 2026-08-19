@@ -103,14 +103,11 @@ export function useTimerSessionListener(onSync) {
   }, [onSync]);
 }
 
+export const ACTIVE_SESSION_LAUNCH_BLOCK_MESSAGE =
+  "진행 중인 훈련이 있습니다. 먼저 완료하거나 종료해주세요.";
+
 export function shouldApplyLaunchConfig(launchConfig) {
   if (!launchConfig) return false;
 
-  const existing = loadTimerSession();
-  if (!existing?.hasStartedSession) return true;
-  if (existing.phase === "done") return true;
-  if (launchConfig.curriculumSessionId) return true;
-  if (launchConfig.styleId) return true;
-
-  return !hasActiveTimerSession(existing);
+  return !hasActiveTimerSession(loadTimerSession());
 }

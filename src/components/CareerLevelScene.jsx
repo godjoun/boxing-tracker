@@ -28,7 +28,6 @@ function buildShareText({ fighter, nickname, streakDays }) {
     }`,
     "",
     "I RULE THE ROUND.",
-    "당신의 복싱은 멈추지 않는다.",
   ].filter((line) => line !== null);
 
   return lines.join("\n");

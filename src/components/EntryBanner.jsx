@@ -6,7 +6,7 @@ import {
 import "./EntryBanner.css";
 
 /**
- * 온보딩 첫 화면 — 로고 · MANTLE · 슬로건 · 철학 (영문만).
+ * 온보딩 첫 화면 — 로고 · PUNCH ERA · 슬로건 · 철학 (영문만).
  * mount 시 완성본으로 표시 (fade/stagger 없음).
  */
 export default function EntryBanner({

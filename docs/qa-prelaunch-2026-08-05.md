@@ -118,7 +118,7 @@
 | dark → dark 홈 (light flash 없음) | **PASS** |
 
 동결 구현 요약:
-- iOS `apple-touch-startup-image` (`public/splash/*`) = 유일한 MANTLE splash
+- iOS `apple-touch-startup-image` (`public/splash/*`) = 유일한 PUNCH ERA splash
 - HTML `#boot-splash` / `bootSplash.js` 제거
 - React 전: `theme-boot.js` 테마만 · `#root`는 `.app-ready` 전 숨김
 - React 후: `revealAppShell()` → onboarding 또는 home 즉시 완성본

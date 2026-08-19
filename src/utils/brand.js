@@ -1,8 +1,8 @@
 /** Locked brand — docs/brand.md */
-export const BRAND_NAME = "MANTLE";
+export const BRAND_NAME = "PUNCH ERA";
 
 export const BRAND_SLOGAN_KO = "알 유 레디.";
-export const BRAND_SLOGAN_EN = "Are you ready?";
+export const BRAND_SLOGAN_EN = "ARE YOU READY?";
 
 export const BRAND_PHILOSOPHY_KO =
   "내면으로 뻗은 그 손길에서 모든 것이 시작된다.";

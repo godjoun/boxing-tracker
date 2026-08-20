@@ -110,8 +110,6 @@ function getTooltipStyle(rect, placement) {
 
 export default function FirstVisitTutorial({
   nickname = "나",
-  onStartTimer,
-  onOpenCurriculum,
   onEnsurePage,
   onClose,
 }) {
@@ -182,28 +180,20 @@ export default function FirstVisitTutorial({
     setStepIndex((current) => current + 1);
   }
 
-  function handleStartTimer() {
-    finish();
-    onStartTimer?.();
-  }
-
-  function handleOpenCurriculum() {
-    finish();
-    onOpenCurriculum?.();
-  }
-
   function renderCardContent({ centered = false } = {}) {
     return (
       <>
         <header className="first-visit-tutorial-head">
           <p>{step.kicker}</p>
-          <button
-            type="button"
-            className="first-visit-tutorial-skip"
-            onClick={handleSkip}
-          >
-            건너뛰기
-          </button>
+          {!isFinish ? (
+            <button
+              type="button"
+              className="first-visit-tutorial-skip"
+              onClick={handleSkip}
+            >
+              건너뛰기
+            </button>
+          ) : null}
         </header>
 
         <div
@@ -242,22 +232,13 @@ export default function FirstVisitTutorial({
 
         <footer className="first-visit-tutorial-actions">
           {isFinish ? (
-            <>
-              <button
-                type="button"
-                className="first-visit-tutorial-primary"
-                onClick={handleStartTimer}
-              >
-                바로 타이머 시작
-              </button>
-              <button
-                type="button"
-                className="first-visit-tutorial-secondary"
-                onClick={handleOpenCurriculum}
-              >
-                기술 보기
-              </button>
-            </>
+            <button
+              type="button"
+              className="first-visit-tutorial-primary"
+              onClick={finish}
+            >
+              완료
+            </button>
           ) : (
             <button
               type="button"

@@ -653,8 +653,6 @@ function MainAppShell({ theme, onToggleTheme }) {
           nickname={profile?.nickname}
           onClose={closeTutorial}
           onEnsurePage={goPage}
-          onStartTimer={() => goDefaultTimer("home")}
-          onOpenCurriculum={goCurriculum}
         />
       ) : null}
 

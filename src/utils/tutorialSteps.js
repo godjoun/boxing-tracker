@@ -66,7 +66,7 @@ export const TUTORIAL_STEPS = [
     id: "finish",
     kicker: "READY",
     title: "이제 시작해 볼까요?",
-    body: "홈의 오늘 버튼으로 바로 들어가거나, 링에서 라운드를 열어보세요.",
+    body: "준비가 되었습니다. 홈에서 오늘의 훈련을 시작하세요.",
     mode: "center",
     isFinish: true,
   },

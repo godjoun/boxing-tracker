@@ -27,7 +27,7 @@ The current product is broader than a standalone round timer. It should help the
 Current experience direction:
 
 1. Open the app and understand what boxing training to do.
-2. Follow a lesson, course, or drill that is suitable for solo home boxing.
+2. Follow a selected drill or simple training routine suitable for solo home boxing.
 3. Move naturally into the round / work / rest timer.
 4. Minimize phone interaction while the session is running.
 5. Finish the workout reliably.
@@ -40,11 +40,13 @@ A simple shorthand for the current product promise is:
 
 Do not reduce the product concept to only `timer + log`. The training guidance, session experience, accumulated record, and profile should feel like one connected loop.
 
+For the current MVP, training guidance means a small, usable set of drills or simple routines. Do not expand this into a full lesson, course, or content-library system unless the repository owner explicitly approves that scope.
+
 ## Brand direction
 
-### Current slogan
+### Current brand line
 
-The current official slogan is:
+The current slogan hypothesis is:
 
 > ARE YOU READY?
 
@@ -137,8 +139,8 @@ Existing levels, tiers, titles, achievements, or progression UI may be used as m
 Prioritize:
 
 1. Fast and understandable training start.
-2. Useful solo-home-boxing lessons / drills.
-3. Reliable round / work / rest timer behavior.
+2. Reliable round / work / rest timer behavior.
+3. Easy-to-follow drills or simple routines for solo home boxing.
 4. Drill information that is readable without repeatedly interrupting training.
 5. Minimal interaction during training.
 6. Reliable automatic completion.

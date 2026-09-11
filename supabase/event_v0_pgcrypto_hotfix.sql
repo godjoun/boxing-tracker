@@ -56,8 +56,8 @@ as $$
 declare
   v_secret text := coalesce(trim(p_plain_secret), '');
 begin
-  if char_length(v_secret) < 8 then
-    raise exception 'operator secret must be at least 8 characters' using errcode = '22023';
+  if char_length(v_secret) < 16 then
+    raise exception 'operator secret must be at least 16 characters' using errcode = '22023';
   end if;
 
   update public.events

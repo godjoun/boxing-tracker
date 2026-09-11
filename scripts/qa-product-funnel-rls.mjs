@@ -108,7 +108,7 @@ async function main() {
   // A) allowed insert (anon)
   {
     const { error } = await bare.from("product_funnel_events").insert({
-      event_name: "app_open",
+      event_name: "training_revisit",
     });
     assert(!error, `anon allowed insert FAIL: ${error?.message}`);
     results.push("PASS anon insert allowed event");
@@ -153,8 +153,8 @@ async function main() {
   {
     const { data, error } = await bare
       .from("product_funnel_events")
-      .update({ event_name: "profile_view" })
-      .eq("event_name", "app_open")
+      .update({ event_name: "log_view" })
+      .eq("event_name", "training_revisit")
       .select("id");
     assert(
       isDenied(error) || !data || data.length === 0,
@@ -168,7 +168,7 @@ async function main() {
     const { data, error } = await bare
       .from("product_funnel_events")
       .delete()
-      .eq("event_name", "app_open")
+      .eq("event_name", "training_revisit")
       .select("id");
     assert(
       isDenied(error) || !data || data.length === 0,

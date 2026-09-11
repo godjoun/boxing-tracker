@@ -2,23 +2,30 @@
 -- Supabase SQL Editor에서 이 파일만 Run.
 -- 기존 dojo_* / exchange / community 테이블·정책과 무관 — 덮어쓰지 않음.
 --
--- 목적: 핵심 행동 5개만 집계용으로 기록. PII·user·JSON payload 없음.
+-- 목적: 핵심 행동 7개만 집계용으로 기록. PII·user·JSON payload 없음.
 -- 클라이언트: INSERT만. SELECT/UPDATE/DELETE는 SQL Editor(서비스 롤)에서만.
 
 create table if not exists public.product_funnel_events (
   id uuid primary key default gen_random_uuid(),
   event_name text not null,
-  created_at timestamptz not null default now(),
-  constraint product_funnel_events_name_allowed check (
+  created_at timestamptz not null default now()
+);
+
+alter table public.product_funnel_events
+  drop constraint if exists product_funnel_events_name_allowed;
+
+alter table public.product_funnel_events
+  add constraint product_funnel_events_name_allowed check (
     event_name in (
       'app_open',
       'training_start',
       'training_complete',
+      'log_view',
       'training_card_create',
-      'profile_view'
+      'profile_view',
+      'training_revisit'
     )
-  )
-);
+  );
 
 create index if not exists product_funnel_events_created_at_idx
   on public.product_funnel_events (created_at);

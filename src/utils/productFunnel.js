@@ -4,8 +4,10 @@ export const PRODUCT_FUNNEL_EVENTS = Object.freeze([
   "app_open",
   "training_start",
   "training_complete",
+  "log_view",
   "training_card_create",
   "profile_view",
+  "training_revisit",
 ]);
 
 const ALLOWED = new Set(PRODUCT_FUNNEL_EVENTS);

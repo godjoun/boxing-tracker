@@ -57,7 +57,7 @@ export const TUTORIAL_STEPS = [
     id: "nav-category",
     kicker: "MENU",
     title: "메뉴 — 나머지를 찾는다",
-    body: "커뮤니티·체육관·성장·백업 같은 보조 도구를 모아 두었습니다.",
+    body: "체육관·성장·백업 같은 보조 도구를 모아 두었습니다.",
     mode: "spotlight",
     target: TUTORIAL_TARGETS.navCategory,
     placement: "top",

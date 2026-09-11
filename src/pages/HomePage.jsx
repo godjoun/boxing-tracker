@@ -1,26 +1,15 @@
 import { useMemo, useRef, useState } from "react";
 import { useTraining } from "../store/TrainingContext";
-import { getFighterProgress } from "../utils/fighterProgress";
-import {
-  getTrainingStreak,
-  resizeImage,
-} from "./profilePage/profileCardUtils";
+import { resizeImage } from "./profilePage/profileCardUtils";
 import { getLogMinutes } from "../utils/trainingStats";
 import { getTodaysLessonPreview } from "../utils/dailyLesson";
 import { getLastStyleContinue } from "../utils/styleProgress";
 import { BRAND_NAME } from "../utils/brand";
-import { getLogSummary, inferLogCategory } from "../utils/logCategories";
+import { getLogSummary } from "../utils/logCategories";
 import { isDevSurfaceLog } from "../utils/devMode";
 import MenuIcon from "../components/MenuIcon";
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
-
-const RECENT_LOG_ICON = {
-  boxing: "skill",
-  running: "growth",
-  weights: "body",
-  walking: "round",
-};
 
 function getDateKey(value) {
   if (!value) return "";
@@ -114,9 +103,10 @@ export default function HomePage({
   onOpenTimer,
   onNavigate,
   onOpenCardMaker,
-  onOpenGrowth,
+  onOpenCurriculum,
   onReadLesson,
   onContinueStyle,
+  onStartMinimumRound,
 }) {
   const { logs = [], profile, updateProfile } = useTraining();
   const [isHeroMenuOpen, setIsHeroMenuOpen] = useState(false);
@@ -127,8 +117,6 @@ export default function HomePage({
   );
 
   const dashboard = useMemo(() => {
-    const fighter = getFighterProgress(logs);
-    const streakDays = getTrainingStreak(logs);
     const todayKey = getTodayKey();
 
     const trainingByDate = surfaceLogs.reduce((dates, log) => {
@@ -145,56 +133,123 @@ export default function HomePage({
     }, {});
 
     return {
-      fighter,
-      streakDays,
       trainedToday: Boolean(trainingByDate[todayKey]),
       trainingByDate,
       weekStrip: buildWeekStrip(trainingByDate),
     };
-  }, [logs, surfaceLogs]);
+  }, [surfaceLogs]);
 
-  const todaysLesson = useMemo(() => getTodaysLessonPreview(), []);
+  const todaysLesson = getTodaysLessonPreview();
   const styleContinue = getLastStyleContinue();
   const todayKey = getTodayKey();
-  const todayRounds = dashboard.trainingByDate[todayKey]?.rounds || 0;
   const nickname = profile?.nickname || "나";
   const greeting = getGreeting();
   // Explicit home hero only — never fall back to profile.photo / general shots.
   const homeHeroPhoto = String(profile?.homeHeroPhoto || "").trim();
   const recentLogs = surfaceLogs.slice(0, 2);
+  const latestLog = recentLogs[0] || null;
   const hasAnyRecords = surfaceLogs.length > 0;
-  const weeklyRounds = dashboard.weekStrip.reduce(
-    (sum, day) => sum + day.rounds,
-    0
-  );
   const trainedDaysThisWeek = dashboard.weekStrip.filter((day) => day.trained)
     .length;
 
   const trainedToday = Boolean(dashboard.trainedToday);
+  const todayLogs = surfaceLogs.filter((log) => getDateKey(log.date || log.createdAt) === todayKey);
+  const todayMinutes = todayLogs.reduce((sum, log) => sum + getLogMinutes(log), 0);
+  const totalRounds = surfaceLogs.reduce((sum, log) => sum + getRounds(log), 0);
+  const trainingDayCount = Object.keys(dashboard.trainingByDate).length;
   const hasLesson = todaysLesson.kind === "session";
   const timerIsActive = Boolean(timerSummary?.isActive);
+  const latestLogRounds = latestLog ? getRounds(latestLog) : 0;
+  const latestLogMinutes = latestLog ? getLogMinutes(latestLog) : 0;
+  const latestLogMetric =
+    latestLogRounds > 0
+      ? `${latestLogRounds}R`
+      : latestLogMinutes > 0
+        ? `${latestLogMinutes}분`
+        : latestLog
+          ? getLogSummary(latestLog) || "저장됨"
+          : "";
 
-  const sceneTitle = hasLesson
-    ? todaysLesson.title
-    : trainedToday
-      ? "오늘도 벨은 울렸다"
-      : "오늘의 훈련";
+  const sceneTitle = trainedToday
+    ? "오늘 훈련을 남겼어요"
+    : hasLesson ? `오늘 ${todaysLesson.durationLabel} 복싱` : "오늘의 훈련";
 
-  const sceneCopy = hasLesson
-    ? todaysLesson.goal || "준비되면 바로 이어가세요"
-    : trainedToday
-      ? `${todayRounds}R 남김 · 연속 ${dashboard.streakDays}일`
+  const sceneCopy = trainedToday
+    ? `${todayLogs.length}회 기록${todayMinutes > 0 ? ` · ${todayMinutes}분` : ""}`
+    : hasLesson
+      ? `체육관 못 가는 날, 기본 자세부터 ${todaysLesson.rounds}R`
       : "짧게라도 오늘 라운드를 남기세요";
 
   const primaryLabel = timerIsActive
     ? "타이머 이어하기"
+    : trainedToday
+      ? "오늘 기록 보기"
+      : hasLesson ? "오늘 훈련 시작" : "훈련 시작";
+  const trainingChoices = [
+    {
+      id: "course",
+      icon: "skill",
+      label: "추천",
+      title: hasLesson ? `정석 ${todaysLesson.durationLabel}` : "정석 코스",
+      meta: hasLesson
+        ? `기본 자세부터 ${todaysLesson.rounds}R`
+        : "정석 루틴",
+      onClick: () =>
+        hasLesson ? onReadLesson?.(todaysLesson.session) : onOpenCurriculum?.("program"),
+    },
+    {
+      id: "quick",
+      icon: "ring",
+      label: "가볍게",
+      title: "1R만",
+      meta: "바쁜 날 최소 기록",
+      onClick: () =>
+        onStartMinimumRound ? onStartMinimumRound() : onNavigate?.("train"),
+    },
+    {
+      id: "review",
+      icon: "combo",
+      label: "복습",
+      title: "기술 복습",
+      meta: styleContinue ? styleContinue.stageTitle : "자세와 가드 확인",
+      onClick: () =>
+        styleContinue ? onContinueStyle?.(styleContinue) : onOpenCurriculum?.("techniques"),
+    },
+    {
+      id: "free",
+      icon: "round",
+      label: "자유",
+      title: "자유 타이머",
+      meta: "내 라운드로 설정",
+      onClick: () => onOpenTimer?.(),
+    },
+  ];
+  const heroStats = trainedToday
+    ? [
+        { label: "오늘 기록", value: `${todayLogs.length}회` },
+        { label: "남긴 시간", value: todayMinutes > 0 ? `${todayMinutes}분` : "-" },
+        { label: "누적", value: `${surfaceLogs.length}회` },
+      ]
     : hasLesson
-      ? "레슨 시작"
-      : "훈련 시작";
+      ? [
+          { label: "분량", value: `${todaysLesson.rounds}R` },
+          { label: "전체", value: todaysLesson.durationLabel },
+          { label: "순서", value: todaysLesson.code },
+        ]
+      : [
+          { label: "오늘", value: "대기" },
+          { label: "기록", value: `${surfaceLogs.length}회` },
+          { label: "이번 주", value: `${trainedDaysThisWeek}일` },
+        ];
 
   function handlePrimaryAction() {
     if (timerIsActive) {
       onOpenTimer?.();
+      return;
+    }
+    if (trainedToday) {
+      if (todayLogs[0]?.id && onOpenCardMaker) onOpenCardMaker(todayLogs[0].id);
+      else onNavigate?.("log");
       return;
     }
     if (hasLesson) {
@@ -254,7 +309,7 @@ export default function HomePage({
         </button>
       ) : null}
 
-      <header className="home-scene-header home-scene-header-compact">
+      <header className="home-scene-header home-scene-header-compact home-command-header">
         <div
           className="home-app-brand"
           aria-label={`${BRAND_NAME} Boxing Tracker`}
@@ -264,209 +319,214 @@ export default function HomePage({
             {greeting}, {nickname}
           </p>
         </div>
-        <button
-          type="button"
-          className="home-alert-button home-alert-button-icon"
-          aria-label="알림"
-          title="알림"
-        >
-          <MenuIcon name="notification" size={18} />
-        </button>
+        <span className="home-command-state">
+          {trainedToday ? "오늘 기록 완료" : "훈련 대기"}
+        </span>
       </header>
 
-      <section
-        className={`home-scene-card home-scene-card-hero${
-          homeHeroPhoto ? " has-custom-photo" : " home-scene-card-hero-default"
-        }`}
-        aria-label="오늘의 훈련"
-      >
-        {homeHeroPhoto ? (
-          <>
-            <img
-              className="home-scene-card-image"
-              src={homeHeroPhoto}
-              alt=""
-              aria-hidden="true"
-            />
-            <div className="home-scene-card-shade" aria-hidden="true" />
-          </>
-        ) : (
-          <div className="home-scene-card-default-stage" aria-hidden="true" />
-        )}
-        <div className="home-scene-photo-control">
-          <button
-            type="button"
-            className="home-scene-menu-button"
-            aria-label="오늘 장면 사진 메뉴"
-            aria-expanded={isHeroMenuOpen}
-            title="사진 설정"
-            onClick={() => setIsHeroMenuOpen((open) => !open)}
-          >
-            <span aria-hidden="true">•••</span>
-          </button>
-          {isHeroMenuOpen ? (
-            <div className="home-scene-photo-menu" role="menu">
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => homeHeroInputRef.current?.click()}
-              >
-                {homeHeroPhoto ? "사진 교체" : "사진 선택"}
-              </button>
-              {homeHeroPhoto ? (
+      <section className="home-training-stack" aria-label="오늘 훈련 흐름">
+        <section
+          className={`home-scene-card home-scene-card-hero home-command-board${
+            homeHeroPhoto ? " has-custom-photo" : " home-scene-card-hero-default"
+          }`}
+          aria-label="오늘의 훈련"
+        >
+          {homeHeroPhoto ? (
+            <>
+              <img
+                className="home-scene-card-image"
+                src={homeHeroPhoto}
+                alt=""
+                aria-hidden="true"
+              />
+              <div className="home-scene-card-shade" aria-hidden="true" />
+            </>
+          ) : (
+            <div className="home-scene-card-default-stage" aria-hidden="true" />
+          )}
+          <div className="home-scene-photo-control">
+            <button
+              type="button"
+              className="home-scene-menu-button"
+              aria-label="오늘 장면 사진 메뉴"
+              aria-expanded={isHeroMenuOpen}
+              title="사진 설정"
+              onClick={() => setIsHeroMenuOpen((open) => !open)}
+            >
+              <span aria-hidden="true">•••</span>
+            </button>
+            {isHeroMenuOpen ? (
+              <div className="home-scene-photo-menu" role="menu">
                 <button
                   type="button"
                   role="menuitem"
-                  className="is-danger"
-                  onClick={handleRemoveHomeHeroPhoto}
+                  onClick={() => homeHeroInputRef.current?.click()}
                 >
-                  사진 제거
+                  {homeHeroPhoto ? "사진 교체" : "사진 선택"}
                 </button>
-              ) : null}
-            </div>
-          ) : null}
-          <input
-            ref={homeHeroInputRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            onChange={handleHomeHeroPhotoChange}
-            hidden
-          />
-        </div>
-        <p className="home-scene-kicker">오늘</p>
-        <h1 className="home-scene-title">{sceneTitle}</h1>
-        <p className="home-scene-copy">{sceneCopy}</p>
-        <div className="home-scene-actions">
-          <button
-            type="button"
-            className="home-scene-primary"
-            data-tutorial-target="home-start"
-            onClick={handlePrimaryAction}
-          >
-            {primaryLabel}
-          </button>
-        </div>
-      </section>
-
-      <section
-        className={`home-week-strip-inline${
-          hasAnyRecords ? " has-records" : " is-empty"
-        }`}
-        aria-label="이번 주"
-      >
-        {hasAnyRecords ? (
-          <>
-            <div className="home-week-strip-days">
-              {dashboard.weekStrip.map((day) => (
-                <div
-                  key={day.key}
-                  className={`home-week-day${day.isToday ? " is-today" : ""}${
-                    day.trained ? " is-trained" : ""
-                  }`}
-                >
-                  <span>{day.label}</span>
-                  <i aria-hidden="true">{day.trained ? "✓" : ""}</i>
-                </div>
-              ))}
-            </div>
-            <p className="home-week-strip-meta">
-              {trainedDaysThisWeek}일 훈련 · {weeklyRounds}R
+                {homeHeroPhoto ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="is-danger"
+                    onClick={handleRemoveHomeHeroPhoto}
+                  >
+                    사진 제거
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            <input
+              ref={homeHeroInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={handleHomeHeroPhotoChange}
+              hidden
+            />
+          </div>
+          <div className="home-board-topline">
+            <p className="home-scene-kicker">
+              {trainedToday ? "기록 완료" : "오늘의 세션"}
             </p>
-          </>
-        ) : (
-          <p className="home-week-strip-empty">
-            이번 주 첫 훈련을 시작해보세요
+            {hasLesson ? (
+              <span className="home-course-status">
+                {todaysLesson.code}
+              </span>
+            ) : null}
+          </div>
+          <h1 className="home-scene-title">{sceneTitle}</h1>
+          <p className="home-scene-copy">{sceneCopy}</p>
+          <div className="home-session-stats" aria-label="오늘 훈련 요약">
+            {heroStats.map((stat) => (
+              <span key={stat.label}>
+                <small>{stat.label}</small>
+                <strong>{stat.value}</strong>
+              </span>
+            ))}
+          </div>
+          <div
+            className={`home-session-track${trainedToday ? " is-complete" : ""}`}
+            aria-hidden="true"
+          >
+            <span>{trainedToday ? "완료" : "준비"}</span>
+            <i />
+            <span>{trainedToday ? "기록" : "훈련"}</span>
+            <i />
+            <span>{trainedToday ? "다음" : "저장"}</span>
+          </div>
+          <div className="home-scene-actions">
+            <button
+              type="button"
+              className="home-scene-primary"
+              data-tutorial-target="home-start"
+              onClick={handlePrimaryAction}
+            >
+              {primaryLabel}
+            </button>
+            {trainedToday && !timerIsActive ? (
+              <button
+                type="button"
+                className="home-scene-secondary-link home-next-session"
+                onClick={() =>
+                  hasLesson ? onReadLesson?.(todaysLesson.session) : onNavigate?.("train")
+                }
+              >
+                {hasLesson ? `다음 훈련 · ${todaysLesson.title}` : "다른 훈련 보기"}
+              </button>
+            ) : null}
+          </div>
+        </section>
+
+        {!hasAnyRecords && !timerIsActive ? (
+          <p className="home-first-note">
+            완료하면 기록은 자동 저장되고 Boxer History에 남습니다.
           </p>
-        )}
+        ) : null}
       </section>
 
-      {styleContinue ? (
-        <section className="home-style-continue" aria-label="이어서 하기">
-          <p className="home-style-continue-kicker">이어서 하기</p>
-          <p className="home-style-continue-meta">
-            {styleContinue.styleTitle} · STEP {styleContinue.order}
-          </p>
-          <strong>{styleContinue.stageTitle}</strong>
-          <button
-            type="button"
-            className="home-style-continue-cta"
-            onClick={() => onContinueStyle?.(styleContinue)}
-          >
-            이어서 훈련
-          </button>
+      <section className="home-training-choice-section" aria-label="오늘의 훈련 선택">
+        <div className="home-training-choice-head">
+          <h2>오늘의 선택</h2>
+          <span>{hasAnyRecords ? "상황에 맞게 이어가기" : "처음엔 하나만 골라도 됩니다"}</span>
+        </div>
+        <div className="home-training-choice-grid">
+          {trainingChoices.map((item) => (
+            <button
+              type="button"
+              className="home-training-choice-item"
+              key={item.id}
+              onClick={item.onClick}
+            >
+              <span className="home-training-choice-icon" aria-hidden="true">
+                <MenuIcon name={item.icon} size={18} />
+              </span>
+              <span className="home-training-choice-copy">
+                <small>{item.label}</small>
+                <strong>{item.title}</strong>
+                <em>{item.meta}</em>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {hasAnyRecords ? (
+        <section className="home-history-preview" aria-label="Boxer History">
+          <div className="home-history-preview-head">
+            <div>
+              <p>Boxer History</p>
+              <h2>내 복싱 이력</h2>
+            </div>
+            <button type="button" onClick={() => onNavigate?.("profile")}>
+              보기
+            </button>
+          </div>
+          <div className="home-history-stats" aria-label="누적 훈련 요약">
+            <span>
+              <small>기록</small>
+              <strong>{surfaceLogs.length}회</strong>
+            </span>
+            <span>
+              <small>훈련일</small>
+              <strong>{trainingDayCount}일</strong>
+            </span>
+            <span>
+              <small>라운드</small>
+              <strong>{totalRounds}R</strong>
+            </span>
+          </div>
+          <div className="home-history-week" aria-label="이번 주 훈련 흔적">
+            {dashboard.weekStrip.map((day) => (
+              <span
+                key={day.key}
+                className={`${day.isToday ? " is-today" : ""}${
+                  day.trained ? " is-trained" : ""
+                }`}
+              >
+                <em>{day.label}</em>
+                <i aria-hidden="true" />
+              </span>
+            ))}
+          </div>
+          {latestLog ? (
+            <button
+              type="button"
+              className="home-history-latest"
+              onClick={() => onOpenCardMaker?.(latestLog.id)}
+            >
+              <span>
+                <small>최근 기록</small>
+                <strong>{latestLog.type || "훈련"}</strong>
+              </span>
+              <em>
+                {[latestLogMetric, formatLogWhen(latestLog, todayKey)]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </em>
+            </button>
+          ) : null}
         </section>
       ) : null}
-
-      <section className="home-recent-card home-recent-card-slim" aria-label="최근 기록">
-        <div className="home-section-row">
-          <h2>최근 기록</h2>
-          <button
-            type="button"
-            className="home-section-text-link"
-            onClick={() => onNavigate?.("log")}
-          >
-            전체
-          </button>
-        </div>
-        <div className="home-recent-list">
-          {recentLogs.length > 0 ? (
-            recentLogs.map((log) => {
-              const rounds = getRounds(log);
-              const minutes = getLogMinutes(log);
-              const category = inferLogCategory(log);
-              const metric =
-                rounds > 0
-                  ? `${rounds}R`
-                  : minutes > 0
-                    ? `${minutes}분`
-                    : getLogSummary(log) || "";
-              return (
-                <button
-                  type="button"
-                  className="home-recent-item home-recent-item-slim"
-                  key={log.id}
-                  onClick={() => onOpenCardMaker?.(log.id)}
-                >
-                  <span className="home-recent-icon" aria-hidden="true">
-                    <MenuIcon
-                      name={RECENT_LOG_ICON[category] || "log"}
-                      size={14}
-                    />
-                  </span>
-                  <span className="home-recent-copy">
-                    <strong>{log.type || "훈련"}</strong>
-                    <em>
-                      {[metric, formatLogWhen(log, todayKey)]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </em>
-                  </span>
-                </button>
-              );
-            })
-          ) : (
-            <div className="home-recent-empty">
-              <strong>아직 기록이 없습니다</strong>
-              <span>첫 훈련을 시작하면 여기에 남습니다.</span>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <button
-        type="button"
-        className="home-level-strip home-level-strip-slim"
-        onClick={() => onOpenGrowth?.()}
-        aria-label={`레벨 ${dashboard.fighter.level}, 성장 보기`}
-      >
-        <span>
-          <small>LV.{dashboard.fighter.level}</small>
-        </span>
-        <span className="home-level-progress" aria-hidden="true">
-          <i style={{ width: `${dashboard.fighter.progressPercent}%` }} />
-        </span>
-        <em>{dashboard.fighter.progressPercent}%</em>
-      </button>
     </main>
   );
 }

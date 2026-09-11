@@ -24,7 +24,6 @@ import MenuIcon from "./components/MenuIcon";
 import AppErrorBoundary from "./components/AppErrorBoundary";
 import { useBackgroundTimerSession } from "./hooks/useBackgroundTimerSession";
 import { needsOnboarding } from "./utils/bodySpecs";
-import { isTutorialComplete } from "./utils/tutorial";
 import { getFighterProgress } from "./utils/fighterProgress";
 import { buildCurriculumTimerLaunch } from "./utils/homeCurriculum";
 import {
@@ -32,9 +31,12 @@ import {
   getTimerPresetById,
 } from "./utils/timerPresets";
 import { isComboCreatorUnlocked } from "./utils/featureUnlocks";
-import { recordAppOpen } from "./utils/retentionMetrics";
+import {
+  getTrainingRevisitStatus,
+  recordAppOpen,
+} from "./utils/retentionMetrics";
 import { trackProductEvent } from "./utils/productFunnel";
-import { isDevMode } from "./utils/devMode";
+import { isDevMode, isDevSurfaceLog } from "./utils/devMode";
 import { getPublishableGymExchangeEventById } from "./data/gymExchangeEvent";
 import {
   applyDocumentTheme,
@@ -104,6 +106,7 @@ function readEventV0DeepLinkBootstrap() {
 }
 
 const EVENT_V0_DEEP_LINK_BOOTSTRAP = readEventV0DeepLinkBootstrap();
+const EVENT_V0_ENABLED = false;
 
 function readTimerReturnPage() {
   if (typeof sessionStorage === "undefined") return "train";
@@ -172,7 +175,7 @@ function AppFlow() {
   }
 
   // EVENT v0 QR: skip app onboarding / main chrome.
-  if (EVENT_V0_DEEP_LINK_BOOTSTRAP.eventId) {
+  if (EVENT_V0_ENABLED && EVENT_V0_DEEP_LINK_BOOTSTRAP.eventId) {
     const eventId = EVENT_V0_DEEP_LINK_BOOTSTRAP.eventId;
     const isOperator = EVENT_V0_DEEP_LINK_BOOTSTRAP.mode === "operator";
     return (
@@ -203,7 +206,7 @@ function MainAppShell({ theme, onToggleTheme }) {
   const [currentPage, setCurrentPage] = useState(
     EXCHANGE_DEEP_LINK_BOOTSTRAP.page
   );
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialComplete());
+  const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialSession, setTutorialSession] = useState(0);
   const [gymView, setGymView] = useState(EXCHANGE_DEEP_LINK_BOOTSTRAP.gymView);
   const [gymExchangeFocusId, setGymExchangeFocusId] = useState(
@@ -229,6 +232,7 @@ function MainAppShell({ theme, onToggleTheme }) {
     (currentPage === "profile" && profileStudioOpen);
   const isEdgeToNavPage = EDGE_TO_NAV_PAGES.has(currentPage);
   const appOpenTrackedRef = useRef(false);
+  const trainingRevisitTrackedRef = useRef(false);
 
   useEffect(() => {
     recordAppOpen();
@@ -236,6 +240,15 @@ function MainAppShell({ theme, onToggleTheme }) {
     appOpenTrackedRef.current = true;
     trackProductEvent("app_open");
   }, []);
+
+  useEffect(() => {
+    if (trainingRevisitTrackedRef.current) return;
+    const surfaceLogs = logs.filter((log) => !isDevSurfaceLog(log));
+    const status = getTrainingRevisitStatus(surfaceLogs);
+    if (!status.shouldTrack) return;
+    trainingRevisitTrackedRef.current = true;
+    trackProductEvent("training_revisit");
+  }, [logs]);
 
   useEffect(() => {
     if (appMainRef.current) {
@@ -341,6 +354,30 @@ function MainAppShell({ theme, onToggleTheme }) {
   const goDefaultTimer = (returnPage = "home") => {
     goTimerWithLaunch(
       buildPresetTimerLaunch(getTimerPresetById("match3")),
+      returnPage
+    );
+  };
+
+  const goMinimumRound = (returnPage = "home") => {
+    const basePreset = getTimerPresetById("match3");
+    if (!basePreset) {
+      goDefaultTimer(returnPage);
+      return;
+    }
+
+    goTimerWithLaunch(
+      buildPresetTimerLaunch(
+        {
+          ...basePreset,
+          id: "minimum-1r",
+          title: "1R",
+          rounds: 1,
+          routineTitle: "오늘 1R",
+          logType: "1R 라운드 훈련",
+          workoutDetails: "오늘 최소 1R",
+        },
+        { autoStart: true }
+      ),
       returnPage
     );
   };
@@ -472,13 +509,14 @@ function MainAppShell({ theme, onToggleTheme }) {
         {currentPage === "home" && (
           <HomePage
             timerSummary={timerSummary}
-            onOpenTimer={() => goDefaultTimer("home")}
+            onOpenTimer={() => openTimerFrom("home")}
             onNavigate={goPage}
             onOpenCardMaker={goProfileCardMaker}
-            onOpenCurriculum={() => goCurriculum("home")}
+            onOpenCurriculum={(tab) => goCurriculum("home", { tab })}
             onOpenGrowth={() => goPage("growth")}
             onReadLesson={goReadLesson}
             onContinueStyle={goStyleContinue}
+            onStartMinimumRound={() => goMinimumRound("home")}
           />
         )}
 

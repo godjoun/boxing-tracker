@@ -33,6 +33,43 @@ export function recordAppOpen(now = new Date()) {
   }
 }
 
+function hasCountableTraining(log) {
+  const rounds =
+    Number(log?.rounds || log?.totalRounds || log?.completedRounds || 0) || 0;
+  const minutes = Number(log?.minutes || log?.duration || 0) || 0;
+
+  return rounds > 0 || minutes > 0;
+}
+
+export function getTrainingRevisitStatus(logs = [], now = new Date()) {
+  if (typeof localStorage === "undefined") {
+    return {
+      shouldTrack: false,
+      previousOpenDays: 0,
+      openDays: 0,
+      trainingLogs: 0,
+    };
+  }
+
+  const today = getTodayKey(now);
+  const uniqueOpenDays = [
+    ...new Set(
+      readOpenDays()
+        .map((day) => String(day))
+        .filter((day) => /^\d{4}-\d{2}-\d{2}$/.test(day))
+    ),
+  ];
+  const previousOpenDays = uniqueOpenDays.filter((day) => day < today).length;
+  const trainingLogs = logs.filter(hasCountableTraining).length;
+
+  return {
+    shouldTrack: previousOpenDays > 0 && trainingLogs > 0,
+    previousOpenDays,
+    openDays: uniqueOpenDays.length,
+    trainingLogs,
+  };
+}
+
 function getLogTimestamp(log) {
   const raw = log?.createdAt || log?.date;
   if (!raw) return null;

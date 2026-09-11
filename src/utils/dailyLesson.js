@@ -1,8 +1,11 @@
 import {
   CURRICULUM_GRADUATION,
+  getCurriculumJourney,
   getCurriculumProgress,
   getRecommendedSession,
 } from "./homeCurriculum";
+import { formatTimerDurationLabel, resolveSessionTimerConfig } from "./curriculumTimerSync";
+import { applyTrainingSettings, getCurriculumSettings } from "./curriculumSettings";
 
 function pickPreviewDrill(drills = []) {
   const mainDrill = drills.find(
@@ -12,8 +15,10 @@ function pickPreviewDrill(drills = []) {
   return mainDrill || drills[0] || null;
 }
 
-export function getTodaysLessonPreview() {
-  const progress = getCurriculumProgress();
+export function getTodaysLessonPreview(
+  progress = getCurriculumProgress(),
+  settings = getCurriculumSettings()
+) {
   const session = getRecommendedSession(progress);
 
   if (!session) {
@@ -26,6 +31,10 @@ export function getTodaysLessonPreview() {
   }
 
   const previewDrill = pickPreviewDrill(session.drills);
+  const timer = resolveSessionTimerConfig(applyTrainingSettings(session, settings));
+  const totalSeconds = timer.prepSeconds + timer.rounds * timer.workSeconds
+    + Math.max(0, timer.rounds - 1) * timer.restSeconds + timer.cooldownSeconds;
+  const journey = getCurriculumJourney(progress);
 
   return {
     kind: "session",
@@ -34,11 +43,12 @@ export function getTodaysLessonPreview() {
     code: session.code,
     title: session.title,
     goal: session.goal,
-    rounds: session.rounds,
+    rounds: timer.rounds,
+    durationLabel: formatTimerDurationLabel(totalSeconds),
     previewDrillName: previewDrill?.name || "",
     previewDrillText: previewDrill?.description || "",
-    progressPercent: progress.progressPercent,
-    completedCount: progress.completedCount,
-    totalSessions: progress.totalSessions,
+    progressPercent: Math.round(journey.completedCount / journey.totalSessions * 100),
+    completedCount: journey.completedCount,
+    totalSessions: journey.totalSessions,
   };
 }

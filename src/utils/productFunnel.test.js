@@ -30,14 +30,16 @@ describe("trackProductEvent", () => {
     stubHostname("boxing-tracker.vercel.app");
   });
 
-  it("exports exactly the five allowed event names", async () => {
+  it("exports exactly the seven allowed event names", async () => {
     const { PRODUCT_FUNNEL_EVENTS } = await import("./productFunnel");
     expect([...PRODUCT_FUNNEL_EVENTS]).toEqual([
       "app_open",
       "training_start",
       "training_complete",
+      "log_view",
       "training_card_create",
       "profile_view",
+      "training_revisit",
     ]);
   });
 

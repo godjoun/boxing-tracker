@@ -1,0 +1,147 @@
+.course-journey {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 0;
+  border-block: 1px solid var(--p-border);
+  text-align: left;
+  letter-spacing: 0;
+}
+
+.course-journey-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--p-text);
+}
+
+.course-journey-heading span,
+.course-journey-week-label {
+  color: var(--p-text-muted);
+  font-size: 12px;
+}
+
+.course-journey-progress {
+  position: relative;
+  overflow: hidden;
+  height: 4px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: var(--p-bg-subtle);
+}
+
+.course-journey-progress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--p-action);
+}
+
+.course-journey-weeks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.course-journey.is-interactive .course-journey-weeks {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.course-journey.is-interactive .course-journey-step {
+  height: 44px;
+}
+
+.course-journey-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: 6px;
+}
+
+.course-journey-week-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.course-journey-week-label strong,
+.course-journey-week-label em {
+  min-width: 0;
+  font: inherit;
+}
+
+.course-journey-week-label strong {
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-journey-week-label em {
+  color: var(--p-text-faint);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.course-journey-week.is-active .course-journey-week-label strong {
+  color: var(--p-action);
+}
+
+.course-journey-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--p-border);
+  border-radius: 4px;
+  background: var(--p-bg-subtle);
+  color: var(--p-text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.course-journey-step.is-complete {
+  background: var(--p-action);
+  border-color: var(--p-action);
+  color: var(--p-action-text);
+}
+
+.course-journey-step.is-next {
+  border: 2px solid var(--p-action);
+  color: var(--p-action);
+}
+
+button.course-journey-step {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button.course-journey-step:hover,
+button.course-journey-step:focus-visible {
+  outline: 2px solid var(--p-text);
+  outline-offset: 2px;
+}
+
+.course-journey-step.is-just-completed {
+  animation: course-journey-stamp 500ms ease-out both;
+}
+
+@keyframes course-journey-stamp {
+  from { transform: scale(0.8); opacity: 0.3; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .course-journey-step.is-just-completed { animation: none; }
+}
+
+@media (max-width: 380px) {
+  .course-journey-weeks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

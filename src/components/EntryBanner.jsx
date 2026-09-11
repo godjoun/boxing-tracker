@@ -31,6 +31,20 @@ export default function EntryBanner({
         <h1 className="entry-banner-name">{BRAND_NAME}</h1>
         <p className="entry-banner-slogan">{BRAND_SLOGAN_EN}</p>
         <p className="entry-banner-philosophy">{BRAND_PHILOSOPHY_EN}</p>
+        <div className="entry-banner-loop" aria-label="앱 흐름">
+          <span>
+            <strong>TRAIN</strong>
+            <em>오늘 훈련</em>
+          </span>
+          <span>
+            <strong>RECORD</strong>
+            <em>자동 저장</em>
+          </span>
+          <span>
+            <strong>HISTORY</strong>
+            <em>복싱 이력</em>
+          </span>
+        </div>
         {welcomeSupport ? (
           <p className="entry-banner-welcome-support">{welcomeSupport}</p>
         ) : null}

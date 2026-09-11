@@ -320,6 +320,23 @@ export default function TrainingHubPage({
           detail: `${boxingKind.title} · ${roundSummary}`,
           onClick: startBoxingSession,
         };
+  const stageTitle =
+    categoryId === "running"
+      ? `${runningGoalMinutes}분 러닝`
+      : `${boxingKind.title} ${sessionRounds}R`;
+  const stageSummary =
+    categoryId === "running"
+      ? `시간 목표 ${runningGoalMinutes}분`
+      : `${roundSummary} · ${boxingKind.title}`;
+  const stageMetricLabel = categoryId === "running" ? "목표" : "분량";
+  const stageMetricValue =
+    categoryId === "running" ? `${runningGoalMinutes}분` : `${sessionRounds}R`;
+  const stageTimeLabel =
+    categoryId === "running" ? `${runningGoalMinutes}분` : `${workMinutes}분`;
+  const todayValue =
+    todaySummary.rounds > 0 || todaySummary.minutes > 0
+      ? `${todaySummary.rounds}R · ${todaySummary.minutes}분`
+      : "0분";
 
   return (
     <main className="hub-page levelup-page training-page training-page-focus">
@@ -331,6 +348,28 @@ export default function TrainingHubPage({
           오늘 {todaySummary.rounds}R · {todaySummary.minutes}분
         </p>
       </header>
+
+      <section className="training-stage-card" aria-label="선택한 훈련">
+        <span className="training-stage-kicker">
+          {categoryId === "running" ? "ROAD WORK" : "FREE ROUND"}
+        </span>
+        <h2>{stageTitle}</h2>
+        <p>{stageSummary}</p>
+        <div className="training-stage-stats" aria-label="훈련 요약">
+          <span>
+            <small>{stageMetricLabel}</small>
+            <b>{stageMetricValue}</b>
+          </span>
+          <span>
+            <small>{categoryId === "running" ? "러닝" : "운동"}</small>
+            <b>{stageTimeLabel}</b>
+          </span>
+          <span>
+            <small>오늘</small>
+            <b>{todayValue}</b>
+          </span>
+        </div>
+      </section>
 
       <section className="training-path-section" aria-label="핵심 훈련">
         <button

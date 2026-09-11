@@ -122,7 +122,7 @@ export default function OnboardingSetupPage() {
         <EntryBanner
           mode="welcome"
           onContinue={handleWelcomeNext}
-          welcomeSupport="라운드를 돌리면 오늘의 기록이 남습니다."
+          welcomeSupport="체육관에 못 가는 날에도 오늘 끝낸 라운드는 Boxer History에 남습니다."
         />
       </div>
     );
@@ -161,9 +161,9 @@ export default function OnboardingSetupPage() {
         <div className="onboarding-setup-shell">
           <header className="onboarding-setup-hero">
             <p className="onboarding-setup-kicker">{BRAND_NAME}</p>
-            <h1 className="onboarding-setup-title">링네임을 정해 주세요</h1>
+            <h1 className="onboarding-setup-title">첫 기록을 남길 이름</h1>
             <p className="onboarding-setup-copy">
-              이름만 있으면 바로 시작할 수 있어요. 나머지는 선택입니다.
+              링네임만 정하면 오늘 1R부터 시작할 수 있어요. 나머지는 선택입니다.
             </p>
           </header>
 
@@ -217,7 +217,7 @@ export default function OnboardingSetupPage() {
             {showSpecs ? (
               <div className="onboarding-specs-panel">
                 <p className="onboarding-inline-note">
-                  명패·스파링에서 언제든 수정할 수 있어요.
+                  프로필과 명패에서 언제든 수정할 수 있어요.
                 </p>
 
                 <div className="onboarding-row">
@@ -313,8 +313,7 @@ export default function OnboardingSetupPage() {
 
             <div className="onboarding-cta-block">
               <p className="onboarding-storage-notice">
-                훈련 기록은 이 기기에 저장됩니다. 전체 메뉴에서 JSON 백업을
-                보관할 수 있어요.
+                훈련 기록은 이 기기에 저장됩니다. JSON 백업은 전체 메뉴에서 보관할 수 있어요.
               </p>
               <p
                 className={`onboarding-cta-hint${

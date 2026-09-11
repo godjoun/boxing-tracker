@@ -5,8 +5,8 @@ import { useTraining } from "../store/TrainingContext";
 import {
   getCompletionDelta,
   getTotalMinutesFromLogs,
-  getTotalRoundsFromLogs,
 } from "../utils/fighterProgress";
+import { getSessionHistoryChange } from "../utils/sessionHistory";
 import { getTrainingStreak } from "./profilePage/profileCardUtils";
 import {
   buildStrengthDayLaunch,
@@ -77,6 +77,7 @@ import WorkoutDetailsQuickBar from "../components/WorkoutDetailsQuickBar";
 import { styles } from "./TimerPage.styles";
 import CurriculumTimerPanel from "../components/CurriculumTimerPanel";
 import StrengthTimerGuide from "../components/StrengthTimerGuide";
+import CourseJourney from "../components/CourseJourney";
 import ComposerShell, {
   ComposerDockPrimary,
   ComposerSegmentTabs,
@@ -385,6 +386,11 @@ export default function TimerPage({
   const totalWorkSeconds = totalRounds * workSecondsSetting;
   const totalSessionSeconds =
     totalWorkSeconds + Math.max(totalRounds - 1, 0) * restSecondsSetting;
+  const totalReadySessionSeconds =
+    activePrepSeconds +
+    totalWorkSeconds +
+    Math.max(totalRounds - 1, 0) * restSecondsSetting +
+    cooldownSecondsSetting;
   const totalWorkMinutes = Math.max(1, Math.round(totalWorkSeconds / 60));
 
   const setupSummary = useMemo(
@@ -1388,9 +1394,14 @@ export default function TimerPage({
     "0"
   )}:${String(completedMoment.getMinutes()).padStart(2, "0")}`;
 
+  const savedSessionLog = logs.find((log) => log.id === completedLogId);
+  const recordedRounds = completionResult?.gainedRounds ?? totalRounds;
   const stillCountLabel = isIntervalMode
-    ? `${totalRounds}세트`
-    : `${totalRounds}R`;
+    ? `${recordedRounds}세트`
+    : `${recordedRounds}R`;
+  const recordedWorkSeconds = endedEarly && savedSessionLog
+    ? Number(savedSessionLog.minutes) * 60
+    : totalWorkSeconds;
   const completeSessionLabel = getCompleteSessionLabel({
     progressionLoop,
     styleTimerStep,
@@ -1401,9 +1412,8 @@ export default function TimerPage({
     strengthPlan,
     isIntervalMode,
   });
-  const cumulativeRounds =
-    completionResult?.totalRounds ?? getTotalRoundsFromLogs(logs);
   const cumulativeMinutes = getTotalMinutesFromLogs(logs);
+  const historyChange = getSessionHistoryChange(logs, completedLogId);
   const cumulativeTimeLabel =
     cumulativeMinutes >= 60
       ? `${Math.floor(cumulativeMinutes / 60)}시간`
@@ -1598,7 +1608,7 @@ export default function TimerPage({
         <ComposerShell
           className="timer-composer"
           kicker="TIMER"
-          title="라운드"
+          title={isCurriculumSession ? "훈련 준비" : "타이머 설정"}
           back={
             onGoBack ? (
               <button
@@ -1611,13 +1621,33 @@ export default function TimerPage({
             ) : null
           }
           summary={
-            <>
+            <div className="timer-ready-card">
               <span className="composer-meta-label">
-                {isIntervalMode ? "인터벌" : "라운드"}
+                {isCurriculumSession
+                  ? [curriculumSessionCode, curriculumWeekLabel]
+                      .filter(Boolean)
+                      .join(" · ")
+                  : isIntervalMode
+                    ? "INTERVAL"
+                    : "ROUND TIMER"}
               </span>
-              <strong>{setupSummary}</strong>
-              <p className="timer-composer-preview">{formatTime(workSecondsSetting)}</p>
-            </>
+              <strong>{curriculumSessionTitle || routineTitle}</strong>
+              <p>{curriculumGoal || setupSummary}</p>
+              <div className="timer-ready-stats" aria-label="타이머 구성">
+                <span>
+                  <small>{isIntervalMode ? "세트" : "라운드"}</small>
+                  <b>{isIntervalMode ? `${totalRounds}세트` : `${totalRounds}R`}</b>
+                </span>
+                <span>
+                  <small>운동</small>
+                  <b>{formatTime(workSecondsSetting)}</b>
+                </span>
+                <span>
+                  <small>전체</small>
+                  <b>{formatTimerDurationLabel(totalReadySessionSeconds)}</b>
+                </span>
+              </div>
+            </div>
           }
           segments={
             <ComposerSegmentTabs
@@ -1641,10 +1671,10 @@ export default function TimerPage({
             />
           }
         >
-          <section className="timer-setup-panel timer-setup-panel-plain">
-            <div className="timer-setup-adjust">
-              <label className="timer-setup-field">
-                <span>{isIntervalMode ? "세트" : "라운드"}</span>
+          <section className="timer-setup-board" aria-label="타이머 세부 설정">
+            <label className="timer-setup-row timer-setup-round-row">
+              <span>{isIntervalMode ? "세트" : "라운드"}</span>
+              <div className="timer-setup-row-value">
                 <input
                   type="text"
                   inputMode="numeric"
@@ -1658,70 +1688,72 @@ export default function TimerPage({
                   disabled={isRunning}
                   aria-label={isIntervalMode ? "세트 수" : "라운드 수"}
                 />
-              </label>
-
-              <div className="timer-setup-field-group">
-                <div className="timer-setup-field-head">
-                  <span>운동 시간</span>
-                  <strong>{formatTime(workSecondsSetting)}</strong>
-                </div>
-                <div className="timer-setup-step-row">
-                  <button
-                    type="button"
-                    onClick={() => handleWorkSecondsChange(-10)}
-                    disabled={isRunning}
-                  >
-                    −10초
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleWorkSecondsChange(10)}
-                    disabled={isRunning}
-                  >
-                    +10초
-                  </button>
-                </div>
               </div>
+            </label>
 
-              <div className="timer-setup-field-group">
-                <div className="timer-setup-field-head">
-                  <span>휴식 시간</span>
-                  <strong>{formatTime(restSecondsSetting)}</strong>
-                </div>
-                <div className="timer-setup-quick-row">
-                  {[15, 30, 45, 60].map((seconds) => (
-                    <button
-                      key={seconds}
-                      type="button"
-                      className={
-                        restSecondsSetting === seconds ? "is-active" : undefined
-                      }
-                      onClick={() => handleRestQuickSelect(seconds)}
-                      disabled={isRunning}
-                    >
-                      {seconds}초
-                    </button>
-                  ))}
-                </div>
-                <div className="timer-setup-step-row">
-                  <button
-                    type="button"
-                    onClick={() => handleRestSecondsChange(-5)}
-                    disabled={isRunning}
-                  >
-                    −5초
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRestSecondsChange(5)}
-                    disabled={isRunning}
-                  >
-                    +5초
-                  </button>
-                </div>
+            <div className="timer-setup-row">
+              <div className="timer-setup-field-head">
+                <span>운동 시간</span>
+                <strong>{formatTime(workSecondsSetting)}</strong>
+              </div>
+              <div className="timer-setup-step-row">
+                <button
+                  type="button"
+                  onClick={() => handleWorkSecondsChange(-10)}
+                  disabled={isRunning}
+                >
+                  −10초
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleWorkSecondsChange(10)}
+                  disabled={isRunning}
+                >
+                  +10초
+                </button>
               </div>
             </div>
 
+            <div className="timer-setup-row">
+              <div className="timer-setup-field-head">
+                <span>휴식 시간</span>
+                <strong>{formatTime(restSecondsSetting)}</strong>
+              </div>
+              <div className="timer-setup-quick-row">
+                {[15, 30, 45, 60].map((seconds) => (
+                  <button
+                    key={seconds}
+                    type="button"
+                    className={
+                      restSecondsSetting === seconds ? "is-active" : undefined
+                    }
+                    onClick={() => handleRestQuickSelect(seconds)}
+                    disabled={isRunning}
+                  >
+                    {seconds}초
+                  </button>
+                ))}
+              </div>
+              <div className="timer-setup-step-row">
+                <button
+                  type="button"
+                  onClick={() => handleRestSecondsChange(-5)}
+                  disabled={isRunning}
+                >
+                  −5초
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRestSecondsChange(5)}
+                  disabled={isRunning}
+                >
+                  +5초
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="timer-workout-panel" aria-label="오늘 할 운동">
             <label className="timer-workout-details">
               <span>오늘 할 운동</span>
               <input
@@ -1765,55 +1797,55 @@ export default function TimerPage({
                 ))}
               </div>
             ) : null}
-
-            <details className="timer-sound-details">
-              <summary>
-                알림음 ·{" "}
-                {SOUND_OPTIONS.find((option) => option.id === soundMode)?.label}
-              </summary>
-              <div className="timer-sound-details-body" style={styles.soundBox}>
-                <div style={styles.soundOptionGrid}>
-                  {SOUND_OPTIONS.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      style={{
-                        ...styles.soundOptionButton,
-                        ...(soundMode === option.id
-                          ? styles.activeSoundOptionButton
-                          : {}),
-                      }}
-                      onClick={() => {
-                        setSoundMode(option.id);
-                        if (option.id === "mute") {
-                          stopTimerAudioSession();
-                          return;
-                        }
-                        previewTimerBeep(option.id);
-                      }}
-                    >
-                      <strong style={styles.soundOptionLabel}>
-                        {option.label}
-                      </strong>
-                      <span style={styles.soundOptionDescription}>
-                        {option.description}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-                {supportsHeadphoneTimerAudio() ? (
-                  <div style={styles.headsetTip}>
-                    <strong style={styles.headsetTipTitle}>
-                      에어팟 · 블루투스 이어폰
-                    </strong>
-                    <span style={styles.headsetTipCopy}>
-                      시작 후 이어폰으로 라운드 알림음이 재생됩니다.
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </details>
           </section>
+
+          <details className="timer-sound-details">
+            <summary>
+              알림음 ·{" "}
+              {SOUND_OPTIONS.find((option) => option.id === soundMode)?.label}
+            </summary>
+            <div className="timer-sound-details-body" style={styles.soundBox}>
+              <div style={styles.soundOptionGrid}>
+                {SOUND_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    style={{
+                      ...styles.soundOptionButton,
+                      ...(soundMode === option.id
+                        ? styles.activeSoundOptionButton
+                        : {}),
+                    }}
+                    onClick={() => {
+                      setSoundMode(option.id);
+                      if (option.id === "mute") {
+                        stopTimerAudioSession();
+                        return;
+                      }
+                      previewTimerBeep(option.id);
+                    }}
+                  >
+                    <strong style={styles.soundOptionLabel}>
+                      {option.label}
+                    </strong>
+                    <span style={styles.soundOptionDescription}>
+                      {option.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {supportsHeadphoneTimerAudio() ? (
+                <div style={styles.headsetTip}>
+                  <strong style={styles.headsetTipTitle}>
+                    에어팟 · 블루투스 이어폰
+                  </strong>
+                  <span style={styles.headsetTipCopy}>
+                    시작 후 이어폰으로 라운드 알림음이 재생됩니다.
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </details>
 
           {strengthPlan ? (
             <>
@@ -1991,7 +2023,7 @@ export default function TimerPage({
         {phase === "done" && (
           <div className="timer-still" aria-live="polite">
             <div className="timer-still-poster">
-              <p className="timer-still-kicker">ROUND COMPLETE</p>
+              <p className="timer-still-kicker">{endedEarly ? "SESSION RECORDED" : "ROUND COMPLETE"}</p>
               {completeSessionLabel ? (
                 <p className="timer-still-session">{completeSessionLabel}</p>
               ) : null}
@@ -2010,11 +2042,13 @@ export default function TimerPage({
               <div className="timer-still-headline">
                 <span className="timer-still-rounds">{stillCountLabel}</span>
                 <span className="timer-still-duration">
-                  {formatTime(totalWorkSeconds)}
+                  {formatTime(recordedWorkSeconds)}
                 </span>
               </div>
 
-              <p className="timer-still-slogan">오늘도 벨은 울렸다.</p>
+              <p className="timer-still-slogan">
+                {!hasSavedLog ? "훈련을 마쳤어요." : historyChange?.totalRecords === 1 ? "첫 훈련이 기록에 남았어요." : "오늘 훈련도 기록에 남았어요."}
+              </p>
 
               <div className="timer-still-meta">
                 <span>{completedDateLabel}</span>
@@ -2032,21 +2066,38 @@ export default function TimerPage({
                 ) : null}
               </div>
 
-              <div className="timer-still-trace">
-                <strong className="timer-still-bell">
-                  {cumulativeRounds}번째 벨
-                </strong>
-                <span className="timer-still-meta-dot" aria-hidden="true">
-                  ·
-                </span>
-                <span className="timer-still-hours">
-                  링 위에서 {cumulativeTimeLabel}
-                </span>
-              </div>
+              {historyChange ? (
+                <div className="timer-history-change">
+                  <div className="timer-history-change-heading">
+                    <span>누적 훈련 기록</span>
+                    <strong>이번 기록 +{historyChange.addedMinutes}분</strong>
+                  </div>
+                  <div className="timer-history-ledger" aria-label={`누적 ${historyChange.previousMinutes}분에서 ${historyChange.totalMinutes}분으로 증가`}>
+                    <span>
+                      <small>이전</small>
+                      <strong>{historyChange.previousMinutes}분</strong>
+                    </span>
+                    <em aria-hidden="true">→</em>
+                    <span>
+                      <small>누적</small>
+                      <strong>{historyChange.totalMinutes}분</strong>
+                    </span>
+                  </div>
+                  <span className="timer-history-count">총 {historyChange.totalRecords}회 기록</span>
+                </div>
+              ) : (
+                <div className="timer-still-trace">
+                  <span className="timer-still-hours">누적 기록 {cumulativeTimeLabel}</span>
+                </div>
+              )}
+
+              {progressionLoop?.kind === "curriculum" && hasSavedLog ? (
+                <CourseJourney completedSessionId={curriculumSessionId} />
+              ) : null}
 
               {progressionLoop?.next ? (
                 <div className="timer-still-next">
-                  <span>다음</span>
+                  <span>다음에 이어갈 훈련</span>
                   <strong>
                     {progressionLoop.kind === "style"
                       ? `STEP ${progressionLoop.next.order} · ${progressionLoop.next.title}`
@@ -2083,24 +2134,30 @@ export default function TimerPage({
                   className="timer-complete-card-cta"
                   onClick={() => {
                     flushWorkoutDetailsToLog();
+                    if (onGoLog) {
+                      onGoLog();
+                      return;
+                    }
                     onGoHome?.();
                   }}
                 >
-                  홈으로
+                  내 기록 보기
                 </button>
               )}
 
               <div className="timer-complete-links">
-                <button
-                  type="button"
-                  onClick={() => {
-                    flushWorkoutDetailsToLog();
-                    onGoLog?.();
-                  }}
-                >
-                  기록 보기
-                </button>
-                {progressionLoop?.next ? (
+                {progressionLoop?.next && onGoLog ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      flushWorkoutDetailsToLog();
+                      onGoLog();
+                    }}
+                  >
+                    기록 보기
+                  </button>
+                ) : null}
+                {onGoHome ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -2118,7 +2175,7 @@ export default function TimerPage({
                 className="timer-complete-aux"
                 onClick={handleGoProfile}
               >
-                인증 카드 만들기
+                훈련 카드 만들기
               </button>
 
               {endedEarly ||

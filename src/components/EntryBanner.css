@@ -76,6 +76,38 @@
   line-height: 1.45;
 }
 
+.entry-banner-loop {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  width: min(100%, 360px);
+  margin: 24px 0 0;
+  border-block: 1px solid rgba(10, 9, 9, 0.12);
+}
+
+.entry-banner-loop span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  padding: 12px 6px;
+}
+
+.entry-banner-loop strong {
+  color: #8a2e2e;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.entry-banner-loop em {
+  color: #161616;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.2;
+  word-break: keep-all;
+}
+
 .entry-banner-welcome-support {
   margin: 18px 0 0;
   color: #5c5652;

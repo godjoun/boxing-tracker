@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { useTraining } from "../store/TrainingContext";
 import { getCompletionDelta } from "../utils/fighterProgress";
+import { trackProductEvent } from "../utils/productFunnel";
 import {
   getLogRounds,
 } from "../utils/trainingStats";
@@ -340,6 +341,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   const [historyPeriod, setHistoryPeriod] = useState("week");
   const [autoTracking, setAutoTracking] = useState(null);
   const watchIdRef = useRef(null);
+  const logViewTrackedRef = useRef(false);
 
   const selectedCategory = form.category ? getLogCategory(form.category) : null;
   const stepOneStatus = getStepOneStatus(form);
@@ -359,19 +361,34 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     Boolean(gpsDistanceKm && Number(gpsDistanceKm) > 0) ||
     Boolean(gpsMinutes && Number(gpsMinutes) > 0);
   const showGpsMetrics = gpsIsActive || gpsIsCompleted || hasGpsValues;
-  const latestLog = useMemo(
-    () => logs.find((log) => !isDevSurfaceLog(log)) || null,
+  const surfaceLogs = useMemo(
+    () => logs.filter((log) => !isDevSurfaceLog(log)),
     [logs]
   );
+  const latestLog = useMemo(
+    () => surfaceLogs[0] || null,
+    [surfaceLogs]
+  );
+  const archiveSummary = useMemo(() => {
+    const trainingDays = new Set(surfaceLogs.map((log) => log.date).filter(Boolean));
+    return {
+      count: surfaceLogs.length,
+      days: trainingDays.size,
+      rounds: surfaceLogs.reduce((sum, log) => sum + getLogRounds(log), 0),
+      minutes: surfaceLogs.reduce(
+        (sum, log) => sum + Number(log.minutes || log.duration || 0),
+        0
+      ),
+    };
+  }, [surfaceLogs]);
   const historyCategoryLogs = useMemo(
     () =>
-      logs.filter(
+      surfaceLogs.filter(
         (log) =>
-          !isDevSurfaceLog(log) &&
           (historyCategory === "all" ||
             inferLogCategory(log) === historyCategory)
       ),
-    [historyCategory, logs]
+    [historyCategory, surfaceLogs]
   );
   const historyLogs = useMemo(
     () => historyCategoryLogs.filter((log) => isInPeriod(log, historyPeriod)),
@@ -591,6 +608,11 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
   }
 
   useEffect(() => {
+    if (!logViewTrackedRef.current) {
+      logViewTrackedRef.current = true;
+      trackProductEvent("log_view");
+    }
+
     return () => {
       if (watchIdRef.current !== null && navigator.geolocation) {
         navigator.geolocation.clearWatch(watchIdRef.current);
@@ -839,8 +861,32 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
     >
       <div className="log-container">
         <header className="log-hero">
-          <h1 className="log-title">기록</h1>
-          <p className="log-subtitle">끝난 운동을 직접 남깁니다</p>
+          <div className="log-archive-topline">
+            <span>TRAINING LEDGER</span>
+            {onGoProfile ? (
+              <button type="button" onClick={onGoProfile}>
+                프로필
+              </button>
+            ) : null}
+          </div>
+          <h1 className="log-title">남긴 훈련 장부</h1>
+          <p className="log-subtitle">
+            자동 저장된 라운드와 직접 남긴 운동을 한곳에서 봅니다.
+          </p>
+          <div className="log-archive-stats" aria-label="전체 기록 요약">
+            <div>
+              <span>전체 기록</span>
+              <strong>{archiveSummary.count}회</strong>
+            </div>
+            <div>
+              <span>누적 라운드</span>
+              <strong>{archiveSummary.rounds}R</strong>
+            </div>
+            <div>
+              <span>훈련한 날</span>
+              <strong>{archiveSummary.days}일</strong>
+            </div>
+          </div>
         </header>
 
         {reward?.type === "growth" && reward.delta ? (
@@ -1673,7 +1719,7 @@ export default function LogPage({ onGoProfileCardMaker, onGoProfile } = {}) {
             </button>
           ) : null}
 
-          {logs.some((log) => !isDevSurfaceLog(log)) ? (
+          {surfaceLogs.length > 0 ? (
             <details className="log-danger-fold">
               <summary>
                 <span>기록 관리</span>

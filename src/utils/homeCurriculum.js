@@ -484,6 +484,31 @@ export function getRecommendedSession(progress = getCurriculumProgress()) {
   );
 }
 
+export function getCurriculumJourney(progress = getCurriculumProgress()) {
+  const completed = new Set(progress.completedSessionIds || []);
+  const sessions = getAllCurriculumSessions();
+  const nextSession = sessions.find((session) => !completed.has(session.id));
+  const completedCount = sessions.filter((session) => completed.has(session.id)).length;
+
+  return {
+    completedCount,
+    totalSessions: sessions.length,
+    weeks: HOME_CURRICULUM.weeks.map((week) => ({
+      id: week.id,
+      label: week.label,
+      theme: week.theme,
+      sessions: sessions.filter((session) => session.weekId === week.id).map((session) => ({
+        ...session,
+        status: completed.has(session.id)
+          ? "complete"
+          : session.id === nextSession?.id
+            ? "next"
+            : "upcoming",
+      })),
+    })),
+  };
+}
+
 export function isCurriculumSessionComplete(
   sessionId,
   progress = getCurriculumProgress()

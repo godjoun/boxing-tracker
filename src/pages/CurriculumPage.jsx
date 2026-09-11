@@ -26,9 +26,13 @@ import {
   isComboCreatorUnlocked,
 } from "../utils/featureUnlocks";
 import { getLevelTitle } from "../utils/fighterTitles";
-import { resolveSessionTimerConfig } from "../utils/curriculumTimerSync";
+import {
+  formatTimerDurationLabel,
+  resolveSessionTimerConfig,
+} from "../utils/curriculumTimerSync";
 import SessionDrillGuide from "../components/SessionDrillGuide";
 import LessonVideoPlayer from "../components/LessonVideoPlayer";
+import CourseJourney from "../components/CourseJourney";
 import { getLessonBySessionId } from "../utils/lessonCatalog";
 import {
   buildStyleDrillSession,
@@ -42,10 +46,7 @@ import {
   isStyleStageComplete,
   readStyleProgress,
 } from "../utils/styleProgress";
-import ComposerShell, {
-  ComposerDockPrimary,
-  ComposerSegmentTabs,
-} from "../components/ComposerShell";
+import ComposerShell, { ComposerSegmentTabs } from "../components/ComposerShell";
 import "./CurriculumPage.css";
 
 const CURRICULUM_TABS = [
@@ -146,6 +147,17 @@ function WeekProgressRing({ percent }) {
   );
 }
 
+function getTimerTotalSeconds(timerConfig) {
+  if (!timerConfig) return 0;
+
+  return (
+    timerConfig.prepSeconds +
+    timerConfig.rounds * timerConfig.workSeconds +
+    Math.max(0, timerConfig.rounds - 1) * timerConfig.restSeconds +
+    timerConfig.cooldownSeconds
+  );
+}
+
 export default function CurriculumPage({
   fighterLevel = 1,
   initialTab = null,
@@ -186,10 +198,8 @@ export default function CurriculumPage({
     () => getRecommendedSession(progress),
     [progress]
   );
-
-  const recommendedAdjusted = useMemo(
-    () => (recommended ? applyTrainingSettings(recommended, settings) : null),
-    [recommended, settings]
+  const [featuredSessionId, setFeaturedSessionId] = useState(
+    () => focusSessionId || null
   );
 
   const sessions = useMemo(() => getAllCurriculumSessions(), []);
@@ -222,6 +232,31 @@ export default function CurriculumPage({
   const isStyleDetail =
     activeTab === "techniques" && Boolean(selectedStyle);
   const isCategoryDetail = isStyleDetail && Boolean(selectedCategory);
+  const featuredSession = useMemo(
+    () =>
+      sessions.find(
+        (session) => session.id === (featuredSessionId || recommended?.id)
+      ) ||
+      recommended ||
+      null,
+    [featuredSessionId, recommended, sessions]
+  );
+  const featuredAdjusted = useMemo(
+    () =>
+      featuredSession ? applyTrainingSettings(featuredSession, settings) : null,
+    [featuredSession, settings]
+  );
+  const featuredTimerConfig = useMemo(
+    () =>
+      featuredAdjusted ? resolveSessionTimerConfig(featuredAdjusted) : null,
+    [featuredAdjusted]
+  );
+  const featuredTotalLabel = formatTimerDurationLabel(
+    getTimerTotalSeconds(featuredTimerConfig)
+  );
+  const featuredStatus = featuredSession
+    ? getSessionStatus(featuredSession)
+    : "pending";
 
   useEffect(() => {
     if (!focusSessionId) return;
@@ -235,6 +270,7 @@ export default function CurriculumPage({
     const frameId = requestAnimationFrame(() => {
       setActiveTab("program");
       setOpenWeekId(session.weekId);
+      setFeaturedSessionId(session.id);
 
       if (focusOpenDrills) {
         setExpandedDrillId(focusSessionId);
@@ -244,14 +280,7 @@ export default function CurriculumPage({
         setExpandedVideoId(focusSessionId);
       }
 
-      const scrollTarget = document.getElementById(
-        `curriculum-week-${session.weekId}`
-      );
-
-      scrollTarget?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
       onFocusConsumed?.();
     });
 
@@ -287,6 +316,21 @@ export default function CurriculumPage({
   function handleStartSession(session) {
     const adjusted = applyTrainingSettings(session, settings);
     onStartSession?.(adjusted);
+  }
+
+  function handleFocusProgramSession(session, { openDrills = false } = {}) {
+    if (!session?.id) return;
+
+    setActiveTab("program");
+    setFeaturedSessionId(session.id);
+    setOpenWeekId(session.weekId);
+    if (openDrills) setExpandedDrillId(session.id);
+
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`curriculum-session-${session.id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   function handleStartStyleDrill(style, stage) {
@@ -428,17 +472,22 @@ export default function CurriculumPage({
           ? selectedStyle.en
           : isStyleDetail
             ? selectedStyle.en
-            : "LEARN"
+            : activeTab === "program"
+              ? "COURSE"
+              : "LEARN"
       }
       title={
         isCategoryDetail
           ? selectedCategory.label
           : isStyleDetail
             ? selectedStyle.title
-            : "기술"
+            : activeTab === "program"
+              ? "4주 코스"
+              : "기술"
       }
       summary={
-        <>
+        activeTab === "program" ? null : (
+          <>
           {isCategoryDetail ? (
             <>
               <span className="composer-meta-label">
@@ -467,32 +516,15 @@ export default function CurriculumPage({
                 </p>
               ) : null}
             </>
-          ) : activeTab === "techniques" ? (
+          ) : (
             <>
               <span className="composer-meta-label">스타일 연습장</span>
               <strong>{techniqueCatalog.length}가지 스타일</strong>
               <p>하나를 고르면 그 스타일 전용 화면으로 들어갑니다.</p>
             </>
-          ) : (
-            <>
-              <span className="composer-meta-label">진행</span>
-              <strong>
-                {progress.completedCount}/{progress.totalSessions} 세션 ·{" "}
-                {progress.progressPercent}%
-              </strong>
-              <p>
-                {recommendedAdjusted
-                  ? `다음 · ${recommended.title} · ${recommendedAdjusted.rounds}R`
-                  : progress.isComplete
-                    ? "4주 프로그램을 모두 마쳤습니다."
-                    : "세션을 완료하면 진행률이 올라갑니다."}
-              </p>
-              <div className="curriculum-progress-bar" aria-hidden="true">
-                <div style={{ width: `${progress.progressPercent}%` }} />
-              </div>
-            </>
           )}
-        </>
+          </>
+        )
       }
       segments={
         isStyleDetail ? null : (
@@ -504,22 +536,13 @@ export default function CurriculumPage({
           />
         )
       }
-      dock={
-        activeTab === "program" && !isStyleDetail && recommendedAdjusted ? (
-          <ComposerDockPrimary
-            label={`${recommendedAdjusted.rounds}R 훈련 시작`}
-            onClick={() => handleStartSession(recommended)}
-          />
-        ) : null
-      }
-      hideDock={isStyleDetail || activeTab !== "program" || !recommendedAdjusted}
+      dock={null}
+      hideDock
     >
-      {!isStyleDetail ? (
+      {activeTab === "techniques" && !isStyleDetail ? (
         <header className="curriculum-hero curriculum-hero-compact">
           <p className="curriculum-intro">
-            {activeTab === "techniques"
-              ? "스타일은 정답이 아니라 자주 쓰는 선택입니다. 하나를 고르면 전용 화면으로 들어갑니다."
-              : "4주 · 12세션. 영상 보고 바로 훈련까지 이어가세요."}
+            스타일은 정답이 아니라 자주 쓰는 선택입니다. 하나를 고르면 전용 화면으로 들어갑니다.
           </p>
         </header>
       ) : null}
@@ -679,20 +702,86 @@ export default function CurriculumPage({
 
       {activeTab === "program" ? (
         <>
-      <section className="curriculum-card curriculum-progress-card curriculum-progress-card-compact">
-        <div className="curriculum-progress-head">
-          <div>
-            <span>4주 코스</span>
-            <strong>
-              {progress.completedCount}/{progress.totalSessions} 세션
-            </strong>
+      {featuredSession && featuredAdjusted && featuredTimerConfig ? (
+        <section className="curriculum-briefing" aria-label="선택한 세션 브리핑">
+          <div className="curriculum-briefing-top">
+            <span>
+              {featuredSession.weekLabel} · {featuredSession.code}
+            </span>
+            <em>
+              {featuredStatus === "complete"
+                ? "완료"
+                : featuredStatus === "next"
+                  ? "다음 훈련"
+                  : "예정"}
+            </em>
           </div>
-          <b>{progress.progressPercent}%</b>
-        </div>
-        <div className="curriculum-progress-bar" aria-hidden="true">
-          <div style={{ width: `${progress.progressPercent}%` }} />
-        </div>
-        <p className="curriculum-progress-note">{HOME_CURRICULUM.intro}</p>
+          <h2>{featuredSession.title}</h2>
+          <p>{featuredSession.goal}</p>
+          <div className="curriculum-briefing-stats" aria-label="세션 구성">
+            <span>
+              <small>라운드</small>
+              <strong>{featuredAdjusted.rounds}R</strong>
+            </span>
+            <span>
+              <small>운동</small>
+              <strong>
+                {formatTimerDurationLabel(featuredTimerConfig.workSeconds)}
+              </strong>
+            </span>
+            <span>
+              <small>전체</small>
+              <strong>{featuredTotalLabel}</strong>
+            </span>
+          </div>
+          <div className="curriculum-briefing-path" aria-hidden="true">
+            <span>영상</span>
+            <i />
+            <span>드릴</span>
+            <i />
+            <span>타이머</span>
+          </div>
+          <div className="curriculum-briefing-actions">
+            {getLessonBySessionId(featuredSession.id)?.hasVideo ? (
+              <button
+                type="button"
+                className="curriculum-briefing-secondary"
+                onClick={() => {
+                  setOpenWeekId(featuredSession.weekId);
+                  setExpandedVideoId(featuredSession.id);
+                  setExpandedDrillId(null);
+                }}
+              >
+                영상 보기
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="curriculum-briefing-secondary"
+              onClick={() =>
+                handleFocusProgramSession(featuredSession, { openDrills: true })
+              }
+            >
+              드릴 보기
+            </button>
+            <button
+              type="button"
+              className="curriculum-briefing-primary"
+              onClick={() => handleStartSession(featuredSession)}
+            >
+              {featuredAdjusted.rounds}R 시작
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="curriculum-course-map" aria-label="4주 코스 맵">
+        <CourseJourney
+          progress={progress}
+          onSelectSession={(session) =>
+            handleFocusProgramSession(session, { openDrills: true })
+          }
+        />
       </section>
 
       {progress.isComplete ? (
@@ -709,6 +798,10 @@ export default function CurriculumPage({
       ) : null}
 
       <section className="curriculum-timeline">
+        <div className="curriculum-timeline-head">
+          <h2>전체 세션</h2>
+          <p>주차를 열어 다른 날의 훈련을 보거나 조정할 수 있습니다.</p>
+        </div>
         {HOME_CURRICULUM.weeks.map((week, weekIndex) => {
           const weekSessions = sessions.filter(
             (session) => session.weekId === week.id
@@ -765,7 +858,10 @@ export default function CurriculumPage({
 
                   return (
                     <article
-                      className={`curriculum-session-card curriculum-session-${status}`}
+                      id={`curriculum-session-${session.id}`}
+                      className={`curriculum-session-card curriculum-session-${status}${
+                        featuredSession?.id === session.id ? " is-featured" : ""
+                      }`}
                       key={session.id}
                     >
                       <div className="curriculum-session-card-top">

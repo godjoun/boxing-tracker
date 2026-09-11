@@ -3,10 +3,13 @@ import { track } from "@vercel/analytics";
 import { trackProductEvent } from "../utils/productFunnel";
 import { useTraining } from "../store/TrainingContext";
 import FighterSpecCard from "../components/FighterSpecCard";
+import CourseJourney from "../components/CourseJourney";
 import { getFighterProgress } from "../utils/fighterProgress";
 import { getCareerTierState } from "../utils/monthlySeason";
 import { isVeteranFilterUnlocked } from "../utils/veteranPerks";
 import { buildWeeklyReport } from "../utils/trainingStats";
+import { getCurriculumJourney } from "../utils/homeCurriculum";
+import { getLogSummary } from "../utils/logCategories";
 import { validateBodySpecFields } from "../utils/bodySpecs";
 import {
   EXPERIENCE_LEVELS,
@@ -42,6 +45,113 @@ import {
 } from "../utils/communityTraces";
 import { listExchangeEventsAsync } from "../utils/dojoExchange";
 import { listMyGymExchangeParticipations } from "../api/gymExchangeParticipationApi";
+
+const HISTORY_WINDOW_DAYS = 7;
+
+function getLogTimeValue(log = {}) {
+  const raw =
+    log.endedAt ||
+    log.startedAt ||
+    log.createdAt ||
+    (log.date ? `${log.date}T00:00:00` : "");
+  const value = Date.parse(raw);
+  return Number.isNaN(value) ? 0 : value;
+}
+
+function sortLogsByTimeDesc(a, b) {
+  return getLogTimeValue(b) - getLogTimeValue(a);
+}
+
+function getDateKeyFromDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getDateKeyFromLog(log = {}) {
+  if (log.date) return String(log.date);
+  const value = getLogTimeValue(log);
+  if (!value) return "";
+  return getDateKeyFromDate(new Date(value));
+}
+
+function formatProfileDate(raw) {
+  if (!raw) return "";
+  const parts = String(raw).split("-");
+  if (parts.length === 3) {
+    return `${Number(parts[0])}.${String(parts[1]).padStart(2, "0")}.${String(
+      parts[2]
+    ).padStart(2, "0")}`;
+  }
+  return String(raw);
+}
+
+function formatShortProfileDate(raw) {
+  if (!raw) return "기록 없음";
+  const parts = String(raw).split("-");
+  if (parts.length === 3) return `${Number(parts[1])}.${Number(parts[2])}`;
+  return String(raw);
+}
+
+function buildRecentWindow(logs, now = new Date()) {
+  const byDate = logs.reduce((map, log) => {
+    const key = getDateKeyFromLog(log);
+    if (!key) return map;
+    const current = map.get(key) || { rounds: 0, minutes: 0, count: 0 };
+    current.rounds += getRounds(log);
+    current.minutes += getTotalMinutes(log);
+    current.count += 1;
+    map.set(key, current);
+    return map;
+  }, new Map());
+
+  return Array.from({ length: HISTORY_WINDOW_DAYS }, (_, index) => {
+    const date = new Date(now);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (HISTORY_WINDOW_DAYS - 1 - index));
+    const key = getDateKeyFromDate(date);
+    const stats = byDate.get(key) || { rounds: 0, minutes: 0, count: 0 };
+    const activity = Math.min(1, Math.max(stats.rounds / 6, stats.minutes / 18));
+    return {
+      key,
+      label: ["일", "월", "화", "수", "목", "금", "토"][date.getDay()],
+      active: stats.count > 0,
+      rounds: stats.rounds,
+      minutes: stats.minutes,
+      height: Math.round(20 + activity * 52),
+    };
+  });
+}
+
+function getArchiveMilestone(count) {
+  if (count <= 0) {
+    return {
+      label: "기록 전",
+      title: "첫 라운드부터 열립니다",
+      detail: "완료한 훈련만 이곳에 남습니다.",
+    };
+  }
+  if (count < 3) {
+    return {
+      label: "첫 기록",
+      title: `다음 회고까지 ${3 - count}회`,
+      detail: "3회가 쌓이면 주간 흔적이 더 또렷해집니다.",
+    };
+  }
+  if (count < 10) {
+    return {
+      label: "개인 보관실",
+      title: `10회까지 ${10 - count}회`,
+      detail: "반복한 훈련이 프로필의 밀도가 됩니다.",
+    };
+  }
+  return {
+    label: "누적 기록",
+    title: `${count}회 남김`,
+    detail: "훈련한 날들이 복싱 히스토리로 쌓이고 있습니다.",
+  };
+}
 
 export default function ProfilePage({
   scrollTarget,
@@ -271,31 +381,42 @@ export default function ProfilePage({
     profile.experience,
   ]);
 
-  const profileStats = useMemo(() => {
-    const totalLogs = logs.length;
+  const surfaceLogs = useMemo(
+    () => logs.filter((log) => !isDevSurfaceLog(log)).sort(sortLogsByTimeDesc),
+    [logs]
+  );
 
-    const totalRounds = logs.reduce((sum, log) => {
+  const profileStats = useMemo(() => {
+    const totalLogs = surfaceLogs.length;
+
+    const totalRounds = surfaceLogs.reduce((sum, log) => {
       return sum + getRounds(log);
     }, 0);
 
-    const totalMinutes = logs.reduce((sum, log) => {
+    const totalMinutes = surfaceLogs.reduce((sum, log) => {
       return sum + getTotalMinutes(log);
     }, 0);
 
     const today = getTodayString();
-    const todayLogs = logs.filter((log) => log.date === today);
+    const todayLogs = surfaceLogs.filter((log) => getDateKeyFromLog(log) === today);
 
-    const timerLogs = logs.filter((log) => log.source === "timer");
-    const manualLogs = logs.filter((log) => log.source === "manual");
-    const weeklyRounds = buildWeeklyReport(logs).totalRounds;
+    const timerLogs = surfaceLogs.filter((log) => log.source === "timer");
+    const manualLogs = surfaceLogs.filter((log) => log.source === "manual");
+    const weeklyRounds = buildWeeklyReport(surfaceLogs).totalRounds;
 
-    const fighterProgress = getFighterProgress(logs);
+    const fighterProgress = getFighterProgress(surfaceLogs);
+    const trainingDays = new Set(surfaceLogs.map(getDateKeyFromLog).filter(Boolean));
+    const oldestLog = surfaceLogs[surfaceLogs.length - 1] || null;
+    const latestLog = surfaceLogs[0] || null;
 
     return {
       totalLogs,
       totalRounds,
       weeklyRounds,
       totalMinutes,
+      trainingDays: trainingDays.size,
+      firstDate: getDateKeyFromLog(oldestLog),
+      latestDate: getDateKeyFromLog(latestLog),
       todayCount: todayLogs.length,
       timerCount: timerLogs.length,
       manualCount: manualLogs.length,
@@ -313,31 +434,31 @@ export default function ProfilePage({
       isMaxLevel: fighterProgress.isMaxLevel,
       nextLevelExp: fighterProgress.nextLevelExp,
     };
-  }, [logs]);
+  }, [surfaceLogs]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setSelectedLogIds((prev) => {
-        if (logs.length === 0) {
+        if (surfaceLogs.length === 0) {
           return prev.length > 0 ? prev : [];
         }
 
         if (
           cardMakerFocusLogId &&
-          logs.some((log) => log.id === cardMakerFocusLogId)
+          surfaceLogs.some((log) => log.id === cardMakerFocusLogId)
         ) {
           return [cardMakerFocusLogId];
         }
 
         if (prev.length === 0) {
-          return [logs[0].id];
+          return [surfaceLogs[0].id];
         }
 
-        const logIds = new Set(logs.map((log) => log.id));
+        const logIds = new Set(surfaceLogs.map((log) => log.id));
         const validIds = prev.filter((id) => logIds.has(id));
 
         if (validIds.length === 0) {
-          return [logs[0].id];
+          return [surfaceLogs[0].id];
         }
 
         return validIds;
@@ -345,7 +466,7 @@ export default function ProfilePage({
     }, 0);
 
     return () => clearTimeout(timer);
-  }, [logs, cardMakerFocusLogId]);
+  }, [surfaceLogs, cardMakerFocusLogId]);
 
   useEffect(() => {
     return () => {
@@ -453,10 +574,10 @@ export default function ProfilePage({
   }
 
   const selectedLogs = useMemo(() => {
-    return logs.filter((log) => selectedLogIds.includes(log.id));
-  }, [logs, selectedLogIds]);
+    return surfaceLogs.filter((log) => selectedLogIds.includes(log.id));
+  }, [surfaceLogs, selectedLogIds]);
 
-  const latestLog = logs[0];
+  const latestLog = surfaceLogs[0];
 
   const cardTotalRounds = selectedLogs.reduce((sum, log) => {
     return sum + getRounds(log);
@@ -473,7 +594,7 @@ export default function ProfilePage({
   const levelUpDisplaySlogan = String(
     levelUpSlogan || "ONE ROUND AT A TIME"
   ).trim().toUpperCase();
-  const levelUpStreakDays = getTrainingStreak(logs);
+  const levelUpStreakDays = getTrainingStreak(surfaceLogs);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2290,23 +2411,31 @@ export default function ProfilePage({
     SIMPLE_CARD_LOOKS.find((look) => look.id === selectedFilter) ||
     SIMPLE_CARD_LOOKS[0];
   const tierState = getCareerTierState(profileStats.level);
-  const recentLogs = logs
+  const recentLogs = surfaceLogs
     .filter((log) => {
-      if (isDevSurfaceLog(log)) return false;
       const rounds = getRounds(log);
       const minutes = Number(log.minutes || log.duration || 0);
       return rounds > 0 || minutes > 0;
     })
-    .slice(0, 2);
+    .slice(0, 5);
+  const recentWindow = useMemo(
+    () => buildRecentWindow(surfaceLogs),
+    [surfaceLogs]
+  );
+  const archiveMilestone = getArchiveMilestone(profileStats.totalLogs);
+  const courseJourney = useMemo(() => getCurriculumJourney(), []);
+  const courseProgressPercent = Math.round(
+    (courseJourney.completedCount / courseJourney.totalSessions) * 100
+  );
   const communityTraces = useMemo(
     () =>
       buildCommunityTraces({
         profile,
         exchangeEvents,
-        sparringLogs: pickSparringLogs(logs),
+        sparringLogs: pickSparringLogs(surfaceLogs),
         gymExchangeParticipations,
       }),
-    [profile, exchangeEvents, logs, gymExchangeParticipations]
+    [profile, exchangeEvents, surfaceLogs, gymExchangeParticipations]
   );
   const hasTrainingTrace =
     profileStats.totalRounds > 0 || profileStats.totalMinutes > 0;
@@ -2315,15 +2444,91 @@ export default function ProfilePage({
     Number(communityTraces.summary?.exchangeCount || 0) > 0 ||
     Number(communityTraces.summary?.sparringCount || 0) > 0 ||
     Number(communityTraces.summary?.gymCount || 0) > 0;
-  const fighterProgress = getFighterProgress(logs);
+  const fighterProgress = getFighterProgress(surfaceLogs);
 
   return (
     <main style={styles.page} className="profile-page">
       {profileView === "nameplate" && (
         <>
       <header className="profile-page-header profile-page-header-tab">
-        <h1>프로필</h1>
+        <div>
+          <p className="home-section-label">PROFILE</p>
+          <h1>Boxer History</h1>
+        </div>
       </header>
+
+      <section
+        className={`profile-history-hero${
+          hasTrainingTrace ? " has-trace" : " is-empty"
+        }`}
+        aria-label="복싱 히스토리"
+      >
+        <div className="profile-history-topline">
+          <span>{BRAND_NAME} RECORD ROOM</span>
+          <strong>
+            {hasTrainingTrace
+              ? `ERA SINCE ${formatShortProfileDate(profileStats.firstDate)}`
+              : "NO RECORD YET"}
+          </strong>
+        </div>
+
+        <div className="profile-history-title-row">
+          <div>
+            <p className="profile-history-kicker">{archiveMilestone.label}</p>
+            <h2>{nickname || "나"}의 복싱 히스토리</h2>
+            <p>
+              {hasTrainingTrace
+                ? `${profileStats.trainingDays}일 동안 ${profileStats.totalRounds}R · ${profileStats.totalMinutes}분을 남겼습니다.`
+                : "첫 라운드를 끝내면 이곳에 개인 기록이 생깁니다."}
+            </p>
+          </div>
+          <div className="profile-history-seal" aria-label="누적 기록">
+            <span>ROUNDS</span>
+            <strong>{profileStats.totalRounds}</strong>
+          </div>
+        </div>
+
+        <div className="profile-history-metrics">
+          <div>
+            <span>훈련 기록</span>
+            <strong>{profileStats.totalLogs}회</strong>
+          </div>
+          <div>
+            <span>훈련한 날</span>
+            <strong>{profileStats.trainingDays}일</strong>
+          </div>
+          <div>
+            <span>이번 주</span>
+            <strong>{profileStats.weeklyRounds}R</strong>
+          </div>
+        </div>
+
+        <div className="profile-history-weekline" aria-label="최근 7일 기록">
+          {recentWindow.map((day) => (
+            <span
+              key={day.key}
+              className={day.active ? "is-active" : ""}
+              title={`${day.key} · ${day.rounds}R · ${day.minutes}분`}
+            >
+              <i style={{ height: `${day.height}%` }} />
+              <em>{day.label}</em>
+            </span>
+          ))}
+        </div>
+
+        <div className="profile-history-footer">
+          <div>
+            <strong>{archiveMilestone.title}</strong>
+            <span>{archiveMilestone.detail}</span>
+          </div>
+          {onGoLog ? (
+            <button type="button" onClick={onGoLog}>
+              기록 전체 보기
+            </button>
+          ) : null}
+        </div>
+      </section>
+
       <div className="profile-hub-layout">
       <div className="profile-hub-primary">
       <FighterSpecCard
@@ -2339,7 +2544,7 @@ export default function ProfilePage({
           experience: experience || profile.experience,
           area: area || profile.area,
         }}
-        logs={logs}
+        logs={surfaceLogs}
         weeklyScore={weeklyScore}
         careerStageKo={profileStats.careerStageKo}
         streakDays={levelUpStreakDays}
@@ -2577,32 +2782,11 @@ export default function ProfilePage({
         ) : null}
       </FighterSpecCard>
 
-      <section className="profile-trace-summary" aria-label="내 훈련의 흔적">
-        <p className="home-section-label">MY TRACE</p>
-        <h2>내 훈련의 흔적</h2>
-        <div className="profile-trace-stats is-inline">
-          <div>
-            <span>누적 라운드</span>
-            <strong>{profileStats.totalRounds}R</strong>
-          </div>
-          <div>
-            <span>링 위의 시간</span>
-            <strong>{profileStats.totalMinutes}분</strong>
-          </div>
-          <div>
-            <span>연속 훈련</span>
-            <strong>
-              {hasTrainingTrace ? levelUpStreakDays || 0 : 0}일
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="profile-hub-card profile-recent-logs" aria-label="최근 훈련">
+      <section className="profile-hub-card profile-recent-logs profile-history-ledger" aria-label="최근 훈련">
         <div className="profile-season-head">
           <div>
-            <p className="home-section-label">RECENT</p>
-            <h2>최근 훈련</h2>
+            <p className="home-section-label">LEDGER</p>
+            <h2>최근 남긴 훈련</h2>
           </div>
           {onGoLog ? (
             <button
@@ -2610,7 +2794,7 @@ export default function ProfilePage({
               className="profile-section-link is-inline"
               onClick={onGoLog}
             >
-              기록 탭으로
+              전체
             </button>
           ) : null}
         </div>
@@ -2619,23 +2803,41 @@ export default function ProfilePage({
           <div className="profile-empty-block">
             <p className="profile-empty-copy">아직 남겨진 훈련이 없습니다.</p>
             <p className="profile-empty-copy is-secondary">
-              첫 훈련이 이곳에 쌓입니다.
+              첫 1R을 끝내면 이곳이 열립니다.
             </p>
           </div>
         ) : (
-          <ul className="profile-recent-list">
-            {recentLogs.map((log) => (
+          <ol className="profile-recent-list profile-history-timeline">
+            {recentLogs.map((log, index) => (
               <li key={log.id}>
-                <strong>{log.type || "훈련"}</strong>
-                <span>
-                  {getRounds(log) ? `${getRounds(log)}R · ` : ""}
-                  {log.minutes || log.duration || 0}분 ·{" "}
-                  {String(log.date || "").replaceAll("-", ".")}
+                <span className="profile-history-index">
+                  {String(recentLogs.length - index).padStart(2, "0")}
                 </span>
+                <div>
+                  <strong>{log.type || "훈련"}</strong>
+                  <span>
+                    {getLogSummary(log) || "기록"} ·{" "}
+                    {formatProfileDate(getDateKeyFromLog(log))}
+                  </span>
+                  {log.workoutDetails ? <p>{log.workoutDetails}</p> : null}
+                </div>
               </li>
             ))}
-          </ul>
+          </ol>
         )}
+      </section>
+
+      <section className="profile-hub-card profile-course-record" aria-label="4주 코스 기록">
+        <div className="profile-season-head">
+          <div>
+            <p className="home-section-label">COURSE TRACE</p>
+            <h2>4주 코스 기록</h2>
+          </div>
+          <strong className="profile-course-percent">
+            {courseProgressPercent}%
+          </strong>
+        </div>
+        <CourseJourney />
       </section>
       </div>
 
@@ -2778,7 +2980,7 @@ export default function ProfilePage({
           사진 → 문구 → 스타일 → 저장. 필요한 것만 남겼습니다.
         </p>
 
-        {logs.length === 0 ? (
+        {surfaceLogs.length === 0 ? (
           <div style={styles.emptyFeaturedLog}>
             아직 훈련 기록이 없어요. 타이머를 완료하거나 기록에서 운동을 남기면
             날짜·라운드가 자동으로 채워집니다.
@@ -3163,11 +3365,11 @@ export default function ProfilePage({
             <span>훈련 코멘트 표시</span>
           </label>
 
-          {logs.length > 0 ? (
+          {surfaceLogs.length > 0 ? (
             <div style={{ marginTop: 12 }}>
               <p style={styles.cardMakerLabel}>기록 선택</p>
               <div style={styles.logSelectList}>
-                {logs.slice(0, 8).map((log) => {
+                {surfaceLogs.slice(0, 8).map((log) => {
                   const isSelected = selectedLogIds.includes(log.id);
                   return (
                     <button

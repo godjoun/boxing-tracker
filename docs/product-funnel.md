@@ -3,17 +3,21 @@
 PUNCH ERA에서 핵심 기능이 **실제로 쓰이는지**만 보는 참고 지표다.
 정교한 리텐션·사용자 추적·관리자 대시보드가 아니다.
 
-## 이벤트 (5개만)
+## 이벤트 (7개만)
 
 | event_name | 의미 | 기록 시점 |
 |---|---|---|
 | `app_open` | 프로덕션 앱 셸 진입 | `MainAppShell` mount |
 | `training_start` | 타이머/훈련 실제 시작 | `TimerPage` running 진입 |
 | `training_complete` | 전체 훈련 정상 완료 + 로그 저장 | 부분 중단 제외 |
+| `log_view` | 기록 화면 확인 | `LogPage` mount 1회 |
 | `training_card_create` | 훈련 카드 저장 성공 | `finishSave` 이후 |
 | `profile_view` | 프로필 화면 진입 | `ProfilePage` mount 1회 |
+| `training_revisit` | 이전 오픈일과 저장 훈련이 있는 사용자의 재방문 | `MainAppShell` mount 후 로컬 open-day/기록 조건 충족 시 1회 |
 
 그 외 이벤트명·payload·PII는 저장하지 않는다.
+
+`training_revisit`은 사용자 식별자 없이 로컬 브라우저의 첫 오픈일·오픈 날짜 목록과 저장 훈련 존재 여부만 보고 전송한다. 사용자별 코호트 리텐션이 아니라 “기록을 가진 재방문 세션이 있었는가”를 보는 참고 지표다.
 
 ## 테이블
 

@@ -1,6 +1,15 @@
 import { getSupabase, isSupabaseConfigured } from "../lib/supabaseClient";
 import { isDojoServerEnabled } from "../utils/releaseScope";
 
+export const GYM_LISTING_PHOTO_MAX_BYTES = 4 * 1024 * 1024;
+
+const GYM_LISTING_PHOTO_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+]);
+
 export function hasGymListingRemote() {
   return (
     isDojoServerEnabled() && isSupabaseConfigured && Boolean(getSupabase())
@@ -28,6 +37,36 @@ function isRemoteUnavailable(error) {
     message.includes("dojo_gym_listings") ||
     message.includes("list_my_dojo_gym_listings")
   );
+}
+
+function createUploadNonce() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function getGymListingPhotoExtension(fileType) {
+  const type = String(fileType || "").toLowerCase();
+  if (type === "image/png") return "png";
+  if (type === "image/webp") return "webp";
+  return "jpg";
+}
+
+export function validateGymListingPhotoFile(file) {
+  const type = String(file?.type || "").toLowerCase();
+  const size = Number(file?.size || 0);
+
+  if (!file || !GYM_LISTING_PHOTO_TYPES.has(type)) {
+    return "사진은 JPG, PNG, WEBP 파일만 올릴 수 있습니다.";
+  }
+  if (!Number.isFinite(size) || size <= 0) {
+    return "사진 파일을 확인해 주세요.";
+  }
+  if (size > GYM_LISTING_PHOTO_MAX_BYTES) {
+    return "사진은 4MB 이하로 올려 주세요.";
+  }
+  return "";
 }
 
 function toWonOrNull(value) {
@@ -365,13 +404,13 @@ export async function uploadGymListingPhoto(file, listingId) {
     return { url: null, errorMessage: "서버 연결 또는 파일이 없습니다." };
   }
 
-  const ext =
-    (file.type || "").includes("png")
-      ? "png"
-      : (file.type || "").includes("webp")
-        ? "webp"
-        : "jpg";
-  const path = `${listingId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+  const validationError = validateGymListingPhotoFile(file);
+  if (validationError) {
+    return { url: null, errorMessage: validationError };
+  }
+
+  const ext = getGymListingPhotoExtension(file.type);
+  const path = `${listingId}/${createUploadNonce()}.${ext}`;
 
   try {
     const { error } = await supabase.storage

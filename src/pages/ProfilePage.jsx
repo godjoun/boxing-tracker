@@ -49,11 +49,12 @@ import { listMyGymExchangeParticipations } from "../api/gymExchangeParticipation
 const HISTORY_WINDOW_DAYS = 7;
 
 function getLogTimeValue(log = {}) {
+  const safeLog = log && typeof log === "object" ? log : {};
   const raw =
-    log.endedAt ||
-    log.startedAt ||
-    log.createdAt ||
-    (log.date ? `${log.date}T00:00:00` : "");
+    safeLog.endedAt ||
+    safeLog.startedAt ||
+    safeLog.createdAt ||
+    (safeLog.date ? `${safeLog.date}T00:00:00` : "");
   const value = Date.parse(raw);
   return Number.isNaN(value) ? 0 : value;
 }
@@ -70,8 +71,9 @@ function getDateKeyFromDate(date) {
 }
 
 function getDateKeyFromLog(log = {}) {
-  if (log.date) return String(log.date);
-  const value = getLogTimeValue(log);
+  const safeLog = log && typeof log === "object" ? log : {};
+  if (safeLog.date) return String(safeLog.date);
+  const value = getLogTimeValue(safeLog);
   if (!value) return "";
   return getDateKeyFromDate(new Date(value));
 }
@@ -382,7 +384,10 @@ export default function ProfilePage({
   ]);
 
   const surfaceLogs = useMemo(
-    () => logs.filter((log) => !isDevSurfaceLog(log)).sort(sortLogsByTimeDesc),
+    () =>
+      logs
+        .filter((log) => log && typeof log === "object" && !isDevSurfaceLog(log))
+        .sort(sortLogsByTimeDesc),
     [logs]
   );
 
@@ -2414,7 +2419,7 @@ export default function ProfilePage({
   const recentLogs = surfaceLogs
     .filter((log) => {
       const rounds = getRounds(log);
-      const minutes = Number(log.minutes || log.duration || 0);
+      const minutes = Number(log?.minutes || log?.duration || 0);
       return rounds > 0 || minutes > 0;
     })
     .slice(0, 5);

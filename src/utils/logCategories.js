@@ -39,9 +39,10 @@ export function getLogCategory(categoryId) {
 }
 
 export function inferLogCategory(log = {}) {
-  if (CATEGORY_IDS.includes(log.category)) return log.category;
+  const safeLog = log && typeof log === "object" ? log : {};
+  if (CATEGORY_IDS.includes(safeLog.category)) return safeLog.category;
 
-  const type = String(log.type || "");
+  const type = String(safeLog.type || "");
   if (CATEGORY_PATTERNS.running.test(type)) return "running";
   if (CATEGORY_PATTERNS.walking.test(type)) return "walking";
   if (CATEGORY_PATTERNS.weights.test(type)) return "weights";
@@ -49,12 +50,14 @@ export function inferLogCategory(log = {}) {
 }
 
 export function normalizeLogCategory(log = {}) {
-  const category = inferLogCategory(log);
+  const safeLog = log && typeof log === "object" ? log : {};
+  const category = inferLogCategory(safeLog);
   return {
-    ...log,
+    ...safeLog,
     category,
-    subtype: log.subtype || log.type || getLogCategory(category).subtypes[0],
-    metrics: log.metrics && typeof log.metrics === "object" ? log.metrics : {},
+    subtype: safeLog.subtype || safeLog.type || getLogCategory(category).subtypes[0],
+    metrics:
+      safeLog.metrics && typeof safeLog.metrics === "object" ? safeLog.metrics : {},
   };
 }
 
@@ -62,16 +65,18 @@ const WEIGHT_BODY_TAGS = new Set(["웨이트", "상체", "하체", "코어"]);
 
 /** 웨이트 표시명. 운동명이 없거나 부위 태그만 있으면 "웨이트"로 안전하게 표시. */
 export function getWeightsExerciseTitle(log = {}) {
-  const metrics = log.metrics || {};
-  const name = String(metrics.exerciseName || log.type || "").trim();
+  const safeLog = log && typeof log === "object" ? log : {};
+  const metrics = safeLog.metrics || {};
+  const name = String(metrics.exerciseName || safeLog.type || "").trim();
   if (!name || WEIGHT_BODY_TAGS.has(name)) return "웨이트";
   return name;
 }
 
 export function getLogSummary(log = {}) {
-  const category = inferLogCategory(log);
-  const metrics = log.metrics || {};
-  const minutes = Number(log.minutes || log.duration || 0);
+  const safeLog = log && typeof log === "object" ? log : {};
+  const category = inferLogCategory(safeLog);
+  const metrics = safeLog.metrics || {};
+  const minutes = Number(safeLog.minutes || safeLog.duration || 0);
 
   if (category === "running") {
     const distanceKm = Number(metrics.distanceKm || 0);
@@ -100,7 +105,9 @@ export function getLogSummary(log = {}) {
       .join(" · ");
   }
 
-  const rounds = Number(log.rounds || log.totalRounds || log.completedRounds || 0);
+  const rounds = Number(
+    safeLog.rounds || safeLog.totalRounds || safeLog.completedRounds || 0
+  );
   return [rounds ? `${rounds}R` : "", minutes ? `${minutes}분` : ""]
     .filter(Boolean)
     .join(" · ");

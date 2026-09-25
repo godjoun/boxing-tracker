@@ -12,7 +12,6 @@ import {
   getWeekEnd,
   getWeekStart,
   isThisWeek,
-  normalizeLogScores,
 } from "../utils/trainingStats";
 import { sanitizeProfileForStorage } from "../utils/privacy";
 import {
@@ -32,9 +31,12 @@ import { getFighterProgress } from "../utils/fighterProgress";
 import { syncListingFromProfile } from "../utils/sparringPartners";
 import { registerNickname } from "../api/nicknameApi";
 import { resetTutorial } from "../utils/tutorial";
-import { normalizeLogCategory } from "../utils/logCategories";
 import { markFreshOnboardingMigrationComplete } from "../utils/profileMigration";
-import { normalizeProofLog, resolveRecordSource } from "../utils/recordSource";
+import { resolveRecordSource } from "../utils/recordSource";
+import {
+  normalizeStoredTrainingLogs,
+  normalizeTrainingLog,
+} from "../utils/trainingLogStorage";
 
 const TrainingContext = createContext(null);
 const GUEST_USER_ID = "local-user";
@@ -111,11 +113,7 @@ function loadUserState(userId) {
   };
 
   return {
-    logs: normalizeLogScores(
-      loadStorage(keys.logs, []).map((log) =>
-        normalizeProofLog(normalizeLogCategory(log))
-      )
-    ),
+    logs: normalizeStoredTrainingLogs(loadStorage(keys.logs, [])),
     feed: loadStorage(keys.feed, []),
     profile,
     mode: localStorage.getItem(keys.mode) || "solo",
@@ -365,48 +363,45 @@ function TrainingProviderState({ children, userId }) {
     const finalSource = source || "manual";
     const details = String(workoutDetails || activities || "").trim();
 
-    const newLog = normalizeProofLog(
-      normalizeLogCategory({
-        id: crypto.randomUUID(),
-        date: finalDate,
-        type: finalType,
-        trainingType: trainingType || finalType,
-        category,
-        subtype,
-        metrics,
-        minutes: finalMinutes,
-        duration: finalMinutes,
-        rounds: finalRounds,
-        totalRounds: finalRounds,
-        completedRounds: finalRounds,
-        difficulty,
-        difficultyLabel: DIFFICULTY_LABEL[difficulty] || "보통",
-        condition: condition || "normal",
-        conditionLabel: getConditionLabel(condition),
-        memo,
-        publicComment,
-        workoutDetails: details,
-        activities: activities || details || undefined,
-        source: finalSource,
-        recordSource: resolveRecordSource({ recordSource, source: finalSource }),
-        sourceLabel: getRecordSourceLabel(finalSource),
-        isEdited: false,
-        score: 0,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-        ...(startedAt ? { startedAt } : {}),
-        ...(endedAt ? { endedAt } : {}),
-      })
-    );
+    const draftLog = {
+      id: crypto.randomUUID(),
+      date: finalDate,
+      type: finalType,
+      trainingType: trainingType || finalType,
+      category,
+      subtype,
+      metrics,
+      minutes: finalMinutes,
+      duration: finalMinutes,
+      rounds: finalRounds,
+      totalRounds: finalRounds,
+      completedRounds: finalRounds,
+      difficulty,
+      difficultyLabel: DIFFICULTY_LABEL[difficulty] || "보통",
+      condition: condition || "normal",
+      conditionLabel: getConditionLabel(condition),
+      memo,
+      publicComment,
+      workoutDetails: details,
+      activities: activities || details || undefined,
+      source: finalSource,
+      recordSource: resolveRecordSource({ recordSource, source: finalSource }),
+      sourceLabel: getRecordSourceLabel(finalSource),
+      isEdited: false,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      ...(startedAt ? { startedAt } : {}),
+      ...(endedAt ? { endedAt } : {}),
+    };
 
-    if (!newLog.workoutDetails) {
-      delete newLog.workoutDetails;
+    if (!draftLog.workoutDetails) {
+      delete draftLog.workoutDetails;
     }
-    if (!newLog.activities) {
-      delete newLog.activities;
+    if (!draftLog.activities) {
+      delete draftLog.activities;
     }
 
-    newLog.score = calculateLogScore(newLog);
+    const newLog = normalizeTrainingLog(draftLog);
 
     setLogs((prevLogs) => [newLog, ...prevLogs]);
 
@@ -438,8 +433,8 @@ function TrainingProviderState({ children, userId }) {
           source: nextSource,
         });
 
-        const nextLog = normalizeProofLog(
-          normalizeLogCategory({
+        return (
+          normalizeTrainingLog({
             ...log,
             ...updates,
             minutes: nextMinutes,
@@ -456,13 +451,8 @@ function TrainingProviderState({ children, userId }) {
             sourceLabel: getRecordSourceLabel(nextSource),
             isEdited: true,
             updatedAt: new Date().toISOString(),
-          })
+          }) || log
         );
-
-        return {
-          ...nextLog,
-          score: calculateLogScore(nextLog),
-        };
       });
     });
   }
@@ -518,15 +508,9 @@ function TrainingProviderState({ children, userId }) {
       throw new Error("훈련 기록 데이터가 없습니다.");
     }
 
-    const nextLogs = merge
-      ? normalizeLogScores(
-          mergeLogs(logs, data.logs).map((log) =>
-            normalizeProofLog(normalizeLogCategory(log))
-          )
-        )
-      : normalizeLogScores(
-          data.logs.map((log) => normalizeProofLog(normalizeLogCategory(log)))
-        );
+    const nextLogs = normalizeStoredTrainingLogs(
+      merge ? mergeLogs(logs, data.logs) : data.logs
+    );
 
     const nextFeed = merge ? mergeFeed(feed, data.feed || []) : data.feed || [];
     const safeImportedProfile = sanitizeProfileForStorage(data.profile);

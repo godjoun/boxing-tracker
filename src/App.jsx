@@ -572,6 +572,7 @@ function MainAppShell({ theme, onToggleTheme }) {
               goPage("strength");
             }}
             onOpenLog={() => goPage("log")}
+            onStartMinimumRound={() => goMinimumRound("train")}
           />
         )}
 

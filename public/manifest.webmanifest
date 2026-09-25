@@ -1,7 +1,8 @@
 {
   "name": "PUNCH ERA",
   "short_name": "PUNCH ERA",
-  "description": "PUNCH ERA — ARE YOU READY? It starts with a reach inward.",
+  "description": "체육관 밖에서도 복싱 훈련을 시작하고 기록을 남기는 PUNCH ERA.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -27,6 +27,16 @@ describe("운동 기록 카테고리", () => {
     expect(log.type).toBe("기술 · 홈복싱 1주차");
   });
 
+  it("깨진 기록 값은 기본 복싱 기록 형태로 안전하게 다룬다", () => {
+    expect(inferLogCategory(null)).toBe("boxing");
+    expect(normalizeLogCategory(null)).toMatchObject({
+      category: "boxing",
+      subtype: "복싱",
+    });
+    expect(getLogSummary(null)).toBe("");
+    expect(getWeightsExerciseTitle(null)).toBe("웨이트");
+  });
+
   it("러닝 페이스와 웨이트 요약을 계산한다", () => {
     expect(getRunningPaceLabel(5, 30)).toBe("6'00\" /km");
     expect(

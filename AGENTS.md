@@ -226,3 +226,15 @@ AI must not autonomously:
 - make a new product-direction decision
 
 When product or brand intent is ambiguous, stop and request approval rather than inventing scope.
+
+## Shared PUNCH ERA handoff for ChatGPT and Codex
+
+At the start of each task, read [docs/HANDOFF.md](docs/HANDOFF.md) after this file.
+It records the user-designated local folder, product direction, production/GitHub source mismatch, evidence, validation limits and next steps.
+
+Before editing, confirm the actual checkout, branch, HEAD and working changes. Do not assume GitHub main is the latest deployed application source.
+Preserve the existing local working tree and this file. When bringing this guidance into the official local source, append the guidance to that checkout's AGENTS.md rather than replacing it with an older copy.
+
+Keep the handoff current with the exact source commit, shared branch/PR, checks actually run and unresolved items.
+Distinguish historical reports, inspected source and runtime verification. A documentation-only branch does not establish source synchronization.
+The existing engineering, approval and record-integrity rules above remain in effect, subject to the user's current explicit instructions.

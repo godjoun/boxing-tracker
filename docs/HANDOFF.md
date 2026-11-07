@@ -19,6 +19,8 @@ Do not describe this documentation PR as a completed source recovery or an appli
 | GitHub repository | godjoun/boxing-tracker |
 | Production URL | https://boxing-tracker.vercel.app/ |
 | Shared documentation branch | docs/punch-era-handoff-20261107 |
+| Shared documentation draft PR | https://github.com/godjoun/boxing-tracker/pull/5 — official local source sync pending |
+| Initial documentation-only verified commit | 0b8de5141d2291ce3b9b718195bf085857c51825 — not an application-source verification |
 | Verified GitHub main snapshot | 3520dc84919fddaf57ae965320348dab27cf6d1f |
 | Last reported release commit | 9c4a76252e8f1889742a192eef058dd5074a9e82 — not found in this GitHub repository during inspection |
 | Verified production deployment | dpl_GNC9fgVjtCEPTPWi1DXYbkAxRWVe |
